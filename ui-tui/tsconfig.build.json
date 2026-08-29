@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@sanremes/ink": ["src/types/sanremes-ink.d.ts"]
+    }
+  }
+}
