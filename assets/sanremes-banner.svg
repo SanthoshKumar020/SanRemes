@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" fill="none">
+  <!-- Background -->
+  <rect width="1200" height="300" fill="#1B2A4A"/>
+  
+  <!-- SR Monogram - centered -->
+  <g transform="translate(540, 30)">
+    <!-- Gold S -->
+    <path d="M 55 10 
+             C 35 10, 15 30, 15 60 
+             C 15 85, 35 100, 60 120 
+             C 85 140, 110 155, 110 180 
+             C 110 210, 85 225, 55 225" 
+          stroke="#C4A265" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- S serifs -->
+    <path d="M 35 10 L 75 10" stroke="#C4A265" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 35 225 L 70 225" stroke="#C4A265" stroke-width="4" stroke-linecap="round"/>
+    
+    <!-- White R -->
+    <path d="M 120 10 L 120 225" stroke="white" stroke-width="12" stroke-linecap="round"/>
+    <path d="M 120 10 
+             C 120 10, 200 10, 215 45 
+             C 230 80, 205 120, 165 135 
+             L 230 225" 
+          stroke="white" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- R serifs -->
+    <path d="M 105 10 L 140 10" stroke="white" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 105 225 L 140 225" stroke="white" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  
+  <!-- "SanRemes" text -->
+  <text x="600" y="275" 
+        font-family="Georgia, 'Times New Roman', serif" 
+        font-size="28" 
+        font-weight="400"
+        fill="white" 
+        text-anchor="middle"
+        letter-spacing="4">SanRemes</text>
+  
+  <!-- "AGENT" text -->
+  <text x="600" y="298" 
+        font-family="Georgia, 'Times New Roman', serif" 
+        font-size="14" 
+        font-weight="400"
+        fill="#C4A265" 
+        text-anchor="middle"
+        letter-spacing="12">AGENT</text>
+  
+  <!-- Decorative lines -->
+  <line x1="490" y2="293" x2="545" y2="293" stroke="#C4A265" stroke-width="1" opacity="0.6"/>
+  <line x1="655" y2="293" x2="710" y2="293" stroke="#C4A265" stroke-width="1" opacity="0.6"/>
+</svg>

@@ -1,8 +1,12 @@
 <p align="center">
-  <img src="assets/banner.png" alt="SanRemes Agent" width="100%">
+  <img src="assets/sanremes-banner.svg" alt="SanRemes Agent" width="100%">
 </p>
 
-# SanRemes Agent ☤
+<p align="center">
+  <img src="assets/sanremes-monogram.svg" alt="SanRemes Agent Logo" width="80">
+</p>
+
+# SanRemes Agent
 <p align="center">
   <a href="https://sanremes-agent.nousresearch.com/">SanRemes Agent</a> | <a href="https://sanremes-agent.nousresearch.com/">SanRemes Desktop</a>
 </p>
