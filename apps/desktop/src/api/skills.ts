@@ -8,7 +8,7 @@ import type {
 } from '@/types/sanremes'
 import type { ActionResponse } from '@/types/sanremes'
 
-import { capabilityScoped, sanremesApi, type ProfileScope, profileScoped } from './client'
+import { capabilityScoped, type ProfileScope, profileScoped, sanremesApi } from './client'
 
 export function getSkills(profile?: ProfileScope): Promise<SkillInfo[]> {
   return window.sanremesDesktop.api<SkillInfo[]>({

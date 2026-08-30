@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 
-import { getSanRemesConfigRecord, type ProfileScope, profileScopeKey } from '@/sanremes'
 import { queryClient, writeCache } from '@/lib/query-client'
+import { getSanRemesConfigRecord, type ProfileScope, profileScopeKey } from '@/sanremes'
 import type { SanRemesConfigRecord } from '@/types/sanremes'
 
 // One shared cache for the whole profile config record (`GET /api/config`).

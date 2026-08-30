@@ -15,9 +15,9 @@ import { test } from 'vitest'
 import {
   canImportSanRemesCli,
   DEFAULT_PROBE_TIMEOUT_MS,
-  sanremesRuntimeImportProbe,
   PROBE_TIMEOUT_MS,
   resolveProbeTimeoutMs,
+  sanremesRuntimeImportProbe,
   shouldTrustSanRemesOverride,
   verifySanRemesCli
 } from './backend-probes'

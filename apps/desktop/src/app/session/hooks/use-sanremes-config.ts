@@ -1,9 +1,9 @@
 import { type MutableRefObject, useCallback, useRef, useState } from 'react'
 
 import { setTerminalFontFamilyFromConfig } from '@/app/right-sidebar/terminal/terminal-font'
-import { getSanRemesConfig, getSanRemesConfigDefaults } from '@/sanremes'
 import { BUILTIN_PERSONALITIES, normalizePersonalityValue, personalityNamesFromConfig } from '@/lib/chat-runtime'
 import { normalize } from '@/lib/text'
+import { getSanRemesConfig, getSanRemesConfigDefaults } from '@/sanremes'
 import { setDisplayTimestampsFromConfig } from '@/store/display-timestamps'
 import {
   getComposerSelectionGeneration,
@@ -65,7 +65,10 @@ export function useSanRemesConfig({ activeSessionIdRef }: SanRemesConfigOptions)
       const selectionGeneration = getComposerSelectionGeneration()
 
       try {
-        const [config, defaults] = await Promise.all([getSanRemesConfig(), getSanRemesConfigDefaults().catch(() => ({}))])
+        const [config, defaults] = await Promise.all([
+          getSanRemesConfig(),
+          getSanRemesConfigDefaults().catch(() => ({}))
+        ])
 
         const canPublish = () => profileRefreshEpochRef.current === profileRefreshEpoch && shouldPublish()
 

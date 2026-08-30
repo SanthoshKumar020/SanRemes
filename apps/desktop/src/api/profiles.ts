@@ -6,7 +6,7 @@ import type {
   ProfilesResponse
 } from '@/types/sanremes'
 
-import { capabilityScoped, sanremesApi, type ProfileScope, STARTUP_REQUEST_TIMEOUT_MS } from './client'
+import { capabilityScoped, type ProfileScope, sanremesApi, STARTUP_REQUEST_TIMEOUT_MS } from './client'
 
 export function getProfiles(): Promise<ProfilesResponse> {
   return sanremesApi<ProfilesResponse>({

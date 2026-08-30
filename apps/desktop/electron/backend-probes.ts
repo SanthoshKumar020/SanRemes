@@ -213,9 +213,9 @@ export {
   canImportSanRemesCli,
   DEFAULT_PROBE_TIMEOUT_MS,
   execProbeSync,
-  sanremesRuntimeImportProbe,
   PROBE_TIMEOUT_MS,
   resolveProbeTimeoutMs,
+  sanremesRuntimeImportProbe,
   shouldTrustSanRemesOverride,
   verifySanRemesCli
 }

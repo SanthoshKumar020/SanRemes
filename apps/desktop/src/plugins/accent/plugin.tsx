@@ -13,7 +13,7 @@
  * authored.
  */
 
-import type { SanRemesPlugin, PaletteContribution } from '@sanremes/plugin-sdk'
+import type { PaletteContribution, SanRemesPlugin } from '@sanremes/plugin-sdk'
 import { $accentOverride, PALETTE_AREA, setAccentOverride, STATUSBAR_AREAS } from '@sanremes/plugin-sdk'
 
 import { AccentPickerTrigger } from './picker'

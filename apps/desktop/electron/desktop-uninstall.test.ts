@@ -96,13 +96,18 @@ test('resolveRemovableAppPath returns null for an unrecognized Windows dir', () 
 
 test('resolveRemovableAppPath uses APPIMAGE on Linux when set', () => {
   assert.equal(
-    resolveRemovableAppPath('/tmp/.mount_SanRemesXXXX/sanremes', 'linux', { APPIMAGE: '/home/x/Apps/SanRemes.AppImage' }),
+    resolveRemovableAppPath('/tmp/.mount_SanRemesXXXX/sanremes', 'linux', {
+      APPIMAGE: '/home/x/Apps/SanRemes.AppImage'
+    }),
     '/home/x/Apps/SanRemes.AppImage'
   )
 })
 
 test('resolveRemovableAppPath finds the unpacked dir on Linux', () => {
-  assert.equal(resolveRemovableAppPath('/opt/sanremes/linux-unpacked/sanremes', 'linux', {}), '/opt/sanremes/linux-unpacked')
+  assert.equal(
+    resolveRemovableAppPath('/opt/sanremes/linux-unpacked/sanremes', 'linux', {}),
+    '/opt/sanremes/linux-unpacked'
+  )
   // A system-package install (/usr/bin) → null, left to apt/dnf.
   assert.equal(resolveRemovableAppPath('/usr/bin/sanremes', 'linux', {}), null)
 })

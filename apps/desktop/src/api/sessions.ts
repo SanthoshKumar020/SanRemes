@@ -10,7 +10,7 @@ import type {
   SessionSearchResponse
 } from '@/types/sanremes'
 
-import { capabilityScoped, getApiRequestConnection, sanremesApi, type ProfileScope, profileScoped } from './client'
+import { capabilityScoped, getApiRequestConnection, type ProfileScope, profileScoped, sanremesApi } from './client'
 
 const SESSION_LIST_REQUEST_TIMEOUT_MS = 60_000
 

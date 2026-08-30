@@ -91,7 +91,16 @@ test('fresh bootstrap args include the packaged commit pin', () => {
       activeRoot: '/tmp/sanremes-agent',
       sanremesHome: '/tmp/sanremes'
     }),
-    ['--dir', '/tmp/sanremes-agent', '--sanremes-home', '/tmp/sanremes', '--branch', 'main', '--commit', installStamp.commit]
+    [
+      '--dir',
+      '/tmp/sanremes-agent',
+      '--sanremes-home',
+      '/tmp/sanremes',
+      '--branch',
+      'main',
+      '--commit',
+      installStamp.commit
+    ]
   )
 })
 

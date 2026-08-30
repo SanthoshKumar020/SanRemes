@@ -8,8 +8,8 @@ import {
   attachmentPreviewDataUrl,
   type DroppedFile,
   extractDroppedFiles,
-  SANREMES_PATHS_MIME,
   partitionDroppedFiles,
+  SANREMES_PATHS_MIME,
   useComposerActions
 } from './use-composer-actions'
 

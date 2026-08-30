@@ -8,8 +8,8 @@ import { currentPickerSelection } from '@/lib/model-status-label'
 import { normalize } from '@/lib/text'
 import type { ModelOptionProvider, ModelPricing } from '@/types/sanremes'
 
-import type { SanRemesGateway } from '../sanremes'
 import { cn } from '../lib/utils'
+import type { SanRemesGateway } from '../sanremes'
 import { startManualOnboarding } from '../store/onboarding'
 
 import { InlineNotice } from './notifications'

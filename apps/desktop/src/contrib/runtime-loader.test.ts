@@ -88,7 +88,9 @@ describe('scanDiskPlugins (#66899)', () => {
 
       if (dir === '/local/.sanremes/plugins/my-feature') {
         return {
-          entries: [{ isDirectory: false, name: 'plugin.yaml', path: '/local/.sanremes/plugins/my-feature/plugin.yaml' }]
+          entries: [
+            { isDirectory: false, name: 'plugin.yaml', path: '/local/.sanremes/plugins/my-feature/plugin.yaml' }
+          ]
         }
       }
 

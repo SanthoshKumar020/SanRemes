@@ -35,7 +35,15 @@ const STOP_PHRASES: readonly string[] = [
 
 // Optional address prefixes so "sanremes stop" / "ok stop" / "hey sanremes, stop"
 // still count. Stripped before matching the core phrase.
-const ADDRESS_PREFIXES: readonly string[] = ['hey sanremes', 'hey sanremes,', 'sanremes', 'sanremes,', 'ok', 'okay', 'hey']
+const ADDRESS_PREFIXES: readonly string[] = [
+  'hey sanremes',
+  'hey sanremes,',
+  'sanremes',
+  'sanremes,',
+  'ok',
+  'okay',
+  'hey'
+]
 
 // Normalise: lowercase, strip surrounding punctuation/whitespace, collapse
 // internal runs of spaces. Trailing punctuation (".", "!", "…") is common in

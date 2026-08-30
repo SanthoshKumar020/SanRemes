@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import { getElevenLabsVoices, getSanRemesConfigSchema, saveSanRemesConfig } from '@/sanremes'
 import { useI18n } from '@/i18n'
+import { getElevenLabsVoices, getSanRemesConfigSchema, saveSanRemesConfig } from '@/sanremes'
 import { notifyError } from '@/store/notifications'
 import type { SanRemesConfigRecord } from '@/types/sanremes'
 

@@ -44,7 +44,12 @@ const profile = (name: string, isDefault = false): ProfileInfo => ({
 })
 
 const remoteConn = (over: Partial<SanRemesConnection> = {}): SanRemesConnection =>
-  ({ baseUrl: 'https://sanremes-roy.tail.ts.net', mode: 'remote', profile: 'vps-remote', ...over }) as SanRemesConnection
+  ({
+    baseUrl: 'https://sanremes-roy.tail.ts.net',
+    mode: 'remote',
+    profile: 'vps-remote',
+    ...over
+  }) as SanRemesConnection
 
 const localConn = (over: Partial<SanRemesConnection> = {}): SanRemesConnection =>
   ({ baseUrl: '', mode: 'local', profile: 'default', ...over }) as SanRemesConnection

@@ -8,8 +8,8 @@ import {
 } from '@/app/right-sidebar/terminal/terminal-font'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { saveSanRemesConfig } from '@/sanremes'
 import { useI18n } from '@/i18n'
+import { saveSanRemesConfig } from '@/sanremes'
 import { notifyError } from '@/store/notifications'
 import type { SanRemesConfigRecord } from '@/types/sanremes'
 

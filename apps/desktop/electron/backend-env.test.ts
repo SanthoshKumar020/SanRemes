@@ -7,10 +7,10 @@ import {
   appendUniquePathEntries,
   buildDesktopBackendEnv,
   buildDesktopBackendPath,
-  sanremesManagedNodePathEntries,
   normalizeSanRemesHomeRoot,
   pathEnvKey,
-  POSIX_SANE_PATH_ENTRIES
+  POSIX_SANE_PATH_ENTRIES,
+  sanremesManagedNodePathEntries
 } from './backend-env'
 
 test('desktop backend PATH adds SanRemes-managed bins and missing POSIX sane entries', () => {
@@ -153,7 +153,9 @@ test('normalizeSanRemesHomeRoot maps profile homes back to the global SanRemes r
     '/Users/test/.sanremes'
   )
   assert.equal(
-    normalizeSanRemesHomeRoot('C:\\Users\\test\\AppData\\Local\\sanremes\\profiles\\oracle', { pathModule: path.win32 }),
+    normalizeSanRemesHomeRoot('C:\\Users\\test\\AppData\\Local\\sanremes\\profiles\\oracle', {
+      pathModule: path.win32
+    }),
     'C:\\Users\\test\\AppData\\Local\\sanremes'
   )
   assert.equal(normalizeSanRemesHomeRoot('/Users/test/.sanremes', { pathModule: path.posix }), '/Users/test/.sanremes')

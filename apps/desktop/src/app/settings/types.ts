@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react'
 
-import type { SanRemesGateway } from '@/sanremes'
 import type { IconComponent } from '@/lib/icons'
+import type { SanRemesGateway } from '@/sanremes'
 import type { EnvVarInfo } from '@/types/sanremes'
 
 export type SettingsView =

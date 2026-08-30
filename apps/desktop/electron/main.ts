@@ -47,7 +47,7 @@ import {
 import { dashboardFallbackArgs, sourceDeclaresServe } from './backend-command'
 import { createBackendConnectionState } from './backend-connection-state'
 import { BackendDialClaims } from './backend-dial-claim'
-import { buildDesktopBackendEnv, sanremesManagedNodePathEntries, normalizeSanRemesHomeRoot } from './backend-env'
+import { buildDesktopBackendEnv, normalizeSanRemesHomeRoot, sanremesManagedNodePathEntries } from './backend-env'
 import {
   isReauthRequiredError,
   makeNousCloudBackendDownError,
@@ -406,12 +406,6 @@ import {
 } from './window-state'
 import { hiddenWindowsChildOptions } from './windows-child-options'
 import {
-  buildPathExtCandidates,
-  chooseUpdaterArgs,
-  getVenvSitePackagesEntries,
-  resolveVenvSanRemesCommand
-} from './windows-sanremes-path'
-import {
   connectWindowsRemote,
   detectRemotePlatform,
   helper,
@@ -432,6 +426,12 @@ import {
   shouldRelaunchForRendererSandboxCrashLoop,
   writeSandboxMarker
 } from './windows-sandbox-fallback'
+import {
+  buildPathExtCandidates,
+  chooseUpdaterArgs,
+  getVenvSitePackagesEntries,
+  resolveVenvSanRemesCommand
+} from './windows-sanremes-path'
 import { installWindowsSystemCaTrust } from './windows-system-ca'
 import { readWindowsUserEnvVar } from './windows-user-env'
 import { isPackagedInstallPath as isPackagedInstallPathUnderRoots } from './workspace-cwd'
@@ -4636,7 +4636,8 @@ function createActiveBackend(backendArgs) {
 function resolveSanRemesBackend(backendArgs) {
   // 1. Explicit override -- SANREMES_DESKTOP_SANREMES_ROOT points at a developer
   //    checkout. Honour it as-is (no bootstrap; the user is driving).
-  const overrideRoot = process.env.SANREMES_DESKTOP_SANREMES_ROOT && path.resolve(process.env.SANREMES_DESKTOP_SANREMES_ROOT)
+  const overrideRoot =
+    process.env.SANREMES_DESKTOP_SANREMES_ROOT && path.resolve(process.env.SANREMES_DESKTOP_SANREMES_ROOT)
 
   if (overrideRoot && isSanRemesSourceRoot(overrideRoot)) {
     const backend = createPythonBackend(overrideRoot, `SanRemes source at ${overrideRoot}`, backendArgs)
@@ -4732,7 +4733,10 @@ function resolveSanRemesBackend(backendArgs) {
       // the Nix wrapper), not a discovered PATH candidate. It must not fall
       // through to the install-script bootstrap if the optional probe times
       // out under load; the pinned backend is the only valid runtime there.
-      if (shouldTrustSanRemesOverride(sanremesOverride) || verifySanRemesCli(sanremesCommand, { shell: shellForProbe })) {
+      if (
+        shouldTrustSanRemesOverride(sanremesOverride) ||
+        verifySanRemesCli(sanremesCommand, { shell: shellForProbe })
+      ) {
         // `unwrapped` above already answered "is this a Windows venv shim?" —
         // it was null (not a shim, or its import probe failed). Do NOT re-run
         // unwrapWindowsVenvSanRemesCommand here: the second call repeats the
@@ -17169,7 +17173,9 @@ ipcMain.handle('sanremes:uninstall:run', async (_event, payload) => {
 ipcMain.handle('sanremes:vscode-theme:fetch', async (_event, id) => fetchMarketplaceThemes(String(id || '')))
 
 // Search the Marketplace for color-theme extensions (empty query = top installs).
-ipcMain.handle('sanremes:vscode-theme:search', async (_event, query) => searchMarketplaceThemes(String(query || ''), 20))
+ipcMain.handle('sanremes:vscode-theme:search', async (_event, query) =>
+  searchMarketplaceThemes(String(query || ''), 20)
+)
 
 // ---------------------------------------------------------------------------
 // sanremes:// deep links (e.g. sanremes://blueprint/morning-brief?time=08:00,

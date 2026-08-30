@@ -10,7 +10,7 @@ import type {
   WebhooksResponse
 } from '@/types/sanremes'
 
-import { sanremesApi, profileScoped } from './client'
+import { profileScoped, sanremesApi } from './client'
 
 export function getMessagingPlatforms(profile?: null | string): Promise<MessagingPlatformsResponse> {
   return sanremesApi<MessagingPlatformsResponse>({

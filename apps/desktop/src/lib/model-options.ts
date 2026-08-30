@@ -1,4 +1,4 @@
-import { getGlobalModelOptions, type SanRemesGateway, type ModelOptionsResponse } from '@/sanremes'
+import { getGlobalModelOptions, type ModelOptionsResponse, type SanRemesGateway } from '@/sanremes'
 import type { ModelOptionProvider } from '@/types/sanremes'
 
 /**

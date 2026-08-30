@@ -2,7 +2,6 @@ import { LOCAL_CONNECTION_ID } from '@sanremes/shared'
 import { atom, batch, computed } from 'nanostores'
 
 import type { SanRemesConnection } from '@/global'
-import { getProfiles, sanremesApi, setApiRequestProfile, STARTUP_REQUEST_TIMEOUT_MS } from '@/sanremes'
 import { invalidateProfileScopedQueries } from '@/lib/query-client'
 import {
   arraysEqual,
@@ -14,6 +13,7 @@ import {
   storedStringRecord
 } from '@/lib/storage'
 import { withTimeout } from '@/lib/with-timeout'
+import { getProfiles, sanremesApi, setApiRequestProfile, STARTUP_REQUEST_TIMEOUT_MS } from '@/sanremes'
 import { invalidateCronModelImpactScopeState } from '@/store/cron-model-impact-scope'
 import {
   $gateway,

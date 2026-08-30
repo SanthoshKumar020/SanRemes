@@ -1,6 +1,6 @@
 import { atom } from 'nanostores'
 
-import { type SanRemesOpenTarget, resolveSanRemesOpenPath } from '@/lib/sanremes-open-target'
+import { resolveSanRemesOpenPath, type SanRemesOpenTarget } from '@/lib/sanremes-open-target'
 import { persistString, storedString } from '@/lib/storage'
 
 import { $gateway } from './gateway'

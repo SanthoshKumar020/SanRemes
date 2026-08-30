@@ -155,7 +155,11 @@ export function resolveSanRemesOpenPath(target: SanRemesOpenTarget | null | unde
  * Build a navigate path from a parsed deep-link payload
  * (`sanremes://<kind>/<name>?…` → kind/name/params).
  */
-export function pathFromSanRemesDeepLink(kind: string, name: string, params: Record<string, string> = {}): string | null {
+export function pathFromSanRemesDeepLink(
+  kind: string,
+  name: string,
+  params: Record<string, string> = {}
+): string | null {
   if (!kind || !name) {
     return null
   }

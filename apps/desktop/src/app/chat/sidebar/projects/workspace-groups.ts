@@ -1,6 +1,6 @@
 import type { SanRemesGitWorktree } from '@/global'
-import type { ProjectInfo, SessionInfo } from '@/sanremes'
 import { normalize } from '@/lib/text'
+import type { ProjectInfo, SessionInfo } from '@/sanremes'
 
 import { rankSessions } from '../order'
 

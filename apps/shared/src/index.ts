@@ -106,9 +106,9 @@ export {
   GatewayReauthRequiredError,
   type GatewayWsConnection,
   type GatewayWsUrlResult,
-  type SanRemesWebSocketUrlOptions,
   isGatewayReauthRequired,
   resolveGatewayWsUrl,
   type ResolveGatewayWsUrlDeps,
+  type SanRemesWebSocketUrlOptions,
   type WebSocketAuthParam
 } from './websocket-url'

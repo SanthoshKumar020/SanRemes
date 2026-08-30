@@ -1043,7 +1043,9 @@ function buildSpawnCommand(sanremesPath, profile, opts: any = {}) {
   const tokenArg = tokenFilePath ? ` --ssh-session-token-file ${expandRemotePath(tokenFilePath)}` : ''
   const ownerArg = opts.spawnNonce ? ` --ssh-owner-nonce ${validateSpawnNonce(opts.spawnNonce)}` : ''
   const subCmd = `serve --isolated --host 127.0.0.1 --port 0${tokenArg}${ownerArg}`
-  const marker = expandRemotePath(`${remoteInstallRoot(opts.sanremesHome || '~/.sanremes')}/.sanremes-update-in-progress`)
+  const marker = expandRemotePath(
+    `${remoteInstallRoot(opts.sanremesHome || '~/.sanremes')}/.sanremes-update-in-progress`
+  )
 
   const updateMutex = expandRemotePath(
     `${remoteInstallRoot(opts.sanremesHome || '~/.sanremes')}/.sanremes-update-in-progress.mutex`
@@ -1668,9 +1670,9 @@ export {
   openForward,
   ownershipDirectory,
   pidIsOurDashboard,
-  probeSanRemesVersion,
-  probeRemoteSanRemesHome,
   probeRemotePlatform,
+  probeRemoteSanRemesHome,
+  probeSanRemesVersion,
   PROTOCOL_VERSION,
   readLockfile,
   READY_RE,

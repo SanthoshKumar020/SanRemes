@@ -1861,7 +1861,8 @@ export const en: Translations = {
       menuItem: 'Connect to a remote host…',
       badge: (host: string) => `Runs on ${host}`,
       title: (profile: string) => `Connect ${profile} to a remote host`,
-      description: 'Sessions in this profile will run on the remote SanRemes you point it at, instead of this computer.',
+      description:
+        'Sessions in this profile will run on the remote SanRemes you point it at, instead of this computer.',
       urlLabel: 'Remote address',
       urlPlaceholder: 'https://sanremes.example.com',
       urlInvalid: 'Enter a full address starting with http:// or https://',
@@ -2599,7 +2600,8 @@ export const en: Translations = {
     maybeLater: 'Maybe later',
     moreChanges: count => `+ ${count} more change${count === 1 ? '' : 's'} included.`,
     manualTitle: 'Update from your terminal',
-    manualBody: 'You installed SanRemes from the command line, so updates run there too. Paste this into your terminal:',
+    manualBody:
+      'You installed SanRemes from the command line, so updates run there too. Paste this into your terminal:',
     manualPickedUp: 'SanRemes will pick up the new version next time you launch it.',
     guiSkewTitle: 'Update the desktop app',
     guiSkewBody:
@@ -2673,7 +2675,8 @@ export const en: Translations = {
     installLocalDesc: 'Download SanRemes, create its Python environment, and run the backend on this computer.',
     localStartUnavailable: 'Local installation could not start. Restart SanRemes Desktop and try again.',
     remoteSetupTitle: 'Connect to existing SanRemes',
-    remoteSetupDesc: 'Enter your gateway URL. SanRemes Desktop will detect whether it needs a token or browser sign-in.',
+    remoteSetupDesc:
+      'Enter your gateway URL. SanRemes Desktop will detect whether it needs a token or browser sign-in.',
     remoteUrlTitle: 'Gateway URL',
     remoteUrlDesc: 'Use the base URL of the SanRemes gateway, including https:// when remote.',
     remoteUrlPlaceholder: 'https://gateway.example.com/sanremes',
@@ -2749,7 +2752,8 @@ export const en: Translations = {
       xai: { short: 'Grok models', description: 'Direct access to xAI Grok models.' },
       local: {
         short: 'self-hosted',
-        description: 'Point SanRemes at a local or self-hosted OpenAI-compatible endpoint (vLLM, llama.cpp, Ollama, etc).'
+        description:
+          'Point SanRemes at a local or self-hosted OpenAI-compatible endpoint (vLLM, llama.cpp, Ollama, etc).'
       }
     },
     backToSignIn: 'Back to sign in',

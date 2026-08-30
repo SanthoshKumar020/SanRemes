@@ -6,9 +6,9 @@ import { useSearchParams } from 'react-router'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { getElevenLabsVoices, getSanRemesConfigSchema, saveSanRemesConfig } from '@/sanremes'
 import { useI18n } from '@/i18n'
 import { triggerHaptic } from '@/lib/haptics'
+import { getElevenLabsVoices, getSanRemesConfigSchema, saveSanRemesConfig } from '@/sanremes'
 import { confirm } from '@/store/confirm'
 import {
   $dataUrlReadMaxMb,
@@ -94,7 +94,11 @@ function ConfigSettingsInner({
   // from — and saved back through — the shared config cache, so edits are visible
   // in the MCP/model surfaces and reopening the page doesn't reload-flash.
   const [config, setConfig] = useState<SanRemesConfigRecord | null>(null)
-  const { data: loadedConfig, isError: configLoadFailed, refetch: refetchConfig } = useSanRemesConfigRecord(scopeProfile)
+  const {
+    data: loadedConfig,
+    isError: configLoadFailed,
+    refetch: refetchConfig
+  } = useSanRemesConfigRecord(scopeProfile)
   // Writes land on the same cache key the query above reads (base key when
   // following the active profile, suffixed when a scope override is set).
   const writeConfigCache = useMemo(() => sanremesConfigCacheWriter(scopeProfile), [scopeProfile])

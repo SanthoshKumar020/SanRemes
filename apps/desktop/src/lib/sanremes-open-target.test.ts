@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import {
   normalizeSanRemesOpenString,
-  pathFromSanRemesDeepLink,
   pathFromOpenDeepLink,
+  pathFromSanRemesDeepLink,
   resolveSanRemesOpenPath
 } from './sanremes-open-target'
 

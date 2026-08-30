@@ -8,7 +8,7 @@ import type {
   ModelOptionsResponse
 } from '@/types/sanremes'
 
-import { capabilityScoped, sanremesApi, type ProfileScope, profileScoped, STARTUP_REQUEST_TIMEOUT_MS } from './client'
+import { capabilityScoped, type ProfileScope, profileScoped, sanremesApi, STARTUP_REQUEST_TIMEOUT_MS } from './client'
 
 export function getGlobalModelInfo(profile?: null | string): Promise<ModelInfoResponse> {
   return sanremesApi<ModelInfoResponse>({

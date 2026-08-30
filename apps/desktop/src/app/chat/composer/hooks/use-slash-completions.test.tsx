@@ -2,9 +2,9 @@ import type { Unstable_TriggerItem } from '@assistant-ui/core'
 import { act, cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import type { SanRemesGateway } from '@/sanremes'
 import { queryClient } from '@/lib/query-client'
 import { invalidateSlashCompletions } from '@/lib/slash-completion-cache'
+import type { SanRemesGateway } from '@/sanremes'
 
 import { isSkillItem } from '../composer-utils'
 
