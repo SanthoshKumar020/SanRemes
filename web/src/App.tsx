@@ -190,13 +190,20 @@ function ChatRouteSink() {
   return null;
 }
 
+/**
+ * Unified SanRemes navigation — grouped to match mobile tabs:
+ *   Home (Sessions) · Missions (Autopilot) · Approvals (via system)
+ *   Chat · Skills · System · Settings
+ */
 const BUILTIN_NAV_REST: NavItem[] = [
+  // ── Core (matches mobile: Home, Missions, Approvals, Chat) ──────
   {
     path: "/sessions",
     labelKey: "sessions",
     label: "Sessions",
     icon: MessageSquare,
   },
+  // /chat is added conditionally via CHAT_NAV_ITEM when embeddedChat is on
   { path: "/files", label: "Files", icon: FolderOpen },
   {
     path: "/analytics",
@@ -204,6 +211,13 @@ const BUILTIN_NAV_REST: NavItem[] = [
     label: "Analytics",
     icon: BarChart3,
   },
+  // ── Agent (matches mobile: Missions) ────────────────────────────
+  { path: "/autopilot", label: "Autopilot", icon: Rocket },
+  { path: "/mission-control", label: "Mission Control", icon: Activity },
+  // ── Skills (matches mobile: Skills) ─────────────────────────────
+  { path: "/skills", labelKey: "skills", label: "Skills", icon: Package },
+  { path: "/marketplace", label: "Marketplace", icon: Sparkles },
+  // ── Monitoring ──────────────────────────────────────────────────
   {
     path: "/models",
     labelKey: "models",
@@ -212,19 +226,18 @@ const BUILTIN_NAV_REST: NavItem[] = [
   },
   { path: "/logs", labelKey: "logs", label: "Logs", icon: FileText },
   { path: "/cron", labelKey: "cron", label: "Cron", icon: Clock },
-  { path: "/skills", labelKey: "skills", label: "Skills", icon: Package },
+  // ── Integrations ────────────────────────────────────────────────
   { path: "/plugins", labelKey: "plugins", label: "Plugins", icon: Puzzle },
   { path: "/mcp", label: "MCP", icon: Plug },
   { path: "/channels", label: "Channels", icon: Radio },
   { path: "/webhooks", label: "Webhooks", icon: Webhook },
+  // ── System (matches mobile: System) ─────────────────────────────
+  { path: "/system", label: "System", icon: Wrench },
   { path: "/pairing", label: "Pairing", icon: ShieldCheck },
+  // ── Settings (matches mobile: Settings) ─────────────────────────
   { path: "/profiles", labelKey: "profiles", label: "Profiles", icon: Users },
   { path: "/config", labelKey: "config", label: "Config", icon: Settings },
   { path: "/env", labelKey: "keys", label: "Keys", icon: KeyRound },
-  { path: "/marketplace", label: "Marketplace", icon: Package },
-  { path: "/autopilot", label: "Autopilot", icon: Rocket },
-  { path: "/mission-control", label: "Mission Control", icon: Rocket },
-  { path: "/system", label: "System", icon: Wrench },
   {
     path: "/docs",
     labelKey: "documentation",

@@ -114,6 +114,15 @@ export interface SystemStatus {
   active_sessions: number;
   active_agents: number;
   memory_usage_mb: number;
+  sanremes_version?: string;
+  python_version?: string;
+  platform?: string;
+  pid?: number;
+  model?: string;
+  provider?: string;
+  total_tokens?: number;
+  total_cost?: number;
+  gateway_connected?: boolean;
 }
 
 // ── Skill types ───────────────────────────────────────────────────────

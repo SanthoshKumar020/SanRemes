@@ -164,6 +164,19 @@ export async function fetchSkills(
   return request(`/api/v1/marketplace/skills?${params}`);
 }
 
+export async function fetchMarketplaceSkills(
+  query?: string,
+  category?: string
+): Promise<Skill[]> {
+  const params = new URLSearchParams();
+  if (query) params.set("q", query);
+  if (category) params.set("category", category);
+  const data = await request<{ skills: Skill[] }>(
+    `/api/v1/marketplace/skills?${params}`
+  );
+  return data.skills ?? [];
+}
+
 // ── Health check ──────────────────────────────────────────────────────
 
 export async function checkHealth(): Promise<boolean> {
