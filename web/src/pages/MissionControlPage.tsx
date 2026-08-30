@@ -16,7 +16,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   AlertTriangle,
-  Approve,
   Ban,
   CheckCircle2,
   ChevronDown,

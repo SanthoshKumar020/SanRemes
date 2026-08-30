@@ -96,6 +96,7 @@ const PairingPage = lazy(() => import("@/pages/PairingPage"));
 const ChannelsPage = lazy(() => import("@/pages/ChannelsPage"));
 const WebhooksPage = lazy(() => import("@/pages/WebhooksPage"));
 const SystemPage = lazy(() => import("@/pages/SystemPage"));
+const HomePage = lazy(() => import("@/pages/HomePage"));
 const MissionControlPage = lazy(() => import("@/pages/MissionControlPage"));
 const MarketplacePage = lazy(() => import("@/pages/MarketplacePage"));
 const AutopilotPage = lazy(() => import("@/pages/AutopilotPage"));
@@ -128,7 +129,7 @@ function RouteFallback({ label = "Loading…" }: { label?: string }) {
 }
 
 function RootRedirect() {
-  return <Navigate to="/sessions" replace />;
+  return <Navigate to="/" replace />;
 }
 
 function UnknownRouteFallback({ pluginsLoading }: { pluginsLoading: boolean }) {
@@ -158,7 +159,7 @@ const CHAT_NAV_ITEM: NavItem = {
  * keep working.
  */
 const BUILTIN_ROUTES_CORE: Record<string, ComponentType> = {
-  "/": RootRedirect,
+  "/": HomePage,
   "/sessions": SessionsPage,
   "/files": FilesPage,
   "/analytics": AnalyticsPage,
@@ -197,6 +198,11 @@ function ChatRouteSink() {
  */
 const BUILTIN_NAV_REST: NavItem[] = [
   // ── Core (matches mobile: Home, Missions, Approvals, Chat) ──────
+  {
+    path: "/",
+    label: "Home",
+    icon: Globe,
+  },
   {
     path: "/sessions",
     labelKey: "sessions",
@@ -920,7 +926,7 @@ function SidebarNavLink({
     >
       <NavLink
         to={path}
-        end={path === "/sessions"}
+        end={path === "/" || path === "/sessions"}
         onClick={closeMobile}
         aria-label={collapsed ? navLabel : undefined}
         onFocus={collapsed ? showTooltip : undefined}
