@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Background -->
+  <rect width="32" height="32" rx="6" fill="#1B2A4A"/>
+  
+  <!-- Gold S -->
+  <path d="M 14 4 
+           C 10 4, 7 6, 7 9 
+           C 7 12, 10 14, 13 16 
+           C 16 18, 19 20, 19 24 
+           C 19 27, 16 29, 13 29" 
+        stroke="#C4A265" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- White R -->
+  <path d="M 17 4 L 17 29" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M 17 4 
+           C 17 4, 26 4, 27 7 
+           C 28 10, 26 14, 22 15 
+           L 28 29" 
+        stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

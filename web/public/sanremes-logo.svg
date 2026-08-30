@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <!-- Background -->
+  <rect width="400" height="400" fill="white"/>
+  
+  <!-- SR Monogram -->
+  <!-- Gold S - elegant serif stroke -->
+  <path d="M 195 80 
+           C 155 80, 120 100, 120 135 
+           C 120 165, 145 185, 175 200 
+           C 205 215, 235 230, 235 260 
+           C 235 295, 205 315, 170 315" 
+        stroke="#C4A265" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- S serifs -->
+  <path d="M 155 80 L 210 80" stroke="#C4A265" stroke-width="4" stroke-linecap="round"/>
+  <path d="M 155 315 L 190 315" stroke="#C4A265" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- Navy R - elegant serif stroke -->
+  <path d="M 220 80 L 220 315" stroke="#1B2A4A" stroke-width="14" stroke-linecap="round"/>
+  <path d="M 220 80 
+           C 220 80, 290 80, 305 110 
+           C 320 140, 300 175, 265 185 
+           L 320 315" 
+        stroke="#1B2A4A" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- R serifs -->
+  <path d="M 205 80 L 240 80" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round"/>
+  <path d="M 205 315 L 240 315" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- "SanRemes" text -->
+  <text x="200" y="355" 
+        font-family="Georgia, 'Times New Roman', serif" 
+        font-size="36" 
+        font-weight="400"
+        fill="#1B2A4A" 
+        text-anchor="middle"
+        letter-spacing="2">SanRemes</text>
+  
+  <!-- "AGENT" text with decorative lines -->
+  <line x1="100" y2="380" x2="165" y2="380" stroke="#C4A265" stroke-width="1.5"/>
+  <text x="200" y="385" 
+        font-family="Georgia, 'Times New Roman', serif" 
+        font-size="18" 
+        font-weight="400"
+        fill="#C4A265" 
+        text-anchor="middle"
+        letter-spacing="8">AGENT</text>
+  <line x1="235" y2="380" x2="300" y2="380" stroke="#C4A265" stroke-width="1.5"/>
+</svg>

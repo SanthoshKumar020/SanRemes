@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "SanRemes Agent",
+    "slug": "sanremes-agent",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "scheme": "sanremes",
+    "splash": {
+      "backgroundColor": "#1B2A4A",
+      "resizeMode": "contain"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.nousresearch.sanremes"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1B2A4A"
+      },
+      "package": "com.nousresearch.sanremes"
+    },
+    "plugins": ["expo-router", "expo-font"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

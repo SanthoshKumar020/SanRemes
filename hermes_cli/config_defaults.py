@@ -2593,6 +2593,36 @@ DEFAULT_CONFIG = {
     # Or dict format: {"name": {"description": "...", "system_prompt": "...", "tone": "...", "style": "..."}}
     "personalities": {},
 
+
+    # Permission Engine — per-tool allow/ask/deny policy enforcement.
+    # When enabled, every tool invocation is evaluated against a policy
+    # before dispatch. Policies can target individual tools, tool patterns
+    # (fnmatch globs), entire toolsets, or specific execution contexts
+    # (cron, subagent, remote). Denied tools return an error to the agent;
+    # ASK-level tools route through the existing approval system.
+    "permissions": {
+        # Master switch — when false, the engine is a no-op (all tools ALLOW).
+        "enabled": False,
+        # Default permission level for tools not matched by any rule.
+        # "allow" = permit without prompt (default, safe for existing users)
+        # "ask"   = require approval for every unmatched tool
+        # "deny"  = block all unmatched tools (restrictive mode)
+        "default": "allow",
+        # Per-tool overrides. Each entry is:
+        #   pattern: fnmatch glob (e.g. "terminal", "browser_*", "write_file")
+        #   level: "allow" | "ask" | "deny"
+        #   reason: optional human-readable explanation
+        #   context: optional context filter ("cron", "subagent", "remote")
+        "tools": [],
+        # Per-toolset overrides. Pattern matches against toolset names.
+        "toolsets": [],
+        # Context-specific rules. Key is the context name.
+        # Rules here apply ONLY when the execution context matches.
+        # Contexts: "cron" (scheduled jobs), "subagent" (delegated tasks),
+        #           "remote" (API/gateway sessions).
+        "contexts": {},
+    },
+
     # Pre-exec security scanning via tirith
     "security": {
         "allow_private_urls": False,  # Allow requests to private/internal IPs (for OpenWrt, proxies, VPNs)

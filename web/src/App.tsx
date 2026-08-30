@@ -43,6 +43,7 @@ import {
   Plug,
   Puzzle,
   Radio,
+  Rocket,
   RotateCw,
   Settings,
   Shield,
@@ -95,6 +96,9 @@ const PairingPage = lazy(() => import("@/pages/PairingPage"));
 const ChannelsPage = lazy(() => import("@/pages/ChannelsPage"));
 const WebhooksPage = lazy(() => import("@/pages/WebhooksPage"));
 const SystemPage = lazy(() => import("@/pages/SystemPage"));
+const MissionControlPage = lazy(() => import("@/pages/MissionControlPage"));
+const MarketplacePage = lazy(() => import("@/pages/MarketplacePage"));
+const AutopilotPage = lazy(() => import("@/pages/AutopilotPage"));
 const ChatPage = lazy(() => import("@/pages/ChatPage"));
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
@@ -168,6 +172,9 @@ const BUILTIN_ROUTES_CORE: Record<string, ComponentType> = {
   "/channels": ChannelsPage,
   "/webhooks": WebhooksPage,
   "/system": SystemPage,
+  "/marketplace": MarketplacePage,
+  "/autopilot": AutopilotPage,
+  "/mission-control": MissionControlPage,
   "/profiles": ProfilesPage,
   "/profiles/new": ProfileBuilderPage,
   "/config": ConfigPage,
@@ -214,6 +221,9 @@ const BUILTIN_NAV_REST: NavItem[] = [
   { path: "/profiles", labelKey: "profiles", label: "Profiles", icon: Users },
   { path: "/config", labelKey: "config", label: "Config", icon: Settings },
   { path: "/env", labelKey: "keys", label: "Keys", icon: KeyRound },
+  { path: "/marketplace", label: "Marketplace", icon: Package },
+  { path: "/autopilot", label: "Autopilot", icon: Rocket },
+  { path: "/mission-control", label: "Mission Control", icon: Rocket },
   { path: "/system", label: "System", icon: Wrench },
   {
     path: "/docs",
@@ -549,9 +559,16 @@ export default function App() {
           <Menu />
         </Button>
 
-        <Typography className="font-bold text-[0.95rem] leading-[0.95] tracking-[0.05em] text-midground">
-          {t.app.brand}
-        </Typography>
+        <div className="flex items-center gap-2">
+          <img
+            src="/sanremes-monogram.svg"
+            alt="SanRemes Agent"
+            className="h-6 w-6"
+          />
+          <Typography className="font-bold text-[0.95rem] leading-[0.95] tracking-[0.05em] text-midground">
+            SanRemes Agent
+          </Typography>
+        </div>
       </header>
 
       {mobileOpen && (
@@ -603,20 +620,36 @@ export default function App() {
                 collapsed ? "lg:justify-center lg:px-0" : "px-4 justify-between",
               )}
             >
-              <div
-                className={cn(
-                  "flex items-center gap-2",
-                  collapsed && "lg:hidden",
-                )}
-              >
-                <PluginSlot name="header-left" />
+              {/* Collapsed: show only monogram */}
+              {collapsed ? (
+                <div className="hidden lg:flex items-center justify-center w-full">
+                  <img
+                    src="/sanremes-monogram.svg"
+                    alt="SanRemes Agent"
+                    className="h-7 w-7"
+                  />
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <PluginSlot name="header-left" />
 
-                <Typography className="font-bold text-[1.125rem] leading-[0.95] tracking-[0.0525rem] text-midground uppercase">
-                  SanRemes
-                  <br />
-                  Agent
-                </Typography>
-              </div>
+                  <div className="flex items-center gap-2">
+                    <img
+                      src="/sanremes-monogram.svg"
+                      alt="SanRemes Agent"
+                      className="h-8 w-8"
+                    />
+                    <div>
+                      <Typography className="font-bold text-[1.125rem] leading-[0.95] tracking-[0.0525rem] text-midground uppercase">
+                        SanRemes
+                      </Typography>
+                      <Typography className="text-[0.6rem] leading-[0.95] tracking-[0.15em] text-[#C4A265] uppercase">
+                        Agent
+                      </Typography>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <Button
                 ghost

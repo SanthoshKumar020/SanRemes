@@ -1516,6 +1516,122 @@ def handle_function_call(
             except Exception:
                 pass  # file_tools may not be loaded yet
 
+        # ── Permission Engine check ────────────────────────────────
+        # Evaluate per-tool allow/ask/deny policies before dispatch.
+        # This runs after pre_tool_call hooks and ACP edit approval,
+        # but before the actual tool handler. ASK-level decisions route
+        # through the existing approval system (tools/approval.py).
+        try:
+            from tools.permission_engine import (
+                get_permission_engine,
+                PermissionLevel,
+            )
+            _perm_engine = get_permission_engine()
+            if _perm_engine.is_enabled():
+                # Detect execution context from environment
+                _perm_context = None
+                if os.environ.get("SANREMES_CRON_SESSION"):
+                    _perm_context = "cron"
+                elif os.environ.get("SANREMES_KANBAN_TASK"):
+                    _perm_context = "subagent"
+                elif os.environ.get("SANREMES_DELEGATED"):
+                    _perm_context = "subagent"
+
+                # Check if tool already matched a user-defined deny rule
+                _is_user_deny = False
+                try:
+                    from tools.approval import detect_dangerous_command
+                    # Only check deny rules for terminal-type commands
+                    if function_name == "terminal":
+                        _cmd = (function_args or {}).get("command", "")
+                        if _cmd:
+                            from tools.approval import _match_user_deny_rule
+                            _is_user_deny = _match_user_deny_rule(_cmd) is not None
+                except Exception:
+                    pass
+
+                _perm_decision = _perm_engine.evaluate(
+                    function_name,
+                    context=_perm_context,
+                    is_user_deny_match=_is_user_deny,
+                )
+
+                if _perm_decision.level == PermissionLevel.DENY:
+                    _perm_reason = (
+                        _perm_decision.reason
+                        or f"Tool '{function_name}' is denied by permission policy"
+                    )
+                    result = tool_error(
+                        f"Permission denied: {_perm_reason}. "
+                        "Adjust permissions in config.yaml under 'permissions' "
+                        "or ask the user to modify the policy."
+                    )
+                    _emit_post_tool_call_hook(
+                        function_name=function_name,
+                        function_args=function_args,
+                        result=result,
+                        task_id=task_id,
+                        session_id=session_id,
+                        tool_call_id=tool_call_id,
+                        turn_id=turn_id,
+                        api_request_id=api_request_id,
+                        status="blocked",
+                        error_type="permission_denied",
+                        error_message=_perm_reason,
+                        middleware_trace=list(_tool_middleware_trace),
+                    )
+                    return result
+
+                if _perm_decision.level == PermissionLevel.ASK:
+                    # Route through the existing approval system
+                    try:
+                        from tools.approval import (
+                            check_dangerous_command,
+                        )
+                        # For terminal commands, use the actual command
+                        _approval_command = function_name
+                        if function_name == "terminal":
+                            _approval_command = (
+                                (function_args or {}).get("command", "")
+                                or function_name
+                            )
+                        _approval_result = check_dangerous_command(
+                            _approval_command,
+                            "local",
+                        )
+                        if not _approval_result.get("approved", False):
+                            _deny_msg = _approval_result.get(
+                                "message",
+                                f"Tool '{function_name}' requires approval",
+                            )
+                            result = tool_error(
+                                f"Permission denied (approval required): {_deny_msg}"
+                            )
+                            _emit_post_tool_call_hook(
+                                function_name=function_name,
+                                function_args=function_args,
+                                result=result,
+                                task_id=task_id,
+                                session_id=session_id,
+                                tool_call_id=tool_call_id,
+                                turn_id=turn_id,
+                                api_request_id=api_request_id,
+                                status="blocked",
+                                error_type="permission_ask_denied",
+                                error_message=_deny_msg,
+                                middleware_trace=list(_tool_middleware_trace),
+                            )
+                            return result
+                    except Exception as _perm_approval_err:
+                        logger.debug(
+                            "Permission engine approval routing error: %s",
+                            _perm_approval_err,
+                        )
+                        # Fail open: if approval routing fails, allow the tool
+                        # (the existing approval system handles its own failures)
+        except Exception as _perm_err:
+            logger.debug("Permission engine error: %s", _perm_err)
+
         # Measure tool dispatch latency so post_tool_call and
         # transform_tool_result hooks can observe per-tool duration.
         # Inspired by Claude Code 2.1.119, which added ``duration_ms`` to
