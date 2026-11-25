@@ -15,6 +15,24 @@ import {
   writeMemoryDoc,
 } from "../memory-store.ts";
 import {
+  addNote,
+  archiveNote,
+  confirmNote,
+  editNote,
+  forgetNote,
+  forgetSkill,
+  loadNotesDoc,
+  maintainNotes,
+  MemoryNotesError,
+  patchSkill,
+  rememberFromMessage,
+  restoreNote,
+  saveNotesDoc,
+  saveSkill,
+  type MemoryNotesDoc,
+} from "../memory-notes.ts";
+import { workspaceDir } from "../workspace.ts";
+import {
   flushMemoryJournal,
   journalMemoryDelete,
   journalMemoryWrite,
@@ -58,6 +76,24 @@ function isThreadNotes(path: string): boolean {
 }
 
 export function createBotMemoryRoutes(deps: BotMemoryRouteDeps): RouteHandler {
+  /** 400 invalid, 404 no such note, 409 conflict, 413 too large, 500 corrupt; anything else goes to the catch-all. */
+  function replyNotesError(res: ServerResponse, error: unknown) {
+    if (!(error instanceof MemoryNotesError)) throw error;
+    return json(res, error.status, { error: error.message, code: error.code });
+  }
+
+  function notesRoot(botId: string): string {
+    return workspaceDir(botId);
+  }
+
+  function notesView(botId: string): MemoryNotesDoc {
+    return loadNotesDoc(notesRoot(botId));
+  }
+
+  function saveNotes(botId: string, doc: MemoryNotesDoc, expectedVersion?: number): MemoryNotesDoc {
+    return saveNotesDoc(notesRoot(botId), doc, expectedVersion);
+  }
+
   /** 400 path, 409 conflict (with what is on disk now), 413 too large; anything else goes to the catch-all. */
   function replyMemoryError(res: ServerResponse, error: unknown) {
     if (!(error instanceof MemoryStoreError)) throw error;
@@ -241,6 +277,152 @@ export function createBotMemoryRoutes(deps: BotMemoryRouteDeps): RouteHandler {
       const opened = await openMemoryLocation(m[1], parsed.data.target);
       if (!opened.ok) return json(res, 500, { error: opened.error, workspacePath: opened.workspacePath });
       return json(res, 200, opened);
+    }
+    const noteSource = z.object({ chatId: z.string(), messageId: z.string(), quote: z.string(), at: z.string() });
+    const noteFact = z.object({
+      kind: z.enum(["fact", "preference", "plan", "event", "possession"]),
+      entities: z.array(z.string()),
+      occurredOn: z.string().optional(),
+      validFrom: z.string().optional(),
+      validTo: z.string().optional(),
+    });
+    const citedMessage = z.object({ id: z.string(), text: z.string() });
+    const expectedVersion = z.number().int().nonnegative().optional();
+    m = path.match(/^\/api\/bots\/([\w-]+)\/memory\/notes$/);
+    if (m && method === "GET") {
+      if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
+      try {
+        return json(res, 200, notesView(m[1]));
+      } catch (error) {
+        return replyNotesError(res, error);
+      }
+    }
+    if (m && method === "POST") {
+      if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
+      const parsed = z.object({
+        path: z.string(), text: z.string(), status: z.enum(["stated", "observed", "tentative"]).optional(),
+        sources: z.array(noteSource), sourceMessages: z.array(citedMessage), fact: noteFact.optional(),
+        expires: z.string().nullable().optional(), expectedVersion,
+      }).safeParse(await readBody(req));
+      if (!parsed.success) return json(res, 400, { error: "a note needs a path, text, quoted sources and the cited messages" });
+      try {
+        const botId = m[1];
+        const saved = write(botId, () => saveNotes(botId, addNote(notesView(botId), parsed.data, parsed.data.sourceMessages), parsed.data.expectedVersion));
+        return json(res, 200, { ok: true, version: saved.version, note: saved.notes.find((n) => n.path === parsed.data.path) ?? null });
+      } catch (error) {
+        return replyNotesError(res, error);
+      }
+    }
+    if (m && method === "DELETE") {
+      if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
+      const notePath = url.searchParams.get("path") ?? "";
+      const version = url.searchParams.get("expectedVersion");
+      const expected = version === null || version === "" ? undefined : Number(version);
+      try {
+        const botId = m[1];
+        const saved = write(botId, () => saveNotes(botId, forgetNote(notesView(botId), notePath), Number.isInteger(expected) ? expected : undefined));
+        return json(res, 200, { ok: true, version: saved.version });
+      } catch (error) {
+        return replyNotesError(res, error);
+      }
+    }
+    m = path.match(/^\/api\/bots\/([\w-]+)\/memory\/notes\/remember$/);
+    if (m && method === "POST") {
+      if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
+      const parsed = z.object({ path: z.string(), chatId: z.string(), messageId: z.string(), text: z.string(), at: z.string(), expectedVersion }).safeParse(await readBody(req));
+      if (!parsed.success) return json(res, 400, { error: "a remember needs a path and the owner's message" });
+      const found = rememberFromMessage(parsed.data);
+      if (!found) return json(res, 400, { error: "that message holds no remember request — start it with “remember: …”" });
+      try {
+        const botId = m[1];
+        const saved = write(botId, () => saveNotes(botId, addNote(notesView(botId), {
+          path: parsed.data.path, text: found.text, status: "stated",
+          sources: [{ chatId: found.chatId, messageId: found.messageId, quote: found.quote, at: found.at }],
+        }, [{ id: parsed.data.messageId, text: parsed.data.text }]), parsed.data.expectedVersion));
+        return json(res, 200, { ok: true, version: saved.version, note: saved.notes.find((n) => n.path === parsed.data.path) ?? null });
+      } catch (error) {
+        return replyNotesError(res, error);
+      }
+    }
+    m = path.match(/^\/api\/bots\/([\w-]+)\/memory\/notes\/(confirm|edit|archive|restore|maintain)$/);
+    if (m && method === "POST") {
+      if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
+      const action = m[2]!;
+      const parsed = z.object({
+        path: z.string().optional(), text: z.string().optional(),
+        reason: z.enum(["superseded", "merged", "duplicate", "expired", "stale", "obsolete", "contradicted", "manual"]).optional(),
+        expectedVersion,
+      }).safeParse(await readBody(req));
+      if (!parsed.success) return json(res, 400, { error: "a note action needs a path" });
+      try {
+        const botId = m[1];
+        const saved = write(botId, () => {
+          const doc = notesView(botId);
+          if (action === "maintain") {
+            const { doc: kept, report } = maintainNotes(doc);
+            const maintained = saveNotes(botId, kept, parsed.data.expectedVersion);
+            return { saved: maintained, report };
+          }
+          if (!parsed.data.path) throw new MemoryNotesError("invalid", 400, "a note action needs a path");
+          const next =
+            action === "confirm" ? confirmNote(doc, parsed.data.path) :
+            action === "edit" ? editNote(doc, parsed.data.path, parsed.data.text ?? "") :
+            action === "archive" ? archiveNote(doc, parsed.data.path, parsed.data.reason ?? "manual") :
+            restoreNote(doc, parsed.data.path);
+          return { saved: saveNotes(botId, next, parsed.data.expectedVersion) };
+        });
+        return json(res, 200, { ok: true, version: saved.saved.version, ...(saved.report ? { report: saved.report } : {}) });
+      } catch (error) {
+        return replyNotesError(res, error);
+      }
+    }
+    m = path.match(/^\/api\/bots\/([\w-]+)\/memory\/skills$/);
+    if (m && method === "GET") {
+      if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
+      try {
+        const doc = notesView(m[1]);
+        return json(res, 200, { version: doc.version, skills: doc.skills });
+      } catch (error) {
+        return replyNotesError(res, error);
+      }
+    }
+    if (m && method === "POST") {
+      if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
+      const parsed = z.object({ name: z.string(), description: z.string(), body: z.string(), task: z.string().nullable().optional(), expectedVersion }).safeParse(await readBody(req));
+      if (!parsed.success) return json(res, 400, { error: "a skill needs a name, a description and a body" });
+      try {
+        const botId = m[1];
+        const saved = write(botId, () => saveNotes(botId, saveSkill(notesView(botId), parsed.data), parsed.data.expectedVersion));
+        return json(res, 200, { ok: true, version: saved.version, skill: saved.skills.find((s) => s.name === parsed.data.name) ?? null });
+      } catch (error) {
+        return replyNotesError(res, error);
+      }
+    }
+    if (m && method === "DELETE") {
+      if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
+      const name = url.searchParams.get("name") ?? "";
+      const version = url.searchParams.get("expectedVersion");
+      const expected = version === null || version === "" ? undefined : Number(version);
+      try {
+        const botId = m[1];
+        const saved = write(botId, () => saveNotes(botId, forgetSkill(notesView(botId), name), Number.isInteger(expected) ? expected : undefined));
+        return json(res, 200, { ok: true, version: saved.version });
+      } catch (error) {
+        return replyNotesError(res, error);
+      }
+    }
+    m = path.match(/^\/api\/bots\/([\w-]+)\/memory\/skills\/patch$/);
+    if (m && method === "POST") {
+      if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
+      const parsed = z.object({ name: z.string(), body: z.string(), expectedVersion }).safeParse(await readBody(req));
+      if (!parsed.success) return json(res, 400, { error: "a skill patch needs a name and a body" });
+      try {
+        const botId = m[1];
+        const saved = write(botId, () => saveNotes(botId, patchSkill(notesView(botId), parsed.data.name, parsed.data.body), parsed.data.expectedVersion));
+        return json(res, 200, { ok: true, version: saved.version, skill: saved.skills.find((s) => s.name === parsed.data.name) ?? null });
+      } catch (error) {
+        return replyNotesError(res, error);
+      }
     }
     return PASS;
   };

@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import { writeFileAtomic } from "./atomic.ts";
 import { alwaysCore, isExpired, isMemoryDate, parseMemoryEntries, untilMark, withoutExpired, withoutSuperseded, type MemoryEntryLine } from "./memory-entries.ts";
+import { loadNotesDoc, structuredNotesPromptBlock } from "./memory-notes.ts";
 import { parseTopicHeader, readTopicHead, renderTopicIndex } from "./memory-topics.ts";
 import { indexMemoryFile, indexedMemoryFiles, recallMemory, removeMemoryFile, type MemoryHit, type SearchMode } from "./message-db.ts";
 import { redactSecretsInText } from "./redact.ts";
@@ -612,7 +613,7 @@ export function memoryRulesPrompt(botId: string, opts: MemoryPromptOptions = {})
 export function memoryNotesPrompt(botId: string, opts: MemoryPromptOptions = {}): string {
   if (opts.enabled === false) return "";
   const memory = loadMemory(botId);
-  const index = topicIndexBlock(botId, opts.fileTools !== false);
+  const index = topicIndexBlock(botId, opts.fileTools !== false) + structuredNotesBlock(botId);
   if (opts.writesRefused || memoryReadOnly(opts)) {
     const lead = opts.writesRefused ? NOTES_IN_RESULT : " Your saved memory is supplied as context; this turn has no memory editing tools.";
     if (!memory) return opts.writesRefused ? `${lead}${index}` : "";
@@ -641,4 +642,13 @@ function topicIndexBlock(botId: string, fileTools: boolean): string {
     ? `paths are relative to ${JSON.stringify(workspaceDir(botId))}, not your working folder; when a request touches one of these topics, read that file with your file tools before you answer`
     : "when a request touches one of these topics, look it up with session_search before you answer";
   return `\n\nYour topic notes (not loaded; ${how}):\n${index}`;
+}
+
+/** Structured notes never fail a turn: a missing or unreadable notes file reads as no notes. */
+function structuredNotesBlock(botId: string): string {
+  try {
+    return structuredNotesPromptBlock(loadNotesDoc(workspaceDir(botId)));
+  } catch {
+    return "";
+  }
 }

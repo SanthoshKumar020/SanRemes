@@ -22,6 +22,7 @@ instructions to forbid that when memory must stay in another source of truth.
 └── memory/
     ├── <topic>.md       longer notes the bot reads on demand
     ├── archive.md       older notes moved out of MEMORY.md, and expired ones
+    ├── notes.json       structured notes (facts with quoted sources) and learned skills
     └── log/
         └── 2026-09-10.md   what the bot did that day, in its own words
 ```
@@ -483,6 +484,19 @@ free form, or one you rewrite by hand, works the same.
 | `POST` | `/api/bots/:id/memory/tidy` | Runs the tidy-up now (`409` when upkeep is switched off) and returns its report. |
 | `GET` | `/api/profile/learned` | Facts bots added to About me on their own, newest first. |
 | `POST` | `/api/profile/learned/:id/remove` | Takes that line out of About me; the fact is never added again. |
+| `GET` | `/api/bots/:id/memory/notes` | The structured notes, archive and learned skills (`notes.json`). |
+| `POST` | `/api/bots/:id/memory/notes` | Adds a note: `{ path, text, sources, sourceMessages }` — every quoted source must appear in the cited message, or the save is refused. `409` when `expectedVersion` no longer matches. |
+| `DELETE` | `/api/bots/:id/memory/notes?path=` | Forgets a note (and any archived copy of it). |
+| `POST` | `/api/bots/:id/memory/notes/remember` | Saves an explicit "remember: …" request from a message. |
+| `POST` | `/api/bots/:id/memory/notes/confirm` | Marks a note confirmed. |
+| `POST` | `/api/bots/:id/memory/notes/edit` | Replaces a note's text; the old wording is archived as superseded. |
+| `POST` | `/api/bots/:id/memory/notes/archive` | Archives a note with a reason (`superseded`, `merged`, `duplicate`, `expired`, `stale`, `obsolete`, `contradicted`, `manual`). |
+| `POST` | `/api/bots/:id/memory/notes/restore` | Restores an archived note. |
+| `POST` | `/api/bots/:id/memory/notes/maintain` | Archives expired notes, merges exact duplicates and archives stale inferred notes; returns the report. |
+| `GET` | `/api/bots/:id/memory/skills` | Learned skills (reusable steps of completed tasks). |
+| `POST` | `/api/bots/:id/memory/skills` | Saves or replaces a skill: `{ name, description, body, task? }`. |
+| `POST` | `/api/bots/:id/memory/skills/patch` | Replaces a skill's body; refuses a skill the owner edited. |
+| `DELETE` | `/api/bots/:id/memory/skills?name=` | Forgets a skill. |
 
 All of them need the owner (admin) session, like the other bot-settings routes.
 
@@ -491,6 +505,52 @@ On a Team Cloud each person also reaches what a bot remembers about them, their 
 `GET /api/bots/:id/memory/mine` is its overview, and `GET`, `PUT` and `DELETE /api/bots/:id/memory/mine/file` read,
 save and remove one of its files as above. Nobody reaches another person's layer. The bot panel's **What it
 remembers** shows these notes on a team.
+
+## Structured notes
+
+Alongside the markdown files, a bot keeps structured notes in
+`memory/notes.json`: one record per fact, each with a path (`about/…`,
+`preferences/…`, `people/…`, `routines/…`, `lessons/…`), a status
+(`stated` — the person said it, `observed` — the bot saw it happen,
+`tentative` — the bot guessed it), the messages it came from, and an
+optional machine-readable fact (kind, entities, dates). A note's sources
+are quotes of at most 400 characters, and a save is refused unless every
+quote really appears in the cited message, case, accents, quote marks and
+spacing aside — a note can never be filed on words nobody said. Adding a
+note whose fact matches one already there merges the two instead of
+duplicating it. Secrets are redacted from a note's text before it reaches
+disk, the same as in the markdown files.
+
+Notes load into every turn as a short index under the heading
+**Your notes**, grouped by area with tentative notes marked, and capped
+at 6,000 characters so the prompt budget stays small; a turn that only
+needs one area finds it by word search (`findNotes`) rather than reading
+the whole file. A note that is past its expiry date never loads. The
+index never fails a turn: a missing or unreadable `notes.json` reads as
+no notes.
+
+A person can also say "remember: …" in chat. That is the only
+model-free way a fact enters the store: the request is taken verbatim,
+filed as `stated`, and quoted from the message that said it. Anything
+else the bot learns in conversation still goes through the existing
+capture into `MEMORY.md` and topic files; model-based extraction into
+structured notes is not built yet.
+
+Maintenance runs deterministically, with no model call: it archives
+expired notes, merges exact duplicates (keeping the older path and both
+sets of sources), and archives inferred notes (`observed` or
+`tentative`, a single source, no structured fact) untouched for 90 days.
+Saves are versioned: a write naming an `expectedVersion` that no longer
+matches is refused with `409`, so two editors never silently overwrite
+each other. The file is written atomically with owner-only permissions
+(`0600`) and capped at 256 KiB.
+
+Learned skills live in the same file. A skill is a named, reusable set of
+steps for a completed task (name, one-line description, body of at most
+6,000 characters, and the task it came from). The newest 40 are kept; the
+oldest unedited one is evicted when the cap is reached. A skill the owner
+edited by hand is never overwritten or evicted by the bot — patching it
+is refused.
 
 ## Shared team memory integrity
 

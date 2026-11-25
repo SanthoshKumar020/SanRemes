@@ -15,6 +15,7 @@ pnpm exec vitest run server/memory-capture-restart.e2e.test.ts
 pnpm exec vitest run server/thread-memory.e2e.test.ts server/thread-notes.test.ts
 pnpm exec vitest run server/spend-cap-api.test.ts
 pnpm exec vitest run server/memory-entries.test.ts server/recall.test.ts server/memory-upkeep.test.ts server/workspace.test.ts
+pnpm exec vitest run server/memory-notes.test.ts server/memory-notes-routes.test.ts
 pnpm exec vitest run server/side-jobs.test.ts server/helper-model.e2e.test.ts
 pnpm exec vitest run src/components/bot-settings/MemorySection.test.ts src/lib/memory.test.ts server/drivers/agents-catalog-wire.test.ts
 ```
@@ -53,6 +54,28 @@ stopping upkeep writes when its switch changes during a model call. Search
 checks use actual index results for signed-number/symbol false matches and
 historical files crowding out current topics. A failed topic write leaves its
 notes in the notebook; retrying completes only the remaining moves.
+
+Structured notes (`server/memory-notes.test.ts`, routes through the isolated
+fixture in `server/memory-notes-routes.test.ts`) add:
+
+- A note is refused unless every quoted source really appears in the cited
+  message, case, accents, quote marks and spacing aside; a quote the person
+  never said is a 400.
+- Adding the same fact twice merges it (one note, both sources); editing a
+  note archives the old wording as superseded; archive, restore and forget
+  round-trip, and forget also clears the archived copy.
+- A save naming a stale `expectedVersion` is refused with 409.
+- "remember: …" saves the request verbatim as a stated note; a message
+  without a remember request is refused.
+- Maintenance archives expired notes, merges exact duplicates and archives
+  stale inferred notes, and reports the counts.
+- Word search finds notes by any word in the text, the path, or the fact's
+  entities; the prompt index groups notes by area, marks tentative ones,
+  hides expired ones and stays within 6,000 characters.
+- Learned skills cap at 40 with oldest-first eviction, refuse to patch a
+  skill the owner edited, and round-trip through save, patch and forget.
+- A corrupt `notes.json` is a 500 with the file's path, never a crash; a
+  note over 256 KiB is a 413.
 
 ## Not proven here
 
