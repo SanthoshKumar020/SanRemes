@@ -299,8 +299,7 @@ See [Run SanRemes from scripts and CI](docs/headless-cli.md).
 
 ## Quick start
 
-**No packaged releases yet.** This fork has no signed `.dmg` / `.exe` / `.deb` builds published —
-run it from source with the one-click installer below, or the manual steps after it.
+**Windows installer:** [Download SanRemes 0.1.0 for Windows](https://github.com/SanthoshKumar020/SanRemes/releases/download/v0.1.0/SanRemes-0.1.0-setup.exe) — one-click install, no Node or terminals needed. The build is unsigned, so Windows SmartScreen will ask you to confirm it (More info → Run anyway). macOS and Ubuntu builds are not published yet — run those from source with the one-click installer below, or the manual steps after it.
 
 **One-click install:**
 
