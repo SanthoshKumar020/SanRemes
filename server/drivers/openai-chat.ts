@@ -929,6 +929,10 @@ export function createOpenAIChatRuntime<Config>(options: RuntimeOptions<Config>)
     })();
     return { turnId };
   };
+  /** Whether the default model can see images: computer control grounds its actions on screenshots, so a model
+   * that cannot see them is not offered it, even when the provider's tools include it. Browser tools stay:
+   * they work by text, through the page's snapshot and element refs. */
+  const defaultSeesImages = options.imageInput?.(options.models().default) ?? true;
   return {
     instanceId: input.instanceId,
     driverKind: options.driverKind,
@@ -947,8 +951,8 @@ export function createOpenAIChatRuntime<Config>(options: RuntimeOptions<Config>)
     },
     adapter: {
       provider: options.driverKind,
-      capabilities: { ...(options.computerUse ? { computerMcp: options.tools !== false, localComputerMcp: options.tools !== false,
-        browserMcp: options.tools !== false, nativeImageInput: true, images: true, ...(options.videoBytes ? { nativeVideoBytes: options.videoBytes } : {}) } : {}),
+      capabilities: { ...(options.computerUse ? { computerMcp: options.tools !== false && defaultSeesImages, localComputerMcp: options.tools !== false && defaultSeesImages,
+        browserMcp: options.tools !== false, ...(defaultSeesImages ? { nativeImageInput: true, images: true } : {}), ...(options.videoBytes ? { nativeVideoBytes: options.videoBytes } : {}) } : {}),
         ...(options.modelVariants ? { modelVariants: true } : {}), sessionModelSwitch: "in-session", customMcp: options.tools !== false, agentsMcp: options.tools !== false, composioMcp: options.tools !== false,
         dataMcp: options.tools !== false,
         emailMcp: options.tools !== false,

@@ -71,6 +71,16 @@ describe("Groq provider", () => {
     } finally { recorder.stop(); }
   });
 
+  it("does not offer computer control to a model that cannot see images, but keeps browser tools", async () => {
+    const instance = await create({ url: base });
+    const capabilities = instance.adapter.capabilities;
+    expect(capabilities.localComputerMcp).toBe(false);
+    expect(capabilities.computerMcp).toBe(false);
+    expect(capabilities.browserMcp).toBe(true);
+    expect(capabilities.images).toBeUndefined();
+    expect(capabilities.nativeImageInput).toBeUndefined();
+  });
+
   it("does not send the server's Groq key to a custom instance host", async () => {
     vi.stubEnv("GROQ_API_KEY", fixtureKey);
     const instance = await create({ url: base }, { GROQ_API_KEY: "" });
