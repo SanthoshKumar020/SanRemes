@@ -9,6 +9,14 @@ import { instanceConfigs } from "../config.ts";
 import { OpenAICompatDriver, chatTimeoutMs } from "./openai-compat.ts";
 import { flushNativeLogs } from "./native.ts";
 
+// A local server takes the long idle timeout, past Node's 300 s fetch limit, so the runtime sends through
+// fetchPastLimit (undici) instead of the global fetch these tests stub. Route it back through the stubbed
+// global fetch here: the tests verify the driver's behaviour, not undici's transport.
+vi.mock("./openai-chat-fetch.ts", async (importOriginal) => {
+  const original = await importOriginal<typeof import("./openai-chat-fetch.ts")>();
+  return { ...original, fetchPastLimit: (url: string, init: RequestInit) => fetch(url, init) };
+});
+
 describe("OpenAICompatDriver", () => {
   const savedUrl = process.env.OPENAI_COMPAT_URL;
   const savedKey = process.env.OPENAI_COMPAT_API_KEY;
@@ -35,7 +43,7 @@ describe("OpenAICompatDriver", () => {
   });
 
   it("gives a server on this network longer to its first token than a remote one", () => {
-    expect(chatTimeoutMs({ url: "http://127.0.0.1:11434" })).toBe(300_000);
+    expect(chatTimeoutMs({ url: "http://127.0.0.1:11434" })).toBe(900_000);
     expect(chatTimeoutMs({ url: "https://api.example.com/v1" })).toBe(180_000);
     expect(chatTimeoutMs({ url: "http://127.0.0.1:11434", replyWaitMinutes: 2 })).toBe(120_000);
     vi.stubEnv("SANREMES_OPENAI_COMPAT_IDLE_TIMEOUT_MS", "60000");

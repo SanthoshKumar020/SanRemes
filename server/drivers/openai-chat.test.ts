@@ -1085,7 +1085,9 @@ describe("createOpenAIChatRuntime transient retries", () => {
       }));
       const instance = await OpenAICompatDriver.create({
         instanceId: "compat-liveness", displayName: "Compat", enabled: true,
-        config: OpenAICompatDriver.decodeConfig({ url: "http://127.0.0.1:503/v1", apiKeyEnv: "K", model: "m" }),
+        // An explicit wait keeps the runtime on the stubbed global fetch: without it a loopback server
+        // takes the long local timeout and the request goes through fetchPastLimit instead.
+        config: OpenAICompatDriver.decodeConfig({ url: "http://127.0.0.1:503/v1", apiKeyEnv: "K", model: "m", replyWaitMinutes: 3 }),
         environment: { K: "secret" },
       });
       const events: RuntimeEvent[] = [];
