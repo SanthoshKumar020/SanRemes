@@ -13,6 +13,7 @@ import type { Notification } from "../../shared/notification.ts";
 import type { RequestAuth } from "../request-auth.ts";
 import { writeFileAtomic } from "../atomic.ts";
 import { loadWatches, saveWatches } from "../browser-errands.ts";
+import { runSelfImprovementEvals } from "../self-improvement.ts";
 import { workspaceDir } from "../workspace.ts";
 import type { AppConfig } from "../config.ts";
 import { createConnectedReads, OUTLOOK_LIST_TOOL, READ_APPS, type ReadApp } from "../connected-reads.ts";
@@ -169,6 +170,15 @@ export function createProactive(deps: ProactiveDeps) {
       list: (botId) => loadWatches(workspaceDir(botId)),
       save: (botId, watches) => {
         saveWatches(workspaceDir(botId), watches);
+      },
+    },
+    selfImprovement: {
+      run: async (botId) => {
+        const run = await runSelfImprovementEvals(workspaceDir(botId));
+        return {
+          needsOwner: run.needsOwner,
+          findings: run.results.filter((result) => result.outcome !== "pass").map((result) => ({ evalId: result.evalId, outcome: result.outcome, detail: result.detail })),
+        };
       },
     },
     report: async (found) => {

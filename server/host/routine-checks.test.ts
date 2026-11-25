@@ -7,12 +7,13 @@ import { SourceError, type CalendarEvent, type ConnectedReads, type EmailHeader,
 import type { Routine, RoutineRun } from "../routines.ts";
 import { newWatch, pageDigest, type BrowserWatch, type PageFetch } from "../browser-errands.ts";
 import { CHECKS_FILE, createRoutineChecks, type CheckReport } from "./routine-checks.ts";
+import type { EvalFindingLine } from "../self-improvement.ts";
 
 const MINUTE = 60_000;
 const dirs: string[] = [];
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 
-function setup(options: { fenced?: boolean; may?: (app: ReadApp) => boolean; connected?: Partial<Record<ReadApp, boolean>> } = {}) {
+function setup(options: { fenced?: boolean; may?: (app: ReadApp) => boolean; connected?: Partial<Record<ReadApp, boolean>>; selfImprovement?: { run: (botId: string) => Promise<{ needsOwner: boolean; findings: EvalFindingLine[] }> } } = {}) {
   const dir = mkdtempSync(join(tmpdir(), "omb-routine-checks-"));
   dirs.push(dir);
   let now = Date.parse("2026-10-22T08:00:00Z");
@@ -64,6 +65,7 @@ function setup(options: { fenced?: boolean; may?: (app: ReadApp) => boolean; con
       const text = pages.get(url);
       return text === undefined ? { ok: false, error: "no such page" } : { ok: true, status: 200, text };
     },
+    ...(options.selfImprovement ? { selfImprovement: options.selfImprovement } : {}),
   });
   const routine = (extra: Partial<Routine> = {}): Routine => ({
     id: "watch", name: "Keep an eye on my day", prompt: "Check my day.", target: "bot", botId: "chief", runOn: "maus", enabled: true,
@@ -349,5 +351,36 @@ describe("browser watches", () => {
     const result = await s.checks.check(s.routine({ checks: ["browser"] }), { manual: true });
     expect(result.run).toBeUndefined();
     expect(result.trouble).toContain("own routine");
+  });
+});
+
+describe("self-improvement evals", () => {
+  const evalRoutine = (s: ReturnType<typeof setup>) => s.routine({ checks: ["evals"], deliver: undefined });
+  const recallFinding: EvalFindingLine = { evalId: "procedure-recall", outcome: "degraded", detail: "1 learned procedure no longer parses" };
+
+  it("evals that need the owner start a run naming the eval, and a quiet eval runs nothing", async () => {
+    const s = setup({ selfImprovement: { run: async () => ({ needsOwner: true, findings: [recallFinding] }) } });
+    const first = await s.checks.check(evalRoutine(s), { manual: true });
+    expect(first.run?.key).toMatch(/^chk-/);
+    expect(first.run!.prompt).toContain("procedure-recall");
+    expect(first.run!.prompt).toContain("1 learned procedure no longer parses");
+
+    const quiet = setup({ selfImprovement: { run: async () => ({ needsOwner: false, findings: [] }) } });
+    expect((await quiet.checks.check(evalRoutine(quiet), { manual: true })).run).toBeUndefined();
+  });
+
+  it("an eval that fails never breaks the routine's other checks", async () => {
+    const s = setup({ selfImprovement: { run: async () => { throw new Error("the eval store is unreadable"); } } });
+    s.mail("m1", 5);
+    const result = await s.checks.check(s.routine({ checks: ["evals", "mail"], deliver: undefined }), { manual: true });
+    expect(result.run).toBeDefined();
+    expect(result.run!.prompt).toContain("Subject m1");
+  });
+
+  it("a brief routine with evals is told the evals need you", async () => {
+    const s = setup({ selfImprovement: { run: async () => ({ needsOwner: true, findings: [recallFinding] }) } });
+    const result = await s.checks.check(s.routine({ checks: ["evals"] }), { manual: true });
+    expect(result.run).toBeUndefined();
+    expect(result.trouble).toContain("Self-improvement evals need you");
   });
 });

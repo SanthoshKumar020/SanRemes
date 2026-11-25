@@ -4,6 +4,7 @@
 import type { CalendarEvent, EmailHeader } from "../connected-reads.ts";
 import type { RoutineRun } from "../routines.ts";
 import { clean, recordsBlock } from "../records-block.ts";
+import type { EvalFindingLine } from "../self-improvement.ts";
 import { PICKS_PER_TRIAGE } from "./check-plan.ts";
 import { clip } from "./text-clip.ts";
 
@@ -16,6 +17,8 @@ export interface CheckItems {
   runs: RoutineRun[];
   /** Watched pages whose text changed since the last check, with what they say now. */
   watches: Array<{ name: string; url: string; excerpt: string }>;
+  /** Self-improvement evals that found something needing the owner, with what they found. */
+  evals: EvalFindingLine[];
 }
 
 function when(ms: number, timeZone: string | undefined): string {
@@ -88,6 +91,7 @@ export function checkedPrompt(input: { instructions: string; items: CheckItems; 
     ...(items.prep.length ? ["Meetings with other people starting soon:", meetingRecords(items.prep, input.timeZone)] : []),
     ...(items.runs.length ? ["Other routines that finished:", runRecords(items.runs)] : []),
     ...(items.watches.length ? ["Watched pages that changed since the last check:", recordsBlock("Watched pages", items.watches.map((watch) => `${clean(watch.name, 120)} · ${clean(watch.url, 300)} · now says ${clean(watch.excerpt, 500)}`))] : []),
+    ...(items.evals.length ? ["Self-improvement evals that need you:", recordsBlock("Self-improvement evals", items.evals.map((finding) => `${clean(finding.evalId, 80)} · ${finding.outcome} · ${clean(finding.detail, 500)}`))] : []),
   ].join("\n");
 }
 

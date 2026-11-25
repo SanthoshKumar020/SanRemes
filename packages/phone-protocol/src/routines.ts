@@ -67,9 +67,10 @@ export type RoutineRunTrigger = "schedule" | "manual" | "webhook" | "startup" | 
 
 /** A check a routine runs on each tick before any AI turn, in plain code: `calendar` reads the next 36 hours, `mail`
  * new inbox mail since the last check, `runs` other routines' finished runs, `browser` watched pages whose text
- * changed since the last check. Nothing new means no AI turn. */
-export type RoutineCheck = "calendar" | "mail" | "runs" | "browser";
-export const ROUTINE_CHECKS: readonly RoutineCheck[] = ["calendar", "mail", "runs", "browser"];
+ * changed since the last check, `evals` the bot's self-improvement evals — learned procedures, watches and skills
+ * that no longer hold. Nothing new means no AI turn. */
+export type RoutineCheck = "calendar" | "mail" | "runs" | "browser" | "evals";
+export const ROUTINE_CHECKS: readonly RoutineCheck[] = ["calendar", "mail", "runs", "browser", "evals"];
 
 /** What a routine's runs may do. `read-and-draft`: read Gmail and Google Calendar and write reply drafts; every other
  * tool is refused outright, never turned into a card. Missing means the bot's own level. */

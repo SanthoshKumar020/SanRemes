@@ -23,7 +23,7 @@ describe("what a watch run is told", () => {
   });
 
   it("a routine of the person's own hears what its checks found, with no JSON rules", () => {
-    const prompt = checkedPrompt({ instructions: "Tell me about mail from Acme.", items: { mail: [email], prep: [], runs: [], watches: [] } });
+    const prompt = checkedPrompt({ instructions: "Tell me about mail from Acme.", items: { mail: [email], prep: [], runs: [], watches: [], evals: [] } });
     expect(prompt).toContain("Since the last check");
     expect(prompt).not.toContain("JSON");
   });

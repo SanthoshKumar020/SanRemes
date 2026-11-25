@@ -12,6 +12,7 @@ import { checkWatch, fetchPageText, type BrowserWatch, type PageFetch } from "..
 import { SourceError, type CalendarEvent, type ConnectedReads, type EmailHeader, type ReadApp, type ReadSession } from "../connected-reads.ts";
 import type { Routine, RoutineCheckResult, RoutineChecks, RoutineRun } from "../routines.ts";
 import type { CheckHold } from "../routine-check-pacing.ts";
+import type { EvalFindingLine } from "../self-improvement.ts";
 import {
   clashes, emailSince, fingerprint, keepNewest, LOOKAHEAD_MS, mergeMeetings, nextMeetingDue, planMail, planMeetings, pruneMeetings, type MeetingRecord,
 } from "./check-plan.ts";
@@ -103,6 +104,9 @@ export interface RoutineChecksDeps {
   browserWatches?: { list(botId: string): BrowserWatch[]; save(botId: string, watches: BrowserWatch[]): void };
   /** Fetch a watched page's text; the plain fetch when unset. */
   fetchPage?: (url: string) => Promise<PageFetch>;
+  /** Self-improvement evals for this bot, run on the routine's schedule: the findings that need the
+   * owner, else none. Absent means no eval is run. */
+  selfImprovement?: { run(botId: string): Promise<{ needsOwner: boolean; findings: EvalFindingLine[] }> };
 }
 
 const ACTIVE = new Set(["queued", "running", "waiting"]);
@@ -234,11 +238,12 @@ export function createRoutineChecks(deps: RoutineChecksDeps): RoutineChecks & {
     const aiAllowed = !context.hold && (routine.access !== "read-and-draft" || deps.fenced(routine.botId));
     const report: CheckReport = { routine, at };
     const trouble: ReadTrouble[] = [];
-    const items: CheckItems = { mail: [], prep: [], runs: [], watches: [] };
+    const items: CheckItems = { mail: [], prep: [], runs: [], watches: [], evals: [] };
     const pending: Omit<Pending, "at"> = { mail: [], prep: [], replies: [] };
     const held = new Set(Object.values(entry.pending ?? {}).flatMap((one) => [...one.mail, ...one.prep]));
     let wakeAt: number | undefined;
     let watchTrouble: string | undefined;
+    let evalTrouble: string | undefined;
     const apps = checks.includes("calendar") || checks.includes("mail") ? await deps.reads.connected().catch(() => null) : null;
     const session = deps.reads.session(routine.botId);
     report.session = session;
@@ -396,10 +401,20 @@ export function createRoutineChecks(deps: RoutineChecksDeps): RoutineChecks & {
       }
     }
 
+    if (checks.includes("evals") && deps.selfImprovement) {
+      // Evals are plain code, so they run under a hold too; what they stage waits for the owner
+      // either way. A failure here never breaks the routine's other checks.
+      const found = await deps.selfImprovement.run(routine.botId).catch(() => null);
+      if (found?.needsOwner && found.findings.length) {
+        items.evals = found.findings;
+        evalTrouble = `Self-improvement evals need you: ${found.findings.map((finding) => `${finding.evalId} ${finding.outcome} — ${finding.detail}`).join("; ").slice(0, 300)}`;
+      }
+    }
+
     if (apps) report.gmail = { connected: apps.gmail === true, ...(entry.address ? { address: entry.address } : {}) };
     if (trouble.length) report.trouble = trouble;
     let run: RoutineCheckResult["run"];
-    const work = brief ? items.mail.length + items.prep.length : items.mail.length + items.prep.length + items.runs.length + items.watches.length;
+    const work = brief ? items.mail.length + items.prep.length : items.mail.length + items.prep.length + items.runs.length + items.watches.length + items.evals.length;
     if (work > 0) {
       const key = `chk-${randomUUID()}`;
       entry.pending = { ...entry.pending, [key]: { at, ...pending } };
@@ -413,7 +428,7 @@ export function createRoutineChecks(deps: RoutineChecksDeps): RoutineChecks & {
     }
     save();
     if (brief) await deps.report(report);
-    const sentences = [troubleSentence(trouble), watchTrouble].filter((one): one is string => one !== undefined);
+    const sentences = [troubleSentence(trouble), watchTrouble, evalTrouble].filter((one): one is string => one !== undefined);
     return { ...(run ? { run } : {}), ...(sentences.length ? { trouble: sentences.join(" ") } : {}), ...(wakeAt !== undefined ? { wakeAt } : {}) };
   }
 
