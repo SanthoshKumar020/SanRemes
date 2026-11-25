@@ -21,7 +21,7 @@ export const CONNECT_PROBLEM_KEYS = Object.freeze({
   unreachable: "native.connect.unreachable",
   dns: "native.connect.dns",
   certificate: "native.connect.certificate",
-  notMausBot: "native.connect.notMausBot",
+  notMausBot: "native.connect.notSanRemes",
   desktopApp: "native.connect.desktopAppDevices",
   desktopAppTailnet: "native.connect.desktopAppTailnetDevices",
   loopback: "native.connect.loopback",
