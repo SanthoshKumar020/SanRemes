@@ -48,6 +48,8 @@ jobs:
       - run: pnpm package:win
       - name: Smoke the staged Windows CUA driver
         run: pnpm smoke:cua-win
+      - name: Smoke the staged Windows Ollama bundle
+        run: pnpm smoke:ollama-win
       - name: Verify the bundled browser with an empty home
         run: node scripts/smoke-browser-bundle.mjs --resources "${{ github.workspace }}/release/win-unpacked/resources"
       - name: Verify the packaged server discovers its browser
@@ -98,6 +100,9 @@ jobs:
           [ -f "$res/cua-driver-background.exe" ] || { echo "::error::missing $res/cua-driver-background.exe"; fail=1; }
           [ -f "$res/cua-sdk/cua-sdk.mjs" ] || { echo "::error::missing $res/cua-sdk/cua-sdk.mjs"; fail=1; }
           [ -f "$res/cua-sdk/native/cua_driver_sdk.dll" ] || { echo "::error::missing $res/cua-sdk/native/cua_driver_sdk.dll"; fail=1; }
+          # missing → first-run Qwen setup has no Ollama binary to start
+          [ -f "$res/ollama/ollama.exe" ] || { echo "::error::missing $res/ollama/ollama.exe"; fail=1; }
+          [ -f "$res/ollama/lib/ollama/ggml-base.dll" ] || { echo "::error::missing $res/ollama/lib/ollama/ggml-base.dll"; fail=1; }
           if [ -f "$res/app-update.yml" ]; then
             grep -Eq '^repo: SanRemes$' "$res/app-update.yml" || {
               echo "::error::app-update.yml does not point at SanthoshKumar020/SanRemes"; fail=1; }

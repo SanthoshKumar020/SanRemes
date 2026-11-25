@@ -4,6 +4,7 @@ import { startFailureText } from "./start-failure-text.ts";
 import { reserveGmailDrafts } from "./gmail-draft-policy.ts";
 import { createGmailDrafts } from "./host/gmail-drafts.ts";
 import { createWatchBrowserDriver } from "./host/browser-driver.ts";
+import { ensureLocalQwen } from "./ollama-setup.ts";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { existsSync, realpathSync, rmSync } from "node:fs";
@@ -15138,6 +15139,19 @@ server.listen(PORT, listenHost(server), async () => {
   if (enginesRead) {
     await enginesRead;
     if (companyShutdown) return;
+  }
+  // First run on a packaged Windows install: make sure the bundled Ollama runs, pull Qwen, and make it the
+  // default when nothing is saved yet. It runs in the background and never blocks startup; a failure leaves the
+  // current default alone.
+  if (process.platform === "win32" && !CLOUD_HOME && !HOSTED_WORKSPACE && !CLOUD_TEAM) {
+    void ensureLocalQwen({
+      resourcesPath: process.env.SANREMES_RESOURCES_PATH,
+      instances: () => persistableInstanceConfigs(cfg),
+      persist: persistProviderInstance,
+      defaultSelection: () => cfg.defaultModelSelection ?? null,
+      saveDefault: (selection) => { saveConfig({ defaultModelSelection: selection }); cfg.defaultModelSelection = selection; },
+      log: (line) => console.log(`[ollama-setup] ${line}`),
+    });
   }
   // Only once every registry is initialized and the endpoint listens: earlier dispatch can hit uninitialized bindings.
   moveFreeze.hold(() => { routines!.start(); botWaits.start(); checkBacks.start(); proactive.start(); }, () => { routines!.stop(); botWaits.stop(); checkBacks.stop(); proactive.stop(); });
