@@ -16,10 +16,11 @@ import {
 const DRIVER_KIND = "openai-compat";
 const DEFAULT_IDLE_TIMEOUT_MS = 180_000;
 /** A model on this network sends nothing until its first token, and prefill of the full prompt (the system prompt
- * alone is ~11k tokens) on a slow machine takes minutes; the 180 s idle default aborts the turn before the first
- * byte arrives. Past 300 s the runtime uses fetchPastLimit, so Node's own 300 s fetch limit does not bind here;
- * a server that stops answering is still caught by the liveness probe, not by this timer. */
-const LOCAL_IDLE_TIMEOUT_MS = 900_000;
+ * alone is ~11k tokens) on a slow machine takes minutes — measured ~16 tokens/s on a 1.5-CPU VM, so a ~15k-token
+ * prompt needs ~16 minutes before the first byte. Past 300 s the runtime uses fetchPastLimit, so Node's own 300 s
+ * fetch limit does not bind here; a server that stops answering is still caught by the liveness probe, not by
+ * this timer. */
+const LOCAL_IDLE_TIMEOUT_MS = 1_800_000;
 /** The idle timeout for a chat turn: an explicit per-instance wait wins, then an explicit environment value, then
  * the longer local allowance for a server on this network, then the default. */
 export function chatTimeoutMs(config: { replyWaitMinutes?: number; url: string }): number {
