@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { z } from "zod";
 
 import { writeFileAtomic } from "../atomic.ts";
-import { checkWatch, fetchPageText, type BrowserWatch, type PageFetch } from "../browser-errands.ts";
+import { checkWatch, checkWatchWithDriver, fetchPageText, type BrowserDriver, type BrowserWatch, type PageFetch } from "../browser-errands.ts";
 import { SourceError, type CalendarEvent, type ConnectedReads, type EmailHeader, type ReadApp, type ReadSession } from "../connected-reads.ts";
 import type { Routine, RoutineCheckResult, RoutineChecks, RoutineRun } from "../routines.ts";
 import type { CheckHold } from "../routine-check-pacing.ts";
@@ -104,6 +104,8 @@ export interface RoutineChecksDeps {
   browserWatches?: { list(botId: string): BrowserWatch[]; save(botId: string, watches: BrowserWatch[]): void };
   /** Fetch a watched page's text; the plain fetch when unset. */
   fetchPage?: (url: string) => Promise<PageFetch>;
+  /** A live-browser driver for this bot's watched pages, for pages that render client-side; absent (or null) means plain fetch. */
+  browserDriver?: (botId: string) => Promise<BrowserDriver | null>;
   /** Self-improvement evals for this bot, run on the routine's schedule: the findings that need the
    * owner, else none. Absent means no eval is run. */
   selfImprovement?: { run(botId: string): Promise<{ needsOwner: boolean; findings: EvalFindingLine[] }> };
@@ -382,8 +384,9 @@ export function createRoutineChecks(deps: RoutineChecksDeps): RoutineChecks & {
         watchTrouble = "Page watches report into a routine's own thread, not the brief — give this watch its own routine to hear about changes.";
       } else {
         let dirty = false;
+        const driver = mine.length && deps.browserDriver ? await deps.browserDriver(routine.botId).catch(() => null) : null;
         for (const watch of mine) {
-          const result = await checkWatch(watch, deps.fetchPage ?? fetchPageText);
+          const result = driver ? await checkWatchWithDriver(watch, driver) : await checkWatch(watch, deps.fetchPage ?? fetchPageText);
           const stored = all.find((candidate) => candidate.id === watch.id);
           if (!stored) continue;
           stored.lastCheckedAt = result.fetchedAt;

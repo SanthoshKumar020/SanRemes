@@ -321,7 +321,7 @@ describe("OpenAICompatDriver", () => {
     }));
     const inst = await OpenAICompatDriver.create({
       instanceId: "ollama", displayName: "Ollama", enabled: true,
-      config: { url: "http://127.0.0.1:11434", key: "ollama", catalog: "ollama" },
+      config: { url: "http://127.0.0.1:11434", key: "ollama", catalog: "ollama", apiKeyEnv: "OPENAI_COMPAT_API_KEY" },
       environment: {},
     });
     const recorder = recordEvents(inst.adapter);

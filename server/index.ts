@@ -3,6 +3,7 @@ import { BOOT_CLOUD_SECRETS } from "./cloud-secrets-boot.ts";
 import { startFailureText } from "./start-failure-text.ts";
 import { reserveGmailDrafts } from "./gmail-draft-policy.ts";
 import { createGmailDrafts } from "./host/gmail-drafts.ts";
+import { createWatchBrowserDriver } from "./host/browser-driver.ts";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { existsSync, realpathSync, rmSync } from "node:fs";
@@ -5540,7 +5541,10 @@ const placeMoves = createPlaceMoves({ home: CLOUD_PERSONAL ? "my-cloud" : CLOUD_
 let routines: RoutineManager | null = null;
 const automationReports = createAutomationReports({ store, routines: () => routines, busy: threadBusy, wrote: markTaskContextExternallyUpdated, brief: (run, turnId) => proactive.runSettled(run, turnId), threadLanguage, notes: { has: (id) => refusedLending.notes.has(id) || noTerminal.notes.has(id), take: (id, language) => [refusedLending.notes.take(id, language), noTerminal.notes.take(id, language)].filter(Boolean).join("\n\n") || null },
   notify: (kind, bot, threadId, detail) => notify(buildNotification(kind, bot, threadId, detail, { avatarUrl: bot.avatarUrl }), { routine: true }) });
-const proactive = createProactive({ store, cfg, composio, registry, dataDir: DATA_DIR, ideas: (botId) => memoryUpkeep.ideas(botId), ...firstHourHooks.proactive, team: Boolean(HOSTED_WORKSPACE || CLOUD_TEAM), frozen: moveFreeze.frozen, routines: () => routines, mainThread: botMainThread, threadBusy, notify, helpers: { decider, extractor }, cloud: Boolean(CLOUD_HOME || HOSTED_WORKSPACE || CLOUD_TEAM),
+const proactive = createProactive({ store, cfg, composio, registry, dataDir: DATA_DIR, ideas: (botId) => memoryUpkeep.ideas(botId), ...firstHourHooks.proactive, team: Boolean(HOSTED_WORKSPACE || CLOUD_TEAM), frozen: moveFreeze.frozen, routines: () => routines, browserDriver: async (botId) => createWatchBrowserDriver({ runtime: browserRuntime, spec: async () => {
+  const target = await currentBrowserSpec(botId, store.bot(botId)?.browserProfile);
+  return target && { session: target.session, spec: { command: target.spec.command, args: [...(target.spec.args ?? [])], env: target.spec.env } };
+} }), mainThread: botMainThread, threadBusy, notify, helpers: { decider, extractor }, cloud: Boolean(CLOUD_HOME || HOSTED_WORKSPACE || CLOUD_TEAM),
   engineName: (instanceId) => engineName(instanceId), hostTimeZone: () => (CLOUD_HOME ? undefined : hostTimeZone()), decide: (row) => appendDecision(DATA_DIR, row), stale: shouldIgnoreProviderEvent, release: (threadId) => watchdog.setWaitingOnHuman(threadId, false),
   owned: (routine) => { (cloudRoutineAuthors ?? phones.routineAuthors)?.record(routine.id, routine); if (CLOUD_OWNER_KEY) cloudRoutineAuthors?.wrote(routine.id, CLOUD_OWNER_KEY); }, needsYou: () => needsYouNow({ bots: store.bots, groups: store.groups, routines, parked: coordinator.active(), engines: registry.instances().map((instance) => ({ instanceId: instance.instanceId, snapshot: registry.lastSnapshot(instance.instanceId) })) }, { admin: true, thread: () => true, routine: () => true }) });
 let calendarCalls: CalendarCallManager | null = null;

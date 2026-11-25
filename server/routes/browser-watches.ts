@@ -33,8 +33,8 @@ export function createBrowserWatchesRoutes(deps: BrowserWatchesRouteDeps): Route
     if (!deps.bot(botId)) return json(res, 404, { error: "no such bot" });
     const root = workspaceDir(botId);
     const write = <T>(change: () => T): T => (deps.ownersWrite ? deps.ownersWrite(auth, botId, change) : change());
-    const ownerOnly = (): true | null => {
-      if (memoryActorForAuth(auth) === "owner") return null;
+    const ownerOnly = (): boolean => {
+      if (memoryActorForAuth(auth) === "owner") return false;
       json(res, 403, { error: "only the owner can change page watches directly", code: "owner-only" });
       return true;
     };
@@ -43,8 +43,7 @@ export function createBrowserWatchesRoutes(deps: BrowserWatchesRouteDeps): Route
         return json(res, 200, { watches: loadWatches(root) });
       }
       if (method === "POST" && !m[2]) {
-        const blocked = ownerOnly();
-        if (blocked) return blocked;
+        if (ownerOnly()) return;
         const parsed = watchInput.safeParse(await readBody(req));
         if (!parsed.success) return json(res, 400, { error: "a watch needs a name, a URL and the routine it reports into" });
         const watch = newWatch(parsed.data.name, parsed.data.url, parsed.data.routineId);
@@ -52,8 +51,7 @@ export function createBrowserWatchesRoutes(deps: BrowserWatchesRouteDeps): Route
         return json(res, 200, { ok: true, watch, watches });
       }
       if (method === "DELETE" && m[2]) {
-        const blocked = ownerOnly();
-        if (blocked) return blocked;
+        if (ownerOnly()) return;
         const watchId = m[2]!;
         const kept = write(() => {
           const all = loadWatches(root);

@@ -12,7 +12,7 @@ import { accountLimit, connectorAccessDecision } from "../../shared/connector-sc
 import type { Notification } from "../../shared/notification.ts";
 import type { RequestAuth } from "../request-auth.ts";
 import { writeFileAtomic } from "../atomic.ts";
-import { loadWatches, saveWatches } from "../browser-errands.ts";
+import { loadWatches, saveWatches, type BrowserDriver } from "../browser-errands.ts";
 import { runSelfImprovementEvals } from "../self-improvement.ts";
 import { workspaceDir } from "../workspace.ts";
 import type { AppConfig } from "../config.ts";
@@ -84,6 +84,8 @@ export interface ProactiveDeps {
   owned(routine: Routine): void;
   /** The decision and extraction models: with them on, they sort the inbox on any engine. */
   helpers?: { decider: Pick<Decider, "choose">; extractor: Pick<Extractor, "extract"> };
+  /** A live-browser driver for a bot's watched pages; absent means plain fetch. */
+  browserDriver?: (botId: string) => Promise<BrowserDriver | null>;
   /** The owner's last nightly dream, for the brief's Ideas. */
   ideas?: BriefDeps["ideas"];
   /** What the proactive bot did, counted as it happens: emails sorted, replies drafted, meetings prepared. */
@@ -172,6 +174,7 @@ export function createProactive(deps: ProactiveDeps) {
         saveWatches(workspaceDir(botId), watches);
       },
     },
+    ...(deps.browserDriver ? { browserDriver: deps.browserDriver } : {}),
     selfImprovement: {
       run: async (botId) => {
         const run = await runSelfImprovementEvals(workspaceDir(botId));

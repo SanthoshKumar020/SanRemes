@@ -121,8 +121,8 @@ export function createBotMemoryRoutes(deps: BotMemoryRouteDeps): RouteHandler {
     let m: RegExpMatchArray | null = null;
     const write = <T>(botId: string, change: () => T): T => deps.ownersWrite ? deps.ownersWrite(auth, botId, change) : change();
     /** Direct note and skill writes are the owner's: a bot stages a proposal instead (see memory-trust.ts). */
-    const ownerOnly = (): true | null => {
-      if (memoryActorForAuth(auth) === "owner") return null;
+    const ownerOnly = (): boolean => {
+      if (memoryActorForAuth(auth) === "owner") return false;
       json(res, 403, { error: "only the owner can change structured notes directly — a bot stages a proposal for the owner to review instead", code: "owner-only" });
       return true;
     };
@@ -313,8 +313,7 @@ export function createBotMemoryRoutes(deps: BotMemoryRouteDeps): RouteHandler {
     }
     if (m && method === "POST") {
       if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
-      const blocked = ownerOnly();
-      if (blocked) return blocked;
+      if (ownerOnly()) return;
       const parsed = z.object({
         path: z.string(), text: z.string(), status: z.enum(["stated", "observed", "tentative"]).optional(),
         sources: z.array(noteSource), sourceMessages: z.array(citedMessage), fact: noteFact.optional(),
@@ -331,8 +330,7 @@ export function createBotMemoryRoutes(deps: BotMemoryRouteDeps): RouteHandler {
     }
     if (m && method === "DELETE") {
       if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
-      const blocked = ownerOnly();
-      if (blocked) return blocked;
+      if (ownerOnly()) return;
       const notePath = url.searchParams.get("path") ?? "";
       const version = url.searchParams.get("expectedVersion");
       const expected = version === null || version === "" ? undefined : Number(version);
@@ -347,8 +345,7 @@ export function createBotMemoryRoutes(deps: BotMemoryRouteDeps): RouteHandler {
     m = path.match(/^\/api\/bots\/([\w-]+)\/memory\/notes\/remember$/);
     if (m && method === "POST") {
       if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
-      const blocked = ownerOnly();
-      if (blocked) return blocked;
+      if (ownerOnly()) return;
       const parsed = z.object({ path: z.string(), chatId: z.string(), messageId: z.string(), text: z.string(), at: z.string(), expectedVersion }).safeParse(await readBody(req));
       if (!parsed.success) return json(res, 400, { error: "a remember needs a path and the owner's message" });
       const found = rememberFromMessage(parsed.data);
@@ -367,8 +364,7 @@ export function createBotMemoryRoutes(deps: BotMemoryRouteDeps): RouteHandler {
     m = path.match(/^\/api\/bots\/([\w-]+)\/memory\/notes\/(confirm|edit|archive|restore|maintain)$/);
     if (m && method === "POST") {
       if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
-      const blocked = ownerOnly();
-      if (blocked) return blocked;
+      if (ownerOnly()) return;
       const action = m[2]!;
       const parsed = z.object({
         path: z.string().optional(), text: z.string().optional(),
@@ -410,8 +406,7 @@ export function createBotMemoryRoutes(deps: BotMemoryRouteDeps): RouteHandler {
     }
     if (m && method === "POST") {
       if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
-      const blocked = ownerOnly();
-      if (blocked) return blocked;
+      if (ownerOnly()) return;
       const parsed = z.object({ name: z.string(), description: z.string(), body: z.string(), task: z.string().nullable().optional(), expectedVersion }).safeParse(await readBody(req));
       if (!parsed.success) return json(res, 400, { error: "a skill needs a name, a description and a body" });
       try {
@@ -424,8 +419,7 @@ export function createBotMemoryRoutes(deps: BotMemoryRouteDeps): RouteHandler {
     }
     if (m && method === "DELETE") {
       if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
-      const blocked = ownerOnly();
-      if (blocked) return blocked;
+      if (ownerOnly()) return;
       const name = url.searchParams.get("name") ?? "";
       const version = url.searchParams.get("expectedVersion");
       const expected = version === null || version === "" ? undefined : Number(version);
@@ -440,8 +434,7 @@ export function createBotMemoryRoutes(deps: BotMemoryRouteDeps): RouteHandler {
     m = path.match(/^\/api\/bots\/([\w-]+)\/memory\/skills\/patch$/);
     if (m && method === "POST") {
       if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
-      const blocked = ownerOnly();
-      if (blocked) return blocked;
+      if (ownerOnly()) return;
       const parsed = z.object({ name: z.string(), body: z.string(), expectedVersion }).safeParse(await readBody(req));
       if (!parsed.success) return json(res, 400, { error: "a skill patch needs a name and a body" });
       try {
@@ -512,8 +505,7 @@ export function createBotMemoryRoutes(deps: BotMemoryRouteDeps): RouteHandler {
     m = path.match(/^\/api\/bots\/([\w-]+)\/memory\/pending\/([\w-]+)\/(approve|deny)$/);
     if (m && method === "POST") {
       if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
-      const blocked = ownerOnly();
-      if (blocked) return blocked;
+      if (ownerOnly()) return;
       try {
         const botId = m[1];
         const proposalId = m[2]!;

@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { SourceError, type CalendarEvent, type ConnectedReads, type EmailHeader, type ReadApp } from "../connected-reads.ts";
 import type { Routine, RoutineRun } from "../routines.ts";
-import { newWatch, pageDigest, type BrowserWatch, type PageFetch } from "../browser-errands.ts";
+import { newWatch, pageDigest, type BrowserDriver, type BrowserWatch, type PageFetch } from "../browser-errands.ts";
 import { CHECKS_FILE, createRoutineChecks, type CheckReport } from "./routine-checks.ts";
 import type { EvalFindingLine } from "../self-improvement.ts";
 
@@ -13,7 +13,7 @@ const MINUTE = 60_000;
 const dirs: string[] = [];
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 
-function setup(options: { fenced?: boolean; may?: (app: ReadApp) => boolean; connected?: Partial<Record<ReadApp, boolean>>; selfImprovement?: { run: (botId: string) => Promise<{ needsOwner: boolean; findings: EvalFindingLine[] }> } } = {}) {
+function setup(options: { fenced?: boolean; may?: (app: ReadApp) => boolean; connected?: Partial<Record<ReadApp, boolean>>; browserDriver?: (botId: string) => Promise<BrowserDriver | null>; selfImprovement?: { run: (botId: string) => Promise<{ needsOwner: boolean; findings: EvalFindingLine[] }> } } = {}) {
   const dir = mkdtempSync(join(tmpdir(), "sanremes-routine-checks-"));
   dirs.push(dir);
   let now = Date.parse("2026-10-22T08:00:00Z");
@@ -65,6 +65,7 @@ function setup(options: { fenced?: boolean; may?: (app: ReadApp) => boolean; con
       const text = pages.get(url);
       return text === undefined ? { ok: false, error: "no such page" } : { ok: true, status: 200, text };
     },
+    ...(options.browserDriver ? { browserDriver: options.browserDriver } : {}),
     ...(options.selfImprovement ? { selfImprovement: options.selfImprovement } : {}),
   });
   const routine = (extra: Partial<Routine> = {}): Routine => ({
@@ -342,6 +343,28 @@ describe("browser watches", () => {
     const result = await s.checks.check(watchRoutine(s), { manual: true });
     expect(result.run).toBeUndefined();
     expect(s.watchStore.get("chief")![0]!.digest).toBe(pageDigest("Price: 99"));
+  });
+
+  it("a JS-rendered page is read through the browser driver", async () => {
+    const s = setup({
+      browserDriver: async () => ({
+        navigate: async () => {},
+        readText: async () => "Price: 109",
+        snapshot: async () => "",
+      }),
+    });
+    s.watchStore.set("chief", [{ ...priceWatch(), digest: pageDigest("Price: 99") }]);
+    const result = await s.checks.check(watchRoutine(s), { manual: true });
+    expect(result.run?.prompt).toContain("Price page");
+    expect(result.run?.prompt).toContain("Price: 109");
+  });
+
+  it("no driver means the plain fetch still checks the page", async () => {
+    const s = setup({ browserDriver: async () => null });
+    s.pages.set("https://example.com/price", "Price: 109");
+    s.watchStore.set("chief", [{ ...priceWatch(), digest: pageDigest("Price: 99") }]);
+    const result = await s.checks.check(watchRoutine(s), { manual: true });
+    expect(result.run?.prompt).toContain("Price: 109");
   });
 
   it("a brief routine with a watch is told the watch needs its own routine", async () => {
