@@ -9,9 +9,9 @@ export interface ThreadState {
 /** A conversation nobody read or wrote for this long gives its parsed transcript back; the next read reloads it from messages.db. */
 export const THREAD_IDLE_MS = 10 * 60_000;
 const SWEEP_EVERY_MS = 60_000;
-/** Parsed transcripts kept in memory at most, as approxBytes counts them; OMB_THREAD_CACHE_MB overrides. Past it the
+/** Parsed transcripts kept in memory at most, as approxBytes counts them; SANREMES_THREAD_CACHE_MB overrides. Past it the
  * least recently used go first, but never a busy conversation's, the one just read, or one read in the last few seconds. */
-export const THREAD_CACHE_MAX_BYTES = (Number(process.env.OMB_THREAD_CACHE_MB) > 0 ? Number(process.env.OMB_THREAD_CACHE_MB) : 256) * 1024 * 1024;
+export const THREAD_CACHE_MAX_BYTES = (Number(process.env.SANREMES_THREAD_CACHE_MB) > 0 ? Number(process.env.SANREMES_THREAD_CACHE_MB) : 256) * 1024 * 1024;
 const MIN_RESIDENCY_MS = 5_000;
 
 /** About what a value holds: its strings' lengths and a few bytes per field. Walks fields, never copies text. */

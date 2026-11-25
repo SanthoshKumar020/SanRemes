@@ -50,7 +50,7 @@ afterEach(() => { vi.useRealTimers(); });
 
 describe("custom MCP probe", () => {
   it("keeps an npm cache that works and preserves a per-server override", () => {
-    const cache = mkdtempSync(join(tmpdir(), "omb-npm-cache-"));
+    const cache = mkdtempSync(join(tmpdir(), "sanremes-npm-cache-"));
     try {
       const inherited = { npm_config_cache: cache, PATH: "/bin" };
       expect(probeEnvironment({ env: {} }, inherited).npm_config_cache).toBe(cache);
@@ -82,7 +82,7 @@ describe("custom MCP probe", () => {
     const anyBot = await opts({ asBot: {} });
     expect(anyBot.box).toEqual({ allowEnv: ["OP_SERVICE_ACCOUNT_TOKEN"], configured: true });
     expect(anyBot).not.toHaveProperty("cwd");
-    const folder = mkdtempSync(join(tmpdir(), "omb-probe-bot-"));
+    const folder = mkdtempSync(join(tmpdir(), "sanremes-probe-bot-"));
     try {
       expect(await opts({ asBot: { id: "ada", cwd: folder } })).toMatchObject({ cwd: folder, box: { botId: "ada", allowEnv: ["OP_SERVICE_ACCOUNT_TOKEN"], configured: true } });
     } finally { await removeTempDir(folder); }
@@ -101,7 +101,7 @@ describe("custom MCP probe", () => {
   });
 
   it("lists a command's Whop-sized catalog and says how many tools it has", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "omb-probe-big-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-probe-big-"));
     try {
       const file = join(dir, "tools.json");
       writeFileSync(file, JSON.stringify(whopSizedCatalog()));
@@ -142,7 +142,7 @@ describe("custom MCP probe", () => {
 
   it("does not expose native spawn details", async () => {
     const result = await probeMcpServer({
-      command: "/definitely/missing/openmaus-mcp",
+      command: "/definitely/missing/sanremes-mcp",
       args: [],
       env: { SECRET_TOKEN: "never-render-this" },
       enabled: false,

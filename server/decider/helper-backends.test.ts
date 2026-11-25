@@ -37,8 +37,8 @@ const sent = (fetchImpl: FetchMock, index = 0) => {
 };
 const decider = (config: AppConfig, fetchImpl: FetchMock) => createDecider({ config: () => config, fetch: fetchImpl as unknown as typeof fetch });
 const cloud = () => {
-  vi.stubEnv("OMB_CLOUD_DECIDER_URL", RELAY);
-  vi.stubEnv("OMB_CLOUD_DECIDER_TOKEN", INCLUDED);
+  vi.stubEnv("SANREMES_CLOUD_DECIDER_URL", RELAY);
+  vi.stubEnv("SANREMES_CLOUD_DECIDER_TOKEN", INCLUDED);
 };
 
 afterEach(() => vi.unstubAllEnvs());

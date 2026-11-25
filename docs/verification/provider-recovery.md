@@ -1,7 +1,7 @@
 # Provider images, authentication and thread approvals
 
 Every command below uses a disposable home. No real account, API key,
-provider charge, deployment, or running OpenMausBot workspace is involved.
+provider charge, deployment, or running SanRemes workspace is involved.
 
 ## Real CLI transport checks
 
@@ -103,7 +103,7 @@ fake Claude, Codex, Grok and Antigravity providers. Assertions cover:
   safety error explains the restriction and does not offer Retry.
 
 For a UI-only rerun use `--ui-only` instead of `--ui`. Screenshots are written
-to `.omb-scratch/verify-evidence/provider-fixes/`. The fixture exits and removes
+to `.sanremes-scratch/verify-evidence/provider-fixes/`. The fixture exits and removes
 its own disposable server/browser data; the screenshots remain.
 
 ## Regression checks

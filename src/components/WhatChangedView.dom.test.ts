@@ -39,7 +39,7 @@ describe("What changed view", () => {
     vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit) => {
       const { path } = JSON.parse(String(init.body)) as { path: string };
       asked.push({ url, path });
-      return new Response(path === SOURCE ? ORIGINAL : EDITED, path === SOURCE ? { headers: { "x-openmausbot-kept-original": "1" } } : {});
+      return new Response(path === SOURCE ? ORIGINAL : EDITED, path === SOURCE ? { headers: { "x-sanremes-kept-original": "1" } } : {});
     }));
     await act(async () => root.render(createElement(WhatChangedContent, {
       original: { path: SOURCE, name: "chapter.md", message: { threadId: "t", messageId: "u1" } },

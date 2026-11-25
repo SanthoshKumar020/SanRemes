@@ -18,7 +18,7 @@ describe("workspace credential migration", () => {
     } }, {});
     expect(result.credentials).toEqual({ openaiImageApiKey: "openai-only", customImageApiKey: "router-only" });
     expect(result.config.imageGen).toEqual({ provider: "custom", customUrl: "http://127.0.0.1:4000/v1", customModel: "local/image" });
-    expect(workspaceCredentialEnv(result.credentials)).toEqual({ OMB_OPENAI_IMAGE_KEY: "openai-only", OMB_CUSTOM_IMAGE_KEY: "router-only" });
+    expect(workspaceCredentialEnv(result.credentials)).toEqual({ SANREMES_OPENAI_IMAGE_KEY: "openai-only", SANREMES_CUSTOM_IMAGE_KEY: "router-only" });
   });
   it("moves every plaintext secret into the store and deletes the field", () => {
     const config = {
@@ -60,9 +60,9 @@ describe("workspace credential migration", () => {
     expect(result.config.decider).toEqual({ provider: "openrouter", openrouterModel: "openai/gpt-4o-mini", enabled: true });
     expect(result.config.openrouter).toEqual({});
     expect(workspaceCredentialEnv(result.credentials)).toEqual({
-      OMB_JEV_API_KEY: "jev-secret",
-      OMB_OPENROUTER_DECIDER_KEY: "sk-or-secret",
-      OMB_OPENROUTER_API_KEY: "engine-openrouter-key",
+      SANREMES_JEV_API_KEY: "jev-secret",
+      SANREMES_OPENROUTER_DECIDER_KEY: "sk-or-secret",
+      SANREMES_OPENROUTER_API_KEY: "engine-openrouter-key",
     });
   });
 
@@ -72,7 +72,7 @@ describe("workspace credential migration", () => {
     }, {});
     expect(result.credentials).toEqual({ customDeciderKey: "gw-secret" });
     expect(result.config.decider).toEqual({ provider: "custom", customBaseUrl: "https://gw.example.com/v1", customModel: "m-1", customApi: "decisions" });
-    expect(workspaceCredentialEnv(result.credentials)).toEqual({ OMB_CUSTOM_DECIDER_KEY: "gw-secret" });
+    expect(workspaceCredentialEnv(result.credentials)).toEqual({ SANREMES_CUSTOM_DECIDER_KEY: "gw-secret" });
   });
 
   it("is idempotent: a second boot over migrated output changes nothing", () => {
@@ -151,10 +151,10 @@ describe("workspace credential env", () => {
     ).toEqual({
       XAI_API_KEY: "xai-secret",
       BOX_TOKEN: "boat-secret",
-      OMB_TTS_KEY: "tts-secret",
-      OMB_FISH_AUDIO_API_KEY: "fish-secret",
+      SANREMES_TTS_KEY: "tts-secret",
+      SANREMES_FISH_AUDIO_API_KEY: "fish-secret",
       OPENCODE_API_KEY: "ocg-secret",
-      OMB_OPENAI_IMAGE_KEY: "image-secret",
+      SANREMES_OPENAI_IMAGE_KEY: "image-secret",
     });
   });
 
@@ -172,16 +172,16 @@ describe("workspace credential env", () => {
 });
 
 const AI_PROVIDER_KEYS = [
-  ["openai", "openaiApiKey", "OMB_OPENAI_API_KEY"],
-  ["anthropic", "anthropicApiKey", "OMB_ANTHROPIC_API_KEY"],
-  ["openrouter", "openrouterApiKey", "OMB_OPENROUTER_API_KEY"],
+  ["openai", "openaiApiKey", "SANREMES_OPENAI_API_KEY"],
+  ["anthropic", "anthropicApiKey", "SANREMES_ANTHROPIC_API_KEY"],
+  ["openrouter", "openrouterApiKey", "SANREMES_OPENROUTER_API_KEY"],
   ["mistral", "mistralApiKey", "MISTRAL_API_KEY"],
   ["cerebras", "cerebrasApiKey", "CEREBRAS_API_KEY"],
-  ["groq", "groqApiKey", "OMB_GROQ_API_KEY"],
-  ["greenference", "greenferenceApiKey", "OMB_GREENFERENCE_API_KEY"],
-  ["modelgo", "modelgoApiKey", "OMB_MODELGO_API_KEY"],
-  ["meta", "metaApiKey", "OMB_META_API_KEY"],
-  ["deepseek", "deepseekApiKey", "OMB_DEEPSEEK_API_KEY"],
+  ["groq", "groqApiKey", "SANREMES_GROQ_API_KEY"],
+  ["greenference", "greenferenceApiKey", "SANREMES_GREENFERENCE_API_KEY"],
+  ["modelgo", "modelgoApiKey", "SANREMES_MODELGO_API_KEY"],
+  ["meta", "metaApiKey", "SANREMES_META_API_KEY"],
+  ["deepseek", "deepseekApiKey", "SANREMES_DEEPSEEK_API_KEY"],
   ["openaiCompat", "openaiCompatApiKey", "OPENAI_COMPAT_API_KEY"],
 ];
 
@@ -208,7 +208,7 @@ describe("AI provider keys in the encrypted store", () => {
 describe("migrating config.json on disk", () => {
   const folders = [];
   const configFile = (config) => {
-    const folder = mkdtempSync(join(tmpdir(), "omb-workspace-credentials-"));
+    const folder = mkdtempSync(join(tmpdir(), "sanremes-workspace-credentials-"));
     folders.push(folder);
     const path = join(folder, "config.json");
     writeFileSync(path, JSON.stringify(config));

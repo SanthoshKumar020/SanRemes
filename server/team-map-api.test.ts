@@ -2,7 +2,7 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { readHandoffs } from "./testing/handoff-rows.ts";
 
 it("shows coordinate_bots work on the team map while it runs, with ids only", async () => {

@@ -1,8 +1,8 @@
-// Sharing a private conversation and saving to team memory, in the real app on a real Team Cloud (OMB_CLOUD_ROLE=team,
+// Sharing a private conversation and saving to team memory, in the real app on a real Team Cloud (SANREMES_CLOUD_ROLE=team,
 // each person paired with the Admin's signed claim) in headless Chrome: Rui hands a private chat to Marta, who finds it
 // in her inbox and carries it on with the bot's whole context; it goes back and forth through their inboxes; Rui saves a
 // decision to team memory in one click and Ana's new conversation with the bot uses it; the team's admin sees none of
-// Rui's private chats. Run with OMB_UI_E2E=1; OMB_TEAM_SHARE_SHOTS=DIR keeps the screenshots there.
+// Rui's private chats. Run with SANREMES_UI_E2E=1; SANREMES_TEAM_SHARE_SHOTS=DIR keeps the screenshots there.
 import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
@@ -14,13 +14,13 @@ import { SPOTLIGHTS } from "../../src/lib/first-conversation.ts";
 import { TOUR_STEPS } from "../../src/lib/guided-tour.ts";
 import { NOTICES } from "../../src/lib/notices.ts";
 import { launchCloudSendFixture, type CloudSendFixture, type CloudTeamFixture } from "./cloud-send-fixture.ts";
-import { agentBrowser, ensureUiBrowser, sessionEnv } from "./control-omb-ui.ts";
+import { agentBrowser, ensureUiBrowser, sessionEnv } from "./control-sanremes-ui.ts";
 import { mountPreview, REPO_ROOT } from "./preview-fixture.ts";
 
-const enabled = process.env.OMB_UI_E2E === "1";
-if (!enabled) console.info("skipping the conversation sharing UI e2e: set OMB_UI_E2E=1");
+const enabled = process.env.SANREMES_UI_E2E === "1";
+if (!enabled) console.info("skipping the conversation sharing UI e2e: set SANREMES_UI_E2E=1");
 
-const SHOTS = process.env.OMB_TEAM_SHARE_SHOTS || join(REPO_ROOT, ".omb-scratch", "team-conversation-share");
+const SHOTS = process.env.SANREMES_TEAM_SHARE_SHOTS || join(REPO_ROOT, ".sanremes-scratch", "team-conversation-share");
 const ENGINE = `process.env.FAKE_CLAUDE_DUMP = process.env.FAKE_CLAUDE_FIXTURE_DIR + "/dump.json";
 process.env.FAKE_CLAUDE_EXIT_AFTER_TURN = "1";`;
 const HANDOFF = "Kumquat launch: the supplier is Ortega, call before Friday";
@@ -115,7 +115,7 @@ async function openAs(who: Who, size: readonly [string, string]) {
     mkdirSync(SHOTS, { recursive: true });
     tools = await ensureUiBrowser(process.env);
     fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-team-share-${randomBytes(8).toString("hex")}`,
-      team: { id: "team-acme-share-ui", name: "Acme", engine: ENGINE, env: { OMB_TEAM_PRESENCE_GRACE_MS: "1000" } } });
+      team: { id: "team-acme-share-ui", name: "Acme", engine: ENGINE, env: { SANREMES_TEAM_PRESENCE_GRACE_MS: "1000" } } });
     team = fx.team!;
     for (const [who, role] of [["olive", "owner"], ["rui", "member"], ["marta", "member"], ["ana", "member"]] as const) tokens[who] = (await team.pair({ email: emails[who], role })).token!;
     const onboarding = { completedAt: new Date().toISOString(), version: WELCOME_VERSION, hintsSeen: [...TOUR_STEPS.map((step) => step.id), ...SPOTLIGHTS, "cloud-welcome-done", "cloud-setup-hidden"] };
@@ -201,7 +201,7 @@ async function openAs(who: Who, size: readonly [string, string]) {
     await expect.poll(() => rui.clickText('[role="menuitem"]', "Save to team memory"), { timeout: 10_000 }).toBe(true);
     await expect.poll(() => rui.evaluate<string>("document.querySelector('[data-access-toast]')?.innerText ?? ''"), { timeout: 10_000 }).toContain("Saved to Scout's team memory");
     await rui.shot("06-rui-saved-to-team-memory-desktop");
-    expect(readFileSync(join(team.home, ".openmausbot", "workspaces", scout, "MEMORY.md"), "utf8")).toMatch(/Decision: we ship the Kumquat launch on 3 March \(saved by Rui, \d{4}-\d{2}-\d{2}\)/);
+    expect(readFileSync(join(team.home, ".sanremes", "workspaces", scout, "MEMORY.md"), "utf8")).toMatch(/Decision: we ship the Kumquat launch on 3 March \(saved by Rui, \d{4}-\d{2}-\d{2}\)/);
     await rui.close();
   }, hostTimeout(300_000));
 

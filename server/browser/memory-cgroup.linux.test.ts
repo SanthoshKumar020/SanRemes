@@ -2,7 +2,7 @@
 // running as an unprivileged user in its own leaf, starts a memory-hungry "Chrome" through the generated launcher; the
 // launcher moves it into the browsers' group; the kernel kills it at the group's limit; the server keeps answering.
 // It needs root and a cgroup v2 tree with the memory controller: CI runs it as root in the build job
-// (OMB_CGROUP_TEST=require, where it fails rather than skips); elsewhere it is skipped.
+// (SANREMES_CGROUP_TEST=require, where it fails rather than skips); elsewhere it is skipped.
 import { spawn, type ChildProcess } from "node:child_process";
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmdirSync, rmSync, writeFileSync } from "node:fs";
 import { request } from "node:http";
@@ -13,11 +13,11 @@ import { launcherScript } from "./chrome/wrapper.ts";
 import { groupOomKills, ownCgroupDir, setUpBrowserCgroup, spawnInCgroup } from "./memory-cgroup.ts";
 
 const MB = 1_048_576;
-const required = process.env.OMB_CGROUP_TEST === "require";
+const required = process.env.SANREMES_CGROUP_TEST === "require";
 const root = process.platform === "linux" && process.getuid?.() === 0;
 const v2 = process.platform === "linux" && existsSync("/sys/fs/cgroup/cgroup.controllers")
   && /(^|\s)memory(\s|$)/.test(readFileSync("/sys/fs/cgroup/cgroup.controllers", "utf8"));
-/** nobody, as maus is on a Cloud home: the supervisor gives it the right to move its own processes, and nothing else. */
+/** nobody, as sanremes is on a Cloud home: the supervisor gives it the right to move its own processes, and nothing else. */
 const NOBODY = { uid: 65_534, gid: 65_534 };
 
 function answer(port: number): Promise<string> {
@@ -64,9 +64,9 @@ describe.skipIf(!required && !(root && v2))("the browsers' kernel memory limit o
     // A fresh, empty cgroup of the test's own under the root one stands for the supervisor's; the test goes back to its own
     // cgroup after each spawn, as the supervisor does.
     const own = ownCgroupDir(readFileSync("/proc/self/cgroup", "utf8"))!;
-    const base = join("/sys/fs/cgroup", `omb-test-${process.pid}-${Date.now()}`);
+    const base = join("/sys/fs/cgroup", `sanremes-test-${process.pid}-${Date.now()}`);
     // Under /tmp itself: the unprivileged "server" must reach it, and a runner's TMPDIR is its own, mode 0700.
-    const work = mkdtempSync("/tmp/omb-cgroup-");
+    const work = mkdtempSync("/tmp/sanremes-cgroup-");
     chmodSync(work, 0o755);
     let server: ChildProcess | undefined;
     try {
@@ -121,7 +121,7 @@ describe.skipIf(!required && !(root && v2))("the browsers' kernel memory limit o
     } finally {
       server?.kill("SIGKILL");
       await new Promise((resolve) => setTimeout(resolve, 300));
-      for (const dir of [`${base}/omb/browsers`, `${base}/omb/server`, `${base}/omb`, base]) try { rmdirSync(dir); } catch {}
+      for (const dir of [`${base}/sanremes/browsers`, `${base}/sanremes/server`, `${base}/sanremes`, base]) try { rmdirSync(dir); } catch {}
       rmSync(work, { recursive: true, force: true });
     }
   }, 120_000);

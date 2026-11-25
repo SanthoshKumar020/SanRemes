@@ -221,7 +221,7 @@ const support: AcpSupport = {
       command: runtime.executablePath,
       args: antigravityLaunchArgs(runtime, profile.directory),
       env: profile.environment,
-      ro: [join(profile.directory, "omb-skills")],
+      ro: [join(profile.directory, "sanremes-skills")],
     };
   },
 
@@ -336,7 +336,7 @@ export const AntigravityDriver: ProviderDriver<AcpConfig> = {
   ...AcpAntigravityDriver,
   metadata: { ...AcpAntigravityDriver.metadata, signInAccount: "Google" },
   async create(input: DriverCreateInput<AcpConfig>): Promise<ProviderInstance> {
-    // A rebuilt instance may run another CLI, or the same one after a sign-in made outside MausBot.
+    // A rebuilt instance may run another CLI, or the same one after a sign-in made outside SanRemes.
     nativeSignIn.forget(input.instanceId);
     const base = await AcpAntigravityDriver.create(input);
     scheduleAntigravityTempSweep(input.instanceId);

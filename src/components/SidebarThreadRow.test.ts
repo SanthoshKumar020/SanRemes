@@ -60,7 +60,7 @@ describe("sidebar thread visibility", () => {
   it("keeps the bot's main thread listed whatever its state: snoozed, an idle burst lane, a thread its opener closed", () => {
     const listed = (main: object) => visibleSidebarThreads([{ threadId: "open", title: "Open" }, { threadId: "main", title: "Main", ...main }], "open", "", [], false, [], "main").map((task) => task.threadId);
     expect(listed({ snoozedUntil: Date.now() + 3_600_000 })).toEqual(["open", "main"]);
-    expect(listed({ openedBy: { botId: "maus", name: "Maus", burstId: "burst" } })).toEqual(["open", "main"]);
+    expect(listed({ openedBy: { botId: "sanremes", name: "SanRemes", burstId: "burst" } })).toEqual(["open", "main"]);
     expect(listed({ openedBy: { botId: "atlas", name: "Atlas" }, closedBy: { botId: "atlas", name: "Atlas" } })).toEqual(["open", "main"]);
     expect(visibleSidebarThreads([{ threadId: "open", title: "Open" }, { threadId: "main", title: "Main", snoozedUntil: Date.now() + 3_600_000 }], "open").map((task) => task.threadId)).toEqual(["open"]);
   });
@@ -595,8 +595,8 @@ describe("Copy link", () => {
     vi.stubGlobal("window", { innerWidth: 1024, innerHeight: 768 });
     vi.stubGlobal("document", { body: { nodeType: 1 } });
     const rows = [
-      { task: { threadId: "qa-245", title: "QA PR 245" }, ownerId: "scout", link: "openmausbot://thread/qa-245?bot=scout" },
-      { task: { threadId: "monday-1", title: "Monday plan" }, ownerId: "standup", link: "openmausbot://thread/monday-1?bot=standup" },
+      { task: { threadId: "qa-245", title: "QA PR 245" }, ownerId: "scout", link: "sanremes://thread/qa-245?bot=scout" },
+      { task: { threadId: "monday-1", title: "Monday plan" }, ownerId: "standup", link: "sanremes://thread/monday-1?bot=standup" },
     ];
     for (const { task, ownerId, link } of rows) {
       const closed = renderRow(task, ownerId);

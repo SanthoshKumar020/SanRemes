@@ -34,7 +34,7 @@ describe.skipIf(!certificate)("mail dispatch after a turn ends", () => {
     stored.copies = 0;
     const smtp = await startFakeSmtp({ certificate: certificate!, security: "tls", mechanisms: ["PLAIN"], users: { [ADDRESS]: PASSWORD } });
     servers.push(smtp);
-    const dataDir = mkdtempSync(join(tmpdir(), "omb-email-turn-")); dirs.push(dataDir);
+    const dataDir = mkdtempSync(join(tmpdir(), "sanremes-email-turn-")); dirs.push(dataDir);
     let reached!: () => void, release!: () => void;
     const waiting = new Promise<void>((resolve) => { reached = resolve; });
     const ready = new Promise<void>((resolve) => { release = resolve; });

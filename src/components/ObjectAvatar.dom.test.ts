@@ -4,12 +4,12 @@ import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
 
-import { MAUS_STATES, type MausState } from "@/lib/mascot";
-import { MausAvatar } from "./Avatar";
+import { MAUS_STATES, type SanRemesState } from "@/lib/mascot";
+import { SanRemesAvatar } from "./Avatar";
 import { objectLook } from "./ObjectAvatar";
 
 describe("objectLook", () => {
-  it.each<[MausState, ReturnType<typeof objectLook>]>([
+  it.each<[SanRemesState, ReturnType<typeof objectLook>]>([
     ["idle", { state: "idle", mood: "neutral" }],
     ["thinking", { state: "thinking", mood: "neutral" }],
     ["writing", { state: "working", mood: "neutral" }],
@@ -33,7 +33,7 @@ describe("an object body", () => {
     const host = document.createElement("div");
     document.body.append(host);
     const root = createRoot(host);
-    flushSync(() => root.render(createElement(MausAvatar, { bodyId: "obj-mug", color: "blue", animated: false, label: "Mugsy", size: 64 })));
+    flushSync(() => root.render(createElement(SanRemesAvatar, { bodyId: "obj-mug", color: "blue", animated: false, label: "Mugsy", size: 64 })));
     const avatar = host.querySelector<HTMLElement>("[data-object-body='mug']")!;
     await vi.waitFor(() => expect(avatar.querySelector("svg")).not.toBeNull());
     expect(avatar.getAttribute("role")).toBe("img");
@@ -47,7 +47,7 @@ describe("an object body", () => {
     const host = document.createElement("div");
     document.body.append(host);
     const root = createRoot(host);
-    flushSync(() => root.render(createElement(MausAvatar, { bodyId: "circle", color: "blue", bodyColor: "#123456", animated: false, size: 64 })));
+    flushSync(() => root.render(createElement(SanRemesAvatar, { bodyId: "circle", color: "blue", bodyColor: "#123456", animated: false, size: 64 })));
     const avatar = host.querySelector<HTMLElement>("[data-object-body='circle']")!;
     await vi.waitFor(() => expect(avatar.innerHTML).toContain('fill="#123456"'));
     flushSync(() => root.unmount());
@@ -59,7 +59,7 @@ describe("an object body", () => {
       const host = document.createElement("div");
       document.body.append(host);
       const root = createRoot(host);
-      const show = (state: MausState) => act(() => root.render(createElement(MausAvatar, { bodyId: "obj-mug", color: "blue", state, size: 64 })));
+      const show = (state: SanRemesState) => act(() => root.render(createElement(SanRemesAvatar, { bodyId: "obj-mug", color: "blue", state, size: 64 })));
       const shown = () => host.querySelector<HTMLElement>("[data-object-body]")!.dataset.objectState;
       show("idle");
       expect(shown()).toBe("idle");

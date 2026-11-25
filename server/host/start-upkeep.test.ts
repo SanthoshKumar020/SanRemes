@@ -11,14 +11,14 @@ afterEach(() => {
 });
 
 describe("start-up upkeep", () => {
-  it("holds the task workspaces' sweep off unless OMB_TASK_WORKSPACE_RETENTION is on", async () => {
+  it("holds the task workspaces' sweep off unless SANREMES_TASK_WORKSPACE_RETENTION is on", async () => {
     expect(taskWorkspaceRetentionOn({})).toBe(false);
-    expect(taskWorkspaceRetentionOn({ OMB_TASK_WORKSPACE_RETENTION: "0" })).toBe(false);
-    expect(taskWorkspaceRetentionOn({ OMB_TASK_WORKSPACE_RETENTION: "off" })).toBe(false);
-    expect(taskWorkspaceRetentionOn({ OMB_TASK_WORKSPACE_RETENTION: "remove" })).toBe(false);
-    for (const value of ["1", "on", " TRUE ", "yes"]) expect(taskWorkspaceRetentionOn({ OMB_TASK_WORKSPACE_RETENTION: value })).toBe(true);
+    expect(taskWorkspaceRetentionOn({ SANREMES_TASK_WORKSPACE_RETENTION: "0" })).toBe(false);
+    expect(taskWorkspaceRetentionOn({ SANREMES_TASK_WORKSPACE_RETENTION: "off" })).toBe(false);
+    expect(taskWorkspaceRetentionOn({ SANREMES_TASK_WORKSPACE_RETENTION: "remove" })).toBe(false);
+    for (const value of ["1", "on", " TRUE ", "yes"]) expect(taskWorkspaceRetentionOn({ SANREMES_TASK_WORKSPACE_RETENTION: value })).toBe(true);
     vi.useFakeTimers();
-    vi.stubEnv("OMB_TASK_WORKSPACE_RETENTION", "");
+    vi.stubEnv("SANREMES_TASK_WORKSPACE_RETENTION", "");
     const calls: string[] = [];
     startUpkeep({
       bots: () => [{ id: "bot", tasks: [task("idle")] }],

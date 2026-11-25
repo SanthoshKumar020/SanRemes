@@ -7,9 +7,9 @@ describe("handoffLimits", () => {
   });
 
   it("takes whole numbers from 1 and leaves the default for anything else", () => {
-    expect(handoffLimits({ OMB_HANDOFF_MAX_TURNS: "40", OMB_HANDOFF_MAX_FAILURES: " 2 " })).toEqual({ totalExecutions: 40, failedInARow: 2 });
+    expect(handoffLimits({ SANREMES_HANDOFF_MAX_TURNS: "40", SANREMES_HANDOFF_MAX_FAILURES: " 2 " })).toEqual({ totalExecutions: 40, failedInARow: 2 });
     for (const bad of ["0", "-3", "1.5", "many", "", "Infinity"]) {
-      expect(handoffLimits({ OMB_HANDOFF_MAX_TURNS: bad, OMB_HANDOFF_MAX_FAILURES: bad })).toEqual({ totalExecutions: 300, failedInARow: 5 });
+      expect(handoffLimits({ SANREMES_HANDOFF_MAX_TURNS: bad, SANREMES_HANDOFF_MAX_FAILURES: bad })).toEqual({ totalExecutions: 300, failedInARow: 5 });
     }
   });
 });

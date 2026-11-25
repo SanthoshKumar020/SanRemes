@@ -19,7 +19,7 @@ afterEach(async () => {
 
 describe("the native CLI's sign-in state, asked of the CLI", () => {
   async function setup(env: Record<string, string> = {}) {
-    const directory = mkdtempSync(join(tmpdir(), "omb-antigravity-status-"));
+    const directory = mkdtempSync(join(tmpdir(), "sanremes-antigravity-status-"));
     scratch.push(directory);
     const fixture: NativeFixture = nativeFixture(join(directory, "cli"));
     const runtime: AntigravityRuntime = { executablePath: fixture.executable, harnessPath: null, source: "override", version: "1.5.14" };
@@ -70,7 +70,7 @@ describe("the native CLI's sign-in state, asked of the CLI", () => {
     // same (here: started without SSH_CONNECTION) must not pass as signed out.
     it("fails when the CLI still accepts a session, even though logout was refused or ignored", async () => {
       for (const logout of ["refuse", "ignore"]) {
-        const keyring = mkdtempSync(join(tmpdir(), "omb-antigravity-keyring-"));
+        const keyring = mkdtempSync(join(tmpdir(), "sanremes-antigravity-keyring-"));
         scratch.push(keyring);
         const { fixture, runtime, profile } = await setup({ FAKE_AGY_KEYRING: keyring, FAKE_AGY_LOGOUT: logout });
         const { SSH_CONNECTION: _ssh, ...environment } = profile.environment;
@@ -81,7 +81,7 @@ describe("the native CLI's sign-in state, asked of the CLI", () => {
 
     it("ends a sign-in the CLI keeps in the profile's file whatever logout answers, and never touches the keyring", async () => {
       for (const logout of ["refuse", "ignore"]) {
-        const keyring = mkdtempSync(join(tmpdir(), "omb-antigravity-keyring-"));
+        const keyring = mkdtempSync(join(tmpdir(), "sanremes-antigravity-keyring-"));
         scratch.push(keyring);
         const { fixture, runtime, profile } = await setup({ FAKE_AGY_KEYRING: keyring, FAKE_AGY_LOGOUT: logout });
         await loginAt(fixture, profile.directory, "fixture-code", { FAKE_AGY_KEYRING: keyring, SSH_CONNECTION: profile.environment.SSH_CONNECTION! });

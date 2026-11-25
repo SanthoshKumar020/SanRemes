@@ -82,7 +82,7 @@ describe("Chrome's command line", () => {
   });
 
   it("sets the time zone on servers only, and marks the process for the sweep", () => {
-    expect(chromeEnv({ PATH: "/bin" }, { host: "server", timezone: "Asia/Kolkata", profileMarker: "abc" })).toMatchObject({ PATH: "/bin", TZ: "Asia/Kolkata", OMB_BROWSER_PROFILE: "abc" });
+    expect(chromeEnv({ PATH: "/bin" }, { host: "server", timezone: "Asia/Kolkata", profileMarker: "abc" })).toMatchObject({ PATH: "/bin", TZ: "Asia/Kolkata", SANREMES_BROWSER_PROFILE: "abc" });
     expect(chromeEnv({}, { host: "desktop", timezone: "Asia/Kolkata" }).TZ).toBeUndefined();
   });
 

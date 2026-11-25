@@ -19,7 +19,7 @@ let recorder: EventRecorder | undefined;
 
 beforeEach(() => {
   ensureDirs();
-  scratch = mkdtempSync(join(tmpdir(), "omb-devin-steer-"));
+  scratch = mkdtempSync(join(tmpdir(), "sanremes-devin-steer-"));
 });
 
 afterEach(async () => {
@@ -42,7 +42,7 @@ const start = async (driver: AnyProviderDriver, mode: string, extra: Record<stri
       USERPROFILE: scratch,
       XDG_DATA_HOME: join(scratch, "data"),
       WINDSURF_API_KEY: "fixture-key",
-      OPENMAUSBOT_PROBE_LOCAL_INJECT: "0",
+      OPENSANREMES_PROBE_LOCAL_INJECT: "0",
       FAKE_ACP_MODELS: "swe-1-6-fast,claude-sonnet-5-5",
       FAKE_ACP_MODES: "accept-edits,smart,ask,plan,bypass",
       FAKE_ACP_MODE: mode,

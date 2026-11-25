@@ -1,7 +1,7 @@
 // Runs INSIDE a bot box (self-check.ts starts it) and tries what a hostile bot would: the server's database and settings,
 // another bot's folders, another turn's process and environment, the server's own loopback routes, the local network,
 // the cloud metadata service and the engines every turn runs; and what a legitimate turn needs: its own folders, an
-// engine OpenMausBot installed, the harness routes and the public internet. Prints one JSON line of results. Every
+// engine SanRemes installed, the harness routes and the public internet. Prints one JSON line of results. Every
 // check is named here once, so the report's `checks: n/n` means these.
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
@@ -10,7 +10,7 @@ import { connect } from "node:net";
 import { hostname } from "node:os";
 import { join } from "node:path";
 
-export const PROBE_SPEC_ENV = "OMB_BOX_PROBE";
+export const PROBE_SPEC_ENV = "SANREMES_BOX_PROBE";
 
 export interface ProbeSpec {
   dataDir: string;
@@ -22,7 +22,7 @@ export interface ProbeSpec {
   serverFiles: string[];
   otherWorkspace: string;
   otherTaskWorkspace: string;
-  /** An engine installed like OpenMausBot installs one: `name` on PATH, linked from `bin`, printing `says`. */
+  /** An engine installed like SanRemes installs one: `name` on PATH, linked from `bin`, printing `says`. */
   engine: { bin: string; name: string; says: string };
   marker: string;
   canaryPid: number;
@@ -151,7 +151,7 @@ export async function runProbe(spec: ProbeSpec, env: Record<string, string | und
   const tamper = fails(() => writeFileSync(join(spec.engine.bin, ".box-probe"), "#!/bin/sh\n"));
   add("engine-read-only", existsSync(join(spec.engine.bin, spec.engine.name)) && tamper.failed, tamper.code);
   add("tmp-private", !existsSync(spec.hostTmpFile), existsSync(spec.hostTmpFile) ? "host /tmp visible" : "private");
-  add("hostname-private", hostname() === "omb-box", hostname() === "omb-box" ? "omb-box" : "host name visible");
+  add("hostname-private", hostname() === "sanremes-box", hostname() === "sanremes-box" ? "sanremes-box" : "host name visible");
   if (spec.cpuList) {
     // TCMalloc runtimes (Google's Antigravity) stop at start without it: exit 134.
     const cpus = fails(() => { if (!/^\d/.test(readFileSync("/sys/devices/system/cpu/possible", "utf8"))) throw new Error("empty"); });
@@ -172,7 +172,7 @@ export async function runProbe(spec: ProbeSpec, env: Record<string, string | und
   if (spec.publicTarget) add("egress-public-allowed", (await connectThroughGate(spec.egressPort, spec.publicTarget)) === "200", `CONNECT ${spec.publicTarget}`);
   if (spec.seccomp) {
     // add_key(2) into the process keyring: fine for any user, EPERM under the box's filter. python3 is in the image.
-    const probe = "import ctypes,os;l=ctypes.CDLL(None,use_errno=True);r=l.syscall(248,b'user',b'omb-box-probe',b'v',1,-2);print('ok' if r>=0 else os.strerror(ctypes.get_errno()))";
+    const probe = "import ctypes,os;l=ctypes.CDLL(None,use_errno=True);r=l.syscall(248,b'user',b'sanremes-box-probe',b'v',1,-2);print('ok' if r>=0 else os.strerror(ctypes.get_errno()))";
     const result = spawnSync("python3", ["-c", probe], { encoding: "utf8", timeout: 10_000 });
     const text = (result.stdout || result.stderr || "").trim();
     add("keyring-denied", /Operation not permitted/.test(text), text.slice(0, 60) || `exit ${result.status}`);

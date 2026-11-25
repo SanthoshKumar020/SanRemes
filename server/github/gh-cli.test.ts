@@ -2,15 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import { ghCredentialTargets, loginArgs, ownGhEnv, windowsGhDirs } from "./gh-cli.ts";
 
-describe("running GitHub CLI for OpenMausBot's own sign-in", () => {
+describe("running GitHub CLI for SanRemes's own sign-in", () => {
   it("passes on no token, no D-Bus session and none of the server's HOME", () => {
     const env = ownGhEnv({ home: "/data/github/owner/home", config: "/data/github/owner/config" }, {
       PATH: "/usr/bin", HOME: "/data", GH_TOKEN: "x", GITHUB_TOKEN: "x", GH_ENTERPRISE_TOKEN: "x", DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/1000/bus",
-      HTTPS_PROXY: "http://proxy:3128", OMB_ANYTHING: "x",
+      HTTPS_PROXY: "http://proxy:3128", SANREMES_ANYTHING: "x",
     }, "linux");
     expect(env).toMatchObject({ PATH: "/usr/bin", HOME: "/data/github/owner/home", GH_CONFIG_DIR: "/data/github/owner/config", HTTPS_PROXY: "http://proxy:3128",
       DBUS_SESSION_BUS_ADDRESS: "unix:path=/data/github/owner/home/.run/no-bus", XDG_RUNTIME_DIR: "/data/github/owner/home/.run" });
-    for (const name of ["GH_TOKEN", "GITHUB_TOKEN", "GH_ENTERPRISE_TOKEN", "OMB_ANYTHING"]) expect(env[name], name).toBeUndefined();
+    for (const name of ["GH_TOKEN", "GITHUB_TOKEN", "GH_ENTERPRISE_TOKEN", "SANREMES_ANYTHING"]) expect(env[name], name).toBeUndefined();
     expect(ownGhEnv({ home: "C:\\h", config: "C:\\c" }, { PATH: "C:\\Windows" }, "win32")).toMatchObject({ USERPROFILE: "C:\\h", APPDATA: "C:\\h\\AppData\\Roaming" });
   });
 

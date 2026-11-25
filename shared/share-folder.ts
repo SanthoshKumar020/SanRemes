@@ -64,7 +64,7 @@ export function safeFolderPath(path: string): string | null {
  * folder is ignored. */
 export function isShareFolderPath(path: string): boolean {
   return path === MANIFEST_NAMES.bot || path === MANIFEST_NAMES.department || path === LEGACY_MARKDOWN || path === LEGACY_MANIFEST ||
-    /^[\w.-]+\.openmaus\.json$/.test(path) || SKILL_PATH.test(path) || PICTURE_PATH.test(path) || isSkillFilePath(path);
+    /^[\w.-]+\.sanremes\.json$/.test(path) || SKILL_PATH.test(path) || PICTURE_PATH.test(path) || isSkillFilePath(path);
 }
 
 function textOf(value: string | Uint8Array | undefined): string | undefined {
@@ -206,12 +206,12 @@ export function readShareFolder(input: ShareFolderFiles): ShareFolder {
     const scope: TemplateScope = bot !== undefined ? "bot" : "department";
     const { metadata } = frontmatterOf(manifest);
     if (metadata.botmrr === 1) return { kind: "package", scope, document: parsePackageDocument(manifest, { trust: "file" }) };
-    if (metadata.botmrr !== BOTMRR_FOLDER_VERSION) throw new PackageFormatError("unsupported_version", "This template was made by a newer MausBot. Update the app, then import it again.");
+    if (metadata.botmrr !== BOTMRR_FOLDER_VERSION) throw new PackageFormatError("unsupported_version", "This template was made by a newer SanRemes. Update the app, then import it again.");
     return { kind: "package", scope, document: parsePackageDocument(packageFromFolder(metadata, files), { trust: "file" }) };
   }
   const legacy = textOf(files[LEGACY_MARKDOWN]);
   if (legacy !== undefined) return { kind: "package", scope: "department", document: parsePackageDocument(legacy, { trust: "file" }) };
-  const json = Object.keys(files).find((path) => path === LEGACY_MANIFEST || path.endsWith(".openmaus.json"));
+  const json = Object.keys(files).find((path) => path === LEGACY_MANIFEST || path.endsWith(".sanremes.json"));
   if (json) {
     let value: unknown;
     try {
@@ -261,7 +261,7 @@ function readableBody(document: PackageDocument, scope: TemplateScope): string {
     `# ${pkg.name}`,
     pkg.tagline,
     "## Activation",
-    `Add this ${scope === "bot" ? "bot" : "department"} in MausBot with + → Import… and this folder's link, or give this file and its skills folder to any AI agent and ask it to work as ${scope === "bot" ? "this bot" : "these bots"}.`,
+    `Add this ${scope === "bot" ? "bot" : "department"} in SanRemes with + → Import… and this folder's link, or give this file and its skills folder to any AI agent and ask it to work as ${scope === "bot" ? "this bot" : "these bots"}.`,
     "## Mission",
     pkg.summary,
     ...(pkg.team?.brief ? ["### Department brief", pkg.team.brief] : []),

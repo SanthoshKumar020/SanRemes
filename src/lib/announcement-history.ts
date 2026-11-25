@@ -21,7 +21,7 @@ export interface HistoryFacts {
   branded: boolean;
   /** An organization runs this desktop; null while that is read. */
   organization: boolean | null;
-  /** This desktop's own page, which sells MausBot Cloud (its Cloud sign-in). */
+  /** This desktop's own page, which sells SanRemes Cloud (its Cloud sign-in). */
   cloudSale: boolean;
   /** This page shows the Cloud's own cards: This computer's page with its sign-in, or a Cloud's page in the desktop. */
   cloudCards: boolean;
@@ -114,8 +114,8 @@ export function withDownloadedUpdate(items: readonly HistoryItem[], update: { ve
 // ---- When the person last opened Announcements: this browser, this desktop's record for every page of its window, and
 // the place's record (on a Team Cloud, the person's own). The newest of them counts.
 
-const READ_KEY = "omb.announcements.read-at";
-const FIRST_VERSION_KEY = "omb.announcements.first-version";
+const READ_KEY = "sanremes.announcements.read-at";
+const FIRST_VERSION_KEY = "sanremes.announcements.first-version";
 const stored = (key: string): string | null => { try { return localStorage.getItem(key); } catch { return null; } };
 const store = (key: string, value: string) => { try { localStorage.setItem(key, value); } catch {} };
 

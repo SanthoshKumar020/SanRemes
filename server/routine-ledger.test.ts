@@ -9,7 +9,7 @@ const START = Date.parse("2026-11-16T08:00:00Z"), HOUR = 3_600_000;
 const dirs: string[] = [];
 
 function world(start = START) {
-  const dir = mkdtempSync(join(tmpdir(), "omb-ledger-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-ledger-"));
   dirs.push(dir);
   const routines = join(dir, "routines.json"), clock = { now: start };
   const open = () => { const ledger = new RoutineLedger(routines, () => clock.now, 40); return { ledger, opened: ledger.open() }; };

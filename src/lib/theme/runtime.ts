@@ -7,8 +7,8 @@ import { accentPalette, canvasPalette, modeOf } from "./palette";
 import { applyThemeCss } from "./theme-css";
 import { serverFetch } from "../relay-server";
 
-const CACHE_KEY = "omb-theme";
-const SAFE_KEY = "omb-safe-look";
+const CACHE_KEY = "sanremes-theme";
+const SAFE_KEY = "sanremes-safe-look";
 
 export type WornTheme = { id: string; theme: ThemeFile };
 

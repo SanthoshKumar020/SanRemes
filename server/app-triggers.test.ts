@@ -22,7 +22,7 @@ let failNextEnqueue: "before-save" | "after-save" | null = null;
 beforeEach(async () => {
   vi.spyOn(console, "log").mockImplementation(() => {});
   vi.spyOn(console, "warn").mockImplementation(() => {});
-  dir = mkdtempSync(join(tmpdir(), "omb-app-triggers-"));
+  dir = mkdtempSync(join(tmpdir(), "sanremes-app-triggers-"));
   broker = await startBrokerFake();
   owner = await broker.install();
   gmail = broker.account(owner.userId, "gmail", "sales");
@@ -267,7 +267,7 @@ describe("AppTriggerManager", () => {
     const triggers = manager();
     const create = (event: string) => triggers.create({ botId: "bot-1", name: "New mail", prompt: "Summarize it.", app: "gmail", event });
     await expect(create("GMAIL_OWN_ENDPOINT")).rejects.toThrow("GMAIL_OWN_ENDPOINT can't be used yet: this event needs webhook setup on our side first. Pick another event this app offers.");
-    await expect(create("GMAIL_NOT_A_THING")).rejects.toThrow("GMAIL_NOT_A_THING is not an event OpenMausBot can watch.");
+    await expect(create("GMAIL_NOT_A_THING")).rejects.toThrow("GMAIL_NOT_A_THING is not an event SanRemes can watch.");
     expect(triggers.list()).toEqual([]);
   });
 
@@ -487,7 +487,7 @@ describe("automations made before the owner kept the managed service out", () =>
   });
 
   it("the host reports the switch as off, for the app and for a bot's event list, and calls nothing", async () => {
-    vi.stubEnv("OMB_COMPOSIO_BROKER", "off");
+    vi.stubEnv("SANREMES_COMPOSIO_BROKER", "off");
     try {
       const { createAppTriggerHost } = await import("./app-trigger-host.ts");
       const fetches = vi.fn();

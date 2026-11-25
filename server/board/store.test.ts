@@ -9,7 +9,7 @@ import { BOARD_FILE, readBoardFile, writeBoardFile } from "./store.ts";
 const dirs: string[] = [];
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 const fileIn = () => {
-  const dir = mkdtempSync(join(tmpdir(), "omb-board-store-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-board-store-"));
   dirs.push(dir);
   return join(dir, "data", BOARD_FILE);
 };

@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb, type VerificationServer } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb, type VerificationServer } from "../scripts/control-sanremes.ts";
 import { WAIT_MESSAGES } from "./routes/waits.ts";
 import { removeTempDir } from "./testing/cleanup.ts";
 import { readHandoffs } from "./testing/handoff-rows.ts";
@@ -31,7 +31,7 @@ describe("waits set by work a bot handed on", () => {
   const token = async (threadId: string) => {
     let value = "";
     await expect.poll(() => {
-      try { value = JSON.parse(readFileSync(file(threadId, "json"), "utf8")).mcpConfig.mcpServers.agents.env.OMB_COMMS_TOKEN; } catch { return false; }
+      try { value = JSON.parse(readFileSync(file(threadId, "json"), "utf8")).mcpConfig.mcpServers.agents.env.SANREMES_COMMS_TOKEN; } catch { return false; }
       return Boolean(value);
     }, { timeout: 15_000 }).toBe(true);
     return value;
@@ -53,7 +53,7 @@ describe("waits set by work a bot handed on", () => {
   const fileWait = (label: string) => ({ label, kind: "file_exists", path: join(folder, `${label}.txt`) });
 
   beforeEach(async () => {
-    folder = mkdtempSync(join(tmpdir(), "omb-handed-waits-"));
+    folder = mkdtempSync(join(tmpdir(), "sanremes-handed-waits-"));
     fixture = await launchVerificationServer();
     source = (await control(["new-bot", "--name", "Wait owner"]) as any).bot;
     peer = (await control(["new-bot", "--name", "Wait peer"]) as any).bot;
@@ -63,7 +63,7 @@ describe("waits set by work a bot handed on", () => {
       'import { readFileSync } from "node:fs";',
       'import { join } from "node:path";',
       'const at = process.argv.indexOf("--mcp-config");',
-      'const thread = at < 0 ? "probe" : JSON.parse(readFileSync(process.argv[at + 1], "utf8")).mcpServers?.agents?.env?.OMB_THREAD_ID ?? "probe";',
+      'const thread = at < 0 ? "probe" : JSON.parse(readFileSync(process.argv[at + 1], "utf8")).mcpServers?.agents?.env?.SANREMES_THREAD_ID ?? "probe";',
       'process.env.FAKE_CLAUDE_MODE = thread === "probe" ? "happy" : "slow";',
       `process.env.FAKE_CLAUDE_SLOW_FINISH_GATE = join(${JSON.stringify(fixture.info.dataDir)}, thread + ".gate");`,
       `process.env.FAKE_CLAUDE_DUMP = join(${JSON.stringify(fixture.info.dataDir)}, thread + ".json");`,

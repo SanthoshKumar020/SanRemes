@@ -19,7 +19,7 @@ describe("which bot files a move carries", () => {
   });
 
   it("lists them by path, size and sha256, never through a link", async () => {
-    const data = mkdtempSync(join(tmpdir(), "omb-files-"));
+    const data = mkdtempSync(join(tmpdir(), "sanremes-files-"));
     mkdirSync(join(data, "workspaces", "b1", "node_modules", "x"), { recursive: true });
     mkdirSync(join(data, "task-workspaces", "b1", "t1"), { recursive: true });
     writeFileSync(join(data, "workspaces", "b1", "notes.md"), "hello");
@@ -34,7 +34,7 @@ describe("which bot files a move carries", () => {
 
 describe("bot-file digests after a timestamp-preserving edit", () => {
   it.each(["overwrite", "replace"])("rechecks a same-size file after %s with its old mtime", async (operation) => {
-    const data = mkdtempSync(join(tmpdir(), "omb-files-digest-"));
+    const data = mkdtempSync(join(tmpdir(), "sanremes-files-digest-"));
     const path = "workspaces/b1/notes.md";
     const full = join(data, path);
     const old = new Date("2020-01-01T00:00:00Z");
@@ -57,7 +57,7 @@ describe("bot-file digests after a timestamp-preserving edit", () => {
 });
 
 describe("My Cloud takes a file", () => {
-  const data = mkdtempSync(join(tmpdir(), "omb-files-"));
+  const data = mkdtempSync(join(tmpdir(), "sanremes-files-"));
   const owner = { person: "p_owner", name: "Amit" };
   const deps = (who: typeof owner | null = owner) => ({ dataDir: data, bots: () => [{ id: "b1" }], owner: () => who });
   async function send(query: Record<string, string | number>, bytes: string, who: typeof owner | null = owner) {

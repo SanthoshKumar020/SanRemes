@@ -368,7 +368,7 @@ function eyeMark(e: EyeState): EyeMark {
 }
 
 /**
- * MausBot: a smile under the eyes, stroked like the happy arc. It follows the gaze with the eyes,
+ * SanRemes: a smile under the eyes, stroked like the happy arc. It follows the gaze with the eyes,
  * deepens as the eyes turn happy and flattens as they turn to a waiting slit.
  */
 function mouthMark([a, b]: [EyeState, EyeState]): EyeMark {
@@ -501,7 +501,7 @@ function runAt(run: Rgb[], t: number): string {
   return toHex(mix(run[n], run[n + 1], x - n));
 }
 
-/** MausBot: every ribbon takes one of our comet palettes (three neighbouring hues head to tail), whatever the body's colour. */
+/** SanRemes: every ribbon takes one of our comet palettes (three neighbouring hues head to tail), whatever the body's colour. */
 const COMET_COLORS: Rgb[][] = [
   ['#A855F7', '#6366F1', '#38BDF8'], ['#22D3EE', '#34D399', '#A3E635'], ['#FB923C', '#F43F5E', '#D946EF'],
   ['#818CF8', '#C084FC', '#F472B6'], ['#FACC15', '#FB923C', '#EC4899'], ['#34D399', '#22D3EE', '#60A5FA'],
@@ -600,7 +600,7 @@ function flatFrame(definition: AvatarDefinition, options: RenderOptions, size: n
         shape: { kind: 'eye', key: idx === 0 ? 'eye-0' : 'eye-1', matrix: shrink(eyeMatrix(v, plane, pivot)), mark: eyeMark(e) },
       });
     });
-    // MausBot: the mouth sits on the plane midway between the eye planes and shows while both eyes
+    // SanRemes: the mouth sits on the plane midway between the eye planes and shows while both eyes
     // do. It paints over every slice, as on a fluffy coat: below the eyes the face can stand
     // proud of the eyes' plane, and its slices would cut through the mouth.
     const [pa, pb] = vol.eyePlanes;

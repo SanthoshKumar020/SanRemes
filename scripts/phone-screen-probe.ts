@@ -20,7 +20,7 @@ const KEY_GAP_MS = 1_000;
 const START_CODE = Buffer.from("00000001", "hex");
 // H.264: the low five bits of a NAL header are its type, and 7 is a sequence parameter set; the bits above vary.
 const startsWithSps = (data: Buffer) => data.subarray(0, START_CODE.length).equals(START_CODE) && (data[START_CODE.length] & 0x1f) === 7;
-const LEFTOVERS = "/data/local/tmp/openmausbot-scrcpy-*";
+const LEFTOVERS = "/data/local/tmp/sanremes-scrcpy-*";
 const SCRCPY_STOPS_WITHIN_MS = 5_000;
 const LIST_PROCESSES = ["ps", "-A", "-o", "PID,ARGS"];
 const FEWEST_PROCESS_LINES = 5;
@@ -29,7 +29,7 @@ const { values } = parseArgs({ options: { serial: { type: "string" }, "data-dir"
 const serial = values.serial;
 const adbPath = resolveAdbPath();
 if (!serial || !adbPath) {
-  console.error(serial ? "adb was not found. Install Android platform tools or set OMB_ADB_PATH." : "Usage: phone-screen-probe.ts --serial <serial> [--data-dir <dir>] [--keys]");
+  console.error(serial ? "adb was not found. Install Android platform tools or set SANREMES_ADB_PATH." : "Usage: phone-screen-probe.ts --serial <serial> [--data-dir <dir>] [--keys]");
   process.exit(2);
 }
 
@@ -93,7 +93,7 @@ const watch = async (serverFile: string) => {
 };
 
 const reason = (error: unknown) => (error instanceof Error ? error.message : String(error));
-const temporaryDataDir = values["data-dir"] ? undefined : mkdtempSync(join(tmpdir(), "omb-phone-screen-probe-"));
+const temporaryDataDir = values["data-dir"] ? undefined : mkdtempSync(join(tmpdir(), "sanremes-phone-screen-probe-"));
 try {
   const serverFile = await ensureScrcpyServer(values["data-dir"] ?? temporaryDataDir!);
   const forwardsBefore = await forwards();

@@ -1,13 +1,13 @@
 // The messages the desktop main process and its own server exchange about the bots' browser panes, over the utility
 // process's parent port. Security: only Electron's main process can post on that port, so the port itself is the
 // authentication; every message is still checked here, on both sides, before anything acts on it.
-export const PANE_MESSAGE = "openmausbot:browser-pane";
+export const PANE_MESSAGE = "sanremes:browser-pane";
 
 /** Tabs one profile's browser may have open, as for a launched Chrome. */
 export const PANE_TABS_PER_BROWSER = 8;
 
 /** A profile's partition: persistent per profile, or in memory with a nonce for a temporary one. */
-export const PANE_PARTITION = /^(?:persist:omb-pane-[0-9a-f]{24}|omb-pane-[0-9a-f]{24}-[0-9a-f]{8})$/;
+export const PANE_PARTITION = /^(?:persist:sanremes-pane-[0-9a-f]{24}|sanremes-pane-[0-9a-f]{24}-[0-9a-f]{8})$/;
 const BROWSER = /^(?:bot|shared|temp):[A-Za-z0-9._:@-]{1,200}$/;
 const TAB = /^p[1-9]\d{0,9}$/;
 const SESSION = /^[\w.:-]{1,128}$/;

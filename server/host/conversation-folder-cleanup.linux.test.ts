@@ -14,7 +14,7 @@ afterEach(() => {
 });
 
 function sandbox() {
-  const root = mkdtempSync(join(tmpdir(), "omb-drain-linux-"));
+  const root = mkdtempSync(join(tmpdir(), "sanremes-drain-linux-"));
   made.push(root);
   const dataDir = join(root, "data");
   const outside = join(root, "outside");

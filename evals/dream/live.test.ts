@@ -38,10 +38,10 @@ describe("the live dream runner, on a fake model", () => {
 });
 
 describe("the live dream entrypoint", () => {
-  it("calls no model unless OMB_EVAL_LIVE=1", () => {
+  it("calls no model unless SANREMES_EVAL_LIVE=1", () => {
     const env = { ...process.env };
-    delete env.OMB_EVAL_LIVE;
+    delete env.SANREMES_EVAL_LIVE;
     const output = execFileSync(process.execPath, ["--experimental-strip-types", "--no-warnings", fileURLToPath(new URL("./run-dream.ts", import.meta.url))], { env, encoding: "utf8" });
-    expect(output.trim()).toBe("dream eval: skipped (set OMB_EVAL_LIVE=1; each case is one real model call)");
+    expect(output.trim()).toBe("dream eval: skipped (set SANREMES_EVAL_LIVE=1; each case is one real model call)");
   });
 });

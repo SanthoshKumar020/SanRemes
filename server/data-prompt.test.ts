@@ -9,7 +9,7 @@ import { DATA_TOOLS_POINTER, ThreadChoices, botHasData, dataPrompts, mentionsDat
 import { removeTempDir } from "./testing/cleanup.ts";
 
 const folders: string[] = [];
-const folder = () => { const made = mkdtempSync(join(tmpdir(), "omb-data-prompt-")); folders.push(made); return made; };
+const folder = () => { const made = mkdtempSync(join(tmpdir(), "sanremes-data-prompt-")); folders.push(made); return made; };
 afterAll(async () => { for (const made of folders) await removeTempDir(made); });
 
 describe("the Data section of the prompt", () => {

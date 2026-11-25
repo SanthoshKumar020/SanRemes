@@ -17,7 +17,7 @@ export function serverCommand(here: string, env: NodeJS.ProcessEnv, options: { e
   const dataDir = defaultDataDir(env, options.homes?.under, options.homes?.realHome);
   return {
     args: [...heapSizeArgs((options.box ?? boxMemory()).cgroupLimit, env.NODE_OPTIONS), cached ? bootstrap : join(here, "index.js")],
-    env: cached ? { ...env, OMB_SERVER_COMPILE_CACHE: join(dataDir, "cache", "node-compile") } : env,
+    env: cached ? { ...env, SANREMES_SERVER_COMPILE_CACHE: join(dataDir, "cache", "node-compile") } : env,
   };
 }
 

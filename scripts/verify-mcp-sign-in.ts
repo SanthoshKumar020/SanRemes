@@ -4,8 +4,8 @@ import { execFile } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
-import { launchVerificationServer, runControlOmb } from "./control-omb.ts";
-import { ensureUiBrowser } from "./testing/control-omb-ui.ts";
+import { launchVerificationServer, runControlOmb } from "./control-sanremes.ts";
+import { ensureUiBrowser } from "./testing/control-sanremes-ui.ts";
 import { fixtureApi, mountPreview, type MountedPreview } from "./testing/preview-fixture.ts";
 import { startFakeOAuth } from "../server/testing/fake-oauth-server.ts";
 import { startFakeHttpMcp } from "../server/testing/fake-http-mcp-server.ts";
@@ -72,7 +72,7 @@ try {
   await command("wait", "--fn", "[...document.querySelectorAll('button')].some(b => b.textContent.trim() === 'Sign in')");
   // Simulate a blocked popup; the explicit reopen and paste UI must still work.
   await evaluate("window.open = () => null");
-  const evidence = resolve(process.env.OMB_UI_EVIDENCE_DIR ?? ".omb-scratch/mcp-oauth-evidence");
+  const evidence = resolve(process.env.SANREMES_UI_EVIDENCE_DIR ?? ".sanremes-scratch/mcp-oauth-evidence");
   mkdirSync(evidence, { recursive: true });
   await command("screenshot", join(evidence, "before.png"), "--full");
   await clickButton("Sign in");

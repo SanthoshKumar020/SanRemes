@@ -1,6 +1,6 @@
 # Phone push: alerts when the phone app is closed
 
-Today the MausBot phone app only gets a notification while it is connected to its
+Today the SanRemes phone app only gets a notification while it is connected to its
 computer or Cloud. The app builds every notification itself from the live event
 stream (`notify` frames). So an alert arrives while the app is open, for about
 25 seconds after it goes to the background on iPhone, or all the time on Android
@@ -73,7 +73,7 @@ carry it (`400 invalid_request`, not silently dropped).
 | thread id | `th_…` | which conversation to open |
 | room id, room name | `grp_…`, `Launch` | only in a room |
 | pairing | the phone's random tag for this computer | so a tap opens the right one of several saved computers |
-| collapse id | `openmaus.<thread>.<seq>` | see "No duplicates" |
+| collapse id | `sanremes.<thread>.<seq>` | see "No duplicates" |
 
 What the lock screen reads, by kind:
 
@@ -83,7 +83,7 @@ What the lock screen reads, by kind:
 - finished reply: "Scout finished"
 
 On iPhone the payload is `{aps: {alert: {title}, sound, thread-id, category,
-interruption-level}, omb: {...}, body: {...}}`. On Android it is a data-only
+interruption-level}, sanremes: {...}, body: {...}}`. On Android it is a data-only
 FCM message with `title`, `tag`, `channelId`, `categoryId`, `threadIdentifier`
 and `body` (the same fields as JSON), and no message text. The exact shapes are
 in `cloudflare/control-plane/README.md` ("Phone push relay").
@@ -107,7 +107,7 @@ of the two exists. They can meet at the edges: the app comes back and replays
 the frames it missed, or the stream closes just as an alert is sent.
 
 - The push carries the identifier the app would give its own notification for
-  the same frame: `openmaus.<threadId>.<seq>`. On iPhone this is the APNs
+  the same frame: `sanremes.<threadId>.<seq>`. On iPhone this is the APNs
   collapse id, which becomes the notification's identifier; on Android it is
   the notification's tag. A local notification with the same identifier
   replaces the push instead of adding a second one.
@@ -118,7 +118,7 @@ the frames it missed, or the stream closes just as an alert is sent.
   shown: the stream's own notification wins.
 - If the identifier would be longer than 64 bytes (APNs' limit), the push
   falls back to one identifier per kind and conversation. That only happens
-  for thread ids over 40 characters; MausBot's are shorter.
+  for thread ids over 40 characters; SanRemes's are shorter.
 
 ## Privacy and threat model
 
@@ -138,7 +138,7 @@ key that dies with the process), and it logs only the machine, the action and
 a status.
 
 **What Apple and Google learn.** The same names, ids and title, the device
-token, and when MausBot pushed to the phone. Not the content of any
+token, and when SanRemes pushed to the phone. Not the content of any
 conversation.
 
 **Where tokens are kept.** On the computer or Cloud, in
@@ -201,8 +201,8 @@ accepts a previous secret beside the current one.
 ## Cloud homes
 
 A desktop has an installation credential once its owner turns on "Use your
-phone anywhere", and `openmausbot serve` has one after `openmausbot account login` or
-from `OMB_INSTALLATION_CREDENTIAL` (or a push-only `OMB_PUSH_CREDENTIAL`). A
+phone anywhere", and `sanremes serve` has one after `sanremes account login` or
+from `SANREMES_INSTALLATION_CREDENTIAL` (or a push-only `SANREMES_PUSH_CREDENTIAL`). A
 Cloud home has none. So **the Admin relays for its homes**: built, and off
 until switched on.
 
@@ -210,17 +210,17 @@ until switched on.
   home and has no installation credential, every relay call goes to its Admin
   instead, `POST <admin>/api/cloud/machines/push/{register,unregister,send,activity}`,
   with the very same body, signed with the bootstrap secret it already holds
-  (headers `x-omb-cloud-machine`, `x-omb-cloud-timestamp`, `x-omb-cloud-nonce`,
-  `x-omb-cloud-signature: v1=<HMAC-SHA256 over "omb-phone-push-v1", the machine
+  (headers `x-sanremes-cloud-machine`, `x-sanremes-cloud-timestamp`, `x-sanremes-cloud-nonce`,
+  `x-sanremes-cloud-signature: v1=<HMAC-SHA256 over "sanremes-phone-push-v1", the machine
   id, the action, the timestamp, the nonce and the body's SHA-256>`). Same
   outbox, retries and back-off: `503 push_unavailable`, a `401` or a `404` (an
   Admin with its switch off, or an older one) leaves it alone for an hour. Still
-  gated by `features.phonePush` / `OMB_PHONE_PUSH`, off by default.
+  gated by `features.phonePush` / `SANREMES_PHONE_PUSH`, off by default.
 - **The Admin** checks the signature, takes the machine id from it, checks the
   body against the control plane's own strict schemas (no field for message
   text), applies the limits, and forwards the parsed body. Its switch is
-  `OMB_CLOUD_PHONE_PUSH` (off by default); it forwards to
-  `OMB_CLOUD_PUSH_RELAY_URL` with `OMB_CLOUD_PUSH_RELAY_SECRET`. Retiring or
+  `SANREMES_CLOUD_PHONE_PUSH` (off by default); it forwards to
+  `SANREMES_CLOUD_PUSH_RELAY_URL` with `SANREMES_CLOUD_PUSH_RELAY_SECRET`. Retiring or
   deleting a Cloud deletes its tokens at the control plane, switch on or off.
 - **The control plane** has the matching routes,
   `POST /v1/cloud-homes/<machine id>/push/{register,unregister,send,activity,forget}`
@@ -245,13 +245,13 @@ in order:
 2. Set the control plane's `CLOUD_HOME_PUSH_SECRET` (random, 32 characters or
    more) and deploy it.
 3. Ship an Admin image with the relay, then set the same value as the Admin's
-   `OMB_CLOUD_PUSH_RELAY_SECRET`, and `OMB_CLOUD_PUSH_RELAY_URL` to the control
+   `SANREMES_CLOUD_PUSH_RELAY_SECRET`, and `SANREMES_CLOUD_PUSH_RELAY_URL` to the control
    plane's origin, and restart the Admin.
 4. Ship a Cloud home image with this code.
 5. Turn phone push on in one test Cloud's home: `features.phonePush: true` in
-   its `config.json` (its owner's `PUT /api/config`; an `OMB_PHONE_PUSH` set by
+   its `config.json` (its owner's `PUT /api/config`; an `SANREMES_PHONE_PUSH` set by
    hand in a home's environment is rewritten by the Admin at its next update),
-   then `OMB_CLOUD_PHONE_PUSH` on in the Admin's Cloud operations → Switches.
+   then `SANREMES_CLOUD_PHONE_PUSH` on in the Admin's Cloud operations → Switches.
 6. Run "Test plan on real devices" against that Cloud, then widen.
 
 ## Always-on and the grace period
@@ -286,7 +286,7 @@ in order:
 
 The owner asked for push "like the reference app does it, with a relay". This
 section says what the reference app actually does, how each part maps onto
-MausBot, and which design we keep.
+SanRemes, and which design we keep.
 
 ### How the reference app does it
 
@@ -318,9 +318,9 @@ MausBot, and which design we keep.
   without a foreground service and shows one ongoing "agent activity"
   notification plus alerts.
 
-### How that maps onto MausBot
+### How that maps onto SanRemes
 
-| The reference app | MausBot |
+| The reference app | SanRemes |
 | --- | --- |
 | The user's server watches its events and decides | The computer or Cloud (`server/phone-push.ts`) does the same |
 | Hosted relay: holds the APNs and Firebase keys, stores tokens, sends | The control plane's push routes (`cloudflare/control-plane/src/push.ts`) |
@@ -329,14 +329,14 @@ MausBot, and which design we keep.
 | Live Activity tokens registered, updates and ends by push | The same (`/api/push/activity`, control plane `push/activity`) |
 | Android ongoing notification from FCM data, no foreground service | The same (the phone app's `bot-activity` module) |
 
-MausBot also has something called a relay: MausBot Relay (`relay1`, `relay2`,
+SanRemes also has something called a relay: SanRemes Relay (`relay1`, `relay2`,
 `relay/` in this repository). It is a different thing. It splices the phone's
 end-to-end encrypted connection to the computer and cannot read a byte of it,
 so it never sees an event, a bot name or a token. The reference app's relay is
 a hosted service that receives plain state from the user's server and talks to
-Apple and Google. In MausBot that service is the control plane.
+Apple and Google. In SanRemes that service is the control plane.
 
-### Should push go through MausBot Relay as well, or instead?
+### Should push go through SanRemes Relay as well, or instead?
 
 What it would buy:
 
@@ -361,20 +361,20 @@ What it would cost or break:
   control plane can serve them all.
 - **It weakens what the relay promises.** Today a relay compromise exposes
   only ciphertext and connection metadata. With push it would also expose
-  device tokens and the keys that can alert every MausBot phone.
+  device tokens and the keys that can alert every SanRemes phone.
 - **Credentials would sit outside Cloudflare's secret store,** on hosts we
   patch ourselves.
 
 **Recommendation: keep the control plane as the sender. It already is our
 equivalent of the reference app's relay:** a single hosted service that holds
 the Apple and Google keys, receives content-free state from the user's own
-machine, and sends. MausBot Relay stays a blind splice. What we take from the
+machine, and sends. SanRemes Relay stays a blind splice. What we take from the
 reference app is everything around the sender: the phone's registration
 robustness, Live Activities updated and ended by push from tokens the phone
 registers, and an ongoing "working" notification on Android driven by FCM data
-messages. MausBot keeps one difference on purpose: the phone registers with
+messages. SanRemes keeps one difference on purpose: the phone registers with
 each computer, not with a hosted account, because a phone can be paired
-without any MausBot account at all.
+without any SanRemes account at all.
 
 ## Switching it on
 
@@ -384,7 +384,7 @@ What the owner provides and does, in order. Nothing here has been done.
 
 1. In the Apple Developer account, create an APNs auth key (`.p8`) with the
    Apple Push Notifications service enabled. Note its Key ID and the Team ID.
-2. Enable the Push Notifications capability on the App ID `com.openmausbot.app`
+2. Enable the Push Notifications capability on the App ID `com.sanremes.app`
    (and `.next` / `.dev` if those builds should get pushes), then regenerate
    the provisioning profiles.
 
@@ -405,7 +405,7 @@ What the owner provides and does, in order. Nothing here has been done.
    use the same APNs key (topic `<bundle id>.push-type.liveactivity`) and the
    same Firebase project.
 6. Set the secrets: `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY` (the
-   `.p8`), `APNS_BUNDLE_ID` (`com.openmausbot.app`), optionally
+   `.p8`), `APNS_BUNDLE_ID` (`com.sanremes.app`), optionally
    `APNS_ENVIRONMENTS=production,sandbox` to accept development builds, and
    `FCM_SERVICE_ACCOUNT` (the whole service-account JSON).
 7. Deploy the Worker. Until a platform's secrets are set its routes answer
@@ -414,19 +414,19 @@ What the owner provides and does, in order. Nothing here has been done.
 **Phone app** (`app/app.config.ts` in the phone repository)
 
 8. Put `google-services.json` where the build can read it (an EAS file secret
-   named by `MAUSBOT_GOOGLE_SERVICES_FILE`, or `app/google-services.json`).
-9. Build with `MAUSBOT_REMOTE_PUSH=1` (or set `REMOTE_PUSH = true`). This adds
+   named by `SANREMES_GOOGLE_SERVICES_FILE`, or `app/google-services.json`).
+9. Build with `SANREMES_REMOTE_PUSH=1` (or set `REMOTE_PUSH = true`). This adds
    the `aps-environment` entitlement (`production` for preview and production
    builds, `development` for development builds), Firebase on Android, and
    turns on token registration in the app. Update the store privacy answers
-   (the app now sends a device token to MausBot's servers and to Apple or
+   (the app now sends a device token to SanRemes's servers and to Apple or
    Google).
 
 **Desktop and server**
 
 10. Ship the server with phone push. It stays off until
-    `features.phonePush: true` is in `config.json`, or `OMB_PHONE_PUSH=1` is set
-    (`OMB_PHONE_PUSH=0` forces it off). This is the rollout flag: turn it on
+    `features.phonePush: true` is in `config.json`, or `SANREMES_PHONE_PUSH=1` is set
+    (`SANREMES_PHONE_PUSH=0` forces it off). This is the rollout flag: turn it on
     for one machine first, then flip the default in a release.
 11. For Cloud homes, follow "Switching it on for Cloud homes" under "Cloud
     homes".

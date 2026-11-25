@@ -13,7 +13,7 @@ vi.mock("node:fs", async (importOriginal) => {
   return { ...fs, mkdtempSync: vi.fn(fs.mkdtempSync) };
 });
 const originalMkdtemp = (await vi.importActual<typeof import("node:fs")>("node:fs")).mkdtempSync;
-const detection = detectBox({ env: { ...process.env, OMB_BOT_BOX: "1" } });
+const detection = detectBox({ env: { ...process.env, SANREMES_BOT_BOX: "1" } });
 const roots: string[] = [];
 afterEach(() => {
   vi.mocked(mkdtempSync).mockReset().mockImplementation(originalMkdtemp);
@@ -22,12 +22,12 @@ afterEach(() => {
 
 describe.skipIf(detection.box !== "bwrap")("Antigravity profile staging in real bubblewrap", () => {
   it("blocks profile-root replacement between validation and staging publication", () => {
-    const root = mkdtempSync(join(tmpdir(), "omb-profile-staging-"));
+    const root = mkdtempSync(join(tmpdir(), "sanremes-profile-staging-"));
     roots.push(root);
     const home = join(root, "home");
-    const dataDir = join(home, ".openmausbot");
+    const dataDir = join(home, ".sanremes");
     const profile = join(dataDir, "providers", "antigravity", "account");
-    const skills = join(profile, "omb-skills");
+    const skills = join(profile, "sanremes-skills");
     const outside = join(home, "escaped");
     const cwd = join(dataDir, "task-workspaces", "bot", "thread");
     const source = join(dataDir, "workspaces", "bot", "skills", "reviewed");

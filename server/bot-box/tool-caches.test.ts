@@ -11,8 +11,8 @@ import { memberAudience } from "../audience.ts";
 import { audienceHome } from "../engine-homes/layout.ts";
 
 const bridge = { socat: "/usr/bin/socat", bridgeScript: "/app/dist-server/bot-box/box-bridge.js", node: "/usr/local/bin/node" };
-const dataDir = "/data/.openmausbot", home = "/data";
-const setup = { dataDir, home, codeRoots: ["/app"], engineRoots: engineInstallRoots(dataDir), bridges: [{ name: "egress", port: BOX_EGRESS_PORT, socket: "/data/.openmausbot/box/egress.sock" }] };
+const dataDir = "/data/.sanremes", home = "/data";
+const setup = { dataDir, home, codeRoots: ["/app"], engineRoots: engineInstallRoots(dataDir), bridges: [{ name: "egress", port: BOX_EGRESS_PORT, socket: "/data/.sanremes/box/egress.sock" }] };
 const turn = { command: "/usr/local/bin/claude", args: ["-p"], cwd: join(dataDir, "task-workspaces", "b1", "t1"), env: { PATH: "/usr/bin", HOME: home, ANTHROPIC_API_KEY: "k" } };
 // The cache folder is made on a real disk only in the BotBox.start tests below; here every HOME's is the server's.
 const runner = (toolCaches?: boolean, cacheRoot: (root: string) => boolean | null = () => true) =>
@@ -22,13 +22,13 @@ const cacheNames = TOOL_CACHES.map((cache) => cache.name);
 describe("the switch", () => {
   it("is on only on a Cloud home that sets it, never on a desktop", () => {
     expect(toolCachesOn({})).toBe(false);
-    expect(toolCachesOn({ OMB_CLOUD_ROLE: "home" })).toBe(false);
-    for (const value of ["1", "on", "ON", "true", "yes", " on "]) expect(toolCachesOn({ OMB_CLOUD_ROLE: "home", OMB_CACHE_ROOT: value }), value).toBe(true);
-    expect(toolCachesOn({ OMB_CLOUD_ROLE: "team", OMB_CACHE_ROOT: "on" })).toBe(true);
-    for (const value of ["", "0", "off", "/data/cache", "maybe"]) expect(toolCachesOn({ OMB_CLOUD_ROLE: "home", OMB_CACHE_ROOT: value }), value).toBe(false);
+    expect(toolCachesOn({ SANREMES_CLOUD_ROLE: "home" })).toBe(false);
+    for (const value of ["1", "on", "ON", "true", "yes", " on "]) expect(toolCachesOn({ SANREMES_CLOUD_ROLE: "home", SANREMES_CACHE_ROOT: value }), value).toBe(true);
+    expect(toolCachesOn({ SANREMES_CLOUD_ROLE: "team", SANREMES_CACHE_ROOT: "on" })).toBe(true);
+    for (const value of ["", "0", "off", "/data/cache", "maybe"]) expect(toolCachesOn({ SANREMES_CLOUD_ROLE: "home", SANREMES_CACHE_ROOT: value }), value).toBe(false);
     // A desktop, even one that forces the box on for a test, never moves a tool's cache.
-    expect(toolCachesOn({ OMB_CACHE_ROOT: "on", OMB_BOT_BOX: "on" })).toBe(false);
-    expect(toolCachesOn({ OMB_CLOUD_ROLE: "desktop", OMB_CACHE_ROOT: "on" })).toBe(false);
+    expect(toolCachesOn({ SANREMES_CACHE_ROOT: "on", SANREMES_BOT_BOX: "on" })).toBe(false);
+    expect(toolCachesOn({ SANREMES_CLOUD_ROLE: "desktop", SANREMES_CACHE_ROOT: "on" })).toBe(false);
   });
 });
 
@@ -163,22 +163,22 @@ describe.skipIf(process.platform === "win32")("BotBox.start", () => {
     for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
   });
   const started = async (env: Record<string, string>) => {
-    const root = mkdtempSync(join(tmpdir(), "omb-tool-caches-"));
+    const root = mkdtempSync(join(tmpdir(), "sanremes-tool-caches-"));
     dirs.push(root);
     const lines: string[] = [];
     const box = new BotBox();
     boxes.push(box);
-    await box.start({ dataDir: join(root, ".openmausbot"), home: root, port: 8799, denyEnv: new Set(), env, log: (line) => lines.push(line), detect: () => ({ box: "bwrap", reason: null, tools: { bwrap: "/usr/bin/bwrap", socat: null } }) });
+    await box.start({ dataDir: join(root, ".sanremes"), home: root, port: 8799, denyEnv: new Set(), env, log: (line) => lines.push(line), detect: () => ({ box: "bwrap", reason: null, tools: { bwrap: "/usr/bin/bwrap", socat: null } }) });
     return { box, root, lines, wrapped: box.wrap({ command: "/usr/bin/codex", args: [], env: { PATH: "/usr/bin" } })! };
   };
 
   it("reads the switch from the server's environment: a Cloud home with it on adds the variables and says so once", async () => {
-    const on = await started({ OMB_CLOUD_ROLE: "home", OMB_CACHE_ROOT: "on" });
+    const on = await started({ SANREMES_CLOUD_ROLE: "home", SANREMES_CACHE_ROOT: "on" });
     expect(on.wrapped.env.npm_config_cache).toBe(join(on.root, "cache", "npm"));
     // The folder is made on the first spawn, with the server's mark.
     expect(readFileSync(join(on.root, "cache", CACHE_TAG_FILE), "utf8")).toBe(CACHE_TAG);
-    expect(on.lines).toContain("bot box: tool caches go to the cache folder in each box's HOME (OMB_CACHE_ROOT)");
-    for (const env of [{}, { OMB_CLOUD_ROLE: "home" }, { OMB_CACHE_ROOT: "on" }] as Record<string, string>[]) {
+    expect(on.lines).toContain("bot box: tool caches go to the cache folder in each box's HOME (SANREMES_CACHE_ROOT)");
+    for (const env of [{}, { SANREMES_CLOUD_ROLE: "home" }, { SANREMES_CACHE_ROOT: "on" }] as Record<string, string>[]) {
       const off = await started(env);
       for (const name of cacheNames) expect(off.wrapped.env[name], `${JSON.stringify(env)} ${name}`).toBeUndefined();
       expect(off.lines.some((line) => line.includes("tool caches"))).toBe(false);
@@ -190,7 +190,7 @@ describe.skipIf(process.platform === "win32")("BotBox.start", () => {
 describe("the cache folder the server makes", () => {
   const dirs: string[] = [];
   afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
-  const scratch = () => { const dir = mkdtempSync(join(tmpdir(), "omb-cache-root-")); dirs.push(dir); return dir; };
+  const scratch = () => { const dir = mkdtempSync(join(tmpdir(), "sanremes-cache-root-")); dirs.push(dir); return dir; };
 
   it("is made and marked when HOME has none, and is the server's on every later start", () => {
     const home = scratch(), root = toolCacheRoot(home);

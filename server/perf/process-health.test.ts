@@ -10,7 +10,7 @@ const MB = 1024 * 1024;
 const SECRETS = [
   "sk-ant-api03-PRIVATEPRIVATEPRIVATE1234567890", "ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", "hunter2-password", "ada@example.test",
   "/Users/ada/Projects/acme-merger/plan.md", "acme-merger", "https://intranet.acme.test/q?token=abc", "intranet.acme.test",
-  "Summarize the merger plan", "acme-internal", "Tallyspoon", "OMB_SECRET_VALUE_42", "lookup_customer", "Ada's Claude",
+  "Summarize the merger plan", "acme-internal", "Tallyspoon", "SANREMES_SECRET_VALUE_42", "lookup_customer", "Ada's Claude",
 ];
 const leaks = (text: string) => SECRETS.filter((secret) => text.toLowerCase().includes(secret.toLowerCase()));
 

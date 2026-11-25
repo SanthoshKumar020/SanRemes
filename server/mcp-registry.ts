@@ -9,7 +9,7 @@ export { importedMcpServerName } from "../shared/mcp-name.ts";
 /** The computer a server runs on when its program, files or address are that computer's own: kept with its entry so a
  * bot can reach it through that computer, and never started anywhere else. */
 export interface McpRunsOn {
-  /** That computer's OpenMausBot environment id. */
+  /** That computer's SanRemes environment id. */
   environmentId: string;
   /** Its name, as the person knows it. */
   label: string;
@@ -20,7 +20,7 @@ export interface McpRunsOn {
  * and the pointer is resolved when the server starts or is called. */
 export interface StoredStdioMcpServer extends StdioMcpSpec {
   enabled: boolean;
-  /** Characters of one tool result allowed into context; 0 = never trim, absent = OMB_MCP_RESULT_BUDGET, else 8,000. */
+  /** Characters of one tool result allowed into context; 0 = never trim, absent = SANREMES_MCP_RESULT_BUDGET, else 8,000. */
   resultBudget?: number;
   runsOn?: McpRunsOn;
   /** The id of the bot whose own server this is: its program or files are in that bot's folder, so it starts only for
@@ -159,10 +159,10 @@ const HEADER_NAME = /^[!#$%&'*+.^_`|~0-9A-Za-z-]{1,128}$/;
 
 /** Codex exposes MCP env names through one app-server process: a custom server claiming one could take a built-in proxy's bearer. */
 export function isHarnessOwnedMcpEnvName(name: string): boolean {
-  return name === "ELECTRON_RUN_AS_NODE" || name.startsWith("OMB_") || name.startsWith("OGB_");
+  return name === "ELECTRON_RUN_AS_NODE" || name.startsWith("SANREMES_") || name.startsWith("OGB_");
 }
 
-/** Codex shares one environment across MCP children: OMB_/OGB_ carry bearers, and ELECTRON_RUN_AS_NODE may only repeat the "1" the harness proxies need. */
+/** Codex shares one environment across MCP children: SANREMES_/OGB_ carry bearers, and ELECTRON_RUN_AS_NODE may only repeat the "1" the harness proxies need. */
 export function isReservedMcpEnvEntry(name: string, value: string): boolean {
   if (name === "ELECTRON_RUN_AS_NODE") return value !== "1";
   return isHarnessOwnedMcpEnvName(name);
@@ -170,7 +170,7 @@ export function isReservedMcpEnvEntry(name: string, value: string): boolean {
 
 /** Custom command servers as Codex mounts them, with new MCP children every turn: the host's restart count (MCP_RESTART_ENV)
  * only tells an engine that keeps servers across turns to start a new one, so it is dropped here instead of failing every
- * turn as an OMB_ name; any other reserved variable is refused. */
+ * turn as an SANREMES_ name; any other reserved variable is refused. */
 export function perTurnCustomMcp<T extends { integrations?: { custom?: Record<string, McpServerSpec> } }>(turn: T): T {
   if (!turn.integrations?.custom) return turn;
   const custom = { ...turn.integrations.custom };
@@ -188,8 +188,8 @@ function environmentEntryError(name: string, value: string): string | null {
   if (!ENV_NAME.test(name)) return `Environment variable “${name}” is not valid.`;
   if (isReservedMcpEnvEntry(name, value)) {
     return name === "ELECTRON_RUN_AS_NODE"
-      ? `Environment variable “${name}” is reserved by OpenMausBot; a custom server may set it to “1” only.`
-      : `Environment variable “${name}” is reserved by OpenMausBot.`;
+      ? `Environment variable “${name}” is reserved by SanRemes; a custom server may set it to “1” only.`
+      : `Environment variable “${name}” is reserved by SanRemes.`;
   }
   return null;
 }
@@ -315,7 +315,7 @@ export function mcpServerNameError(name: string): string | null {
   if (!MCP_NAME.test(name)) {
     return "Use 1–32 lowercase letters, numbers, underscores, or hyphens, starting with a letter.";
   }
-  if (RESERVED_MCP_NAMES.has(name)) return "That name is reserved by OpenMausBot.";
+  if (RESERVED_MCP_NAMES.has(name)) return "That name is reserved by SanRemes.";
   return null;
 }
 

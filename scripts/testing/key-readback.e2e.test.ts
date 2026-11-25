@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, expect, it, vi } from "vitest";
-import { launchVerificationServer, verificationServerArgs, verificationServerEnvironment, type VerificationServer } from "../control-omb.ts";
+import { launchVerificationServer, verificationServerArgs, verificationServerEnvironment, type VerificationServer } from "../control-sanremes.ts";
 import { waitForExit } from "../../server/testing/cleanup.ts";
 import { hostTimeout } from "../../server/testing/host-timeout.ts";
 
@@ -75,7 +75,7 @@ beforeAll(async () => {
     }
     if (url.startsWith("/sandboxes")) return reply(200, { ok: true, sandboxes: [], pageInfo: { nextCursor: null } });
     if (url.startsWith("/composio/tool_router/session")) {
-      return reply(201, { session_id: "trs_readback", mcp: { type: "http", url: "https://app.composio.dev/tool_router/v3/trs_readback/mcp" }, config: { user_id: "openmausbot_readback" } });
+      return reply(201, { session_id: "trs_readback", mcp: { type: "http", url: "https://app.composio.dev/tool_router/v3/trs_readback/mcp" }, config: { user_id: "sanremes_readback" } });
     }
     if (url === "/gemini/interactions") {
       const input = JSON.parse(raw);
@@ -120,9 +120,9 @@ beforeAll(async () => {
   writeFileSync(configFile, JSON.stringify({ ...JSON.parse(readFileSync(configFile, "utf8")), decider }));
   const env = {
     ...verificationServerEnvironment({}, fixture.info.dataDir, Number(new URL(fixture.info.url).port)),
-    OMB_BOAT_API: origin, OMB_COMPOSIO_API: `${origin}/composio`, OMB_COMPOSIO_TOOLKITS_API: `${origin}/composio`,
-    OMB_GEMINI_TTS_API: `${origin}/gemini`, OMB_DEEPSEEK_SPEECH_API: `${origin}/deepseek`,
-    OMB_ELEVENLABS_API: `${origin}/eleven`, OMB_FISH_AUDIO_API: `${origin}/fish`, OMB_POSTIZ_CLOUD_URL: `${origin}/postiz`,
+    SANREMES_BOAT_API: origin, SANREMES_COMPOSIO_API: `${origin}/composio`, SANREMES_COMPOSIO_TOOLKITS_API: `${origin}/composio`,
+    SANREMES_GEMINI_TTS_API: `${origin}/gemini`, SANREMES_DEEPSEEK_SPEECH_API: `${origin}/deepseek`,
+    SANREMES_ELEVENLABS_API: `${origin}/eleven`, SANREMES_FISH_AUDIO_API: `${origin}/fish`, SANREMES_POSTIZ_CLOUD_URL: `${origin}/postiz`,
   };
   const log = openSync(fixture.info.logPath, "a", 0o600);
   server = spawn(process.execPath, verificationServerArgs(env), { cwd: fileURLToPath(ROOT), env, stdio: ["ignore", log, log] });

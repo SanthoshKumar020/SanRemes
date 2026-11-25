@@ -10,8 +10,8 @@ const rooms: RosterMember = { id: "rooms", name: "Rooms", visibility: B };
 const hours: RosterMember = { id: "hours", name: "Staff Hours", visibility: B };
 const books: RosterMember = { id: "books", name: "Bookkeeping", visibility: "admins" };
 const ledger: RosterMember = { id: "ledger", name: "Ledger", visibility: "admins" };
-const mausbot: RosterMember = { id: "maus", name: "MausBot", visibility: { people: ["olive@acme.test"] }, defaultBot: { person: "olive@acme.test" } };
-const bots = [rooms, hours, books, ledger, mausbot];
+const sanremes: RosterMember = { id: "sanremes", name: "SanRemes", visibility: { people: ["olive@acme.test"] }, defaultBot: { person: "olive@acme.test" } };
+const bots = [rooms, hours, books, ledger, sanremes];
 
 const SAID = "Rooms couldn't hand this to Bookkeeping, because they're shared with different people. Nothing was sent.";
 const LEDGER_SAID = "Rooms couldn't hand this to Ledger, because they're shared with different people. Nothing was sent.";
@@ -37,8 +37,8 @@ describe("a routine's refused hand-off", () => {
     }
   });
 
-  it("stays quiet about anything that wasn't the refusal: a hand-off that went through, a typo, the bot itself, someone's own MausBot", () => {
-    for (const [named, status] of [["Staff Hours", 202], ["Staff Hours", 403], ["Bookkeeper", 403], ["Rooms", 403], ["MausBot", 403], ["books", 202]] as const) {
+  it("stays quiet about anything that wasn't the refusal: a hand-off that went through, a typo, the bot itself, someone's own SanRemes", () => {
+    for (const [named, status] of [["Staff Hours", 202], ["Staff Hours", 403], ["Bookkeeper", 403], ["Rooms", 403], ["SanRemes", 403], ["books", 202]] as const) {
       const { refused } = fixture();
       refused.settled("t", rooms, [named], status, r1);
       expect(refused.take("t"), named).toBeNull();

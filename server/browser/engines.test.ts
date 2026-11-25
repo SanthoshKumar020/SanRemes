@@ -67,9 +67,9 @@ describe("which engine runs a session", () => {
   });
 
   it("gives a bot its own profile, a shared profile's bots one profile, and a temporary browser its session's", () => {
-    expect(profileKey("a", "omb-a", { guest: false, partitionId: null })).toBe("bot:a");
-    expect(profileKey("a", "omb-p", { guest: false, partitionId: "p1" })).toBe("shared:p1");
-    expect(profileKey("a", "omb-a-guest-1", { guest: true, partitionId: null })).toBe("temp:omb-a-guest-1");
+    expect(profileKey("a", "sanremes-a", { guest: false, partitionId: null })).toBe("bot:a");
+    expect(profileKey("a", "sanremes-p", { guest: false, partitionId: "p1" })).toBe("shared:p1");
+    expect(profileKey("a", "sanremes-a-guest-1", { guest: true, partitionId: null })).toBe("temp:sanremes-a-guest-1");
   });
 });
 
@@ -79,20 +79,20 @@ describe("the runtime router", () => {
     const { old, chrome, runtime } = engines({ inputLog: createBrowserInputLog((line) => lines.push(line)), refusal: (_session, _spec, params) => (params as { name?: string }).name === "agent_browser_press" ? "Browser tools are paused while a person controls this browser." : null });
     const failure = (text: string) => ({ isError: true, content: [{ type: "text", text }] });
     old.agentRpc.mockResolvedValueOnce(failure("Element not found: #pay-now. Verify the selector.") as never);
-    await runtime.agentRpc("omb-a", AGENT_BROWSER, "tools/call", { name: "agent_browser_click", arguments: { selector: "#pay-now" } });
+    await runtime.agentRpc("sanremes-a", AGENT_BROWSER, "tools/call", { name: "agent_browser_click", arguments: { selector: "#pay-now" } });
     chrome.service.agentRpc.mockResolvedValueOnce(failure("No element matches #card-number.") as never);
-    await runtime.agentRpc("omb-b", CHROME, "tools/call", { name: "agent_browser_fill", arguments: { selector: "#card-number", text: "4111" } });
+    await runtime.agentRpc("sanremes-b", CHROME, "tools/call", { name: "agent_browser_fill", arguments: { selector: "#card-number", text: "4111" } });
     old.agentRpc.mockRejectedValueOnce(new Error("socket hang up"));
-    await expect(runtime.agentRpc("omb-a", AGENT_BROWSER, "tools/call", { name: "agent_browser_type", arguments: { text: "typed words" } })).rejects.toThrow("socket hang up");
-    await runtime.agentRpc("omb-a", AGENT_BROWSER, "tools/call", { name: "agent_browser_press", arguments: { key: "Enter" } });
+    await expect(runtime.agentRpc("sanremes-a", AGENT_BROWSER, "tools/call", { name: "agent_browser_type", arguments: { text: "typed words" } })).rejects.toThrow("socket hang up");
+    await runtime.agentRpc("sanremes-a", AGENT_BROWSER, "tools/call", { name: "agent_browser_press", arguments: { key: "Enter" } });
     old.agentRpc.mockResolvedValueOnce(failure("Element not found: #pay-now.") as never);
-    await runtime.agentRpc("omb-a", AGENT_BROWSER, "tools/call", { name: "agent_browser_get_text", arguments: { selector: "#pay-now" } });
-    await runtime.agentRpc("omb-a", AGENT_BROWSER, "tools/call", { name: "agent_browser_click", arguments: { selector: "#ok" } });
+    await runtime.agentRpc("sanremes-a", AGENT_BROWSER, "tools/call", { name: "agent_browser_get_text", arguments: { selector: "#pay-now" } });
+    await runtime.agentRpc("sanremes-a", AGENT_BROWSER, "tools/call", { name: "agent_browser_click", arguments: { selector: "#ok" } });
     expect(lines).toEqual([
-      "browser input: bot click dropped reason=target_not_found engine=agent-browser transport=tools session=omb-a",
-      "browser input: bot fill dropped reason=target_not_found engine=chrome transport=tools session=omb-b",
-      "browser input: bot type dropped reason=threw engine=agent-browser transport=tools session=omb-a",
-      "browser input: bot press dropped reason=person_holds_control engine=agent-browser transport=tools session=omb-a",
+      "browser input: bot click dropped reason=target_not_found engine=agent-browser transport=tools session=sanremes-a",
+      "browser input: bot fill dropped reason=target_not_found engine=chrome transport=tools session=sanremes-b",
+      "browser input: bot type dropped reason=threw engine=agent-browser transport=tools session=sanremes-a",
+      "browser input: bot press dropped reason=person_holds_control engine=agent-browser transport=tools session=sanremes-a",
     ]);
     expect(lines.join("\n")).not.toMatch(/pay-now|card-number|4111|typed words/);
   });
@@ -135,7 +135,7 @@ describe("the runtime router", () => {
     { name: "agent_browser_tab_new", arguments: { url: "https://www.reddit.com/" } },
   ];
 
-  it("tells a bot on MausBot Cloud why its browser doesn't open Reddit, on either engine, without reaching it", async () => {
+  it("tells a bot on SanRemes Cloud why its browser doesn't open Reddit, on either engine, without reaching it", async () => {
     const { old, chrome, runtime } = onHost("cloud");
     for (const spec of [AGENT_BROWSER, CHROME]) {
       for (const call of OPENS_REDDIT) {
@@ -303,7 +303,7 @@ describe("the new engine's minute", () => {
   });
 
   function engine() {
-    const dataDir = mkdtempSync(join(tmpdir(), "omb-chrome-engine-"));
+    const dataDir = mkdtempSync(join(tmpdir(), "sanremes-chrome-engine-"));
     const value = new ChromeEngine({ dataDir, host: "container", env: {}, platform: "linux", egressPort: async () => 0, idleMs: () => 180_000, egressNotice: () => null });
     cleanups.push(async () => { await value.close(); await removeTempDir(dataDir); });
     const closeIdle = vi.spyOn(value.service, "closeIdle").mockResolvedValue([]);
@@ -355,7 +355,7 @@ describe("which backend a profile's browser starts on", () => {
 
 describe("deleting a bot's browser on the desktop app, pane off", () => {
   it("does what it did without the pane: nothing for a profile that never ran, and no partition", async () => {
-    const dataDir = mkdtempSync(join(tmpdir(), "omb-chrome-engine-"));
+    const dataDir = mkdtempSync(join(tmpdir(), "sanremes-chrome-engine-"));
     const posted: object[] = [];
     const link = new PaneLink({ on: () => undefined, postMessage: (message) => posted.push(message) });
     const value = new ChromeEngine({
@@ -368,7 +368,7 @@ describe("deleting a bot's browser on the desktop app, pane off", () => {
       expect(await value.erase({ kind: "profile", id: "p", partitionId: "p1" })).toBe(true);
       expect(erase).not.toHaveBeenCalled();
       expect(existsSync(join(browserRoot(dataDir), "workspace-id"))).toBe(false);
-      expect(posted).toEqual([{ type: "openmausbot:browser-pane", op: "hello" }]);
+      expect(posted).toEqual([{ type: "sanremes:browser-pane", op: "hello" }]);
     } finally {
       await value.close();
       await removeTempDir(dataDir);
@@ -378,7 +378,7 @@ describe("deleting a bot's browser on the desktop app, pane off", () => {
 
 describe("the new engine's desktop view", () => {
   it.skipIf(process.platform === "win32")("never looks for bubblewrap while the setting is off, and looks once when it is on", async () => {
-    const dataDir = mkdtempSync(join(tmpdir(), "omb-chrome-engine-"));
+    const dataDir = mkdtempSync(join(tmpdir(), "sanremes-chrome-engine-"));
     const bin = join(dataDir, "bin");
     mkdirSync(bin);
     writeFileSync(join(bin, "Xvnc"), "", { mode: 0o755 });
@@ -400,7 +400,7 @@ describe("the new engine's desktop view", () => {
   });
 
   it("stays inert on a server without Xvnc, the setting on: no lookup at start, no bubblewrap probe, no desktop view", async () => {
-    const dataDir = mkdtempSync(join(tmpdir(), "omb-chrome-engine-"));
+    const dataDir = mkdtempSync(join(tmpdir(), "sanremes-chrome-engine-"));
     const probeBwrap = vi.fn(() => "/usr/bin/bwrap");
     const value = new ChromeEngine({ dataDir, host: "container", env: { PATH: join(dataDir, "no-such-bin") }, platform: "linux", egressPort: async () => 0, idleMs: () => 180_000, egressNotice: () => null, cloudDisplay: () => true, probeBwrap });
     try {
@@ -426,7 +426,7 @@ describe("where a bot's browser shows: a desktop pane, a private display, or pic
 
   /** An engine on `host` with Xvnc on PATH (or not), the display setting, and the desktop app's panes when it has them. */
   function surfaceOf({ host, xvnc = true, cloudDisplay, pane }: { host: "desktop" | "container"; xvnc?: boolean; cloudDisplay: boolean; pane?: { available: boolean; wanted: boolean } }) {
-    const dataDir = mkdtempSync(join(tmpdir(), "omb-chrome-engine-"));
+    const dataDir = mkdtempSync(join(tmpdir(), "sanremes-chrome-engine-"));
     folders.push(dataDir);
     const bin = join(dataDir, "bin");
     mkdirSync(bin);

@@ -24,12 +24,12 @@ export const FAILED_RUNS_BEFORE_SPACING = 3;
 export const FAILURE_FIRST_SPACING_MS = 60 * 60_000;
 export const FAILURE_SPACING_MS = 4 * 60 * 60_000;
 
-/** OMB_ROUTINE_FAILURES_BEFORE_SPACING (from 1), OMB_ROUTINE_FAILURE_SPACING_MS and OMB_ROUTINE_FAILURE_SPACING_MAX_MS
+/** SANREMES_ROUTINE_FAILURES_BEFORE_SPACING (from 1), SANREMES_ROUTINE_FAILURE_SPACING_MS and SANREMES_ROUTINE_FAILURE_SPACING_MAX_MS
  * (whole milliseconds from 60000, the second never below the first); anything else leaves the default. */
 export function failureSpacingLimits(env: NodeJS.ProcessEnv = process.env): FailureSpacingLimits {
-  const firstMs = envWhole(env.OMB_ROUTINE_FAILURE_SPACING_MS, FAILURE_FIRST_SPACING_MS, 60_000);
-  return { runs: envWhole(env.OMB_ROUTINE_FAILURES_BEFORE_SPACING, FAILED_RUNS_BEFORE_SPACING), firstMs,
-    laterMs: Math.max(firstMs, envWhole(env.OMB_ROUTINE_FAILURE_SPACING_MAX_MS, FAILURE_SPACING_MS, 60_000)) };
+  const firstMs = envWhole(env.SANREMES_ROUTINE_FAILURE_SPACING_MS, FAILURE_FIRST_SPACING_MS, 60_000);
+  return { runs: envWhole(env.SANREMES_ROUTINE_FAILURES_BEFORE_SPACING, FAILED_RUNS_BEFORE_SPACING), firstMs,
+    laterMs: Math.max(firstMs, envWhole(env.SANREMES_ROUTINE_FAILURE_SPACING_MAX_MS, FAILURE_SPACING_MS, 60_000)) };
 }
 
 /** The routine's newest failed runs that started work, since it last completed a run, was turned on or was changed, or

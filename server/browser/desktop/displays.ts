@@ -111,7 +111,7 @@ export function xvncArgs(display: number, size: DisplaySize, socket: string, aut
     "-FrameRate", "30",
     "-nolisten", "tcp",
     "-auth", auth,
-    "-desktop", "OpenMausBot",
+    "-desktop", "SanRemes",
   ];
 }
 

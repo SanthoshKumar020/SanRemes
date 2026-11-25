@@ -20,7 +20,7 @@ afterEach(() => {
 });
 
 function bridgeHome(helperBody: string) {
-  const home = mkdtempSync(join(tmpdir(), "omb-bridge-respawn-"));
+  const home = mkdtempSync(join(tmpdir(), "sanremes-bridge-respawn-"));
   homes.push(home);
   const log = join(home, "helper.log");
   const helper = join(home, "fake-helper.mjs");
@@ -163,12 +163,12 @@ describe("the local computer proxy", () => {
     try {
       const { port } = gate.address() as AddressInfo;
       const { bridge, call, reply, initialize } = startBridge(resolve("server/local-computer-proxy.ts"), {
-        OMB_CUA_COMMAND: process.execPath,
-        OMB_CUA_ARGS: JSON.stringify([helper]),
-        OMB_CUA_PLATFORM: platform,
-        OMB_CONTROL_URL: `http://127.0.0.1:${port}/control`,
-        OMB_CONTROL_TOKEN: "fixture-token",
-        OMB_COMPUTER_JOURNAL: "0",
+        SANREMES_CUA_COMMAND: process.execPath,
+        SANREMES_CUA_ARGS: JSON.stringify([helper]),
+        SANREMES_CUA_PLATFORM: platform,
+        SANREMES_CONTROL_URL: `http://127.0.0.1:${port}/control`,
+        SANREMES_CONTROL_TOKEN: "fixture-token",
+        SANREMES_COMPUTER_JOURNAL: "0",
       });
       await initialize(1);
       call(2, tool);

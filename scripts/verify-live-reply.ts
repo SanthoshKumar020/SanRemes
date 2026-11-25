@@ -7,7 +7,7 @@
 //   node --experimental-strip-types scripts/verify-live-reply.ts [--engines claude,codex,acp,cline,copilot]
 //     [--cases short,long,...] [--skip-room] [--out DIR] [--cadence 4:30]
 //
-// Needs the pinned test browser (OMB_AGENT_BROWSER_PATH / AGENT_BROWSER_EXECUTABLE_PATH, as control-omb ui launch).
+// Needs the pinned test browser (SANREMES_AGENT_BROWSER_PATH / AGENT_BROWSER_EXECUTABLE_PATH, as control-sanremes ui launch).
 import { spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
 import { caseTokens, LIVE_REPLY_CASES, liveReplyScripts, type LiveReplyCase } from "../server/testing/live-reply-cases.ts";
-import { runControlOmbUi } from "./testing/control-omb-ui.ts";
+import { runControlOmbUi } from "./testing/control-sanremes-ui.ts";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 /** The instance each engine's fixture adds, and the model Pepper is moved to. */
@@ -26,7 +26,7 @@ const ENGINES: Record<string, { flag?: string; instanceId: string; model: string
   acp: { flag: "acp", instanceId: "myAgent", model: "fixture-fast" },
   cline: { flag: "cline", instanceId: "cline", model: "cline-default" },
   copilot: { flag: "copilot", instanceId: "githubCopilot", model: "claude-haiku-4.5" },
-  // A real OpenCode at OMB_VERIFY_OPENCODE_CLI, on a free model it offers with no key: real prompts, not scripts.
+  // A real OpenCode at SANREMES_VERIFY_OPENCODE_CLI, on a free model it offers with no key: real prompts, not scripts.
   opencode: { flag: "opencode", instanceId: "opencode", model: "" },
 };
 /** Prompts for a real engine: each asks for its own token, so the checks can find the reply's words. */
@@ -48,7 +48,7 @@ const { values } = parseArgs({ options: {
   out: { type: "string" },
   cadence: { type: "string", default: "4:30" },
 } });
-const out = values.out ?? mkdtempSync(join(tmpdir(), "omb-live-reply-verify-"));
+const out = values.out ?? mkdtempSync(join(tmpdir(), "sanremes-live-reply-verify-"));
 mkdirSync(out, { recursive: true });
 const scripts = join(out, "scripts.json");
 writeFileSync(scripts, JSON.stringify(liveReplyScripts()));
@@ -73,7 +73,7 @@ const api = async (handle: Handle, method: string, path: string, body?: unknown)
 /** Starts a fixture and resolves with its handle once it has printed it. */
 function launch(engine: string): Promise<{ child: ChildProcess; handle: Handle }> {
   const flag = ENGINES[engine]!.flag;
-  const child = spawn(process.execPath, ["--experimental-strip-types", join(ROOT, "scripts", "control-omb.ts"), "ui", "launch", ...(flag ? ["--engine", flag] : [])], {
+  const child = spawn(process.execPath, ["--experimental-strip-types", join(ROOT, "scripts", "control-sanremes.ts"), "ui", "launch", ...(flag ? ["--engine", flag] : [])], {
     cwd: ROOT, env: { ...process.env, FAKE_STREAM_SCRIPT: scripts, FAKE_STREAM_CADENCE: values.cadence }, stdio: ["ignore", "pipe", "pipe"],
   });
   return new Promise((resolve, reject) => {
@@ -147,7 +147,7 @@ async function runCase(handle: Handle, engine: string, entry: LiveReplyCase & { 
       await ui(handle, "type", "--name", context.composer, "--text", "also mention T13STEER");
       await ui(handle, "press", "--keys", "Enter");
     }
-    if (entry.action === "reconnect") await evaluate(handle, "window.dispatchEvent(new Event('omb:retry-live-events')); 'retried'");
+    if (entry.action === "reconnect") await evaluate(handle, "window.dispatchEvent(new Event('sanremes:retry-live-events')); 'retried'");
     if (entry.action === "switch") {
       await evaluate(handle, `document.querySelector(${JSON.stringify(context.otherBotRow)})?.click(); 'away'`);
       await pause(1_500);
@@ -261,7 +261,7 @@ for (const engine of values.engines!.split(",")) {
     const bots = (await api(handle, "GET", "/api/bots")).bots as Array<{ id: string; name: string; threadId: string }>;
     const pepper = bots.find((bot) => bot.id === handle.botId)!;
     const other = bots.find((bot) => bot.id !== handle.botId)!;
-    await evaluate(handle, "localStorage.setItem('omb-advanced-mode', 'true'); location.reload(); 'reloaded'");
+    await evaluate(handle, "localStorage.setItem('sanremes-advanced-mode', 'true'); location.reload(); 'reloaded'");
     await pause(4_000);
     await ui(handle, "flag", "--set", "features.showToolCalls=true");
     const before = await CONSOLE_ERRORS(handle);

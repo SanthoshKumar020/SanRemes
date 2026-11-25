@@ -14,7 +14,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
-import { launchVerificationServer, runControlOmb } from "./control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "./control-sanremes.ts";
 import { openHeadlessChrome, type HeadlessPage } from "./testing/headless-chrome.ts";
 import { zoomedCrop } from "./testing/png.ts";
 import { mountPreview, parkUntilSignal, type MountedPreview } from "./testing/preview-fixture.ts";
@@ -159,7 +159,7 @@ try {
     await parkUntilSignal();
   } else {
     mkdirSync(shots, { recursive: true });
-    const profile = mkdtempSync(join(tmpdir(), "omb-frame-chrome-"));
+    const profile = mkdtempSync(join(tmpdir(), "sanremes-frame-chrome-"));
     const page = await openHeadlessChrome(profile);
     const wanted = (name: string) => !only || only.has(name);
     try {

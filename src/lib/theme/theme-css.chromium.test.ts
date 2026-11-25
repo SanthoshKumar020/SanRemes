@@ -1,13 +1,13 @@
 // The theme CSS guard in a real Chromium, whose parser and CSSOM are what people run: nothing a theme writes may reach
 // another site, and what stays still styles the page. Runs where a Chromium and playwright-core are named:
-//   OMB_UI_CHROMIUM=<chrome or headless shell> OMB_UI_PLAYWRIGHT_CORE=<playwright-core dir> vitest run src/lib/theme/theme-css.chromium.test.ts
+//   SANREMES_UI_CHROMIUM=<chrome or headless shell> SANREMES_UI_PLAYWRIGHT_CORE=<playwright-core dir> vitest run src/lib/theme/theme-css.chromium.test.ts
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import { afterAll, beforeAll, expect, it } from "vitest";
 
-const { OMB_UI_CHROMIUM: chromiumPath, OMB_UI_PLAYWRIGHT_CORE: playwrightPath } = process.env;
+const { SANREMES_UI_CHROMIUM: chromiumPath, SANREMES_UI_PLAYWRIGHT_CORE: playwrightPath } = process.env;
 const ready = Boolean(chromiumPath && playwrightPath);
 const HERE = dirname(fileURLToPath(import.meta.url));
 

@@ -484,7 +484,7 @@ function withinFolder(path: string, folder: string): boolean {
 }
 
 /** A bot's shared or private folder: bots wrote everything there, so none of it may become OpenCode configuration. */
-export function openMausOwnsWorkingFolder(cwd: string): boolean {
+export function openSanRemesOwnsWorkingFolder(cwd: string): boolean {
   return [join(DATA_DIR, "workspaces"), join(DATA_DIR, "task-workspaces")].some((root) =>
     withinFolder(cwd, root) && resolvePath(cwd) !== resolvePath(root));
 }
@@ -719,7 +719,7 @@ const support = (
     },
     spawnFingerprint: (env, config) => openCodeSpawnFingerprint(env, config.cli),
     applyTurnEnv: (env, { fullAuto, botId, cwd }) => {
-      if (openMausOwnsWorkingFolder(cwd)) env.OPENCODE_DISABLE_PROJECT_CONFIG = "1";
+      if (openSanRemesOwnsWorkingFolder(cwd)) env.OPENCODE_DISABLE_PROJECT_CONFIG = "1";
       if (!fullAuto) {
         allowOwnedDirectories(env, botId, cwd);
         return;

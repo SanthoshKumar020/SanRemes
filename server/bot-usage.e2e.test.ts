@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it } from "vitest";
 
-import { launchVerificationServer, runControlOmb, type VerificationServer } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb, type VerificationServer } from "../scripts/control-sanremes.ts";
 import { createHarnessClient } from "./drivers/agents-client.ts";
 import { callUsageLimitsTool } from "./drivers/agents-usage-tool.ts";
 import { removeTempDir } from "./testing/cleanup.ts";
@@ -11,7 +11,7 @@ import { hostTimeout } from "./testing/host-timeout.ts";
 import { appendUsage } from "./usage-ledger.ts";
 
 it("shows exact headroom to a solo turn and keeps restricted usage out of a chat-only device's turn", async () => {
-  const folder = mkdtempSync(join(tmpdir(), "omb-bot-usage-e2e-"));
+  const folder = mkdtempSync(join(tmpdir(), "sanremes-bot-usage-e2e-"));
   const gate = join(folder, "finish");
   let fixture: VerificationServer | undefined;
   try {
@@ -43,7 +43,7 @@ it("shows exact headroom to a solo turn and keeps restricted usage out of a chat
       let active: ReturnType<typeof createHarnessClient> | undefined;
       await expect.poll(async () => {
         let token: string;
-        try { token = JSON.parse(readFileSync(fixtureDumpPath, "utf8")).mcpConfig.mcpServers.agents.env.OMB_COMMS_TOKEN; } catch { return false; }
+        try { token = JSON.parse(readFileSync(fixtureDumpPath, "utf8")).mcpConfig.mcpServers.agents.env.SANREMES_COMMS_TOKEN; } catch { return false; }
         if (!token) return false;
         active = createHarnessClient(url, token);
         return (await active.apiResponse(botUsagePath)).status === 200;

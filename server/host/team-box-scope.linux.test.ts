@@ -10,12 +10,12 @@ import { detectBox } from "../bot-box/detect.ts";
 import { bwrapArgs, planBox, type BoxRequest } from "../bot-box/plan.ts";
 import { createTeamBoxScope } from "./team-box-scope.ts";
 
-const detection = detectBox({ env: { ...process.env, OMB_BOT_BOX: "1" } });
+const detection = detectBox({ env: { ...process.env, SANREMES_BOT_BOX: "1" } });
 const available = detection.box === "bwrap" && detection.tools !== null;
-const root = mkdtempSync(join(tmpdir(), "omb-team-box-"));
+const root = mkdtempSync(join(tmpdir(), "sanremes-team-box-"));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
 
-const home = join(root, "home"), dataDir = join(home, ".openmausbot");
+const home = join(root, "home"), dataDir = join(home, ".sanremes");
 const team = join(dataDir, "workspaces", "bot-a"), miraLayer = join(dataDir, "workspaces", "bot-a--member-p_mira");
 const conversation = (threadId: string) => join(dataDir, "task-workspaces", "bot-a", threadId);
 const put = (path: string, text: string) => { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, text); };

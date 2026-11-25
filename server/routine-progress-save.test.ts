@@ -7,7 +7,7 @@ import { RunProgressSave } from "./routine-progress-save.ts";
 
 let directory: string;
 beforeEach(() => {
-  directory = mkdtempSync(join(tmpdir(), "omb-progress-save-"));
+  directory = mkdtempSync(join(tmpdir(), "sanremes-progress-save-"));
   vi.useFakeTimers();
 });
 afterEach(() => {

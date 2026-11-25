@@ -9,7 +9,7 @@ const folders: string[] = [];
 afterEach(() => { for (const dir of folders.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 
 function harness() {
-  const dir = mkdtempSync(join(tmpdir(), "omb-trigger-identity-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-trigger-identity-"));
   folders.push(dir);
   let binds = 0;
   const broker: AppTriggerBroker = {

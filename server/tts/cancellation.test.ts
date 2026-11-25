@@ -30,10 +30,10 @@ beforeAll(async () => {
     entered(res);
   });
   providerUrl = await listen(provider);
-  vi.stubEnv("OMB_ELEVENLABS_API", `${providerUrl}/v1`);
-  vi.stubEnv("OMB_FISH_AUDIO_API", providerUrl);
-  vi.stubEnv("OMB_XAI_TTS_API", `${providerUrl}/v1`);
-  vi.stubEnv("OMB_GEMINI_TTS_API", providerUrl);
+  vi.stubEnv("SANREMES_ELEVENLABS_API", `${providerUrl}/v1`);
+  vi.stubEnv("SANREMES_FISH_AUDIO_API", providerUrl);
+  vi.stubEnv("SANREMES_XAI_TTS_API", `${providerUrl}/v1`);
+  vi.stubEnv("SANREMES_GEMINI_TTS_API", providerUrl);
   const { createTtsRoutes } = await import("../routes/tts.ts");
   const route = createTtsRoutes({ config: () => config });
   api = createServer(async (req, res) => {

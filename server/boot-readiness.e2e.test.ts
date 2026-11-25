@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath } from "node:url";
 import { afterEach, expect, it } from "vitest";
-import { runControlOmb, verificationServerEnvironment } from "../scripts/control-omb.ts";
+import { runControlOmb, verificationServerEnvironment } from "../scripts/control-sanremes.ts";
 import { removeTempDir, waitForExit } from "./testing/cleanup.ts";
 import { freePortBlock } from "./testing/ports.ts";
 
@@ -22,7 +22,7 @@ afterEach(async () => {
 });
 
 function freshHome(more: Record<string, unknown> = {}): string {
-  const home = mkdtempSync(join(tmpdir(), "omb-boot-readiness-"));
+  const home = mkdtempSync(join(tmpdir(), "sanremes-boot-readiness-"));
   homes.push(home);
   mkdirSync(join(home, "tmp"), { recursive: true });
   writeFileSync(join(home, "config.json"), JSON.stringify({
@@ -102,7 +102,7 @@ it("answers on a later start while an engine CLI is still being probed, and runs
 }, 60_000);
 
 it.skipIf(process.platform === "win32")("runs a turn on a later start once its own engine has answered, while another engine's CLI is still being probed", async () => {
-  const scratch = mkdtempSync(join(tmpdir(), "omb-boot-slow-engine-"));
+  const scratch = mkdtempSync(join(tmpdir(), "sanremes-boot-slow-engine-"));
   homes.push(scratch);
   const slowProbes = join(scratch, "probes.log"), slowRelease = join(scratch, "release-version");
   const slowCli = join(scratch, "slow-claude");

@@ -40,7 +40,7 @@ export function boxGitEnv(input: { port: number; token: string }): Record<string
 }
 
 /** The header the credential helper sends its secret in (server/github/git-credential.ts). */
-export const GIT_CREDENTIAL_HEADER = "x-omb-git-credential";
+export const GIT_CREDENTIAL_HEADER = "x-sanremes-git-credential";
 export const GIT_CREDENTIAL_PATH = "/api/github/git-credential";
 
 /** The credential helper of an unboxed bot (This computer): for github.com only, asked after the person's own helpers,

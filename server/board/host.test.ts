@@ -13,7 +13,7 @@ const PERSON = { kind: "person" as const, person: "p_mira" };
 const dirs: string[] = [];
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 
-function harness(dir = mkdtempSync(join(tmpdir(), "omb-board-host-"))) {
+function harness(dir = mkdtempSync(join(tmpdir(), "sanremes-board-host-"))) {
   if (!dirs.includes(dir)) dirs.push(dir);
   const h = {
     dir,
@@ -176,7 +176,7 @@ describe("the board", () => {
   });
 
   it("starts empty from a corrupt file and writes a good one on the next change", () => {
-    const dir = mkdtempSync(join(tmpdir(), "omb-board-host-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-board-host-"));
     writeFileSync(join(dir, BOARD_FILE), "{oops");
     const { board, add } = harness(dir);
     expect(board.list()).toEqual([]);

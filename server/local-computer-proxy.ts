@@ -8,13 +8,13 @@ import { journalUrl } from "./saved-steps/journal-tap.ts";
 import { COMPUTER_HELPER_STOPPED } from "../shared/your-computer.ts";
 
 const {
-  OMB_CUA_COMMAND: command,
-  OMB_CUA_ARGS: encodedArgs,
-  OMB_CUA_PLATFORM: platform,
-  OMB_CONTROL_URL: url,
-  OMB_CONTROL_TOKEN: token,
-  OMB_COMPUTER_JOURNAL: journal,
-  OMB_HOST_FILES: hostFiles,
+  SANREMES_CUA_COMMAND: command,
+  SANREMES_CUA_ARGS: encodedArgs,
+  SANREMES_CUA_PLATFORM: platform,
+  SANREMES_CONTROL_URL: url,
+  SANREMES_CONTROL_TOKEN: token,
+  SANREMES_COMPUTER_JOURNAL: journal,
+  SANREMES_HOST_FILES: hostFiles,
   ...childEnv
 } = process.env;
 

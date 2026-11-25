@@ -68,7 +68,7 @@ createInterface({ input: process.stdin }).on("line", (line) => {
  * in `after` exists, then `startMs` later; if they are not all there within 30 s it exits with an error, so it never
  * starts out of order. Remove `dir` when done. */
 export function catalogServer(names: readonly string[], { startMs = 0, after = [] }: { startMs?: number; after?: readonly string[] } = {}): { dir: string; server: { command: string; args: string[]; env: Record<string, string> } } {
-  const dir = mkdtempSync(join(tmpdir(), "omb-catalog-mcp-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-catalog-mcp-"));
   const script = join(dir, "catalog.mjs");
   writeFileSync(script, CATALOG_SERVER);
   return { dir, server: { command: process.execPath, args: [script], env: { CATALOG_TOOLS: JSON.stringify(names), CATALOG_START_MS: String(startMs), CATALOG_AFTER: JSON.stringify(after) } } };

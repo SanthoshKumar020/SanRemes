@@ -7,7 +7,7 @@ import test from "node:test";
 import { createSyncClient } from "./cloud-sync-client.mjs";
 
 function setup(t, contents, maxRead) {
-  const folder = fs.mkdtempSync(join(tmpdir(), "omb-sync-short-read-"));
+  const folder = fs.mkdtempSync(join(tmpdir(), "sanremes-sync-short-read-"));
   const file = join(folder, "upload");
   fs.writeFileSync(file, contents);
   const read = fs.readSync;

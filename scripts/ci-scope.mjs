@@ -101,7 +101,7 @@ export const VITEST_SUBSETS = {
       "server/cloud-team-gateway-mcp.e2e.test.ts",
       "server/cloud-team-inbox.e2e.test.ts",
       "server/cloud-team-included-hosting.e2e.test.ts",
-      "server/cloud-team-mausbot-reach.e2e.test.ts",
+      "server/cloud-team-sanremes-reach.e2e.test.ts",
       "server/cloud-team-member-secrets.e2e.test.ts",
       "server/cloud-team-new-chat-private.e2e.test.ts",
       "server/cloud-team-onepassword.e2e.test.ts",
@@ -174,7 +174,7 @@ export const VITEST_SUBSETS = {
       "server/question-routing.e2e.test.ts",
       "server/team-protocol.e2e.test.ts",
       "server/team-small-fixes.e2e.test.ts",
-      "server/team-mausbot-followup.e2e.test.ts",
+      "server/team-sanremes-followup.e2e.test.ts",
       "server/team-no-ai.e2e.test.ts",
       "server/team-phone-data.e2e.test.ts",
       "server/team-refused-handoff.e2e.test.ts",
@@ -186,7 +186,7 @@ export const VITEST_SUBSETS = {
       "server/bot-api-team.e2e.test.ts",
       "server/cloud-team-conversation-share.e2e.test.ts",
       "server/cloud-team-first-look.e2e.test.ts",
-      "server/cloud-team-mausbot-own-chat.e2e.test.ts",
+      "server/cloud-team-sanremes-own-chat.e2e.test.ts",
       "server/connector-stayed.e2e.test.ts",
       "server/email/host.test.ts",
       "server/email/inline-images.test.ts",
@@ -366,7 +366,7 @@ export function laneOf(event) {
 // (the smokes, browser identity and the browser driver) wait for a free one.
 export const VITEST_SHARDS = { "macos-latest": 5, "ubuntu-latest": 8, "windows-latest": 8 };
 
-// Test files at once on each platform's runner (OMB_VITEST_WORKERS, vite.config.ts). A Linux shard mostly waits on real
+// Test files at once on each platform's runner (SANREMES_VITEST_WORKERS, vite.config.ts). A Linux shard mostly waits on real
 // servers and fake engines: its 4 vCPU sat 70% idle one file at a time, and four files take a third of the time. A
 // Windows shard one file at a time took 9 to 14 minutes (Nov 10 2026) and set the length of every run that has one;
 // its runner has 4 vCPU too, so it runs two files at once.
@@ -408,7 +408,7 @@ export function ciOutputs({ checks }, oses) {
   };
 }
 
-/** The outputs for a static job that does the Linux work itself (on a Boat VM, `OMB_CI_LINUX_IN_STATIC`): the Linux
+/** The outputs for a static job that does the Linux work itself (on a Boat VM, `SANREMES_CI_LINUX_IN_STATIC`): the Linux
  * vitest entries, behavior evals and the Linux packaged server smoke become `linux_lanes`
  * (scripts/ci-linux-lanes.mjs), and the jobs left with nothing to run drop out of the selection. */
 export function moveLinuxIntoStatic(outputs) {
@@ -544,7 +544,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       console.warn(`CI scope: using main's checks because the push diff or its CI is unavailable: ${error.message}`);
     }
   }
-  const linuxInStatic = process.env.OMB_CI_LINUX_IN_STATIC === "true";
+  const linuxInStatic = process.env.SANREMES_CI_LINUX_IN_STATIC === "true";
   const outputs = linuxInStatic ? moveLinuxIntoStatic(ciOutputs(scope, vitestOs)) : ciOutputs(scope, vitestOs);
   console.log(`CI scope: ${scope.areas.join(", ")} -> ${outputs.jobs.join(", ") || "static checks only"}`);
   if (linuxInStatic) {

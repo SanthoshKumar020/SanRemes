@@ -5,7 +5,7 @@ import { once } from "node:events";
 import { resolve } from "node:path";
 import { Writable } from "node:stream";
 import { fileURLToPath } from "node:url";
-import { launchUi } from "./control-omb-ui.ts";
+import { launchUi } from "./control-sanremes-ui.ts";
 import { fakeDesktopFrame } from "./fake-desktop-frame.ts";
 import { fixtureApi } from "./preview-fixture.ts";
 

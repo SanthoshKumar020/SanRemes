@@ -22,7 +22,7 @@ cannot pass.
 The test requires catalog refresh to expose the model labels, model-specific
 thinking options and capability without sending a prompt. It saves independent
 defaults on two bots and an explicit override on a sibling thread, then sends
-through `control-omb send`, `wait` and `messages` with the fixture URL explicitly
+through `control-sanremes send`, `wait` and `messages` with the fixture URL explicitly
 pinned. The fake ACP process records only model settings, session IDs and
 synthetic request markers. Its reply includes the effective model and thought
 level, so an auxiliary call or merely successful settings save cannot satisfy

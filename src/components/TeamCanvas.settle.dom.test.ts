@@ -20,7 +20,7 @@ const fixture = vi.hoisted(() => {
 
 async function fakeApi(path: string) {
   await new Promise((resolve) => setTimeout(resolve, 5));
-  if (path.startsWith("/.well-known/openmausbot/environment")) return { environmentId: "fixture" };
+  if (path.startsWith("/.well-known/sanremes/environment")) return { environmentId: "fixture" };
   if (path.startsWith("/api/team-map")) return structuredClone(fixture.teamMap);
   if (path.startsWith("/api/computers/frames")) {
     if (!fixture.computersAnswer) return new Promise(() => {});
@@ -70,7 +70,7 @@ beforeEach(() => {
   HTMLElement.prototype.getBoundingClientRect = function (this: HTMLElement) {
     return this.matches("[data-team-canvas]") ? new DOMRect(0, 0, 1200, 800) : elementRect.call(this);
   };
-  const stored = new Map([["omb-team-canvas:fixture", JSON.stringify({ Ops: { x: 900, y: 60 } })]]);
+  const stored = new Map([["sanremes-team-canvas:fixture", JSON.stringify({ Ops: { x: 900, y: 60 } })]]);
   vi.stubGlobal("localStorage", { getItem: (key: string) => stored.get(key) ?? null, setItem: (key: string, value: string) => stored.set(key, value) });
   fixture.computersAnswer = true;
   fixture.teamMap = { collaborations: [], queued: [], running: [] };

@@ -54,7 +54,7 @@ describe("a delegation run", () => {
     const draft = draftWorkflow(run, { teammate })!;
     expect(workflowSchema.safeParse(draft.workflow).success).toBe(true);
     const [send, review] = draft.workflow.steps;
-    expect(draft.workflow.args).toEqual({ site: { default: "https://mausbot.com", label: "site" } });
+    expect(draft.workflow.args).toEqual({ site: { default: "https://sanremes.com", label: "site" } });
     expect(send).toMatchObject({ kind: "delegate", label: "Ask Kiwi, Rio and Miso", review: { rounds: 1 } });
     if (send?.kind !== "delegate") throw new Error("not a delegate step");
     expect(send.tasks.map((task) => task.bot)).toEqual([
@@ -92,8 +92,8 @@ describe("a delegation run", () => {
 
 describe("values from the ask", () => {
   it("names each typed value by its kind", () => {
-    expect(askValues("QA-test https://mausbot.com and email ana@example.com the report.csv from ~/out/x by 2026-12-01, titled \"Weekly QA\"")).toEqual(expect.arrayContaining([
-      { value: "https://mausbot.com", name: "site" }, { value: "ana@example.com", name: "email" }, { value: "report.csv", name: "file" },
+    expect(askValues("QA-test https://sanremes.com and email ana@example.com the report.csv from ~/out/x by 2026-12-01, titled \"Weekly QA\"")).toEqual(expect.arrayContaining([
+      { value: "https://sanremes.com", name: "site" }, { value: "ana@example.com", name: "email" }, { value: "report.csv", name: "file" },
       { value: "~/out/x", name: "path" }, { value: "2026-12-01", name: "date" }, { value: "Weekly QA", name: "text" },
     ]));
     expect(askValues("open https://python.org/downloads/ now")).toEqual([{ value: "https://python.org/downloads/", name: "url" }]);
@@ -108,7 +108,7 @@ describe("values from the ask", () => {
     const [fetch] = draft.workflow.steps;
     expect(draft.workflow.args).toEqual({ url: { default: "https://example.com/feed.json", label: "url" } });
     expect(fetch).toMatchObject({ kind: "shell" });
-    expect(fetch?.kind === "shell" && fetch.run).toContain('curl -sf "$OMB_ARG_URL"');
+    expect(fetch?.kind === "shell" && fetch.run).toContain('curl -sf "$SANREMES_ARG_URL"');
     expect(fetch?.kind === "shell" && fetch.run).toContain("d['score']");
   });
 
@@ -119,12 +119,12 @@ describe("values from the ask", () => {
       bash("sort -n times.txt > ranking.txt"),
     ])!;
     const first = draft.workflow.steps[0]!;
-    expect(first.kind === "shell" && first.run).toBe('for site in "$OMB_ARG_SITE" "$OMB_ARG_SITE_2"; do curl -s -o /dev/null -w \'%{time_total}\' https://$site/; done > times.txt');
+    expect(first.kind === "shell" && first.run).toBe('for site in "$SANREMES_ARG_SITE" "$SANREMES_ARG_SITE_2"; do curl -s -o /dev/null -w \'%{time_total}\' https://$site/; done > times.txt');
   });
 });
 
 describe("a step's place and the run's own leftovers", () => {
-  const folder = "/Users/ana/omb/task-workspaces/ae3a6bd7-afb4-4ad1-909b-5a7b6d887ac9/a48d8ea2-161f-4ca1-a80c-0591f3082283";
+  const folder = "/Users/ana/sanremes/task-workspaces/ae3a6bd7-afb4-4ad1-909b-5a7b6d887ac9/a48d8ea2-161f-4ca1-a80c-0591f3082283";
 
   it("writes in the conversation it runs in, not the one it was saved from", () => {
     const draft = draftWorkflow([ask("make notes"), bash(`cd ${folder} && echo hi > notes.md`), bash(`cp ${folder}/notes.md ${folder}/copy.md`)])!;
@@ -169,6 +169,6 @@ describe("a file the person named", () => {
       bash('cp /tmp/out.md "./top5.md"'),
     ])!;
     expect(draft.workflow.args).toEqual({ file: { default: "top5.md", label: "file" } });
-    expect(draft.workflow.steps[1]).toMatchObject({ run: 'cp /tmp/out.md "./$OMB_ARG_FILE"' });
+    expect(draft.workflow.steps[1]).toMatchObject({ run: 'cp /tmp/out.md "./$SANREMES_ARG_FILE"' });
   });
 });

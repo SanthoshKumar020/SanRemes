@@ -7,7 +7,7 @@ import fs from "node:fs";
 import { createRequire, syncBuiltinESMExports } from "node:module";
 import path from "node:path";
 
-const config = JSON.parse(process.env.OMB_BENCH_LAUNCH ?? "null");
+const config = JSON.parse(process.env.SANREMES_BENCH_LAUNCH ?? "null");
 if (!config) { console.error("bench-launch-entry runs only under scripts/bench-launch.mjs"); app.exit(64); await new Promise(() => {}); }
 const require = createRequire(import.meta.url);
 require(config.blocker);
@@ -28,7 +28,7 @@ const real = (target) => {
 const inside = (target) => { const full = real(target); return full === config.root || full.startsWith(config.root + path.sep); };
 const derived = {
   home: app.getPath("home"), appData: app.getPath("appData"), userData: app.getPath("userData"), logs: app.getPath("logs"),
-  downloads: app.getPath("downloads"), dataDir: process.env.OMB_DATA_DIR ?? "", profiles: `${process.env.OMB_DATA_DIR ?? ""}-profiles`,
+  downloads: app.getPath("downloads"), dataDir: process.env.SANREMES_DATA_DIR ?? "", profiles: `${process.env.SANREMES_DATA_DIR ?? ""}-profiles`,
   envHome: process.env.HOME ?? "",
 };
 const outside = Object.entries(derived).filter(([, value]) => !value || !inside(value));
@@ -96,7 +96,7 @@ utilityProcess.fork = function (entry, ...rest) {
   const child = fork.call(this, entry, ...rest);
   child.once("spawn", () => mark("fork-spawned", { entry: label }));
   let listening = false;
-  child.stdout?.on("data", (chunk) => { if (!listening && String(chunk).includes("openmausbot server on ")) { listening = true; mark("server-first-listen-line"); } });
+  child.stdout?.on("data", (chunk) => { if (!listening && String(chunk).includes("sanremes server on ")) { listening = true; mark("server-first-listen-line"); } });
   return child;
 };
 

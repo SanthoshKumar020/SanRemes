@@ -50,7 +50,7 @@ export function changeBlocks(segments: readonly ChangeSegment[]): { blocks: Bloc
 /** `kept`: the server served the copy kept when the person sent the file, so it is exactly their original. */
 async function readSide(file: ComparedFile, signal: AbortSignal): Promise<{ text: string; kept: boolean }> {
   const response = await requestMessageFile(file.path, file.message, signal);
-  const kept = response.headers.get("x-openmausbot-kept-original") === "1";
+  const kept = response.headers.get("x-sanremes-kept-original") === "1";
   return { text: await readTableResponse(response, signal, WHAT_CHANGED_MAX_BYTES, "windows-1252"), kept };
 }
 

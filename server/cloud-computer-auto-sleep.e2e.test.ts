@@ -81,13 +81,13 @@ describe("a cloud computer goes to sleep after use and wakes on the next", () =>
       cwd: ROOT,
       env: {
         PATH: process.env.PATH, ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}),
-        HOME: home, USERPROFILE: home, OMB_DATA_DIR: data, TEMP: home, TMP: home, TMPDIR: home,
-        OMB_PORT: String(port), OMB_WEBHOOK_PORT: String(port + 1),
-        OMB_BOAT_API: `${relayBase}/own-key-must-not-be-used`,
-        OMB_CLOUD_BOAT_URL: `${relayBase}/relay/api/box/v1`,
-        OMB_CLOUD_BOAT_TOKEN: INCLUDED,
-        OMB_CLOUD_COMPUTER_IDLE_MS: String(IDLE_MS),
-        ...(process.platform === "win32" ? {} : { OMB_EXTRA_PATH: join(home, "bin"), FAKE_DOCKER_LOG: dockerLog }),
+        HOME: home, USERPROFILE: home, SANREMES_DATA_DIR: data, TEMP: home, TMP: home, TMPDIR: home,
+        SANREMES_PORT: String(port), SANREMES_WEBHOOK_PORT: String(port + 1),
+        SANREMES_BOAT_API: `${relayBase}/own-key-must-not-be-used`,
+        SANREMES_CLOUD_BOAT_URL: `${relayBase}/relay/api/box/v1`,
+        SANREMES_CLOUD_BOAT_TOKEN: INCLUDED,
+        SANREMES_CLOUD_COMPUTER_IDLE_MS: String(IDLE_MS),
+        ...(process.platform === "win32" ? {} : { SANREMES_EXTRA_PATH: join(home, "bin"), FAKE_DOCKER_LOG: dockerLog }),
       },
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -152,7 +152,7 @@ describe("a cloud computer goes to sleep after use and wakes on the next", () =>
     });
     await new Promise<void>(resolve => relay.listen(0, "127.0.0.1", resolve));
 
-    home = mkdtempSync(join(tmpdir(), "omb-cloud-sleep-"));
+    home = mkdtempSync(join(tmpdir(), "sanremes-cloud-sleep-"));
     data = join(home, "data");
     gate = join(home, "finish");
     usesGate = join(home, "finish-uses");

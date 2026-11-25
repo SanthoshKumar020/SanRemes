@@ -80,10 +80,10 @@ given and any secret granted to it directly: every bot may use what it reads, so
 - On a Team Cloud only an admin connects it, for the whole team; a member's Vault shows
   `bitwardenSecrets: { connected: false }`. The Admin's signed report does not list it yet.
 
-## The tool, and why OpenMausBot stays Apache-2.0
+## The tool, and why SanRemes stays Apache-2.0
 
 The tool is Bitwarden's own command line client, built from github.com/bitwarden/clients, whose code is GPL-3.0 except
-the `bitwarden_license/` folder. OpenMausBot uses its **open-source build** (`bw-oss-*`, made with `build:oss` from the
+the `bitwarden_license/` folder. SanRemes uses its **open-source build** (`bw-oss-*`, made with `build:oss` from the
 GPL code alone) and never bundles, ships or imports it:
 
 - It is downloaded on first use from Bitwarden's GitHub release
@@ -91,11 +91,11 @@ GPL code alone) and never bundles, ships or imports it:
   pinned size and SHA-256 below, and unpacked to `<data>/tools/bitwarden/2026.10.1/bw` (`bw.exe` on Windows). A download
   that fails the check installs nothing.
 - It runs only as a separate process: arguments and environment in, text out (`server/host/bitwarden-cli.ts`). Two
-  programs talking that way are separate works; OpenMausBot links nothing of Bitwarden's and copies none of its source.
+  programs talking that way are separate works; SanRemes links nothing of Bitwarden's and copies none of its source.
 - No `@bitwarden/` package is a dependency: `scripts/testing/no-bitwarden-dependency.test.ts` fails if one enters a
   manifest, a lockfile or an import. (Bitwarden's Secrets Manager SDK, `@bitwarden/sdk-napi`, is under Bitwarden's own
   SDK license, which forbids offering an app built with it to others; `@bitwarden/sdk-internal` is GPL-3.0. Neither is
-  used, and neither is the `bws` tool, which is under the same SDK license: Secrets Manager goes through OpenMausBot's own
+  used, and neither is the `bws` tool, which is under the same SDK license: Secrets Manager goes through SanRemes's own
   client of its HTTP API, written from the protocol, with no Bitwarden code or test data.)
 
 | Platform | Asset | Bytes | SHA-256 |

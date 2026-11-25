@@ -8,11 +8,11 @@ import { checkIndex, checkRelease, SOAK_MS, stableRecord, stableVersion } from "
 const NOW = Date.parse("2026-11-12T12:00:00Z");
 const release = (patch: Record<string, unknown> = {}) => ({
   tagName: "v0.1.151", isDraft: false, isPrerelease: false, publishedAt: "2026-11-09T22:56:49Z",
-  url: "https://github.com/milind-soni/OpenMausBot/releases/tag/v0.1.151", ...patch,
+  url: "https://github.com/SanthoshKumar020/SanRemes/releases/tag/v0.1.151", ...patch,
 });
-const pinned = (name: string, letter: string) => `ghcr.io/milind-soni/${name}@sha256:${letter.repeat(64)}`;
-const IMAGE = pinned("openmausbot", "a");
-const HOME = pinned("openmausbot-cloud-home", "b");
+const pinned = (name: string, letter: string) => `ghcr.io/SanthoshKumar020/${name}@sha256:${letter.repeat(64)}`;
+const IMAGE = pinned("sanremes", "a");
+const HOME = pinned("sanremes-cloud-home", "b");
 const index = (...platforms: string[]) => ({
   mediaType: "application/vnd.oci.image.index.v1+json",
   manifests: [...platforms, "unknown/unknown"].map((platform) => ({ platform: { os: platform.split("/")[0], architecture: platform.split("/")[1] } })),

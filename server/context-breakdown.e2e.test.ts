@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { expect, it } from "vitest";
 
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { request } from "../scripts/mcp-server.ts";
 import type { ContextBreakdown } from "../shared/context-breakdown.ts";
 

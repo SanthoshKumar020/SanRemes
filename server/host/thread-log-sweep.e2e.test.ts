@@ -2,7 +2,7 @@ import { appendFileSync, existsSync, readFileSync, statSync, utimesSync } from "
 import { join } from "node:path";
 import { expect, it } from "vitest";
 
-import { launchVerificationServer, runControlOmb } from "../../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../../scripts/control-sanremes.ts";
 import { AGE_MS, sweepThreadLogs } from "./thread-log-sweep.ts";
 
 // Cloud homes, where this runs, are Linux; Windows refuses a rename over a log the server may hold open.

@@ -1,6 +1,6 @@
 // Types for browser-pane-wire.mjs as the server uses it (server/browser/pane). Keep in step with the implementation.
 type CdpParams = Record<string, unknown>;
-type Base = { type: "openmausbot:browser-pane" };
+type Base = { type: "sanremes:browser-pane" };
 
 export type PaneToMain = Base & (
   | { op: "hello" }
@@ -73,7 +73,7 @@ export type PaneToServer = Base & (
   | { op: "download"; browser: string; tab: string; guid: string; state: "begin" | "inProgress" | "completed" | "canceled"; url?: string; name?: string; received?: number; total?: number; path?: string }
 );
 
-export declare const PANE_MESSAGE: "openmausbot:browser-pane";
+export declare const PANE_MESSAGE: "sanremes:browser-pane";
 export declare const PANE_TABS_PER_BROWSER: number;
 export declare const PANE_PARTITION: RegExp;
 export declare function paneMessageToMain(raw: unknown): PaneToMain | null;

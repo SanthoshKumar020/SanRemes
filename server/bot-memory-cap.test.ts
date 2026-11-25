@@ -27,25 +27,25 @@ describe("the cap's setting", () => {
   it("watches only by default, enforces only a set number, and is off where set off or on the desktop unless set", () => {
     const warned: string[] = [];
     expect(botMemoryCap({}, { gate: null, memoryBytes: 16 * GB })).toBeNull();
-    expect(botMemoryCap({ OMB_BOT_MEMORY_MAX_MB: "3000" }, { gate: null, memoryBytes: 16 * GB })).toEqual({ mode: "enforce", bytes: 3000 * MB });
-    expect(botMemoryCap({ OMB_BOT_MEMORY_MAX_MB: "off" }, inputs(8 * GB, 10))).toBeNull();
-    expect(botMemoryCap({ OMB_BOT_MEMORY_MAX_MB: "0" }, inputs(8 * GB, 10))).toBeNull();
-    expect(botMemoryCap({ OMB_BOT_MEMORY_MAX_MB: "10" }, inputs(8 * GB, 10))).toEqual({ mode: "enforce", bytes: 256 * MB });
+    expect(botMemoryCap({ SANREMES_BOT_MEMORY_MAX_MB: "3000" }, { gate: null, memoryBytes: 16 * GB })).toEqual({ mode: "enforce", bytes: 3000 * MB });
+    expect(botMemoryCap({ SANREMES_BOT_MEMORY_MAX_MB: "off" }, inputs(8 * GB, 10))).toBeNull();
+    expect(botMemoryCap({ SANREMES_BOT_MEMORY_MAX_MB: "0" }, inputs(8 * GB, 10))).toBeNull();
+    expect(botMemoryCap({ SANREMES_BOT_MEMORY_MAX_MB: "10" }, inputs(8 * GB, 10))).toEqual({ mode: "enforce", bytes: 256 * MB });
     // 8 GB and 10 turns: a fair share is 819 MB, twice that 1,638 MB, below an engine at its largest with its browser.
     expect(botMemoryCap({}, inputs(8 * GB, 10))).toEqual({ mode: "log", bytes: BOT_CAP_FLOOR_BYTES });
     expect(BOT_CAP_FLOOR_BYTES).toBe(1900 * MB);
     // "auto" is the default: watch only, with the computed value. 32 GB and 8 turns: 8 GB.
-    expect(botMemoryCap({ OMB_BOT_MEMORY_MAX_MB: "auto" }, inputs(32 * GB, 8))).toEqual({ mode: "log", bytes: 8 * GB });
+    expect(botMemoryCap({ SANREMES_BOT_MEMORY_MAX_MB: "auto" }, inputs(32 * GB, 8))).toEqual({ mode: "log", bytes: 8 * GB });
     expect(botMemoryCap({}, inputs(2 * GB, 2))?.bytes).toBe(Math.round(1.6 * GB));
     expect(botMemoryCap({}, inputs(64 * GB))?.bytes).toBe(BOT_CAP_FLOOR_BYTES);
-    expect(botMemoryCap({ OMB_BOT_MEMORY_MAX_MB: "lots" }, inputs(8 * GB, 10), (line) => warned.push(line))).toEqual({ mode: "log", bytes: BOT_CAP_FLOOR_BYTES });
-    expect(warned).toEqual(['OMB_BOT_MEMORY_MAX_MB="lots" is not a number of MB, "auto" or "off", so the default (watch only) is used']);
+    expect(botMemoryCap({ SANREMES_BOT_MEMORY_MAX_MB: "lots" }, inputs(8 * GB, 10), (line) => warned.push(line))).toEqual({ mode: "log", bytes: BOT_CAP_FLOOR_BYTES });
+    expect(warned).toEqual(['SANREMES_BOT_MEMORY_MAX_MB="lots" is not a number of MB, "auto" or "off", so the default (watch only) is used']);
   });
 
   it("reports the ladder's rungs this host offers, and watches with the watchdog", () => {
     const log: CapSetting = { mode: "log", bytes: GB };
     expect(capLadder(log, { platform: "darwin" })).toEqual({ rung: "none", offered: [] });
-    const files: Record<string, string> = { "/proc/self/cgroup": "0::/system.slice/openmausbot.service\n", "/sys/fs/cgroup/system.slice/openmausbot.service/cgroup.controllers": "cpu io memory pids\n" };
+    const files: Record<string, string> = { "/proc/self/cgroup": "0::/system.slice/sanremes.service\n", "/sys/fs/cgroup/system.slice/sanremes.service/cgroup.controllers": "cpu io memory pids\n" };
     const read = (path: string) => files[path] ?? null;
     expect(capLadder(log, { platform: "linux", read, writable: () => true, exists: () => true })).toEqual({ rung: "watchdog", offered: ["systemd-scope", "cgroup", "watchdog"] });
     expect(capLadder(log, { platform: "linux", read: (path) => (path === "/proc/self/cgroup" ? "0::/\n" : path === "/sys/fs/cgroup/cgroup.controllers" ? "memory pids\n" : null), writable: () => false, exists: () => false }))
@@ -116,7 +116,7 @@ describe("watch only, the default", () => {
     const [event] = await h.watchdog.check();
     expect(event).toEqual({ at: h.now(), botId: "bot_b", usedMB: 1700, measured: "pss", capMB: 1000, engines: 1, room: 0.1, freeMB: 300, pressure: true, action: "logged" });
     expect(h.logs).toEqual(["memory: bot bot_b uses 1700 MB (proportional), over the 1000 MB one bot may use with 1 engine running; room 0.1, 300 MB free: "
-      + "watch only, nothing stopped (set OMB_BOT_MEMORY_MAX_MB to a number of MB to enforce)"]);
+      + "watch only, nothing stopped (set SANREMES_BOT_MEMORY_MAX_MB to a number of MB to enforce)"]);
     for (let look = 0; look < 30; look++) { h.advance(10_000); expect(await h.watchdog.check()).toEqual([]); }
     expect(h.signals).toEqual([]);
     expect(h.closed).toEqual([]);

@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 
 // Triggers v2, end to end on a real server with the scripted engine: a bot at Ask sets up a schedule and a webhook from
 // chat with no card to confirm; the webhook's address reaches the bot that owns it but never the transcript; the person's

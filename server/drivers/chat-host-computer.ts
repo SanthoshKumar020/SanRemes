@@ -22,8 +22,8 @@ type Server = { command: string; args: string[]; env: Record<string, string> };
 
 /** The driver behind the turn's gate, never the turn's own capability, so every turn on the same driver shares it. */
 export function hostComputerKey(server: Server): string {
-  const { OMB_CUA_COMMAND, OMB_CUA_ARGS, OMB_CUA_PLATFORM, OMB_HOST_FILES } = server.env;
-  return JSON.stringify(OMB_CUA_COMMAND === undefined ? [server.command, server.args] : [OMB_CUA_COMMAND, OMB_CUA_ARGS ?? "", OMB_CUA_PLATFORM ?? "", OMB_HOST_FILES ?? ""]);
+  const { SANREMES_CUA_COMMAND, SANREMES_CUA_ARGS, SANREMES_CUA_PLATFORM, SANREMES_HOST_FILES } = server.env;
+  return JSON.stringify(SANREMES_CUA_COMMAND === undefined ? [server.command, server.args] : [SANREMES_CUA_COMMAND, SANREMES_CUA_ARGS ?? "", SANREMES_CUA_PLATFORM ?? "", SANREMES_HOST_FILES ?? ""]);
 }
 
 const lastListed = new Map<string, unknown[]>();

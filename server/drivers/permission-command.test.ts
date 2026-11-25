@@ -14,11 +14,11 @@ describe("acpPermissionCommand", () => {
   it("reads Antigravity's CommandLine/Cwd", () => {
     expect(acpPermissionCommand({
       CommandLine: "ls -la /home/user/workspace/notes/",
-      Cwd: "/home/user/.openmausbot/task-workspaces/fc432790/4b7437fe",
+      Cwd: "/home/user/.sanremes/task-workspaces/fc432790/4b7437fe",
       WaitMsBeforeAsync: 5000,
     }, undefined)).toEqual({
       command: "ls -la /home/user/workspace/notes/",
-      cwd: "/home/user/.openmausbot/task-workspaces/fc432790/4b7437fe",
+      cwd: "/home/user/.sanremes/task-workspaces/fc432790/4b7437fe",
     });
   });
 
@@ -91,7 +91,7 @@ describe("the never-list on an ACP request", () => {
   });
 
   it("takes a request for a file edit only when it is one, inside the folder", () => {
-    const root = mkdtempSync(join(tmpdir(), "omb-edit-within-"));
+    const root = mkdtempSync(join(tmpdir(), "sanremes-edit-within-"));
     onTestFinished(() => rmSync(root, { recursive: true, force: true }));
     const inside = { kind: "edit", locations: [{ path: `${root}/notes.md` }] };
     expect(acpFileEditWithin(inside, root)).toBe(true);
@@ -106,8 +106,8 @@ describe("the never-list on an ACP request", () => {
   });
 
   it.skipIf(process.platform === "win32")("asks for a folder, and for a path that goes through any link, one that climbs out of the folder or one it cannot follow", () => {
-    const root = realpathSync(mkdtempSync(join(tmpdir(), "omb-edit-root-")));
-    const outside = realpathSync(mkdtempSync(join(tmpdir(), "omb-edit-outside-")));
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "sanremes-edit-root-")));
+    const outside = realpathSync(mkdtempSync(join(tmpdir(), "sanremes-edit-outside-")));
     try {
       mkdirSync(join(outside, "deep"));
       symlinkSync(join(outside, "deep"), join(root, "link"));

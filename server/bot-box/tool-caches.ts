@@ -1,4 +1,4 @@
-// Tool caches on a Cloud home (docs/bot-box.md, "Tool caches"). With OMB_CACHE_ROOT on, what a bot's tools download again
+// Tool caches on a Cloud home (docs/bot-box.md, "Tool caches"). With SANREMES_CACHE_ROOT on, what a bot's tools download again
 // whenever it is missing (npm's and pip's packages, uv's wheels, Hugging Face models, …) goes into one folder, `cache` in
 // the box's HOME, through each tool's own variable, so "never back up, cap, clean" becomes one rule for one folder. The
 // box's HOME is /data on a personal Cloud and the audience's own engine home on a Team Cloud (server/engine-homes), so the
@@ -23,7 +23,7 @@ import { join, resolve } from "node:path";
 import { cloudRole } from "./detect.ts";
 
 /** The switch: 1, on, true or yes on a Cloud home turns the tool cache folder on; anything else, or unset, leaves it off. */
-export const CACHE_ROOT_SWITCH = "OMB_CACHE_ROOT";
+export const CACHE_ROOT_SWITCH = "SANREMES_CACHE_ROOT";
 
 /** The folder in the box's HOME that the tools' caches go to. */
 export const TOOL_CACHE_DIR = "cache";
@@ -31,7 +31,7 @@ export const TOOL_CACHE_DIR = "cache";
 /** The mark the server leaves in a cache folder it made (https://bford.info/cachedir/): backup tools skip a tagged folder,
  * and the cache cap (server/cache-sweep) works only in a folder with exactly this text. */
 export const CACHE_TAG_FILE = "CACHEDIR.TAG";
-export const CACHE_TAG = "Signature: 8a477f597d28d172789f06886806bc55\n# Made by OpenMausBot for its bots' tool caches (OMB_CACHE_ROOT). Everything here is downloaded again when missing.\n";
+export const CACHE_TAG = "Signature: 8a477f597d28d172789f06886806bc55\n# Made by SanRemes for its bots' tool caches (SANREMES_CACHE_ROOT). Everything here is downloaded again when missing.\n";
 
 export interface ToolCache {
   /** The tool's own variable. */

@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 
-const PANEL_WIDTH_KEY = "omb-computer-panel-width";
+const PANEL_WIDTH_KEY = "sanremes-computer-panel-width";
 export const PANEL_MIN_WIDTH = 360;
 /** The widest the panel gets when there is no chat beside it to measure. */
 export const PANEL_MAX_WIDTH = 960;

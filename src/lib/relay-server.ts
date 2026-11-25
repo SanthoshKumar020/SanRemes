@@ -1,4 +1,4 @@
-// The page's way to its own server's `/api` routes: through MausBot Relay while it holds a relay pairing (a phone
+// The page's way to its own server's `/api` routes: through SanRemes Relay while it holds a relay pairing (a phone
 // browser away from home, src/lib/e2e/relay-link.ts), as a plain same-origin request otherwise.
 // It imports nothing: server code type-checks src/lib/composer-attachments.ts, whose uploads come through here, and
 // must not take in the browser's relay crypto (e2e/) or the live events store with it.
@@ -33,7 +33,7 @@ export function relayLink(): ServerLink | null {
 }
 
 /** The server's own routes: `/api`, and the environment descriptor that says what this server is. */
-const API = /^\/(?:api(?:[/?#]|$)|\.well-known\/openmausbot\/environment(?:[?#]|$))/;
+const API = /^\/(?:api(?:[/?#]|$)|\.well-known\/sanremes\/environment(?:[?#]|$))/;
 
 /** `path` as a request to this page's own server routes (API): a root path, or an absolute URL on this page's origin
  * (some links are built from `location`); null for anything else. */

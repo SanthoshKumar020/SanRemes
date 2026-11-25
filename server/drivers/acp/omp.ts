@@ -28,7 +28,7 @@ export async function resolveOmpModels(
   env: Record<string, string | undefined>,
   config: Pick<AcpConfig, "cli">,
 ): Promise<ModelCatalog> {
-  const sessionDir = await mkdtemp(join(tmpdir(), "omb-omp-discovery-"));
+  const sessionDir = await mkdtemp(join(tmpdir(), "sanremes-omp-discovery-"));
   try {
     return await discoverAcpModels({ ...env, PI_CODING_AGENT_SESSION_DIR: sessionDir }, config.cli, ["acp"], DISCOVERY);
   } finally {

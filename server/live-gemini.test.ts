@@ -17,14 +17,14 @@ describe("Gemini Live endpoint", () => {
     expect(ENDPOINT).toEqual({ provider: "gemini", apiBase: "https://generativelanguage.googleapis.com/v1beta", model: GEMINI_LIVE_MODEL });
   });
 
-  it("takes a model id from OMB_GEMINI_LIVE_MODEL and ignores anything else", () => {
-    expect(geminiLiveEndpoint({ OMB_GEMINI_LIVE_MODEL: "models/gemini-3.8-live-extended-thinking" }).model).toBe("gemini-3.8-live-extended-thinking");
-    expect(geminiLiveEndpoint({ OMB_GEMINI_LIVE_MODEL: "../evil?x=1" }).model).toBe(GEMINI_LIVE_MODEL);
+  it("takes a model id from SANREMES_GEMINI_LIVE_MODEL and ignores anything else", () => {
+    expect(geminiLiveEndpoint({ SANREMES_GEMINI_LIVE_MODEL: "models/gemini-3.8-live-extended-thinking" }).model).toBe("gemini-3.8-live-extended-thinking");
+    expect(geminiLiveEndpoint({ SANREMES_GEMINI_LIVE_MODEL: "../evil?x=1" }).model).toBe(GEMINI_LIVE_MODEL);
   });
 
   it("accepts only a loopback override of the API's address", () => {
-    expect(geminiLiveBaseUrl({ OMB_GEMINI_LIVE_URL: "http://127.0.0.1:9123" })).toBe("http://127.0.0.1:9123");
-    expect(geminiLiveBaseUrl({ OMB_GEMINI_LIVE_URL: "https://evil.example" })).toBe("https://generativelanguage.googleapis.com");
+    expect(geminiLiveBaseUrl({ SANREMES_GEMINI_LIVE_URL: "http://127.0.0.1:9123" })).toBe("http://127.0.0.1:9123");
+    expect(geminiLiveBaseUrl({ SANREMES_GEMINI_LIVE_URL: "https://evil.example" })).toBe("https://generativelanguage.googleapis.com");
   });
 });
 
@@ -69,7 +69,7 @@ describe("a Gemini Live call's token", () => {
   });
 
   it("connects a loopback override over ws", async () => {
-    const endpoint = geminiLiveEndpoint({ OMB_GEMINI_LIVE_URL: "http://127.0.0.1:9123" });
+    const endpoint = geminiLiveEndpoint({ SANREMES_GEMINI_LIVE_URL: "http://127.0.0.1:9123" });
     const session = await createGeminiLiveSession({ key: "k", endpoint, voice: "Puck", bot: { name: "R" }, history: [], cloudHome: false, fetchImpl: fakeGemini(), now: () => NOW });
     expect(session.ws_url).toBe("ws://127.0.0.1:9123/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained");
   });

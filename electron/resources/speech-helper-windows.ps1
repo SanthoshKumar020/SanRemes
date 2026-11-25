@@ -50,9 +50,9 @@ try {
   exit 1
 }
 
-Register-ObjectEvent -InputObject $engine -EventName SpeechHypothesized -SourceIdentifier 'omb-heard' | Out-Null
-Register-ObjectEvent -InputObject $engine -EventName SpeechRecognized -SourceIdentifier 'omb-recognized' | Out-Null
-Register-ObjectEvent -InputObject $engine -EventName RecognizeCompleted -SourceIdentifier 'omb-completed' | Out-Null
+Register-ObjectEvent -InputObject $engine -EventName SpeechHypothesized -SourceIdentifier 'sanremes-heard' | Out-Null
+Register-ObjectEvent -InputObject $engine -EventName SpeechRecognized -SourceIdentifier 'sanremes-recognized' | Out-Null
+Register-ObjectEvent -InputObject $engine -EventName RecognizeCompleted -SourceIdentifier 'sanremes-completed' | Out-Null
 
 $commands = New-Object System.IO.StreamReader([Console]::OpenStandardInput())
 $command = $commands.ReadLineAsync()
@@ -66,7 +66,7 @@ while ($true) {
   foreach ($received in @(Get-Event)) {
     Remove-Event -EventIdentifier $received.EventIdentifier
     switch ($received.SourceIdentifier) {
-      'omb-heard' {
+      'sanremes-heard' {
         $text = Join-Text $committed $received.SourceEventArgs.Result.Text
         if ($text -ne $shown) {
           $shown = $text
@@ -74,13 +74,13 @@ while ($true) {
           Send-Line @{ partial = $true; text = $text }
         }
       }
-      'omb-recognized' {
+      'sanremes-recognized' {
         $committed = Join-Text $committed $received.SourceEventArgs.Result.Text
         $shown = $committed
         $changedAt = [DateTime]::UtcNow
         Send-Line @{ partial = $true; text = $committed }
       }
-      'omb-completed' {
+      'sanremes-completed' {
         if ($received.SourceEventArgs.Error) {
           Send-Line @{ error = 'helper-exited' }
           exit 1

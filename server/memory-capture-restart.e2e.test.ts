@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb, verificationServerEnvironment } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb, verificationServerEnvironment } from "../scripts/control-sanremes.ts";
 import type { WireBot } from "../shared/wire.ts";
 import { CAPTURE_MARKER } from "./memory-capture.ts";
 import { waitForExit } from "./testing/cleanup.ts";
@@ -13,7 +13,7 @@ import { waitForExit } from "./testing/cleanup.ts";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 it.skipIf(process.platform === "win32")("captures a turn that was still waiting when the server stopped, after the next start", async () => {
-  const scratch = mkdtempSync(join(tmpdir(), "omb-capture-restart-"));
+  const scratch = mkdtempSync(join(tmpdir(), "sanremes-capture-restart-"));
   const routes = join(scratch, "routes.json");
   writeFileSync(routes, JSON.stringify({
     [CAPTURE_MARKER]: JSON.stringify([{ text: "The person plays the cello on Sundays", kind: "fact", evidence: "I play the cello every Sunday morning", confidence: 0.9 }]),

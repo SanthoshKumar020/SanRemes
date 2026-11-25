@@ -15,7 +15,7 @@ const scratch: string[] = [];
 const opened: CloudSync[] = [];
 const sha = (value: string) => createHash("sha256").update(value).digest("hex");
 function setup() {
-  const home = mkdtempSync(join(tmpdir(), "omb-sync-short-write-"));
+  const home = mkdtempSync(join(tmpdir(), "sanremes-sync-short-write-"));
   scratch.push(home);
   const sync = createCloudSync({ dataDir: join(home, "data"), statfs: () => ({ totalBytes: 10 * 1024 ** 3, freeBytes: 9 * 1024 ** 3 }) });
   opened.push(sync);

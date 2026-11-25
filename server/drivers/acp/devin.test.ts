@@ -18,7 +18,7 @@ const MODES = "accept-edits,smart,ask,plan,bypass";
 describe("Devin sign-in", () => {
   let scratch: string;
   beforeEach(() => {
-    scratch = mkdtempSync(join(tmpdir(), "omb-devin-sign-in-"));
+    scratch = mkdtempSync(join(tmpdir(), "sanremes-devin-sign-in-"));
   });
   afterEach(async () => {
     await removeTempDir(scratch);
@@ -149,7 +149,7 @@ describe("Devin ACP driver", () => {
 
   beforeEach(() => {
     ensureDirs();
-    scratch = mkdtempSync(join(tmpdir(), "omb-devin-contract-"));
+    scratch = mkdtempSync(join(tmpdir(), "sanremes-devin-contract-"));
   });
   afterEach(async () => {
     recorder?.stop();

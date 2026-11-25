@@ -28,7 +28,7 @@ const FOLDER_FLAGS = constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NO
 /** How deep a walk goes. A tool's cache is a few levels deep (npx's node_modules perhaps 20); deeper is left. */
 export const MAX_DEPTH = 128;
 /** What a folder being removed is renamed to first, in its own parent. */
-export const TRASH_PREFIX = ".omb-trash-";
+export const TRASH_PREFIX = ".sanremes-trash-";
 
 export interface Folder {
   handle: FileHandle;

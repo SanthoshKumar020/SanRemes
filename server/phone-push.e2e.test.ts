@@ -30,8 +30,8 @@ let off: Fixture;
 const streams: SseRecorder[] = [];
 
 async function boot(env: Record<string, string>): Promise<Fixture> {
-  const home = mkdtempSync(join(tmpdir(), "omb-phone-push-"));
-  const data = join(home, ".openmausbot");
+  const home = mkdtempSync(join(tmpdir(), "sanremes-phone-push-"));
+  const data = join(home, ".sanremes");
   mkdirSync(data, { recursive: true });
   writeFileSync(join(data, "config.json"), JSON.stringify({
     features: { smartSetupChoices: false },
@@ -50,8 +50,8 @@ async function boot(env: Record<string, string>): Promise<Fixture> {
       ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}),
       HOME: home,
       USERPROFILE: home,
-      OMB_PORT: String(port),
-      OMB_WEBHOOK_PORT: String(port + 1),
+      SANREMES_PORT: String(port),
+      SANREMES_WEBHOOK_PORT: String(port + 1),
       ...env,
     },
     stdio: ["ignore", "pipe", "pipe"],
@@ -100,8 +100,8 @@ beforeAll(async () => {
   stub = await startControlPlaneStub();
   const credential = stub.seedInstallation("phone push fixture");
   [on, off] = await Promise.all([
-    boot({ OMB_PHONE_PUSH: "1", OMB_CONTROL_PLANE_URL: stub.url, OMB_PUSH_CREDENTIAL: credential }),
-    boot({ OMB_CONTROL_PLANE_URL: stub.url, OMB_PUSH_CREDENTIAL: credential }),
+    boot({ SANREMES_PHONE_PUSH: "1", SANREMES_CONTROL_PLANE_URL: stub.url, SANREMES_PUSH_CREDENTIAL: credential }),
+    boot({ SANREMES_CONTROL_PLANE_URL: stub.url, SANREMES_PUSH_CREDENTIAL: credential }),
   ]);
 }, 60_000);
 
@@ -150,7 +150,7 @@ describe("phone push switched on", () => {
       v: 1,
       token: FCM_B,
       pairing: "pair-tag-bbbb",
-      collapseId: `openmaus.${herald.threadId}.${done.seq}`,
+      collapseId: `sanremes.${herald.threadId}.${done.seq}`,
       notification: { kind: "done", title: "Herald finished", botId: herald.id, botName: "Herald", threadId: herald.threadId },
     });
     const raw = JSON.stringify(stub.pushes);
@@ -161,7 +161,7 @@ describe("phone push switched on", () => {
     expect((await api(on, "POST", `/api/bots/${sage.id}/messages`, { text: "pick a colour for the banner" })).status).toBe(202);
     const question = await streamA.until((frame) => frame.kind === "notify" && frame.notification?.kind === "question" && frame.notification?.botId === sage.id, 30_000);
     await expect.poll(() => sends().length, { timeout: 15_000 }).toBe(2);
-    expect(sends()[1]!.body).toMatchObject({ token: FCM_B, collapseId: `openmaus.${question.notification.threadId}.${question.seq}`, notification: { kind: "question", title: "Sage has a question" } });
+    expect(sends()[1]!.body).toMatchObject({ token: FCM_B, collapseId: `sanremes.${question.notification.threadId}.${question.seq}`, notification: { kind: "question", title: "Sage has a question" } });
     await api(on, "POST", `/api/bots/${sage.id}/interrupt`, {}).catch(() => undefined);
 
     expect((await api(on, "POST", "/api/auth/logout", {}, phoneB.token)).status).toBe(200);
@@ -184,7 +184,7 @@ describe("Live Activities by push", () => {
     const pip = await createBot(on, "Pip", "slow", "claude-sonnet-5");
     expect((await api(on, "PUT", "/api/push/device", { platform: "apns", token: "c3".repeat(32) }, phone.token)).status).toBe(200);
     const registered = await api(on, "PUT", "/api/push/activity", {
-      scheme: "openmausbot",
+      scheme: "sanremes",
       headlines: { needsYou: "{name} braucht dich", working: "{name} arbeitet" },
       statuses: { working: "Arbeitet", needsYou: { approval: "Braucht deine Freigabe", question: "Hat eine Frage", signIn: "Braucht deine Anmeldung", other: "Braucht dich" } },
       activities: [{ botId: pip.id, token: ACTIVITY }],
@@ -204,7 +204,7 @@ describe("Live Activities by push", () => {
       token: ACTIVITY,
       event: "update",
       activity: {
-        botId: pip.id, botName: "Pip", kind: "working", headline: "Pip arbeitet", since: expect.any(Number), link: `openmausbot://chat/${pip.threadId}`, color: "#7C5CFF", gradient: ["#B9A9FF", "#7C5CFF"], body: "round",
+        botId: pip.id, botName: "Pip", kind: "working", headline: "Pip arbeitet", since: expect.any(Number), link: `sanremes://chat/${pip.threadId}`, color: "#7C5CFF", gradient: ["#B9A9FF", "#7C5CFF"], body: "round",
         version: 1, ask: "other", status: "Arbeitet", waiting: 0,
       },
     });

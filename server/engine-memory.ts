@@ -216,7 +216,7 @@ export interface EngineMemoryOptions {
   /** A self-hosted server also holds turns to a number of its own and to its container's pids limit; a Cloud home, the
    * default, keeps to memory and its plan. */
   host?: Exclude<GateHost, null>;
-  /** OMB_TURNS_MAX_RUNNING on a self-hosted server. */
+  /** SANREMES_TURNS_MAX_RUNNING on a self-hosted server. */
   turns?: TurnsSetting;
   processes?: ProcessBudget;
   read?: () => HostMemory | null;
@@ -857,7 +857,7 @@ export class EngineMemory {
 }
 
 const HOST = gateHost();
-export const engineMemory = new EngineMemory({ enabled: HOST !== null, host: HOST ?? "cloud", turns: turnsSetting(process.env.OMB_TURNS_MAX_RUNNING) });
+export const engineMemory = new EngineMemory({ enabled: HOST !== null, host: HOST ?? "cloud", turns: turnsSetting(process.env.SANREMES_TURNS_MAX_RUNNING) });
 
 /** Engines that keep a session over stdout and answer first (stream-json's init, JSON-RPC's initialize); every driver
  * that admits its own engines (ACP) does too. */

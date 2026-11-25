@@ -73,7 +73,7 @@ it("lists the command under Commands and wears Daylight from Midnight, saving th
   flushSync(() => command()!.click());
   await settle();
   expect(document.documentElement.dataset.skin).toBe("daylight");
-  expect(values.get("omb-skin")).toBe("daylight");
+  expect(values.get("sanremes-skin")).toBe("daylight");
   expect(document.querySelector('[role="dialog"]')).toBeNull();
 });
 
@@ -83,15 +83,15 @@ it("finds it by typing and takes another light skin to Midnight with Enter", asy
   expect(command()).toBeDefined();
   flushSync(() => input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true })));
   await settle();
-  expect(values.get("omb-skin")).toBe("midnight");
+  expect(values.get("sanremes-skin")).toBe("midnight");
 });
 
 it("pins Midnight or Daylight when the theme followed the system, as Appearance does", async () => {
-  values.set("omb-skin", "system");
+  values.set("sanremes-skin", "system");
   open("midnight");
   flushSync(() => command()!.click());
   await settle();
-  expect(values.get("omb-skin")).toBe("daylight");
+  expect(values.get("sanremes-skin")).toBe("daylight");
 });
 
 it("leaves the command out when the search does not name it", () => {

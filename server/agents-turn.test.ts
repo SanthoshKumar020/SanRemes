@@ -48,7 +48,7 @@ describe("one conversation's agents tools", () => {
     for (const bridged of [false, true]) {
       it(`lists ${name} the same tools on every kind of turn, byte for byte${bridged ? ", with the tool bridge on" : ""}`, async () => {
         const turns = await everyTurn(conversation, bridged ? { [TOOL_BRIDGE_ENV]: "1" } : {});
-        expect(new Set(turns.map(({ env }) => env.OMB_COMMS_TOKEN)).size).toBe(turns.length);
+        expect(new Set(turns.map(({ env }) => env.SANREMES_COMMS_TOKEN)).size).toBe(turns.length);
         for (const { kind, wire } of turns) expect(wire, kind).toBe(turns[0]!.wire);
       });
     }
@@ -89,7 +89,7 @@ describe("one conversation's agents tools", () => {
     const off = { ...CHAT, host: { ...HOST, meetings: true, imageGeneration: true }, bot: { ...CHAT.bot, toolsOff: ["meetings", "pages"] } };
     const turns = await everyTurn(off);
     for (const { kind, env, wire } of turns) {
-      expect(env.OMB_TOOLS_OFF, kind).toBe("meetings,pages");
+      expect(env.SANREMES_TOOLS_OFF, kind).toBe("meetings,pages");
       expect(wire, kind).toBe(turns[0]!.wire);
     }
     const names = (wire: string) => (JSON.parse(wire) as { tools: Array<{ name: string }> }).tools.map((tool) => tool.name);
@@ -99,7 +99,7 @@ describe("one conversation's agents tools", () => {
       expect(kept).not.toContain(tool);
     }
     expect(kept).toContain("generate_image");
-    expect((await everyTurn(CHAT))[0]!.env.OMB_TOOLS_OFF).toBe("");
+    expect((await everyTurn(CHAT))[0]!.env.SANREMES_TOOLS_OFF).toBe("");
   });
 
   it("leaves select_computer out only where the conversation can never pick a computer", async () => {

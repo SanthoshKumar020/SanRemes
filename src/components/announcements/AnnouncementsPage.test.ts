@@ -14,7 +14,7 @@ const f = vi.hoisted(() => ({ found: null as unknown as Announcements, dispatch:
 vi.mock("./use-announcements", () => ({ useAnnouncements: () => f.found }));
 vi.mock("@/state/store", () => ({ useStore: () => ({ state: f.state, dispatch: f.dispatch }), api: vi.fn() }));
 vi.mock("@/lib/analytics", () => ({ track: vi.fn() }));
-vi.mock("@/components/Avatar", () => ({ MausAvatar: () => null }));
+vi.mock("@/components/Avatar", () => ({ SanRemesAvatar: () => null }));
 vi.mock("../lazy-screens", () => ({ GrokMoveDialog: () => createElement("div", { "data-grok-move-dialog": "" }) }));
 vi.mock("@/lib/announcement-history", async original => ({ ...await original<typeof import("@/lib/announcement-history")>(), rememberNoticeSeen: f.remembered }));
 const { AnnouncementsPage } = await import("./AnnouncementsPage");
@@ -24,7 +24,7 @@ const { track } = await import("@/lib/analytics");
 const NOW = Date.parse("2026-11-18T10:00:00Z");
 const browser: HistoryFacts = { branded: false, organization: false, cloudSale: false, cloudCards: false, remote: false, team: false, canSave: true, sponsors: true, modelgo: true };
 const desktop: HistoryFacts = { ...browser, cloudSale: true, cloudCards: true };
-const card: AnnouncementCard = { id: "phone-app-2026-11", kind: "product", title: { en: "MausBot on your phone", "pt-br": "MausBot no seu celular" }, body: "Chat with your bots anywhere.",
+const card: AnnouncementCard = { id: "phone-app-2026-11", kind: "product", title: { en: "SanRemes on your phone", "pt-br": "SanRemes no seu celular" }, body: "Chat with your bots anywhere.",
   primary: { label: "Open", action: { open: "my_cloud" } }, starts: "2026-11-20T00:00:00Z", ends: "2027-01-01T00:00:00Z" } as AnnouncementCard;
 const markRead = vi.fn();
 const found = (facts: HistoryFacts, extra: Partial<Announcements> = {}): Announcements => ({
@@ -58,7 +58,7 @@ describe("Announcements", () => {
     const teams = rows()[1]!;
     expect(teams.querySelector("time")?.getAttribute("datetime")).toBe("2026-11-17T00:00:00.000Z");
     expect(teams.textContent).toContain("Nov 17, 2026");
-    expect(teams.textContent).toContain("MausBot is better with your team");
+    expect(teams.textContent).toContain("SanRemes is better with your team");
     expect(teams.textContent).toContain("Show again");
     const hunt = rows().find(row => row.dataset.announcementItem === "product-hunt-launch-2026-10")!;
     expect(hunt.querySelector("[data-announcement-ended]")?.textContent).toBe("Ended");
@@ -125,7 +125,7 @@ describe("Announcements", () => {
     setLocale("pt-br");
     f.found = found(browser);
     await open();
-    expect(rows()[0]!.textContent).toContain("MausBot no seu celular");
+    expect(rows()[0]!.textContent).toContain("SanRemes no seu celular");
     expect(document.querySelector("h1")?.textContent).toBe("Anúncios");
   });
 

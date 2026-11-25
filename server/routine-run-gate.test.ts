@@ -57,7 +57,7 @@ describe("stopping the work for a run that no longer waits", () => {
 describe("the scheduler and a run that is being made ready", () => {
   const START = new Date(2026, 10, 14, 8, 0, 0).getTime();
   function harness() {
-    const dir = mkdtempSync(join(tmpdir(), "omb-run-gate-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-run-gate-"));
     dirs.push(dir);
     let at = START;
     const started: string[] = [];

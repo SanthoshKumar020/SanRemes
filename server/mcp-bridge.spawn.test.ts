@@ -28,7 +28,7 @@ afterEach(() => { spawned.length = 0; });
 
 describe("bridge child processes", () => {
   it("starts a console child (docker, podman) without a terminal window on Windows", () => {
-    spawnBridgeChild("docker", ["exec", "-i", "omb-vm"], { PATH: "" }, true);
+    spawnBridgeChild("docker", ["exec", "-i", "sanremes-vm"], { PATH: "" }, true);
     expect(spawned).toEqual([{ command: "docker", options: expect.objectContaining({ shell: false, windowsHide: true }) }]);
   });
 
@@ -38,7 +38,7 @@ describe("bridge child processes", () => {
   });
 
   it("starts the liveness probe without a console window", async () => {
-    await expect(runLivenessProbe({ command: "docker", args: ["exec", "omb-vm", "true"] }, 1_000, { PATH: "" })).resolves.toBe(true);
+    await expect(runLivenessProbe({ command: "docker", args: ["exec", "sanremes-vm", "true"] }, 1_000, { PATH: "" })).resolves.toBe(true);
     expect(spawned).toEqual([{ command: "docker", options: expect.objectContaining({ shell: false, windowsHide: true }) }]);
   });
 });

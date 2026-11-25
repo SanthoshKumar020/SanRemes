@@ -1,9 +1,9 @@
-// MausBot's Pi turns run in a Pi agent folder of its own (PI_CODING_AGENT_DIR, pi-coding-agent 1.6.0), so a bot's turn
+// SanRemes's Pi turns run in a Pi agent folder of its own (PI_CODING_AGENT_DIR, pi-coding-agent 1.6.0), so a bot's turn
 // never loads what the person set up for their own Pi in ~/.pi/agent: their AGENTS.md or CLAUDE.md, SYSTEM.md and
 // APPEND_SYSTEM.md, skills, prompts, themes, extensions and packages, MCP servers (mcp.json) and project trust. Only what
 // Pi needs to reach the person's providers comes along: their sign-ins and keys (auth.json, linked, so a refreshed login
 // stays theirs), their own providers (models.json) and the model and connection parts of settings.json (both copied, so
-// MausBot's local models never land in their files), and the search tools Pi downloaded (bin, linked).
+// SanRemes's local models never land in their files), and the search tools Pi downloaded (bin, linked).
 import { createHash } from "node:crypto";
 import { linkSync, lstatSync, mkdirSync, readFileSync, rmSync, statSync, symlinkSync } from "node:fs";
 import { homedir } from "node:os";
@@ -48,7 +48,7 @@ export function readPiDefaultModel(env: Record<string, string | undefined>): str
   }
 }
 
-/** Links the person's entry into MausBot's folder; true when it is there (or the person has none). */
+/** Links the person's entry into SanRemes's folder; true when it is there (or the person has none). */
 function linked(target: string, link: string): boolean {
   let want;
   try {
@@ -83,8 +83,8 @@ function linked(target: string, link: string): boolean {
   }
 }
 
-/** Copies `text` (the person's version, or null when they have none) into MausBot's folder when it changed since the
- * last copy. When the person never had one, MausBot's own stays (the local models a turn adds to models.json). */
+/** Copies `text` (the person's version, or null when they have none) into SanRemes's folder when it changed since the
+ * last copy. When the person never had one, SanRemes's own stays (the local models a turn adds to models.json). */
 function seeded(own: string, name: string, text: string | null): void {
   const path = join(own, name), mark = join(own, `.${name}.from`);
   const hash = text === null ? null : createHash("sha256").update(text).digest("hex");
@@ -109,9 +109,9 @@ function settingsText(path: string): string | null {
   return `${JSON.stringify(kept, null, 2)}\n`;
 }
 
-/** MausBot's Pi agent folder for this instance, made and brought up to date with the person's. Null when the person's
+/** SanRemes's Pi agent folder for this instance, made and brought up to date with the person's. Null when the person's
  * folder stays in use: on a Team Cloud (each audience's engine home already has its own, with only auth.json shared),
- * when theirs is MausBot's already (in the data folder), or when their login cannot be linked in. */
+ * when theirs is SanRemes's already (in the data folder), or when their login cannot be linked in. */
 export function ownPiAgentDir(env: Record<string, string | undefined>, instanceId: string, dataDir = DATA_DIR,
   teamCloud = engineHomes.active()): string | null {
   const person = piAgentDir(env);
@@ -120,7 +120,7 @@ export function ownPiAgentDir(env: Record<string, string | undefined>, instanceI
   try {
     mkdirSync(own, { recursive: true, mode: 0o700 });
     if (!linked(join(person, "auth.json"), join(own, "auth.json"))) {
-      note(own, "could not link your Pi login into MausBot's Pi folder, so turns use your own ~/.pi/agent");
+      note(own, "could not link your Pi login into SanRemes's Pi folder, so turns use your own ~/.pi/agent");
       return null;
     }
     // A download cache only: Pi fetches fd and rg again when it cannot be linked.
@@ -130,13 +130,13 @@ export function ownPiAgentDir(env: Record<string, string | undefined>, instanceI
     seeded(own, "models.json", models);
     seeded(own, "settings.json", settingsText(join(person, "settings.json")));
   } catch (error) {
-    note(own, `could not make MausBot's Pi folder, so turns use your own ~/.pi/agent: ${(error as Error).message}`);
+    note(own, `could not make SanRemes's Pi folder, so turns use your own ~/.pi/agent: ${(error as Error).message}`);
     return null;
   }
   return own;
 }
 
-/** `env` with Pi pointed at MausBot's own agent folder for this instance; `env` itself where the person's stays in use. */
+/** `env` with Pi pointed at SanRemes's own agent folder for this instance; `env` itself where the person's stays in use. */
 export function withOwnPiAgentDir(env: Record<string, string | undefined>, instanceId: string, dataDir = DATA_DIR,
   teamCloud = engineHomes.active()): Record<string, string | undefined> {
   const own = ownPiAgentDir(env, instanceId, dataDir, teamCloud);

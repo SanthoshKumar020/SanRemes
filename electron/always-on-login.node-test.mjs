@@ -11,10 +11,10 @@ import { createAlwaysOnHome } from "./always-on-home.mjs";
 import { createOpenAtLogin, HIDDEN_ARG } from "./open-at-login.mjs";
 
 const blocker = { start: () => 1, stop() {}, isStarted: () => true };
-const CHOSEN = "OpenMausBot at login";
+const CHOSEN = "SanRemes at login";
 
 function world(t, platform) {
-  const dir = mkdtempSync(path.join(tmpdir(), "omb-always-on-login-"));
+  const dir = mkdtempSync(path.join(tmpdir(), "sanremes-always-on-login-"));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const items = new Map();
   let macOn = false;
@@ -29,10 +29,10 @@ function world(t, platform) {
     }
     : { isPackaged: true, getLoginItemSettings: () => ({ openAtLogin: macOn }), setLoginItemSettings: ({ openAtLogin }) => { macOn = openAtLogin; } };
   const loginFile = path.join(dir, "open-at-login.json");
-  const login = createOpenAtLogin({ app, file: loginFile, platform, home: dir, env: { XDG_CONFIG_HOME: path.join(dir, "config") }, execPath: "/opt/omb/omb" });
+  const login = createOpenAtLogin({ app, file: loginFile, platform, home: dir, env: { XDG_CONFIG_HOME: path.join(dir, "config") }, execPath: "/opt/sanremes/sanremes" });
   let lent = false;
   const make = () => createAlwaysOnHome({ file: path.join(dir, "always-on-home.json"), loginItem: login, blocker, isOnBattery: () => false, lending: () => lent, platform, lookMs: 3_600_000 });
-  const autostart = path.join(dir, "config", "autostart", "openmausbot.desktop");
+  const autostart = path.join(dir, "config", "autostart", "sanremes.desktop");
   return {
     login, items, make, home: make(),
     /** Lending starts or stops: its own login item follows, as main's sharing onChange does. */
@@ -43,7 +43,7 @@ function world(t, platform) {
     autostart: () => (existsSync(autostart) ? readFileSync(autostart, "utf8") : null),
   };
 }
-const marked = text => text !== null && text.includes("X-OpenMausBot-Lending=true") && text.includes(HIDDEN_ARG);
+const marked = text => text !== null && text.includes("X-SanRemes-Lending=true") && text.includes(HIDDEN_ARG);
 
 test("Windows: off removes only the switch's own entry, so lending can add its hidden one afterwards", t => {
   const w = world(t, "win32");

@@ -28,7 +28,7 @@ afterEach(async () => {
 });
 
 function tempFile(): string {
-  const dir = mkdtempSync(join(tmpdir(), "omb-remote-teammates-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-remote-teammates-"));
   dirs.push(dir);
   return join(dir, "remote-teammates.json");
 }
@@ -46,16 +46,16 @@ function teammate(base: string, key = KEY): RemoteTeammate {
 
 describe("remoteAddress", () => {
   it("takes https anywhere and plain http only on a private network", () => {
-    expect(remoteAddress("https://maus.example.com/", "b1")).toEqual({ base: "https://maus.example.com", botId: "b1" });
+    expect(remoteAddress("https://sanremes.example.com/", "b1")).toEqual({ base: "https://sanremes.example.com", botId: "b1" });
     expect(remoteAddress("http://100.101.2.3:8799", "b1").base).toBe("http://100.101.2.3:8799");
     expect(remoteAddress("http://box.tail1234.ts.net:8799", "b1").base).toBe("http://box.tail1234.ts.net:8799");
     expect(remoteAddress("http://192.168.1.20:8799", "b1").base).toBe("http://192.168.1.20:8799");
-    expect(() => remoteAddress("http://maus.example.com", "b1")).toThrow(/open internet/);
-    expect(() => remoteAddress("ftp://maus.example.com", "b1")).toThrow(/https/);
+    expect(() => remoteAddress("http://sanremes.example.com", "b1")).toThrow(/open internet/);
+    expect(() => remoteAddress("ftp://sanremes.example.com", "b1")).toThrow(/https/);
     // A blob: URL's origin is the https one inside it.
-    expect(() => remoteAddress("blob:https://maus.example.com/x", "b1")).toThrow(/must start with https/);
-    expect(() => remoteAddress("https://me:pw@maus.example.com", "b1")).toThrow(/without a sign-in/);
-    expect(() => remoteAddress("maus", "b1")).toThrow(/not a server address/);
+    expect(() => remoteAddress("blob:https://sanremes.example.com/x", "b1")).toThrow(/must start with https/);
+    expect(() => remoteAddress("https://me:pw@sanremes.example.com", "b1")).toThrow(/without a sign-in/);
+    expect(() => remoteAddress("sanremes", "b1")).toThrow(/not a server address/);
   });
 
   it("refuses link-local and cloud metadata hosts, and an address too long to keep", () => {
@@ -66,14 +66,14 @@ describe("remoteAddress", () => {
     expect(() => remoteAddress("https://[64:ff9b::a9fe:a9fe]", "b1")).toThrow(/link-local/);
     expect(() => remoteAddress("https://[::a9fe:a9fe]", "b1")).toThrow(/link-local/);
     expect(() => remoteAddress("https://100.100.100.200", "b1")).toThrow(/link-local/);
-    expect(() => remoteAddress(`https://maus.example.com/${"p".repeat(300)}`, "b1")).toThrow(/too long/);
+    expect(() => remoteAddress(`https://sanremes.example.com/${"p".repeat(300)}`, "b1")).toThrow(/too long/);
   });
 
   it("reads the bot from a pasted Bot API address and keeps a path the server is served under", () => {
-    expect(remoteAddress("https://maus.example.com/hooks/api/bots/scout-1/messages")).toEqual({ base: "https://maus.example.com", botId: "scout-1" });
-    expect(remoteAddress("https://example.com/omb/hooks/api/bots/b2/messages", "b2")).toEqual({ base: "https://example.com/omb", botId: "b2" });
-    expect(() => remoteAddress("https://maus.example.com/hooks/api/bots/b2/messages", "b3")).toThrow(/different bot/);
-    expect(() => remoteAddress("https://maus.example.com")).toThrow(/bot's id/);
+    expect(remoteAddress("https://sanremes.example.com/hooks/api/bots/scout-1/messages")).toEqual({ base: "https://sanremes.example.com", botId: "scout-1" });
+    expect(remoteAddress("https://example.com/sanremes/hooks/api/bots/b2/messages", "b2")).toEqual({ base: "https://example.com/sanremes", botId: "b2" });
+    expect(() => remoteAddress("https://sanremes.example.com/hooks/api/bots/b2/messages", "b3")).toThrow(/different bot/);
+    expect(() => remoteAddress("https://sanremes.example.com")).toThrow(/bot's id/);
   });
 });
 
@@ -81,8 +81,8 @@ describe("RemoteTeammates", () => {
   it("keeps the key only in its own file and never lists it", () => {
     const file = tempFile();
     const store = new RemoteTeammates({ file, now: () => 5 });
-    const added = store.add({ name: " Far ", address: "https://maus.example.com/hooks/api/bots/b1/messages", key: KEY });
-    expect(added).toEqual({ id: expect.any(String), name: "Far", base: "https://maus.example.com", botId: "b1", createdAt: 5 });
+    const added = store.add({ name: " Far ", address: "https://sanremes.example.com/hooks/api/bots/b1/messages", key: KEY });
+    expect(added).toEqual({ id: expect.any(String), name: "Far", base: "https://sanremes.example.com", botId: "b1", createdAt: 5 });
     expect(JSON.stringify(store.list())).not.toContain(KEY);
     expect(store.get(added.id)?.key).toBe(KEY);
     if (process.platform !== "win32") expect(statSync(file).mode & 0o777).toBe(0o600);
@@ -91,9 +91,9 @@ describe("RemoteTeammates", () => {
 
   it("refuses a duplicate, a key of the wrong shape, and removes by id", () => {
     const store = new RemoteTeammates({ file: tempFile() });
-    const added = store.add({ name: "Far", address: "https://maus.example.com", botId: "b1", key: KEY });
-    expect(() => store.add({ name: "Again", address: "https://maus.example.com/", botId: "b1", key: KEY })).toThrow(/already a teammate/);
-    expect(() => store.add({ name: "Bad", address: "https://maus.example.com", botId: "b2", key: "Bearer x\r\nX-Evil: 1" })).toThrow(/bak_/);
+    const added = store.add({ name: "Far", address: "https://sanremes.example.com", botId: "b1", key: KEY });
+    expect(() => store.add({ name: "Again", address: "https://sanremes.example.com/", botId: "b1", key: KEY })).toThrow(/already a teammate/);
+    expect(() => store.add({ name: "Bad", address: "https://sanremes.example.com", botId: "b2", key: "Bearer x\r\nX-Evil: 1" })).toThrow(/bak_/);
     expect(store.remove(added.id)).toBe(true);
     expect(store.remove(added.id)).toBe(false);
     expect(store.list()).toEqual([]);
@@ -104,7 +104,7 @@ describe("RemoteTeammates", () => {
     writeFileSync(file, "{not json");
     const store = new RemoteTeammates({ file });
     expect(store.list()).toEqual([]);
-    expect(() => store.add({ name: "Far", address: "https://maus.example.com", botId: "b1", key: KEY })).toThrow(/could not be read.*restart OpenMausBot/);
+    expect(() => store.add({ name: "Far", address: "https://sanremes.example.com", botId: "b1", key: KEY })).toThrow(/could not be read.*restart SanRemes/);
     expect(readFileSync(file, "utf8")).toBe("{not json");
   });
 
@@ -112,7 +112,7 @@ describe("RemoteTeammates", () => {
     const dir = dirname(tempFile());
     const store = new RemoteTeammates({ file: join(dir, "blocked", "remote-teammates.json") });
     writeFileSync(join(dir, "blocked"), "a file where the folder should be");
-    expect(() => store.add({ name: "Far", address: "https://maus.example.com", botId: "b1", key: KEY })).toThrow();
+    expect(() => store.add({ name: "Far", address: "https://sanremes.example.com", botId: "b1", key: KEY })).toThrow();
     expect(store.list()).toEqual([]);
   });
 });
@@ -225,7 +225,7 @@ describe("calling a teammate's Bot API", () => {
   it("takes an answer only about the thread it went on in", async () => {
     let answer: unknown = { reply: "hi", thread: "other" };
     const fetch = (async () => new Response(JSON.stringify(answer), { status: "reply" in (answer as object) ? 200 : 202 })) as typeof globalThis.fetch;
-    const far = teammate("https://maus.example.com");
+    const far = teammate("https://sanremes.example.com");
     expect(await readRemote(far, "t1", { fetch })).toEqual({ ok: false, problem: "bad_answer", status: 200 });
     expect(await sendToRemote(far, { message: "x", thread: "t1" }, { fetch })).toEqual({ ok: false, problem: "bad_answer", status: 200 });
     // A message that starts a thread takes the one the other server gives.
@@ -237,7 +237,7 @@ describe("calling a teammate's Bot API", () => {
   it("never passes on the key when the other server echoes it in an error", async () => {
     const said = `bad key ${KEY} for ${"x".repeat(280)}${KEY}`;
     const fetch = (async () => new Response(JSON.stringify({ error: said }), { status: 401 })) as typeof globalThis.fetch;
-    const result = await readRemote(teammate("https://maus.example.com"), "t1", { fetch });
+    const result = await readRemote(teammate("https://sanremes.example.com"), "t1", { fetch });
     expect(result).toMatchObject({ ok: false, problem: "wrong_key", status: 401 });
     expect(JSON.stringify(result)).not.toContain("k".repeat(16));
     expect(result).toMatchObject({ detail: expect.stringMatching(/^bad key \[key\] for x/) });
@@ -365,7 +365,7 @@ describe("/api/remote-teammates", () => {
 
   it("answers a bad teammate with 400 and leaves other paths to the next route", async () => {
     const { call } = await app();
-    const [status, body] = await call("POST", "/api/remote-teammates", { name: "Far", address: "http://maus.example.com", botId: "b1", key: KEY });
+    const [status, body] = await call("POST", "/api/remote-teammates", { name: "Far", address: "http://sanremes.example.com", botId: "b1", key: KEY });
     expect(status).toBe(400);
     expect(body.error).toMatch(/open internet/);
     expect(await call("GET", "/api/remote-teammates-other")).toEqual([404, { from: "no route" }]);

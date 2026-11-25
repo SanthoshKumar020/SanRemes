@@ -46,7 +46,7 @@ describe("a bot's threads under its sidebar row", () => {
     };
     const first = [["main", true], ["a", false], ["b", false]];
     expect(listed({ openedBy: { botId: "atlas", name: "Atlas", at: 1 } })).toEqual(first);
-    expect(listed({ openedBy: { botId: "maus", name: "Maus", at: 1, burstId: "burst" } })).toEqual(first);
+    expect(listed({ openedBy: { botId: "sanremes", name: "SanRemes", at: 1, burstId: "burst" } })).toEqual(first);
     expect(listed({ snoozedUntil: NOW + DAY })).toEqual(first);
     expect(canUnfold({ ...bot([thread("a", 1), thread("main", 30, { openedBy: { botId: "atlas", name: "Atlas", at: 1 } })]), mainThreadId: "main" })).toBe(true);
   });

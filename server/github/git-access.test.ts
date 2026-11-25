@@ -10,8 +10,8 @@ import { provideGithubSignIn } from "./token.ts";
 const TOKEN = "ghp_boxPlanFakeToken0123456789abcdefABCD";
 const bridge = { socat: "/usr/bin/socat", bridgeScript: "/app/dist-server/bot-box/box-bridge.js", node: "/usr/local/bin/node" };
 const setup = {
-  dataDir: "/data/.openmausbot", home: "/data", codeRoots: ["/app"], engineRoots: engineInstallRoots("/data/.openmausbot"),
-  bridges: [{ name: "egress", port: BOX_EGRESS_PORT, socket: "/data/.openmausbot/box/egress.sock" }, { name: "broker", port: BOX_BROKER_PORT, socket: "/data/.openmausbot/box/broker.sock" }],
+  dataDir: "/data/.sanremes", home: "/data", codeRoots: ["/app"], engineRoots: engineInstallRoots("/data/.sanremes"),
+  bridges: [{ name: "egress", port: BOX_EGRESS_PORT, socket: "/data/.sanremes/box/egress.sock" }, { name: "broker", port: BOX_BROKER_PORT, socket: "/data/.sanremes/box/broker.sock" }],
 };
 
 /** A broker that records what each token was minted with. */
@@ -50,7 +50,7 @@ describe("a boxed bot's git", () => {
     signIn(() => true);
     const { broker, minted } = fakeBroker();
     const runner = new BoxRunner({ bwrap: "/usr/bin/bwrap", bridge, setup, denyEnv: new Set(), broker });
-    const wrapped = wrapIn(runner, "/data/.openmausbot/task-workspaces/b1/t1");
+    const wrapped = wrapIn(runner, "/data/.sanremes/task-workspaces/b1/t1");
     const process = minted.at(-1)!;
     expect(wrapped.token).toBe(process.token);
     expect(Object.keys(process.grants)).toEqual(["github"]);
@@ -65,7 +65,7 @@ describe("a boxed bot's git", () => {
     expect(wrapped.env.GIT_CONFIG_PARAMETERS).not.toMatch(/insteadof=[^']*omb_t0_/);
     expect(wrapped.env.GIT_CONFIG_PARAMETERS).not.toContain(`/b/${process.token}`);
     // The token goes in a header git sends only to the broker's address, and no helper is asked for that address alone.
-    expect(wrapped.env.GIT_CONFIG_PARAMETERS).toContain(shellQuote(`http.${origin}/.extraheader=x-omb-broker: ${process.token}`));
+    expect(wrapped.env.GIT_CONFIG_PARAMETERS).toContain(shellQuote(`http.${origin}/.extraheader=x-sanremes-broker: ${process.token}`));
     expect(wrapped.env.GIT_CONFIG_PARAMETERS).toContain(shellQuote(`credential.${origin}.helper=`));
     expect(wrapped.env.GIT_CONFIG_PARAMETERS).not.toContain("'credential.helper=");
     expect(wrapped.env.GIT_TERMINAL_PROMPT).toBe("0");
@@ -83,23 +83,23 @@ describe("a boxed bot's git", () => {
     signIn(() => false);
     const { broker, minted, revoked } = fakeBroker();
     const runner = new BoxRunner({ bwrap: "/usr/bin/bwrap", bridge, setup, denyEnv: new Set(), broker });
-    const wrapped = wrapIn(runner, "/data/.openmausbot/task-workspaces/b1/t1");
+    const wrapped = wrapIn(runner, "/data/.sanremes/task-workspaces/b1/t1");
     expect(wrapped.token).toBeNull();
     expect(minted.map((entry) => entry.token)).toEqual(revoked);
     expect(Object.keys(wrapped.env).filter((name) => name.startsWith("GIT_"))).toEqual([]);
     provideGithubSignIn(null);
-    expect(Object.keys(wrapIn(runner, "/data/.openmausbot/task-workspaces/b1/t1").env).filter((name) => name.startsWith("GIT_"))).toEqual([]);
+    expect(Object.keys(wrapIn(runner, "/data/.sanremes/task-workspaces/b1/t1").env).filter((name) => name.startsWith("GIT_"))).toEqual([]);
   });
 
   it("shares the one per-process token with a provider key the broker took over", () => {
     signIn(() => true);
     const { broker, minted } = fakeBroker();
     const runner = new BoxRunner({ bwrap: "/usr/bin/bwrap", bridge, setup, denyEnv: new Set(), broker });
-    const wrapped = runner.wrap({ command: "/usr/local/bin/claude", args: [], cwd: "/data/.openmausbot/task-workspaces/b1/t1", env: { PATH: "/usr/bin", ANTHROPIC_API_KEY: "sk-ant-real" } });
+    const wrapped = runner.wrap({ command: "/usr/local/bin/claude", args: [], cwd: "/data/.sanremes/task-workspaces/b1/t1", env: { PATH: "/usr/bin", ANTHROPIC_API_KEY: "sk-ant-real" } });
     const process = minted.at(-1)!;
     expect(Object.keys(process.grants).sort()).toEqual(["anthropic", "github"]);
     expect(wrapped.env.ANTHROPIC_API_KEY).toBe(process.token);
-    expect(wrapped.env.GIT_CONFIG_PARAMETERS).toContain(`x-omb-broker: ${process.token}`);
+    expect(wrapped.env.GIT_CONFIG_PARAMETERS).toContain(`x-sanremes-broker: ${process.token}`);
   });
 
   it("on a Team Cloud: the member's own conversation gets that member's sign-in; a room's, the team's and a shared process get none", () => {
@@ -108,10 +108,10 @@ describe("a boxed bot's git", () => {
     provideGitAudience((threadId) => (threadId === "mine" ? "p_aaaaaaaaaaaaaaaaaaaaaa" : null));
     const { broker, minted } = fakeBroker();
     const runner = new BoxRunner({ bwrap: "/usr/bin/bwrap", bridge, setup, denyEnv: new Set(), broker });
-    expect(wrapIn(runner, "/data/.openmausbot/task-workspaces/b1/mine").env.GIT_CONFIG_PARAMETERS).toContain("/github/");
+    expect(wrapIn(runner, "/data/.sanremes/task-workspaces/b1/mine").env.GIT_CONFIG_PARAMETERS).toContain("/github/");
     expect(minted.at(-1)!.grants.github).toBeDefined();
-    expect(wrapIn(runner, "/data/.openmausbot/task-workspaces/b1/room").env.GIT_CONFIG_PARAMETERS).toBeUndefined();
-    expect(wrapIn(runner, "/data/.openmausbot/task-workspaces/b1/mine", { botThreads: true }).env.GIT_CONFIG_PARAMETERS).toBeUndefined();
+    expect(wrapIn(runner, "/data/.sanremes/task-workspaces/b1/room").env.GIT_CONFIG_PARAMETERS).toBeUndefined();
+    expect(wrapIn(runner, "/data/.sanremes/task-workspaces/b1/mine", { botThreads: true }).env.GIT_CONFIG_PARAMETERS).toBeUndefined();
     expect(asked).toEqual(["p_aaaaaaaaaaaaaaaaaaaaaa"]);
     expect(gitAudience(null)).toBeNull();
     provideGitAudience(null);

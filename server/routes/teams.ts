@@ -36,7 +36,7 @@ export interface TeamRouteDeps {
   packageImportDeps(selection: ModelSelection): PackageImportDeps;
   /** On a Team Cloud: false for someone else's private chat, which a team backup never carries. */
   threadShown?(auth: RequestAuth): (threadId: string) => boolean;
-  /** On a Team Cloud: false for someone else's own MausBot, which no export carries. */
+  /** On a Team Cloud: false for someone else's own SanRemes, which no export carries. */
   botShown?(auth: RequestAuth): (botId: string) => boolean;
   /** On a Team Cloud: false for a routine that lives in someone else's private chat, which no export carries. */
   routineShown?(auth: RequestAuth): (routine: Routine) => boolean;
@@ -176,7 +176,7 @@ export function createTeamRoutes(deps: TeamRouteDeps): RouteHandler {
         importVisibility = parsed.visibility;
       }
       const body = await readBody(req, MAX_TEAM_BACKUP_BYTES);
-      if (body?.format === "openmaus.backup") {
+      if (body?.format === "sanremes.backup") {
         if (importMode !== "add") return json(res, 400, { error: "Import backups alongside your existing bots; project mode is only for templates" });
         try {
           const imported = importTeamBackup(store, routines!, body, await defaultSelection(), { visibility: importVisibility, ...teamCreator(auth) });

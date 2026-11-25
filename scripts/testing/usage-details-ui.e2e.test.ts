@@ -5,19 +5,19 @@ import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
 import { resolveAgentBrowserBinary } from "../../server/browser-engine.ts";
 import { waitForExit } from "../../server/testing/cleanup.ts";
-import { runControlOmb } from "../control-omb.ts";
-import { ENABLE_ADVANCED_UI, agentBrowser, sessionEnv, UI_TOOLS_DIR, type UiHandle } from "./control-omb-ui.ts";
+import { runControlOmb } from "../control-sanremes.ts";
+import { ENABLE_ADVANCED_UI, agentBrowser, sessionEnv, UI_TOOLS_DIR, type UiHandle } from "./control-sanremes-ui.ts";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
-const enabled = process.env.OMB_UI_E2E === "1" || Boolean(resolveAgentBrowserBinary({ dataDir: UI_TOOLS_DIR, env: process.env }));
-if (!enabled) console.log("skipping usage details UI: set OMB_UI_E2E=1 to install the pinned browser");
+const enabled = process.env.SANREMES_UI_E2E === "1" || Boolean(resolveAgentBrowserBinary({ dataDir: UI_TOOLS_DIR, env: process.env }));
+if (!enabled) console.log("skipping usage details UI: set SANREMES_UI_E2E=1 to install the pinned browser");
 
 (enabled ? it : it.skip)("renders separate cached input, uncached input and output after a real fixture turn", async () => {
   let child: ChildProcess | undefined;
   let info: { ui: string; url: string; botId: string; logPath: string } | undefined;
   try {
     let stdout = "", stderr = "";
-    child = spawn(process.execPath, ["--experimental-strip-types", join(ROOT, "scripts/control-omb.ts"), "ui", "launch"], {
+    child = spawn(process.execPath, ["--experimental-strip-types", join(ROOT, "scripts/control-sanremes.ts"), "ui", "launch"], {
       cwd: ROOT, env: process.env, stdio: ["ignore", "pipe", "pipe"],
     });
     child.stdout!.on("data", chunk => { stdout += String(chunk); });
@@ -86,7 +86,7 @@ if (!enabled) console.log("skipping usage details UI: set OMB_UI_E2E=1 to instal
     }
     await agentBrowser(browser.binary, sessionEnv(browser), ["set", "viewport", "1100", "900"]);
     await expect.poll(() => evaluate("innerWidth")).toBe(1100);
-    const density = await evaluate("localStorage.getItem('openmausbot.sidebarDensity')");
+    const density = await evaluate("localStorage.getItem('sanremes.sidebarDensity')");
     const activate = async (selector: string) => {
       await expect.poll(() => evaluate(`(() => {
         const button = document.querySelector(${JSON.stringify(selector)});
@@ -103,7 +103,7 @@ if (!enabled) console.log("skipping usage details UI: set OMB_UI_E2E=1 to instal
     };
     await openUsage();
     await expect.poll(() => evaluate("document.querySelector('[data-sidebar]').getBoundingClientRect().width")).toBe(80);
-    expect(await evaluate("localStorage.getItem('openmausbot.sidebarDensity')")).toBe(density);
+    expect(await evaluate("localStorage.getItem('sanremes.sidebarDensity')")).toBe(density);
     await expect.poll(() => evaluate("Boolean(document.querySelector('[role=dialog]'))"), { timeout: 10_000 }).toBe(true);
     await ui("screenshot", "--out", `${handle.logPath}.settings-1100.png`);
     await ui("press", "--keys", "Escape");
@@ -124,7 +124,7 @@ if (!enabled) console.log("skipping usage details UI: set OMB_UI_E2E=1 to instal
     await openMore();
     await activate('[role="menu"][aria-label="More"] button[data-menu-key="inspector"]');
     await expect.poll(() => evaluate("Boolean(document.querySelector('[aria-label=Inspector]'))")).toBe(false);
-    await evaluate(`(() => { localStorage.setItem("omb-advanced-mode", "0"); window.dispatchEvent(new StorageEvent("storage", { key: "omb-advanced-mode", storageArea: localStorage })); return true; })()`);
+    await evaluate(`(() => { localStorage.setItem("sanremes-advanced-mode", "0"); window.dispatchEvent(new StorageEvent("storage", { key: "sanremes-advanced-mode", storageArea: localStorage })); return true; })()`);
     await agentBrowser(browser.binary, sessionEnv(browser), ["set", "viewport", "1040", "900"]);
     await expect.poll(() => evaluate("innerWidth")).toBe(1040);
     await activate('[data-chathead-pill][aria-expanded="false"]');

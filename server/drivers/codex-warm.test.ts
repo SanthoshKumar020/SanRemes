@@ -49,8 +49,8 @@ describe("a Codex app-server's launch contract", () => {
     expect(before).not.toContain("model=");
   });
 
-  it("computes what can change outside OpenMausBot, config.toml, the CLI and the login, exactly as the contract does", () => {
-    const home = mkdtempSync(join(tmpdir(), "omb-identity-"));
+  it("computes what can change outside SanRemes, config.toml, the CLI and the login, exactly as the contract does", () => {
+    const home = mkdtempSync(join(tmpdir(), "sanremes-identity-"));
     const write = (account: string) => writeFileSync(join(home, "auth.json"), JSON.stringify({ auth_mode: "chatgpt", tokens: { account_id: account, access_token: "t" } }));
     writeFileSync(join(home, "config.toml"), "model = \"a\"\n");
     write("account-1");
@@ -156,7 +156,7 @@ describe("kept Codex app-servers", () => {
   });
 
   it("keep nothing when switched off", () => {
-    vi.stubEnv("OMB_CODEX_SESSION_KEEP", "0");
+    vi.stubEnv("SANREMES_CODEX_SESSION_KEEP", "0");
     const warm = codexWarmSessions<null>("instance-d");
     expect(warm.keep("thread-1", session())).toBe(false);
     vi.unstubAllEnvs();

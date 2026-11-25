@@ -9,7 +9,7 @@ import { compareVersions } from "./announcements.ts";
 
 export const RELEASES_FILE = "announcements/releases.json";
 export const RELEASES_SCHEMA_FILE = "announcements/releases.schema.json";
-export const RELEASES_URL = `https://raw.githubusercontent.com/milind-soni/OpenMausBot/main/${RELEASES_FILE}`;
+export const RELEASES_URL = `https://raw.githubusercontent.com/SanthoshKumar020/SanRemes/main/${RELEASES_FILE}`;
 
 /** The file keeps the newest this many releases; an install reads at most this many. */
 export const MAX_RELEASES = 20;

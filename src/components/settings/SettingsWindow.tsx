@@ -25,7 +25,7 @@ import { SettingsSkeletonCard, SettingsUnreachable } from "./SettingsStates";
 
 const NARROW = "(max-width: 767.98px)";
 const FOCUSABLE = 'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
-const OPENED = "omb-settings-opened";
+const OPENED = "sanremes-settings-opened";
 
 function markOpened(): void {
   try { if (!localStorage.getItem(OPENED)) localStorage.setItem(OPENED, String(Date.now())); } catch { /* storage may be blocked */ }

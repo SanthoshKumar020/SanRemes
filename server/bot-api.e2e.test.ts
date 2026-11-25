@@ -9,7 +9,7 @@ import { connect, type Socket } from "node:net";
 import { join } from "node:path";
 import { afterEach, expect, it, onTestFinished } from "vitest";
 
-import { launchVerificationServer, runControlOmb, type VerificationServer } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb, type VerificationServer } from "../scripts/control-sanremes.ts";
 import { botApiCurl } from "../shared/bot-api.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
 import { BOT_API_REFUSAL } from "./bot-api-fence.ts";
@@ -112,7 +112,7 @@ it.each(["ask", "full", "auto"])("a bot at %s stops at the approval: nothing ans
   expect(launch.argv[launch.argv.indexOf("--permission-mode") + 1]).toBe("default");
   expect(JSON.stringify(launch.prompt)).toContain("[UNTRUSTED BOT API MESSAGE]");
   expect(JSON.stringify(launch.systemPrompt)).toContain("through this bot's API");
-  // Whatever the bot's own level: confined, and no tool of OpenMausBot's, so it can start, schedule or change nothing.
+  // Whatever the bot's own level: confined, and no tool of SanRemes's, so it can start, schedule or change nothing.
   expect(launch.argv).toContain("--restricted");
   expect(launch.argv[launch.argv.indexOf("--tools") + 1]).toBe("Read,Grep,Glob,Edit,Write,WebSearch");
   expect(Object.keys(launch.mcpConfig.mcpServers)).toEqual(["ogb"]);
@@ -265,7 +265,7 @@ it("says it is still working when the reply takes longer than the caller will wa
 }, hostTimeout(60_000));
 
 it("a Retry in the app on a caller's line runs it again as the call: the caller's line, framed and fenced, and the status reads the retried turn", async () => {
-  const replies = mkdtempSync(join(tmpdir(), "omb-bot-api-retry-"));
+  const replies = mkdtempSync(join(tmpdir(), "sanremes-bot-api-retry-"));
   onTestFinished(() => rmSync(replies, { recursive: true, force: true }));
   const replyState = join(replies, "replies");
   fixture = await launchVerificationServer({ ...process.env, FAKE_CLAUDE_VERSION: "2.1.284", FAKE_CLAUDE_REPLIES: JSON.stringify(["first answer", "retried answer", "edited answer"]), FAKE_CLAUDE_REPLY_STATE: replyState });

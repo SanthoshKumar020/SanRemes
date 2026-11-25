@@ -81,7 +81,7 @@ export interface AppEventAttempt {
 }
 
 export interface AppTriggerService {
-  /** "self-hosted": this server uses its own Composio key, which app events do not support. "off": OMB_COMPOSIO_BROKER=off. */
+  /** "self-hosted": this server uses its own Composio key, which app events do not support. "off": SANREMES_COMPOSIO_BROKER=off. */
   available: boolean;
   reason?: "self-hosted" | "unavailable" | "off";
   plan?: "desktop" | "cloud";
@@ -170,7 +170,7 @@ export function gmailSearchQuery(filter: AppTriggerFilter | undefined): string {
   ].filter(Boolean).join(" ");
 }
 
-/** Whether Composio filters this app's events itself from the plain filter (its config), or OpenMausBot does on arrival. */
+/** Whether Composio filters this app's events itself from the plain filter (its config), or SanRemes does on arrival. */
 export function filtersAtSource(app: string): boolean {
   return app === GMAIL_APP;
 }

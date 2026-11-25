@@ -17,7 +17,7 @@ const stored = { command: "npx", args: ["-y", "notes-mcp"], env: { NOTES_KEY: PO
 const names = storedGrantSpec("notes", stored)!;
 /** The server as a turn starts it: its Vault key read, and its restart count when it has one. */
 const started = (restarts = 0, secret = SECRET): McpServerSpec =>
-  ({ command: "npx", args: ["-y", "notes-mcp"], env: { NOTES_KEY: secret, REGION: "eu", ...(restarts ? { OMB_MCP_RESTART: String(restarts) } : {}) } });
+  ({ command: "npx", args: ["-y", "notes-mcp"], env: { NOTES_KEY: secret, REGION: "eu", ...(restarts ? { SANREMES_MCP_RESTART: String(restarts) } : {}) } });
 /** The key earlier versions saved: the fingerprint of the whole started server. */
 const earlierKey = (instance: string, server: string, tool: string, spec: unknown): string =>
   `provider-tool:${instance}:${server}:${tool}:${createHash("sha256").update(JSON.stringify(spec)).digest("hex").slice(0, 16)}`;

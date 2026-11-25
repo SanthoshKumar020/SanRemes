@@ -90,7 +90,7 @@ export function parseDf(output: string): DiskRow[] {
 export const fullest = (rows: DiskRow[]): DiskRow | null =>
   rows.reduce<DiskRow | null>((worst, row) => (!worst || row.percent > worst.percent ? row : worst), null);
 
-const HOME_MARK = "omb-disk:home";
+const HOME_MARK = "sanremes-disk:home";
 export const DISK_CHECK_COMMAND = `timeout ${DISK.checkLimitSeconds} sh -c 'df -Pk /; echo ${HOME_MARK}; df -Pk "$HOME"' 2>/dev/null; true`;
 
 export type DiskSide = "root" | "home";
@@ -115,10 +115,10 @@ export const isNoSpaceError = (text: string): boolean => NO_SPACE.test(text);
 const TOOLS = ["root", "sudo", "apt-get", "journalctl", "docker", "docker-sudo", "pgrep", "npm-cache", "pip-cache", "yarn-cache", "pnpm-cache"] as const;
 export type DiskTool = (typeof TOOLS)[number];
 
-const STAMP_DIR = '"$HOME/.cache/omb-disk"';
-const STAMP_FILE = '"$HOME/.cache/omb-disk/last-cleanup"';
-const CAPACITY_STAMP = '"$HOME/.cache/omb-disk/last-capacity"';
-const RECENT_MARK = "omb-disk:recent";
+const STAMP_DIR = '"$HOME/.cache/sanremes-disk"';
+const STAMP_FILE = '"$HOME/.cache/sanremes-disk/last-cleanup"';
+const CAPACITY_STAMP = '"$HOME/.cache/sanremes-disk/last-capacity"';
+const RECENT_MARK = "sanremes-disk:recent";
 
 export const DISK_SURVEY_COMMAND = [
   '[ "$(id -u)" = 0 ] && echo has:root',
@@ -207,8 +207,8 @@ const dockerFor = (found: ReadonlySet<DiskTool>): string | null => (found.has("d
 
 /** Stops the capacity tier: true once the root filesystem is under the target, and also when it cannot be read. */
 const ENOUGH = `enough() { p=$(df -P / 2>/dev/null | awk 'NR==2 { sub("%", "", $5); print $5 }'); case "$p" in ''|*[!0-9]*) return 0;; esac; [ "$p" -lt ${DISK.capacityTargetPercent} ]; }`;
-const FINISHED = "omb-disk:end";
-const BELOW_MARK = "omb-disk:below";
+const FINISHED = "sanremes-disk:end";
+const BELOW_MARK = "sanremes-disk:below";
 
 /** The two levels the capacity tier may be started at; the script checks its own first reading against the one it was given. */
 export type CapacityTrigger = typeof DISK.writesFailAtPercent | typeof DISK.cleanAtPercent;
@@ -246,8 +246,8 @@ function tmpSweep(found: ReadonlySet<DiskTool>, tmp: string): string[] {
     ] : [
       "  if command -v docker >/dev/null 2>&1 || [ -S /var/run/docker.sock ] || [ -S /run/docker.sock ]; then sure=; fi",
     ]),
-    '  for old in "$t"/.omb-disk-removing.*; do [ -d "$old" ] && [ ! -L "$old" ] && { chmod -R u+w "$old" 2>/dev/null; rm -rf --one-file-system -- "$old" 2>/dev/null; }; done',
-    '  g=$(mktemp -d "$t/.omb-disk-removing.XXXXXX" 2>/dev/null) || sure=',
+    '  for old in "$t"/.sanremes-disk-removing.*; do [ -d "$old" ] && [ ! -L "$old" ] && { chmod -R u+w "$old" 2>/dev/null; rm -rf --one-file-system -- "$old" 2>/dev/null; }; done',
+    '  g=$(mktemp -d "$t/.sanremes-disk-removing.XXXXXX" 2>/dev/null) || sure=',
     '  [ -n "$g" ] && [ -d "$g" ] || sure=',
     '  if [ -n "$sure" ]; then',
     `    u0=$(${usedKb})`,
@@ -285,7 +285,7 @@ function tmpSweep(found: ReadonlySet<DiskTool>, tmp: string): string[] {
  * container uses: a container that stopped a moment ago, such as a database the full disk brought down, stays, and so
  * does its image. `docker rm` without -f refuses a running container and leaves volumes alone. Prints each name removed. */
 const dockerStage = (docker: string): string[] => [
-  "echo omb-disk:containers; now=$(date +%s)",
+  "echo sanremes-disk:containers; now=$(date +%s)",
   `for c in $(${docker} ps -aq --no-trunc --filter status=exited --filter status=dead 2>/dev/null </dev/null); do`,
   `  f=$(${docker} inspect --format '{{.State.FinishedAt}}' "$c" 2>/dev/null </dev/null) || continue`,
   '  s=$(date -d "$f" +%s 2>/dev/null) || continue',
@@ -294,7 +294,7 @@ const dockerStage = (docker: string): string[] => [
   `  name=$(${docker} inspect --format '{{.Name}}' "$c" 2>/dev/null </dev/null)`,
   `  ${docker} rm "$c" >/dev/null 2>&1 </dev/null && printf '%s\\n' "\${name#/}"`,
   "done",
-  `echo omb-disk:images; ${docker} image prune -a -f 2>/dev/null </dev/null | grep -E '^untagged: ' | grep -v '@sha256:' | head -n 40`,
+  `echo sanremes-disk:images; ${docker} image prune -a -f 2>/dev/null </dev/null | grep -E '^untagged: ' | grep -v '@sha256:' | head -n 40`,
 ];
 
 /** The capacity tier as one shell under the same time limit. It does nothing when its own first reading of the root
@@ -313,7 +313,7 @@ export function capacityCommand(found: ReadonlySet<DiskTool>, full: Record<DiskS
     ...cleanupSteps(found, full).map((step) => `( ${step}\n) >/dev/null 2>&1 </dev/null`),
     stop,
     ...(docker ? [...dockerStage(docker), stop] : []),
-    "echo omb-disk:tmp",
+    "echo sanremes-disk:tmp",
     ...tmpSweep(found, tmp),
     `echo ${FINISHED}`,
   ].join("\n");
@@ -331,7 +331,7 @@ export function parseCapacityReport(output: string): DiskRemoved | null {
   let section = "";
   for (const line of String(output ?? "").split(/\r?\n/)) {
     if (line.trim() === RECENT_MARK || line.trim() === BELOW_MARK) return null;
-    const mark = /^omb-disk:(containers|images|tmp|end)\s*$/.exec(line)?.[1];
+    const mark = /^sanremes-disk:(containers|images|tmp|end)\s*$/.exec(line)?.[1];
     if (mark) { section = mark; continue; }
     const container = section === "containers" ? /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/.exec(line.trim())?.[0] : undefined;
     if (container && removed.containers.length < 200) removed.containers.push(container);
@@ -415,8 +415,8 @@ export function removedText(removed: DiskRemoved): string {
     const largest = [...removed.items].sort((a, b) => b.kb - a.kb).slice(0, DISK.removedShown).map((item) => `${JSON.stringify(item.name)} ${sized(item.kb)}`);
     parts.push(`${some(removed.items.length, "old item", "old items")} in /tmp: ${listed(largest, removed.items.length)}`);
   }
-  if (!parts.length) return "MausBot cleared its caches and found nothing else it could safely remove.";
-  return `MausBot removed ${parts.length > 1 ? `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}` : parts[0]}.`;
+  if (!parts.length) return "SanRemes cleared its caches and found nothing else it could safely remove.";
+  return `SanRemes removed ${parts.length > 1 ? `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}` : parts[0]}.`;
 }
 
 const ago = (ms: number): string => (ms < 90 * 60_000 ? `${Math.max(1, Math.round(ms / 60_000))} min` : `${Math.round(ms / 3_600_000)} h`);
@@ -429,13 +429,13 @@ export function diskNotice(facts: DiskFacts, now: number): string | null {
     line = `Disk note: this cloud computer's disk was ${facts.capacity.before}% full; ${removedText(facts.capacity)}${facts.capacity.after !== null ? ` Now ${facts.capacity.after}%.` : ""}`;
   } else if (cleanup && !facts.cleanupTold && cleanup.after !== null) {
     const freed = cleanup.freedKb !== null && cleanup.freedKb >= 1024 ? ` (${sized(cleanup.freedKb)} freed)` : "";
-    line = `Disk note: this cloud computer's disk was ${cleanup.before}% full; MausBot cleared caches${freed}, now ${cleanup.after}%.`;
+    line = `Disk note: this cloud computer's disk was ${cleanup.before}% full; SanRemes cleared caches${freed}, now ${cleanup.after}%.`;
   } else if (percent < DISK.cleanAtPercent) {
     return null;
   } else if (facts.cleaning === "now") {
-    line = `Disk note: this cloud computer's disk is ${percent}% full; MausBot is freeing space now, which can take a few minutes.`;
+    line = `Disk note: this cloud computer's disk is ${percent}% full; SanRemes is freeing space now, which can take a few minutes.`;
   } else if (facts.cleaning === "soon") {
-    line = `Disk note: this cloud computer's disk is ${percent}% full; MausBot frees space once no command is running on it.`;
+    line = `Disk note: this cloud computer's disk is ${percent}% full; SanRemes frees space once no command is running on it.`;
   } else if (cleanup && now - cleanup.at < DISK.cleanAgainUnhelpedMs) {
     line = `Disk note: this cloud computer's disk is ${percent}% full; its caches were cleared ${ago(now - cleanup.at)} ago.`;
   } else {

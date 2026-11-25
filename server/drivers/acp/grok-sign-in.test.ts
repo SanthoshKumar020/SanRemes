@@ -18,7 +18,7 @@ afterEach(async () => { for (const dir of scratches.splice(0)) await removeTempD
 
 const home = (login: string, withAuth = true) => {
   chmodSync(FAKE_CLI, 0o755);
-  const scratch = mkdtempSync(join(tmpdir(), "omb-grok-sign-in-"));
+  const scratch = mkdtempSync(join(tmpdir(), "sanremes-grok-sign-in-"));
   scratches.push(scratch);
   mkdirSync(join(scratch, "grok"), { recursive: true });
   const authFile = join(scratch, "grok", "auth.json");

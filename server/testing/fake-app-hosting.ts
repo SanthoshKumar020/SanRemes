@@ -26,7 +26,7 @@ interface FakeApp {
 }
 
 export interface FakeAppHosting {
-  /** What a home gets as OMB_CLOUD_HOSTING_URL. */
+  /** What a home gets as SANREMES_CLOUD_HOSTING_URL. */
   url: string;
   origin: string;
   /** Every request to the relay, in order: "METHOD /path" after the relay's base. */

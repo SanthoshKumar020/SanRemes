@@ -7,7 +7,7 @@ import { t } from "./i18n";
 import { pageRecords, scribeChosen } from "./speech";
 
 export type CallMode = "turns" | "live";
-export const CALL_MODE_KEY = "openmausbot.callMode.v1";
+export const CALL_MODE_KEY = "sanremes.callMode.v1";
 
 export const CALL_MODES: ReadonlyArray<{ id: CallMode; label: LocaleKey }> = [
   { id: "turns", label: "call.mode.turns" },

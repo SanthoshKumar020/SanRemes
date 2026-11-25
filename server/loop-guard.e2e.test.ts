@@ -10,19 +10,19 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it, vi } from "vitest";
 
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { failedTurnCause } from "../shared/failed-turn.ts";
 import { lastNonReceipt } from "../src/lib/receipts.ts";
 import { openSse } from "./testing/sse.ts";
 
 const CALLS = 12;
-const NOTE = "[OpenMausBot: this exact call has failed the same way 5 times in a row: “Bash: git status”. Change approach, or stop and report what is blocking.]";
+const NOTE = "[SanRemes: this exact call has failed the same way 5 times in a row: “Bash: git status”. Change approach, or stop and report what is blocking.]";
 const STOPPED = "the same call failed the same way 10 times in a row: “Bash: git status” — the turn was stopped";
 /** What the command prints, every time. Never in anything the harness writes. */
 const OUTPUT = "fatal: not a git repository (or any of the parent directories): .git";
 
 it("leaves a stuck turn alone when off; on, tells it at 5 in a row and stops it only with a stop count set", async () => {
-  const scratch = mkdtempSync(join(tmpdir(), "omb-loop-guard-"));
+  const scratch = mkdtempSync(join(tmpdir(), "sanremes-loop-guard-"));
   // the engine holds its turn open until this file exists, and says here
   // when it has read a message steered into that turn
   const gate = join(scratch, "finish");

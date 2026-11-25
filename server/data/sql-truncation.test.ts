@@ -13,7 +13,7 @@ const dirs: string[] = [];
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 
 function harness() {
-  const dir = mkdtempSync(join(tmpdir(), "omb-data-sql-truncation-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-data-sql-truncation-"));
   dirs.push(dir);
   const database = new FakeDataDatabase();
   const deps: DataRpcDeps = {

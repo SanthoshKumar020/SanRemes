@@ -19,15 +19,15 @@ const MAX_CORRECTIVE_ROUNDS = 5;
 
 /** The `loopGuard` section of config.json. */
 export const loopGuardConfigSchema = z.object({
-  /** Off unless true; OMB_LOOP_GUARD=1 switches it on too. */
+  /** Off unless true; SANREMES_LOOP_GUARD=1 switches it on too. */
   enabled: z.boolean().optional(),
   /** Identical failures in a row before the note; 5 when unset. */
   steerAt: count.optional(),
-  /** Identical failures in a row before the turn is stopped; unset never stops. OMB_LOOP_GUARD_STOP_AT wins; null clears. */
+  /** Identical failures in a row before the turn is stopped; unset never stops. SANREMES_LOOP_GUARD_STOP_AT wins; null clears. */
   stopAt: count.nullable().optional(),
   /** For a turn nobody is watching the guard is on whatever `enabled` says, unless this is false. */
   unattended: z.boolean().optional(),
-  /** Identical failures in a row before such a turn is stopped; 20 when unset. OMB_LOOP_GUARD_UNATTENDED_STOP_AT wins. */
+  /** Identical failures in a row before such a turn is stopped; 20 when unset. SANREMES_LOOP_GUARD_UNATTENDED_STOP_AT wins. */
   unattendedStopAt: count.optional(),
   /** For bots on API models: times a turn that answers after a failed tool call is sent back to re-run it; 0 when unset. */
   correctiveRounds: z.number().int().min(0).max(MAX_CORRECTIVE_ROUNDS).optional(),
@@ -50,19 +50,19 @@ const countFrom = (raw: string | undefined): number | undefined => {
   return Number.isInteger(parsed) && parsed >= COUNT_MIN && parsed <= COUNT_MAX ? parsed : undefined;
 };
 
-/** For a turn a person is waiting on, off by default: it speaks into a running turn, and OMB_LOOP_GUARD_STOP_AT never
+/** For a turn a person is waiting on, off by default: it speaks into a running turn, and SANREMES_LOOP_GUARD_STOP_AT never
  * switches it on by itself. For a turn nobody is watching (`unattended`) it is on and stops the turn at
- * `unattendedStopAt`, or at `stopAt` when that is the lower; `off` in OMB_LOOP_GUARD_UNATTENDED_STOP_AT, or
+ * `unattendedStopAt`, or at `stopAt` when that is the lower; `off` in SANREMES_LOOP_GUARD_UNATTENDED_STOP_AT, or
  * `unattended: false` in config.json, leaves such a turn to the same settings as any other. */
 export function loopGuardSettings(cfg: { loopGuard?: LoopGuardConfig }, env: NodeJS.ProcessEnv = process.env, unattended = false): LoopGuardSettings {
-  const stopAt = countFrom(env.OMB_LOOP_GUARD_STOP_AT) ?? cfg.loopGuard?.stopAt ?? undefined;
-  const envUnattended = env.OMB_LOOP_GUARD_UNATTENDED_STOP_AT?.trim().toLowerCase();
+  const stopAt = countFrom(env.SANREMES_LOOP_GUARD_STOP_AT) ?? cfg.loopGuard?.stopAt ?? undefined;
+  const envUnattended = env.SANREMES_LOOP_GUARD_UNATTENDED_STOP_AT?.trim().toLowerCase();
   const own = countFrom(envUnattended) ?? cfg.loopGuard?.unattendedStopAt ?? DEFAULT_UNATTENDED_STOP_AT;
   if (unattended && envUnattended !== "off" && cfg.loopGuard?.unattended !== false) {
     return { enabled: true, steerAt: cfg.loopGuard?.steerAt ?? DEFAULT_STEER_AT, stopAt: Math.min(own, stopAt ?? own) };
   }
   return {
-    enabled: env.OMB_LOOP_GUARD === "1" || cfg.loopGuard?.enabled === true,
+    enabled: env.SANREMES_LOOP_GUARD === "1" || cfg.loopGuard?.enabled === true,
     steerAt: cfg.loopGuard?.steerAt ?? DEFAULT_STEER_AT,
     ...(stopAt === undefined ? {} : { stopAt }),
   };
@@ -145,9 +145,9 @@ function quoted(call: CountedCall): string {
   return `“${quoteInNote(`${call.tool}: ${call.args}`, CALL_QUOTE_MAX).replace(/[“”]/g, '"')}”`;
 }
 
-/** Opened as `[OpenMausBot …]`, which model-written text cannot open, and never carrying what the command printed. */
+/** Opened as `[SanRemes …]`, which model-written text cannot open, and never carrying what the command printed. */
 function loopNote(call: string, streak: number): string {
-  return `[OpenMausBot: this exact call has failed the same way ${streak} times in a row: ${call}. Change approach, or stop and report what is blocking.]`;
+  return `[SanRemes: this exact call has failed the same way ${streak} times in a row: ${call}. Change approach, or stop and report what is blocking.]`;
 }
 
 function loopCause(call: string, streak: number): string {

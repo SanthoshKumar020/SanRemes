@@ -32,7 +32,7 @@ export function antigravityInUse(
 
 /** The channel whose copy is older is the one installed, and what it installed is reported by that copy's own version.
  * On a computer with no Antigravity runtime at all, the CLI is installed from its channel when the server is opted in
- * (OMB_ANTIGRAVITY_NATIVE_CLI=1) or Antigravity is in use here; otherwise nothing is downloaded until the card's install. */
+ * (SANREMES_ANTIGRAVITY_NATIVE_CLI=1) or Antigravity is in use here; otherwise nothing is downloaded until the card's install. */
 export function antigravityManagedRuntime(
   configuredClis: () => readonly string[],
   options: Pick<AntigravityInstallOptions, "baseDir" | "fetchImpl" | "cliRelease" | "validate"> & {

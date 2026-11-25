@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { openSse } from "./testing/sse.ts";
 
 it("holds a conversation marked unread with it open against being on screen, in every window, until it is opened or answered", async () => {

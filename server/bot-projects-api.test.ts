@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { launchVerificationServer, type VerificationServer } from "../scripts/control-omb.ts";
+import { launchVerificationServer, type VerificationServer } from "../scripts/control-sanremes.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
 
 describe("organizational folders through an isolated HTTP fixture", () => {

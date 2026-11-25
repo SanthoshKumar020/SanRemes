@@ -94,13 +94,13 @@ describe("the bots list", () => {
 });
 
 describe("on a Team Cloud", () => {
-  it("names only the bots this person may see, never a teammate's own MausBot, and counts an unnamed one as a private bot", () => {
+  it("names only the bots this person may see, never a teammate's own SanRemes, and counts an unnamed one as a private bot", () => {
     const names = storageBotNames([
       { id: "chief", name: "Chief" }, { id: "research", name: "Research", defaultBot: { person: "Ada@Example.com" } },
-      { id: "theirs", name: "Bo's MausBot", defaultBot: { person: "bo@example.com" } },
+      { id: "theirs", name: "Bo's SanRemes", defaultBot: { person: "bo@example.com" } },
     ], { me: "ada@example.com" });
     expect([...names]).toEqual([["chief", "Chief"], ["research", "Research"]]);
-    expect([...storageBotNames([{ id: "mine", name: "MausBot", defaultBot: { person: "ada@example.com" } }], { me: null })]).toEqual([["mine", "MausBot"]]);
+    expect([...storageBotNames([{ id: "mine", name: "SanRemes", defaultBot: { person: "ada@example.com" } }], { me: null })]).toEqual([["mine", "SanRemes"]]);
     expect(storageBots(storageReport(), (id) => names.get(id), undefined, true).map((row) => [row.key, row.kind, row.name])).toEqual([
       ["chief", "bot", "Chief"], ["research", "bot", "Research"], ["gone", "gone", null], ["rest", "rest", null],
     ]);
@@ -108,7 +108,7 @@ describe("on a Team Cloud", () => {
   });
 
   it("off a team every bot keeps its name, and one without a name is unnamed, not private", () => {
-    expect([...storageBotNames([{ id: "theirs", name: "Bo's MausBot", defaultBot: { person: "bo@example.com" } }], null)]).toEqual([["theirs", "Bo's MausBot"]]);
+    expect([...storageBotNames([{ id: "theirs", name: "Bo's SanRemes", defaultBot: { person: "bo@example.com" } }], null)]).toEqual([["theirs", "Bo's SanRemes"]]);
     expect(storageBots(storageReport(), () => undefined).map((row) => row.kind)).toEqual(["bot", "bot", "gone", "rest"]);
   });
 });

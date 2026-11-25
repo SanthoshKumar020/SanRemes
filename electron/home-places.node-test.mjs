@@ -6,7 +6,7 @@ import { parseCloudList } from "./cloud-list.mjs";
 import environments from "./environments.cjs";
 import { createHomePlaces } from "./home-places.mjs";
 
-const HOME = "https://omb-t-1.fly.dev", TEAM = "https://omb-u-acme.fly.dev", OTHER = "https://omb-u-beta.fly.dev";
+const HOME = "https://sanremes-t-1.fly.dev", TEAM = "https://sanremes-u-acme.fly.dev", OTHER = "https://sanremes-u-beta.fly.dev";
 const acme = { id: "team-acme", name: "Acme", role: "admin", machine: { status: "ready", origin: TEAM } };
 const beta = { id: "team-beta", name: "Beta", role: "member", machine: { status: "ready", origin: OTHER } };
 const connected = (teams) => ({ status: "connected", account: { id: "acct-1" }, teams });

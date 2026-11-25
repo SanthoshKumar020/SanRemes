@@ -1,11 +1,11 @@
-// Synthetic bots and threads only, in OMB_DATA_DIR, which must be set to an empty temporary folder before this starts.
+// Synthetic bots and threads only, in SANREMES_DATA_DIR, which must be set to an empty temporary folder before this starts.
 // Counts how many bots each save of bots.json serializes, and what one setting save and a round of turns write, for the
 // checkout at <repo>, so two checkouts can be compared with the same script:
-//   OMB_DATA_DIR=$(mktemp -d) node --experimental-strip-types scripts/bench-bots-serialize.ts <repo> 200x200
+//   SANREMES_DATA_DIR=$(mktemp -d) node --experimental-strip-types scripts/bench-bots-serialize.ts <repo> 200x200
 import { randomUUID } from "node:crypto";
 import { statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-if (!process.env.OMB_DATA_DIR) throw new Error("Set OMB_DATA_DIR to an empty temporary folder first: the store saves there.");
+if (!process.env.SANREMES_DATA_DIR) throw new Error("Set SANREMES_DATA_DIR to an empty temporary folder first: the store saves there.");
 const [repo, shape] = process.argv.slice(2) as [string, string];
 const [nBots, nThreads] = shape.split("x").map(Number) as [number, number];
 const { Store } = await import(join(repo, "server/store.ts"));
@@ -13,7 +13,7 @@ const batch = await import(join(repo, "server/save-batch.ts"));
 const selection = () => ({ instanceId: "claude", model: "synthetic" });
 const seed = new Store(selection);
 const first = seed.createBot({ name: "Bench 0" }, { seedMessages: false });
-const file = join(process.env.OMB_DATA_DIR!, "bots.json");
+const file = join(process.env.SANREMES_DATA_DIR!, "bots.json");
 const template = JSON.parse(JSON.stringify(seed.bot(first.id)));
 const rows = Array.from({ length: nBots }, (_, b) => ({ ...template, id: randomUUID(), threadId: `thread-${b}-0`, name: `Bench ${b}`,
   tasks: Array.from({ length: nThreads }, (_, t) => ({ ...template.tasks[0], id: randomUUID(), threadId: `thread-${b}-${t}`,

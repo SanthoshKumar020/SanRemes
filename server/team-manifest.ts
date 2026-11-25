@@ -1,14 +1,14 @@
 import { z } from "zod";
 
 import { schemaIssue, type JsonValue } from "./schema.ts";
-import type { MausColor } from "./store.ts";
+import type { SanRemesColor } from "./store.ts";
 import { botBodyId, type BotBodyId } from "../shared/bot-body.ts";
 import { takeImportName } from "../shared/import-name.ts";
 import { MAUS_COLOR_NAMES } from "../shared/wire.ts";
 import { BOT_PROFILE_LIMITS } from "../shared/bot-profile.ts";
 import { optionalText, requiredText } from "../shared/package-format.ts";
 
-export const TEAM_MANIFEST_FORMAT = "openmaus.team" as const;
+export const TEAM_MANIFEST_FORMAT = "sanremes.team" as const;
 export const TEAM_MANIFEST_VERSION = 2 as const;
 export const LEGACY_TEAM_MANIFEST_VERSION = 1 as const;
 export const MAX_TEAM_MEMBERS = 200;
@@ -83,7 +83,7 @@ export interface TeamManifestMember {
   description: string;
   soul?: string;
   appearance: {
-    color: MausColor;
+    color: SanRemesColor;
     mascotExpression?: string;
     mascotBody?: string;
   };
@@ -130,7 +130,7 @@ interface ExportableBot {
   title: string;
   description: string;
   soul?: string;
-  color: MausColor;
+  color: SanRemesColor;
   mascotExpression?: string | null;
   mascotBody?: string | null;
 }
@@ -200,7 +200,7 @@ export interface ImportedMemberProfile {
   title: string;
   description: string;
   soul?: string;
-  color: MausColor;
+  color: SanRemesColor;
   mascotExpression?: string;
   mascotBody?: BotBodyId;
 }

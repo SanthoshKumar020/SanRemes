@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { isTitleCall } from "./testing/title-call.ts";
 
 // The fixture can only append to one fixed file in the launcher's disposable home: provider arguments cannot select a path.

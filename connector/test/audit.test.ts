@@ -16,7 +16,7 @@ afterEach(() => {
   for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 const folder = () => {
-  const dir = mkdtempSync(join(tmpdir(), "omb-connector-audit-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-connector-audit-"));
   dirs.push(dir);
   return dir;
 };
@@ -51,8 +51,8 @@ describe("the audit log", () => {
   });
 
   it("records what a job asked for without a value that could be a secret", () => {
-    const start: Job = { id: "s1", type: "start", args: { image: HOME, env: { OMB_PUBLIC_URL: "https://acme.example", OMB_CLOUD_BOOTSTRAP_SECRET: SECRET } } };
-    expect(auditArgs(start)).toEqual({ image: HOME, env: ["OMB_CLOUD_BOOTSTRAP_SECRET", "OMB_PUBLIC_URL"] });
+    const start: Job = { id: "s1", type: "start", args: { image: HOME, env: { SANREMES_PUBLIC_URL: "https://acme.example", SANREMES_CLOUD_BOOTSTRAP_SECRET: SECRET } } };
+    expect(auditArgs(start)).toEqual({ image: HOME, env: ["SANREMES_CLOUD_BOOTSTRAP_SECRET", "SANREMES_PUBLIC_URL"] });
     expect(JSON.stringify(auditArgs(start))).not.toContain(SECRET);
     expect(auditArgs({ id: "i1", type: "import-disk", args: { url: "https://bucket.example/home.tar.gz?X-Signature=abcdef" } })).toEqual({ from: "https://bucket.example" });
     expect(auditArgs({ id: "r1", type: "restore", args: { backupId: "20261028-104512-3fa9" } })).toEqual({ backupId: "20261028-104512-3fa9" });
@@ -105,15 +105,15 @@ describe("the server owner's policy", () => {
     run: async (job) => { ran.push(`${job.type}`); return { id: job.id, ok: true, result: { home: { state: "running", image: HOME, health: null } } } as JobReply; },
     audit: new AuditLog(join(dir, "audit.jsonl")), log: () => {}, policyFile: join(dir, "policy.json"),
   });
-  const SELF = { id: "self-1", type: "self-update", args: { image: `ghcr.io/milind-soni/mausbot-connector@sha256:${"b".repeat(64)}` } } as Job;
+  const SELF = { id: "self-1", type: "self-update", args: { image: `ghcr.io/SanthoshKumar020/sanremes-connector@sha256:${"b".repeat(64)}` } } as Job;
   const UPDATE = { id: "u1", type: "update", args: { image: HOME } } as Job;
 
-  it("limits what MausBot may run here, records each refusal, and never limits root on the server or a self-update", async () => {
+  it("limits what SanRemes may run here, records each refusal, and never limits root on the server or a self-update", async () => {
     const dir = folder();
     ran.splice(0);
     writeFileSync(join(dir, "policy.json"), JSON.stringify({ jobs: ["status", "backup"], updates: "hold" }));
     const refused = await desk(dir).submit(UPDATE, "admin");
-    expect(refused).toEqual({ id: "u1", ok: false, error: { code: "refused_by_policy", message: `This server's policy ${join(dir, "policy.json")} does not let MausBot run update jobs.` } });
+    expect(refused).toEqual({ id: "u1", ok: false, error: { code: "refused_by_policy", message: `This server's policy ${join(dir, "policy.json")} does not let SanRemes run update jobs.` } });
     expect((await desk(dir).submit(SELF, "admin"))?.ok).toBe(true);
     expect((await desk(dir).submit({ ...UPDATE, id: "local-1" }, "local"))?.ok).toBe(true);
     expect(ran).toEqual(["self-update", "update"]);
@@ -123,7 +123,7 @@ describe("the server owner's policy", () => {
     expect((await desk(dir).submit({ id: "b1", type: "backup", args: {} }, "admin"))?.ok).toBe(true);
   });
 
-  it("changes nothing for MausBot while the policy cannot be used, but still answers a status and takes a self-update", async () => {
+  it("changes nothing for SanRemes while the policy cannot be used, but still answers a status and takes a self-update", async () => {
     const dir = folder();
     ran.splice(0);
     writeFileSync(join(dir, "policy.json"), '{"updates": "sometimes"}');
@@ -139,7 +139,7 @@ describe("the server owner's policy", () => {
 });
 
 describe.skipIf(process.platform === "win32")("jobs from root on this server", () => {
-  it("go through the same checks and desk as MausBot's, and only root can reach the socket", async () => {
+  it("go through the same checks and desk as SanRemes's, and only root can reach the socket", async () => {
     const dir = folder();
     const socket = join(dir, "jobs.sock");
     const submitted: { job: Job; by: string }[] = [];

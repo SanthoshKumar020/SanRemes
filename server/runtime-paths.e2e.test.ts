@@ -5,7 +5,7 @@ import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
 
-import { launchVerificationServer, runControlOmb, verificationServerArgs, verificationServerEnvironment } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb, verificationServerArgs, verificationServerEnvironment } from "../scripts/control-sanremes.ts";
 import { ENVELOPE_MARK } from "./runtime/envelope.ts";
 import { waitForExit } from "./testing/cleanup.ts";
 import { readHandoffs } from "./testing/handoff-rows.ts";
@@ -87,8 +87,8 @@ async function scenario(test: (f: any) => Promise<void>) {
         try {
           const dump = JSON.parse(readFileSync(session.fixtureDumpPath, "utf8"));
           const env = dump.mcpConfig?.mcpServers?.agents?.env;
-          if (env?.OMB_THREAD_ID !== threadId) return false;
-          found = env.OMB_COMMS_TOKEN;
+          if (env?.SANREMES_THREAD_ID !== threadId) return false;
+          found = env.SANREMES_COMMS_TOKEN;
           return Boolean(found);
         } catch { return false; }
       }, { timeout: 20_000 }).toBe(true);

@@ -119,15 +119,15 @@ describe("Companion account service", () => {
     );
     expect(resolveCompanionControlPlaneURL({
       isPackaged: false,
-      environment: { OMB_CONTROL_PLANE_URL: "http://127.0.0.1:8787/" },
+      environment: { SANREMES_CONTROL_PLANE_URL: "http://127.0.0.1:8787/" },
     })).toBe("http://127.0.0.1:8787");
     expect(resolveCompanionControlPlaneURL({
       isPackaged: true,
-      environment: { OMB_CONTROL_PLANE_URL: "http://accounts.openmausbot.com" },
+      environment: { SANREMES_CONTROL_PLANE_URL: "http://accounts.openmausbot.com" },
     })).toBe("");
     expect(resolveCompanionControlPlaneURL({
       isPackaged: true,
-      environment: { OMB_CONTROL_PLANE_URL: new String("https://accounts.openmausbot.com") },
+      environment: { SANREMES_CONTROL_PLANE_URL: new String("https://accounts.openmausbot.com") },
     })).toBe("");
     expect(resolveCompanionControlPlaneURL({ isPackaged: false, environment: {} })).toBe("");
   });
@@ -1523,7 +1523,7 @@ describe("Companion account on demand", () => {
 
   it("tells a desktop below the minimum version to update", async () => {
     const message = friendlyCompanionAccountError(new ControlPlaneError("update_required", 426));
-    expect(message).toBe("This version of MausBot can no longer make secure links. Update MausBot, then try again. Local Wi-Fi and Tailscale pairing still work.");
+    expect(message).toBe("This version of SanRemes can no longer make secure links. Update SanRemes, then try again. Local Wi-Fi and Tailscale pairing still work.");
   });
 
   it("signs a relay-capable computer in without a tunnel when no phone needs one", async () => {

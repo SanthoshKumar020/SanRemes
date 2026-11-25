@@ -152,21 +152,21 @@ describe("a turn nobody is watching", () => {
 describe("the limits' settings", () => {
   it("default to 4 hours, 400 requests and 5 denials; take whole numbers or off; leave the default for anything else", () => {
     expect(unattendedLimits({})).toEqual({ maxMs: 4 * 60 * 60_000, maxRequests: 400, maxDenials: 5 });
-    expect(unattendedLimits({ OMB_UNATTENDED_TURN_MAX_MS: "600000", OMB_UNATTENDED_TURN_MAX_REQUESTS: "50", OMB_UNATTENDED_TURN_MAX_DENIALS: "2" }))
+    expect(unattendedLimits({ SANREMES_UNATTENDED_TURN_MAX_MS: "600000", SANREMES_UNATTENDED_TURN_MAX_REQUESTS: "50", SANREMES_UNATTENDED_TURN_MAX_DENIALS: "2" }))
       .toEqual({ maxMs: 600_000, maxRequests: 50, maxDenials: 2 });
-    expect(unattendedLimits({ OMB_UNATTENDED_TURN_MAX_MS: "off", OMB_UNATTENDED_TURN_MAX_REQUESTS: "OFF", OMB_UNATTENDED_TURN_MAX_DENIALS: " off " }))
+    expect(unattendedLimits({ SANREMES_UNATTENDED_TURN_MAX_MS: "off", SANREMES_UNATTENDED_TURN_MAX_REQUESTS: "OFF", SANREMES_UNATTENDED_TURN_MAX_DENIALS: " off " }))
       .toEqual({ maxMs: Infinity, maxRequests: Infinity, maxDenials: Infinity });
-    expect(unattendedLimits({ OMB_UNATTENDED_TURN_MAX_MS: "59999", OMB_UNATTENDED_TURN_MAX_REQUESTS: "0", OMB_UNATTENDED_TURN_MAX_DENIALS: "2.5" })).toEqual(UNATTENDED_DEFAULTS);
+    expect(unattendedLimits({ SANREMES_UNATTENDED_TURN_MAX_MS: "59999", SANREMES_UNATTENDED_TURN_MAX_REQUESTS: "0", SANREMES_UNATTENDED_TURN_MAX_DENIALS: "2.5" })).toEqual(UNATTENDED_DEFAULTS);
   });
 
   it("the loop guard is on with a stop at 20 for a turn nobody is watching, and as configured for any other", () => {
     expect(loopGuardSettings({}, {})).toEqual({ enabled: false, steerAt: 5 });
     expect(loopGuardSettings({}, {}, true)).toEqual({ enabled: true, steerAt: 5, stopAt: 20 });
     expect(loopGuardSettings({ loopGuard: { unattendedStopAt: 8, steerAt: 3 } }, {}, true)).toEqual({ enabled: true, steerAt: 3, stopAt: 8 });
-    expect(loopGuardSettings({ loopGuard: { unattendedStopAt: 8 } }, { OMB_LOOP_GUARD_UNATTENDED_STOP_AT: "30" }, true)).toMatchObject({ stopAt: 30 });
+    expect(loopGuardSettings({ loopGuard: { unattendedStopAt: 8 } }, { SANREMES_LOOP_GUARD_UNATTENDED_STOP_AT: "30" }, true)).toMatchObject({ stopAt: 30 });
     expect(loopGuardSettings({ loopGuard: { enabled: true, stopAt: 10 } }, {}, true)).toMatchObject({ enabled: true, stopAt: 10 });
     expect(loopGuardSettings({ loopGuard: { unattended: false } }, {}, true)).toEqual({ enabled: false, steerAt: 5 });
-    expect(loopGuardSettings({ loopGuard: { enabled: true } }, { OMB_LOOP_GUARD_UNATTENDED_STOP_AT: "off" }, true)).toEqual({ enabled: true, steerAt: 5 });
+    expect(loopGuardSettings({ loopGuard: { enabled: true } }, { SANREMES_LOOP_GUARD_UNATTENDED_STOP_AT: "off" }, true)).toEqual({ enabled: true, steerAt: 5 });
     expect(parseConfigPatch({ loopGuard: { unattendedStopAt: 12 } })).toEqual({ loopGuard: { unattendedStopAt: 12 } });
     expect(parseConfigPatch({ loopGuard: { unattended: false } })).toEqual({ loopGuard: { unattended: false } });
     expect(() => parseConfigPatch({ loopGuard: { unattendedStopAt: 1 } })).toThrow();

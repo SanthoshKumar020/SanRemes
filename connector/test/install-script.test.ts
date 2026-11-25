@@ -16,7 +16,7 @@ afterEach(() => {
 
 /** Runs install.sh with stand-ins for docker, id and apparmor_parser that record what they were asked to do. */
 function run(args: string[], options: { uid?: number; env?: Record<string, string>; ownServer?: boolean } = {}) {
-  const dir = mkdtempSync(join(tmpdir(), "omb-install-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-install-"));
   dirs.push(dir);
   const bin = join(dir, "bin");
   mkdirSync(bin);
@@ -28,35 +28,35 @@ function run(args: string[], options: { uid?: number; env?: Record<string, strin
   tool("docker", `echo "docker $*" >> "${log}"
 case "$*" in
   "ps -aq --filter label=${LABELS.role}=helper") echo helper-1 ;;
-  "volume ls -q --filter label=${LABELS.role}=backup") echo mausbot-backup-20261028-000000-ab12; echo mausbot-backup-20261029-000000-cd34 ;;
+  "volume ls -q --filter label=${LABELS.role}=backup") echo sanremes-backup-20261028-000000-ab12; echo sanremes-backup-20261029-000000-cd34 ;;
 esac`);
   tool("id", `echo ${options.uid ?? 0}`);
   tool("apparmor_parser", `echo "apparmor_parser $*" >> "${log}"`);
-  const etc = join(dir, "etc-mausbot");
+  const etc = join(dir, "etc-sanremes");
   const apparmor = join(dir, "apparmor.d");
-  const audit = join(dir, "log-mausbot");
+  const audit = join(dir, "log-sanremes");
   mkdirSync(etc);
   mkdirSync(apparmor);
   mkdirSync(audit);
   writeFileSync(join(audit, "audit.jsonl"), "{}\n");
   writeFileSync(join(etc, SECCOMP_FILE), "{}");
   writeFileSync(join(apparmor, APPARMOR_PROFILE), "profile");
-  const install = join(dir, "opt-openmausbot");
+  const install = join(dir, "opt-sanremes");
   const update = join(dir, "update");
   const sbin = join(dir, "sbin");
   const systemd = join(dir, "systemd");
   for (const made of [install, join(install, "data"), update, sbin, systemd]) mkdirSync(made);
   if (options.ownServer) {
-    writeFileSync(join(install, "compose.yaml"), "name: openmausbot\n");
+    writeFileSync(join(install, "compose.yaml"), "name: sanremes\n");
     writeFileSync(join(install, "data", "chats.json"), "theirs");
-    for (const file of [join(update, "runner"), join(sbin, "mausbot-update-runner"), join(systemd, "mausbot-update.path"), join(systemd, "mausbot-update.service")]) writeFileSync(file, "1\n");
+    for (const file of [join(update, "runner"), join(sbin, "sanremes-update-runner"), join(systemd, "sanremes-update.path"), join(systemd, "sanremes-update.service")]) writeFileSync(file, "1\n");
   }
   const result = spawnSync("sh", [SCRIPT, ...args], {
     encoding: "utf8",
     env: {
-      PATH: `${bin}:/usr/bin:/bin`, MAUSBOT_ETC_DIR: etc, MAUSBOT_APPARMOR_DIR: apparmor, MAUSBOT_AUDIT_DIR: audit,
-      MAUSBOT_INSTALL_DIR: install, MAUSBOT_UPDATE_DIR: update, MAUSBOT_SBIN_DIR: sbin, MAUSBOT_SYSTEMD_DIR: systemd,
-      MAUSBOT_ADMIN_URL: "https://cloud.example.test", MAUSBOT_CONNECTOR_IMAGE: `ghcr.io/milind-soni/mausbot-connector@sha256:${"1".repeat(64)}`,
+      PATH: `${bin}:/usr/bin:/bin`, SANREMES_ETC_DIR: etc, SANREMES_APPARMOR_DIR: apparmor, SANREMES_AUDIT_DIR: audit,
+      SANREMES_INSTALL_DIR: install, SANREMES_UPDATE_DIR: update, SANREMES_SBIN_DIR: sbin, SANREMES_SYSTEMD_DIR: systemd,
+      SANREMES_ADMIN_URL: "https://cloud.example.test", SANREMES_CONNECTOR_IMAGE: `ghcr.io/SanthoshKumar020/sanremes-connector@sha256:${"1".repeat(64)}`,
       ...options.env,
     },
     timeout: 30_000,
@@ -74,7 +74,7 @@ describe("install.sh", () => {
     for (const bashism of [/\[\[/, /\bfunction\s+\w+/, /\blocal\s/, /<<</, /\$\{[A-Za-z_]+\[/, /\bsource\s/, /&>/]) expect(script, String(bashism)).not.toMatch(bashism);
   });
 
-  it("names the same Docker objects, labels and profiles as the connector, and waits for MausBot to fill in its address and image", () => {
+  it("names the same Docker objects, labels and profiles as the connector, and waits for SanRemes to fill in its address and image", () => {
     const value = (name: string) => new RegExp(`^${name}=(\\S+)$`, "m").exec(script)?.[1];
     expect(value("CONNECTOR")).toBe(NAMES.connector);
     expect(value("CONNECTOR_NEXT")).toBe(NAMES.connectorNext);
@@ -85,14 +85,14 @@ describe("install.sh", () => {
     expect(value("ROLE_LABEL")).toBe(LABELS.role);
     expect(value("PROFILE")).toBe(APPARMOR_PROFILE);
     expect(value("SECCOMP")).toBe(SECCOMP_FILE);
-    expect(script).toContain('ADMIN_URL="${MAUSBOT_ADMIN_URL:-@MAUSBOT_ADMIN_URL@}"');
-    expect(script).toContain('CONNECTOR_IMAGE="${MAUSBOT_CONNECTOR_IMAGE:-@MAUSBOT_CONNECTOR_IMAGE@}"');
-    expect(script).toContain(`say "Connected. Your server shows up in MausBot in a minute, for your team's Owner to accept."`);
-    expect(script).toContain(`com.mausbot.instance=$instance`);
+    expect(script).toContain('ADMIN_URL="${SANREMES_ADMIN_URL:-@SANREMES_ADMIN_URL@}"');
+    expect(script).toContain('CONNECTOR_IMAGE="${SANREMES_CONNECTOR_IMAGE:-@SANREMES_CONNECTOR_IMAGE@}"');
+    expect(script).toContain(`say "Connected. Your server shows up in SanRemes in a minute, for your team's Owner to accept."`);
+    expect(script).toContain(`com.sanremes.instance=$instance`);
     expect(script).toContain("--restart unless-stopped --network host");
-    expect(script).toContain("-v /var/run/docker.sock:/var/run/docker.sock -v \"$STATE_VOLUME:/state\" -v \"$ETC_DIR:/etc/mausbot:ro\" -v \"$AUDIT_DIR:/var/log/mausbot\"");
-    expect(script).toContain('AUDIT_DIR="${MAUSBOT_AUDIT_DIR:-/var/log/mausbot}"');
-    expect(PATHS.audit).toBe("/var/log/mausbot");
+    expect(script).toContain("-v /var/run/docker.sock:/var/run/docker.sock -v \"$STATE_VOLUME:/state\" -v \"$ETC_DIR:/etc/sanremes:ro\" -v \"$AUDIT_DIR:/var/log/sanremes\"");
+    expect(script).toContain('AUDIT_DIR="${SANREMES_AUDIT_DIR:-/var/log/sanremes}"');
+    expect(PATHS.audit).toBe("/var/log/sanremes");
     expect(script).toContain('apparmor_parser -r -W "$APPARMOR_DIR/$PROFILE"');
   });
 
@@ -103,7 +103,7 @@ describe("install.sh", () => {
       `docker rm -f ${NAMES.connector} ${NAMES.connectorNext}`, `docker stop -t 30 ${NAMES.home}`, `docker rm -f ${NAMES.home}`, "docker rm -f helper-1",
       `docker volume rm ${NAMES.stateVolume}`,
     ]));
-    expect(result.calls.filter((call) => /volume rm (mausbot-data|mausbot-snapshot|mausbot-backup-)/.test(call))).toEqual([]);
+    expect(result.calls.filter((call) => /volume rm (sanremes-data|sanremes-snapshot|sanremes-backup-)/.test(call))).toEqual([]);
     expect(result.calls.some((call) => call.startsWith("apparmor_parser -R "))).toBe(true);
     expect(existsSync(join(result.apparmor, APPARMOR_PROFILE))).toBe(false);
     expect(existsSync(result.etc)).toBe(false);
@@ -117,9 +117,9 @@ describe("install.sh", () => {
     expect(deleted.status, deleted.stderr).toBe(0);
     expect(deleted.calls).toEqual(expect.arrayContaining([
       `docker volume rm ${NAMES.dataVolume}`, `docker volume rm ${NAMES.snapshotVolume}`,
-      "docker volume rm mausbot-backup-20261028-000000-ab12", "docker volume rm mausbot-backup-20261029-000000-cd34",
+      "docker volume rm sanremes-backup-20261028-000000-ab12", "docker volume rm sanremes-backup-20261029-000000-cd34",
     ]));
-    expect(deleted.stdout).toContain("MausBot is removed from this server, and so is its data.");
+    expect(deleted.stdout).toContain("SanRemes is removed from this server, and so is its data.");
     expect(existsSync(deleted.audit)).toBe(false);
     for (const typo of [["uninstall", "--delete-dat"], ["uninstall", "--delete-data=yes"], ["uninstall", "-f"]]) {
       const refused = run(typo);
@@ -129,42 +129,42 @@ describe("install.sh", () => {
     }
   });
 
-  it.skipIf(!posix)("says in plain words what to run instead: as root, from MausBot's own command, with a code as MausBot shows it", () => {
+  it.skipIf(!posix)("says in plain words what to run instead: as root, from SanRemes's own command, with a code as SanRemes shows it", () => {
     const user = run(["MB-1A2B-3C4D"], { uid: 1000 });
     expect(user.status).toBe(1);
     expect(user.stderr).toContain("Please run this as root: put sudo before sh, like this: curl -fsSL https://cloud.example.test/install.sh | sudo sh -s -- MB-1A2B-3C4D");
     expect(run(["uninstall"], { uid: 1000 }).stderr).toContain("Please run this as root");
-    const copied = run(["MB-1A2B-3C4D"], { env: { MAUSBOT_ADMIN_URL: "", MAUSBOT_CONNECTOR_IMAGE: "" } });
-    expect(copied.stderr).toContain("This installer was not downloaded from MausBot. Copy the install command from MausBot and run that.");
+    const copied = run(["MB-1A2B-3C4D"], { env: { SANREMES_ADMIN_URL: "", SANREMES_CONNECTOR_IMAGE: "" } });
+    expect(copied.stderr).toContain("This installer was not downloaded from SanRemes. Copy the install command from SanRemes and run that.");
     const odd = run(["MB-1A2B;reboot"]);
-    expect(odd.stderr).toContain("That code doesn't look right. Copy the install command from MausBot again.");
+    expect(odd.stderr).toContain("That code doesn't look right. Copy the install command from SanRemes again.");
     expect(odd.calls).toEqual([]);
   });
 
-  it("starts a customer-run connector with its mode and the updater's folder, and only where MausBot is already installed", () => {
-    expect(script).toContain('set -- "$@" -e MAUSBOT_MODE=customer-run -v "$UPDATE_DIR:/var/lib/mausbot/update"');
-    expect(PATHS.update).toBe("/var/lib/mausbot/update");
-    expect(script).toContain('INSTALL_DIR="${MAUSBOT_INSTALL_DIR:-/opt/openmausbot}"');
+  it("starts a customer-run connector with its mode and the updater's folder, and only where SanRemes is already installed", () => {
+    expect(script).toContain('set -- "$@" -e SANREMES_MODE=customer-run -v "$UPDATE_DIR:/var/lib/sanremes/update"');
+    expect(PATHS.update).toBe("/var/lib/sanremes/update");
+    expect(script).toContain('INSTALL_DIR="${SANREMES_INSTALL_DIR:-/opt/sanremes}"');
     expect(script).toContain("PathExists=$UPDATE_DIR/request");
     expect(script).toContain("ExecStart=$SBIN_DIR/$UPDATE_RUNNER");
   });
 
-  it.skipIf(!posix)("refuses --customer-run where MausBot is not installed, before touching a thing", () => {
+  it.skipIf(!posix)("refuses --customer-run where SanRemes is not installed, before touching a thing", () => {
     const refused = run(["--customer-run", "MB-1A2B-3C4D"]);
     expect(refused.status).toBe(1);
-    expect(refused.stderr).toContain(`MausBot isn't installed in ${refused.install} yet. Install it first with the server's install command, then run this again to connect it.`);
+    expect(refused.stderr).toContain(`SanRemes isn't installed in ${refused.install} yet. Install it first with the server's install command, then run this again to connect it.`);
     expect(refused.calls).toEqual([]);
   });
 
-  it.skipIf(!posix)("disconnecting a server its owner installed removes the connector and the updater, and leaves that MausBot and its data alone", () => {
+  it.skipIf(!posix)("disconnecting a server its owner installed removes the connector and the updater, and leaves that SanRemes and its data alone", () => {
     const result = run(["uninstall", "--delete-data"], { ownServer: true });
     expect(result.status, result.stderr).toBe(0);
     expect(result.calls).toContain(`docker rm -f ${NAMES.connector} ${NAMES.connectorNext}`);
-    expect(result.calls.filter((call) => /mausbot-home|mausbot-data|openmausbot|compose/.test(call))).toEqual([]);
+    expect(result.calls.filter((call) => /sanremes-home|sanremes-data|sanremes|compose/.test(call))).toEqual([]);
     expect(readFileSync(join(result.install, "data", "chats.json"), "utf8")).toBe("theirs");
     expect(existsSync(join(result.install, "compose.yaml"))).toBe(true);
-    for (const gone of [result.update, join(result.sbin, "mausbot-update-runner"), join(result.systemd, "mausbot-update.path"), join(result.systemd, "mausbot-update.service")]) expect(existsSync(gone), gone).toBe(false);
-    expect(result.stdout).toContain(`Your MausBot in ${result.install} and its data were not touched, and it keeps running.`);
+    for (const gone of [result.update, join(result.sbin, "sanremes-update-runner"), join(result.systemd, "sanremes-update.path"), join(result.systemd, "sanremes-update.service")]) expect(existsSync(gone), gone).toBe(false);
+    expect(result.stdout).toContain(`Your SanRemes in ${result.install} and its data were not touched, and it keeps running.`);
     expect(existsSync(join(result.apparmor, APPARMOR_PROFILE))).toBe(true);
   });
 });

@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { request } from "../scripts/mcp-server.ts";
 
 // Check before done through the real wiring: the person's answer goes to the named checker, its issues come back as a
@@ -9,7 +9,7 @@ import { request } from "../scripts/mcp-server.ts";
 
 it("checks a finished answer with the named bot, has the issues fixed, and ends on the fixed answer with one checked line; off, nothing changes", async () => {
   const session = await launchVerificationServer({ ...process.env }, undefined, undefined, undefined, undefined, { scripted: true });
-  const cli = (...args: string[]) => runControlOmb(args, { env: { OPENMAUSBOT_URL: session.info.url } }) as Promise<any>;
+  const cli = (...args: string[]) => runControlOmb(args, { env: { OPENSANREMES_URL: session.info.url } }) as Promise<any>;
   const api = (path: string, body?: unknown, method = "POST") => request(path, body === undefined ? {} : { method, body: JSON.stringify(body) }, session.info.url) as Promise<any>;
   try {
     const worker = (await cli("new-bot", "--name", "Nib")).bot;

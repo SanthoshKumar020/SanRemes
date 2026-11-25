@@ -16,9 +16,9 @@ import { useDesktopCapabilities } from "./DesktopCapabilities";
 import { serverFetch } from "@/lib/relay-server";
 
 const LINUX_GUIDE_URL =
-  "https://github.com/milind-soni/OpenMausBot/blob/main/docs/linux-desktop.md#enable-local-control";
+  "https://github.com/SanthoshKumar020/SanRemes/blob/main/docs/linux-desktop.md#enable-local-control";
 const OMARCHY_DOCS_URL =
-  "https://github.com/milind-soni/OpenMausBot/blob/main/docs/linux-desktop.md#omarchy-hyprland-experimental";
+  "https://github.com/SanthoshKumar020/SanRemes/blob/main/docs/linux-desktop.md#omarchy-hyprland-experimental";
 const CUA_OMARCHY_GUIDE_URL = "https://cua.ai/docs/cua-sdk/guides/omarchy";
 
 export function LinuxLocalControl() {

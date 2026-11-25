@@ -1,5 +1,5 @@
 // While the page holds a relay pairing (a phone browser away from home), its own server is reachable only through
-// MausBot Relay, so every request the app makes goes through serverFetch (src/lib/relay-server.ts), which keeps any
+// SanRemes Relay, so every request the app makes goes through serverFetch (src/lib/relay-server.ts), which keeps any
 // path outside /api a plain fetch. A bare fetch( in app code is a screen that breaks away from home.
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";

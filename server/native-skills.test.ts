@@ -21,7 +21,7 @@ const AGENTS_SKILLS = join(HOME, ".agents", "skills");
 const SHARED = join(TASK_WORKSPACES_DIR, ".claude", "skills");
 const PROJECTS = join(HOME, "projects");
 afterEach(() => {
-  if (!DATA_DIR.startsWith(join(tmpdir(), "omb-test-home-"))) throw new Error(`refusing to clean ${DATA_DIR}: not this test's home`);
+  if (!DATA_DIR.startsWith(join(tmpdir(), "sanremes-test-home-"))) throw new Error(`refusing to clean ${DATA_DIR}: not this test's home`);
   for (const dir of [TASK_WORKSPACES_DIR, USER_SKILLS, CODEX_SKILLS, AGENTS_SKILLS, PROJECTS, join(DATA_DIR, "skill-state")]) {
     rmSync(dir, { recursive: true, force: true });
   }

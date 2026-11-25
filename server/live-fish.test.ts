@@ -18,9 +18,9 @@ function fakeFetch(status: number, body: unknown) {
 describe("the Fish Audio endpoint", () => {
   it("is Fish's API unless a loopback http override is set", () => {
     expect(fishLiveBaseUrl({})).toBe("https://api.fish.audio");
-    expect(fishLiveBaseUrl({ OMB_FISH_LIVE_URL: "http://127.0.0.1:4555" })).toBe("http://127.0.0.1:4555");
+    expect(fishLiveBaseUrl({ SANREMES_FISH_LIVE_URL: "http://127.0.0.1:4555" })).toBe("http://127.0.0.1:4555");
     for (const url of ["https://evil.example", "http://127.0.0.1.evil.example:80", "http://localhost:80", "http://127.0.0.1:80/x"]) {
-      expect(fishLiveBaseUrl({ OMB_FISH_LIVE_URL: url }), url).toBe("https://api.fish.audio");
+      expect(fishLiveBaseUrl({ SANREMES_FISH_LIVE_URL: url }), url).toBe("https://api.fish.audio");
     }
   });
 
@@ -50,11 +50,11 @@ describe("the Fish agent for Live calls", () => {
       const route = `${init!.method} ${String(url).replace(ENDPOINT.apiBase, "")}`;
       return new Response(JSON.stringify(answers[route] ?? {}), { status: route in answers ? 200 : 404 });
     });
-    await expect(setUpFishAgent(" fish-key ", { ...ENDPOINT, model: "" }, "MausBot", "vi", fetchImpl)).resolves.toBe("agent_new");
+    await expect(setUpFishAgent(" fish-key ", { ...ENDPOINT, model: "" }, "SanRemes", "vi", fetchImpl)).resolves.toBe("agent_new");
     const calls = fetchImpl.mock.calls.map(([url, init]) => ({ route: `${init!.method} ${String(url).replace(ENDPOINT.apiBase, "")}`, body: JSON.parse(String(init!.body)), init: init! }));
     expect(calls.map((call) => call.route)).toEqual(Object.keys(answers));
     expect(calls[0]!.body).toMatchObject({ name: "delegate", tool_type: "client", expects_response: true });
-    expect(calls[1]!.body.name).toBe("MausBot Live calls");
+    expect(calls[1]!.body.name).toBe("SanRemes Live calls");
     expect(calls[1]!.body.config).toEqual({ voice: { engine: "live3", speaking_language: "vi" }, tools: { enabled: true, tool_ids: ["tool_1"] } });
     expect(calls[2]!.body).toEqual({ overrides_allowed: ["system_prompt"] });
     for (const call of calls) {
@@ -83,9 +83,9 @@ describe("the Fish agent for Live calls", () => {
 
   it("stops at Fish's first refusal with the user's next step, never Fish's body", async () => {
     const fetchImpl = fakeFetch(401, { message: "raw fish-key detail" });
-    await expect(setUpFishAgent("fish-key", ENDPOINT, "MausBot", "en", fetchImpl)).rejects.toMatchObject({ status: 502, message: fishErrorMessage(401) });
+    await expect(setUpFishAgent("fish-key", ENDPOINT, "SanRemes", "en", fetchImpl)).rejects.toMatchObject({ status: 502, message: fishErrorMessage(401) });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
-    await expect(setUpFishAgent("fish-key", ENDPOINT, "MausBot", "en", fakeFetch(201, {}))).rejects.toMatchObject({ status: 502 });
+    await expect(setUpFishAgent("fish-key", ENDPOINT, "SanRemes", "en", fakeFetch(201, {}))).rejects.toMatchObject({ status: 502 });
   });
 });
 

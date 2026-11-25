@@ -17,12 +17,12 @@ import { resolveAntigravityRuntime } from "./antigravity-runtime.ts";
 import { AntigravityDriver } from "./antigravity.ts";
 
 const FAKE_ACP = join(dirname(fileURLToPath(import.meta.url)), "..", "testing", "fake-acp-cli.ts");
-const OWN = { name: "openmausbot", version: "0.0.0" };
+const OWN = { name: "sanremes", version: "0.0.0" };
 const scratch: string[] = [];
 const instances: ProviderInstance[] = [];
 
 function fakeRuntime() {
-  const directory = mkdtempSync(join(tmpdir(), "omb-antigravity-client-"));
+  const directory = mkdtempSync(join(tmpdir(), "sanremes-antigravity-client-"));
   scratch.push(directory);
   const executable = join(directory, "fake-antigravity.ts");
   const harness = join(directory, process.platform === "win32" ? "localharness_external.exe" : "localharness_external");

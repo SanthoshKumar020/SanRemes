@@ -92,8 +92,8 @@ beforeAll(async () => {
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   const { port } = server.address() as { port: number };
-  vi.stubEnv("OMB_CLOUD_BOAT_URL", `http://127.0.0.1:${port}/relay/api/box/v1`);
-  vi.stubEnv("OMB_CLOUD_BOAT_TOKEN", "box_omb_synthetic");
+  vi.stubEnv("SANREMES_CLOUD_BOAT_URL", `http://127.0.0.1:${port}/relay/api/box/v1`);
+  vi.stubEnv("SANREMES_CLOUD_BOAT_TOKEN", "box_omb_synthetic");
 });
 afterAll(async () => {
   vi.unstubAllEnvs();
@@ -159,7 +159,7 @@ beforeEach(async () => {
   at += 30 * 24 * 60 * 60_000;
   told = []; logs = []; hooks = []; autoOn = true; inUseByOther = new Set(); personViewing = new Set();
   witness = false; probeTakesMs = 0; stalledLoop = false; sweepDeletes = false; wakeBudgetMs = 10_000;
-  dir = mkdtempSync(join(tmpdir(), "omb-wake-"));
+  dir = mkdtempSync(join(tmpdir(), "sanremes-wake-"));
   replacementsFile = join(dir, "boat-replacements.json");
   vi.resetModules();
   boat = await import("./boat.ts");
@@ -200,10 +200,10 @@ const call = (boxId: () => string, extra: Partial<Parameters<typeof tools.cloudC
     cfg, signal: new AbortController().signal, boxId, gate: async () => ({ held: false }), assertActive: () => {}, recovery, ...extra,
   });
 const ranEcho = () => requests.filter((request) => request.command?.includes("echo hi")).length;
-/** Left as it is: a passing failure that says MausBot keeps trying, never "do not retry". */
+/** Left as it is: a passing failure that says SanRemes keeps trying, never "do not retry". */
 function keptAsItIs(error: Error | null) {
   expect(error).toBeInstanceOf(Error);
-  expect(error!.message).toMatch(/MausBot keeps trying in the background; trying again later is fine/);
+  expect(error!.message).toMatch(/SanRemes keeps trying in the background; trying again later is fine/);
   expect(error!.message).not.toMatch(/Do not retry|replac/i);
   expect(claims.transientClaimFailure(error)).toBe(true);
 }
@@ -250,7 +250,7 @@ describe("a woken cloud computer that is slow to answer", () => {
       claims.startAutoVmClaim(table, "thread-1", "g1");
       await slot.begin;
       expect(slot.failed).toBeFalsy();
-      if (!slot.claimed) expect(slot.retryReason).toMatch(/MausBot keeps trying in the background/);
+      if (!slot.claimed) expect(slot.retryReason).toMatch(/SanRemes keeps trying in the background/);
     }
     expect(slot.claimed).toBe(true);
     expect(slot.attempts).toBeGreaterThan(3);
@@ -338,7 +338,7 @@ describe("a woken cloud computer that never answers", () => {
     const { bot, box, originalName } = await madeThenSilent();
     noRoom = true;
     const error = await failure(bot);
-    expect(error!.message).toMatch(/plan has no room for a new computer beside it, so MausBot kept it, stopped and with its files/);
+    expect(error!.message).toMatch(/plan has no room for a new computer beside it, so SanRemes kept it, stopped and with its files/);
     expect(claims.transientClaimFailure(error)).toBe(true);
     expect(box.name).toBe(originalName);
     expect(renames(box.id).map((request) => request.name)).toEqual([expect.stringMatching(SET_ASIDE_NAME), originalName]);

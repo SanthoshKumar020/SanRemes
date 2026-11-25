@@ -2,8 +2,8 @@ import { b64u, type Bytes } from "./bytes.ts";
 import { encodePayload1, MAX_RECORD_BYTES, newConn, NoiseError, phoneHello, TRANSPORT_DIRECT, TRANSPORT_RELAY, type SessionKeys } from "./noise.ts";
 import { decodeFrame, encodeFrame, GO_AWAY, Mux, PING_INTERVAL_MS, PING_TIMEOUT_MS, YamuxError, type Frame } from "./yamux.ts";
 
-export const DIRECT_PROTOCOL = "omb-e2e.v1";
-export const RELAY_PROTOCOL = "omb-relay.v1";
+export const DIRECT_PROTOCOL = "sanremes-e2e.v1";
+export const RELAY_PROTOCOL = "sanremes-relay.v1";
 
 export const CLOSE = {
   normal: 1000,

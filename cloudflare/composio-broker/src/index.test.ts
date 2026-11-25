@@ -95,7 +95,7 @@ describe("connected-apps broker boundaries", () => {
   });
 
   it("hashes installation tokens before storage", async () => {
-    await expect(sha256("openmausbot")).resolves.toBe("63c74f70a9d4681c334e84001935955a75245ea5b16b9c37c808e85c69963705");
+    await expect(sha256("sanremes")).resolves.toBe("63c74f70a9d4681c334e84001935955a75245ea5b16b9c37c808e85c69963705");
   });
 
   it("creates Sessions with explicit multi-account selection", async () => {
@@ -328,7 +328,7 @@ describe("connected-apps broker boundaries", () => {
         const response = await fixture.authorize();
         expect(response.status, status).toBe(200);
         await expect(response.json()).resolves.toEqual({ url: "https://connect.composio.dev/link/gmail" });
-        expect(fixture.links().at(-1)).toEqual({ toolkit: "gmail", alias: expect.stringMatching(/^omb-retry-[0-9a-f-]{36}$/) });
+        expect(fixture.links().at(-1)).toEqual({ toolkit: "gmail", alias: expect.stringMatching(/^sanremes-retry-[0-9a-f-]{36}$/) });
       }
     }
     expect(new Set(fixture.links().map((body) => body.alias)).size).toBe(14);

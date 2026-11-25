@@ -68,7 +68,7 @@ describe("serverFetch", () => {
 
     const reply = await serverFetch("/api/bots?x=1", {
       method: "post",
-      headers: { "content-type": "application/json", "x-omb-background": "1" },
+      headers: { "content-type": "application/json", "x-sanremes-background": "1" },
       body: JSON.stringify({ name: "Ada" }),
     });
     expect(await reply.json()).toEqual({ ok: true });
@@ -77,7 +77,7 @@ describe("serverFetch", () => {
     expect(sent[0].request.method).toBe("POST");
     const headers = new Headers(sent[0].request.headers);
     expect(headers.get("content-type")).toBe("application/json");
-    expect(headers.get("x-omb-background")).toBe("1");
+    expect(headers.get("x-sanremes-background")).toBe("1");
     expect(new TextDecoder().decode(sent[0].request.body as Uint8Array)).toBe('{"name":"Ada"}');
 
     await serverFetch("/api/auth/session");
@@ -103,10 +103,10 @@ describe("serverFetch", () => {
     const { link, sent } = fakeLink(() => Response.json({ environmentId: "env-1" }));
     setRelayLink(link);
 
-    expect(await (await serverFetch("/.well-known/openmausbot/environment")).json()).toEqual({ environmentId: "env-1" });
-    await serverFetch("/.well-known/openmausbot/environmental");
-    expect(sent.map(({ path }) => path)).toEqual(["/.well-known/openmausbot/environment"]);
-    expect(plain.mock.calls.map(([path]) => path)).toEqual(["/.well-known/openmausbot/environmental"]);
+    expect(await (await serverFetch("/.well-known/sanremes/environment")).json()).toEqual({ environmentId: "env-1" });
+    await serverFetch("/.well-known/sanremes/environmental");
+    expect(sent.map(({ path }) => path)).toEqual(["/.well-known/sanremes/environment"]);
+    expect(plain.mock.calls.map(([path]) => path)).toEqual(["/.well-known/sanremes/environmental"]);
   });
 
   it("forwards the normalized target: unsafe characters encoded, no fragment", async () => {

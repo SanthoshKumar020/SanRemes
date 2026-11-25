@@ -1,4 +1,4 @@
-// Bitwarden on a real Team Cloud (OMB_CLOUD_ROLE=team), its tool a fake `bw` already where the server installs the real
+// Bitwarden on a real Team Cloud (SANREMES_CLOUD_ROLE=team), its tool a fake `bw` already where the server installs the real
 // one: an Admin connects it in Settings → Vault for the whole team; a member's private chat and the bot's shared chat get
 // its secrets by name and by bw:// reference with no card; a member neither sees nor manages it; the Admin's signed report
 // names it with its server, never a value, the API key or the master password. No value is ever printed.

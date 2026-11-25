@@ -14,7 +14,7 @@ import { binaryCookies, chromiumDatabase, fakeKeys, firefoxProfile, fixtureFiles
 const folders: string[] = [];
 afterAll(async () => { for (const folder of folders) await removeTempDir(folder); });
 const home = () => {
-  const folder = mkdtempSync(join(tmpdir(), "omb-cookie-import-"));
+  const folder = mkdtempSync(join(tmpdir(), "sanremes-cookie-import-"));
   folders.push(folder);
   return folder;
 };

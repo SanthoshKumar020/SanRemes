@@ -253,11 +253,11 @@ export function botEntries(deps: Pick<RegistryDeps, "bots" | "engines" | "patchB
       patch: (one, { archived }) => ({ hidden: archived, ...(archived && one.chiefOfStaff ? { chiefOfStaff: false } : {}) }),
     }),
     writable({
-      id: "sidebar.showHelper", label: "Show MausBot in the sidebar", help: "Whether this place's own bot, MausBot, has a row in the sidebar; it keeps working either way.", where: "show-helper",
-      synonyms: ["helper", "starter", "default bot", "mausbot", "show helper"], value: z.boolean(), allowed: "true or false",
+      id: "sidebar.showHelper", label: "Show SanRemes in the sidebar", help: "Whether this place's own bot, SanRemes, has a row in the sidebar; it keeps working either way.", where: "show-helper",
+      synonyms: ["helper", "starter", "default bot", "sanremes", "show helper"], value: z.boolean(), allowed: "true or false",
       current: () => { const helper = deps.bots().find((one) => one.defaultBot); return helper ? !helper.sidebarHidden : undefined; },
-      describe: (show: boolean) => (deps.bots().some((one) => one.defaultBot) ? { change: show ? "Show MausBot in the sidebar" : "Take MausBot out of the sidebar; it keeps working" } : { refusal: "This place has no MausBot of its own." }),
-      write: (show: boolean) => { const helper = deps.bots().find((one) => one.defaultBot); return helper ? deps.patchBot(helper.id, { sidebarHidden: !show }) : Promise.resolve("This place has no MausBot of its own."); },
+      describe: (show: boolean) => (deps.bots().some((one) => one.defaultBot) ? { change: show ? "Show SanRemes in the sidebar" : "Take SanRemes out of the sidebar; it keeps working" } : { refusal: "This place has no SanRemes of its own." }),
+      write: (show: boolean) => { const helper = deps.bots().find((one) => one.defaultBot); return helper ? deps.patchBot(helper.id, { sidebarHidden: !show }) : Promise.resolve("This place has no SanRemes of its own."); },
     }),
     perBot({
       id: "bots.tools", label: "Bot tool groups", where: "bot-settings",

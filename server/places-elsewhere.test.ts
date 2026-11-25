@@ -10,7 +10,7 @@ import { resolveTeammate } from "./peer-roster.ts";
 
 const dirs: string[] = [];
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
-const dataDir = () => { const dir = mkdtempSync(join(tmpdir(), "omb-places-elsewhere-")); dirs.push(dir); return dir; };
+const dataDir = () => { const dir = mkdtempSync(join(tmpdir(), "sanremes-places-elsewhere-")); dirs.push(dir); return dir; };
 const LAPTOP = { name: "Work laptop", kind: "computer" as const, bots: ["Scout", "Reviewer 2"] };
 const GARAGE = { name: "Garage server", kind: "server" as const, bots: ["Ledger"] };
 const CLOUD = { name: "My Cloud", kind: "cloud" as const, bots: ["Chief"] };

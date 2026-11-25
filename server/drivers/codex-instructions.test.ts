@@ -13,7 +13,7 @@ describe("Codex effective developer instructions", () => {
   it("preserves native rules after bot rules, including when bot rules are removed", () => {
     const config = { developer_instructions: "Native rules." };
     expect(codexDeveloperInstructions(config, "Bot rules.")).toBe("Bot rules.\n\nNative rules.");
-    expect(codexDeveloperInstructions(config, "")).toBe("No OpenMausBot bot-specific instructions remain.\n\nNative rules.");
+    expect(codexDeveloperInstructions(config, "")).toBe("No SanRemes bot-specific instructions remain.\n\nNative rules.");
     expect(codexDeveloperInstructions({}, "Bot rules.")).toBe("Bot rules.");
     expect(codexDeveloperInstructions({ developer_instructions: null }, "")).toBe("");
   });
@@ -24,10 +24,10 @@ describe("Codex effective developer instructions", () => {
       `Bot rules.\n\n${CODEX_LINUX_SANDBOX_NOTE}\n\nNative rules.`,
     );
     expect(codexDeveloperInstructions(config, "", CODEX_LINUX_SANDBOX_NOTE)).toBe(
-      `No OpenMausBot bot-specific instructions remain.\n\n${CODEX_LINUX_SANDBOX_NOTE}\n\nNative rules.`,
+      `No SanRemes bot-specific instructions remain.\n\n${CODEX_LINUX_SANDBOX_NOTE}\n\nNative rules.`,
     );
     expect(codexDeveloperInstructions({}, "", CODEX_LINUX_SANDBOX_NOTE)).toBe(
-      `No OpenMausBot bot-specific instructions remain.\n\n${CODEX_LINUX_SANDBOX_NOTE}`,
+      `No SanRemes bot-specific instructions remain.\n\n${CODEX_LINUX_SANDBOX_NOTE}`,
     );
     expect(codexDeveloperInstructions({}, "Bot rules.", "")).toBe("Bot rules.");
   });
@@ -46,7 +46,7 @@ describe("Codex effective developer instructions", () => {
     expect(codexSandboxNote(customApprovalParams({ sandbox_mode: "workspace-write" }), "linux")).toBe(CODEX_LINUX_SANDBOX_NOTE);
     expect(codexSandboxNote(customApprovalParams({ sandbox_mode: "read-only" }), "linux")).toBe(CODEX_LINUX_SANDBOX_NOTE);
     expect(codexSandboxNote(customApprovalParams({ sandbox_mode: "danger-full-access" }), "linux")).toBe("");
-    // Active `permissions` profiles hide the effective sandbox from OpenMausBot, so never guess from inactive fallback config or add a stale thread.sandbox override.
+    // Active `permissions` profiles hide the effective sandbox from SanRemes, so never guess from inactive fallback config or add a stale thread.sandbox override.
     expect(codexSandboxNote(customApprovalParams({ default_permissions: "restricted", sandbox_mode: "workspace-write" }), "linux")).toBe("");
     expect(codexSandboxNote(customApprovalParams({ default_permissions: "unrestricted" }), "linux")).toBe("");
     expect(codexSandboxNote({ thread: { sandbox: "danger-full-access" }, turn: { sandboxPolicy: { type: "workspaceWrite" } } }, "linux")).toBe(CODEX_LINUX_SANDBOX_NOTE);
@@ -72,7 +72,7 @@ describe("Codex instruction receipts", () => {
     await syncCodexInstructions(key, "native", "", "", true, request);
     await syncCodexInstructions(key, "native", "", "", true, request);
     expect(request).toHaveBeenCalledTimes(2);
-    expect(request.mock.calls[1][1].items[0].content[0].text).toContain("No OpenMausBot bot-specific instructions remain.");
+    expect(request.mock.calls[1][1].items[0].content[0].text).toContain("No SanRemes bot-specific instructions remain.");
   });
 
   it("adopts an existing native session once without replaying user history", async () => {
@@ -96,7 +96,7 @@ describe("Codex instruction receipts", () => {
     expect(accepted).toHaveBeenCalledTimes(1);
   });
 
-  it("keeps native sessions independent even for one OpenMausBot task", async () => {
+  it("keeps native sessions independent even for one SanRemes task", async () => {
     const key = randomUUID();
     const request = vi.fn().mockResolvedValue({});
     await syncCodexInstructions(key, "first", "rules", "", false, request);

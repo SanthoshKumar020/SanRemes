@@ -22,7 +22,7 @@ afterEach(async () => {
 const PARQUET = Buffer.from("PAR1\u0000\u0001\u0002\u0003 rows and columns PAR1", "latin1");
 
 function setup(more: Array<{ path: string; data: Buffer }> = []) {
-  const docs = new AppDocs(join(mkdtempSync(join(tmpdir(), "omb-page-files-")), "app-docs"));
+  const docs = new AppDocs(join(mkdtempSync(join(tmpdir(), "sanremes-page-files-")), "app-docs"));
   const stored = docs.put({ source: "html", html: "<h1>Sales</h1><script src=\"app.js\"></script>", data: { folder: "/work/dash" },
     files: [{ path: "app.js", data: Buffer.from("draw()") }, { path: "data/sales.parquet", data: PARQUET }, { path: "notes.html", data: Buffer.from("<p>n</p>") }, ...more] });
   if (!stored.ok) throw new Error("not stored");
@@ -128,7 +128,7 @@ describe("a folder page's video", () => {
     return { file: path, bytes: Number(info.size), dev: String(info.dev), ino: String(info.ino), mtimeNs: String(info.mtimeNs) };
   }
   function setupVideo(videos: (dir: string) => Record<string, PageVideo> = (dir) => ({ "clip.mp4": recorded(join(dir, "clip.mp4")) })) {
-    const dir = mkdtempSync(join(tmpdir(), "omb-page-video-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-page-video-"));
     writeFileSync(join(dir, "clip.mp4"), MOVIE);
     const docs = new AppDocs(join(dir, "app-docs"));
     const stored = docs.put({ source: "html", html: "<video src=\"clip.mp4\">", data: { folder: dir, videos: videos(dir) } });

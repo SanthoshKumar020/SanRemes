@@ -2,8 +2,8 @@ import { concat, utf8, type Bytes } from "./bytes.ts";
 
 const KEY_ID_BYTES = 16;
 
-const PSK_LABEL = utf8("omb-e2e psk v1");
-const ADMISSION_LABEL = utf8("omb-relay admission v1");
+const PSK_LABEL = utf8("sanremes-e2e psk v1");
+const ADMISSION_LABEL = utf8("sanremes-relay admission v1");
 
 export async function sha256(bytes: Bytes): Promise<Bytes> {
   return new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));

@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, it, vi } from "vitest";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { STOPPED_TURN_NAME } from "../shared/client-cancel.ts";
 import { unaskedStopMessage } from "./harness/unasked-stop.ts";
 import { roomRetryRequest } from "../src/lib/room-retry.ts";

@@ -14,7 +14,7 @@ const MINUTE = 60_000, HOUR = 60 * MINUTE;
 const START = Date.parse("2026-11-16T08:00:00Z");
 const DEAD_TOOL = "MCP server could not start; check its command and installation";
 const OVERLOADED = "Claude is overloaded right now (HTTP 529). Wait a minute, then run it again.";
-const NO_START = "Maus's cloud desktop didn't start. Change where this routine runs.";
+const NO_START = "SanRemes's cloud desktop didn't start. Change where this routine runs.";
 const SPAWN_REFUSED = "spawn /usr/local/bin/claude EAGAIN";
 const dirs: string[] = [];
 
@@ -74,14 +74,14 @@ describe("failed runs in a row", () => {
 
   it("read their limits from the environment, and keep the defaults for anything that is not a whole number in range", () => {
     expect(failureSpacingLimits({})).toEqual({ runs: 3, firstMs: HOUR, laterMs: 4 * HOUR });
-    expect(failureSpacingLimits({ OMB_ROUTINE_FAILURES_BEFORE_SPACING: "5", OMB_ROUTINE_FAILURE_SPACING_MS: "600000", OMB_ROUTINE_FAILURE_SPACING_MAX_MS: "1800000" })).toEqual({ runs: 5, firstMs: 10 * MINUTE, laterMs: 30 * MINUTE });
-    expect(failureSpacingLimits({ OMB_ROUTINE_FAILURES_BEFORE_SPACING: "0", OMB_ROUTINE_FAILURE_SPACING_MS: "5m", OMB_ROUTINE_FAILURE_SPACING_MAX_MS: "1000" })).toEqual({ runs: 3, firstMs: HOUR, laterMs: 4 * HOUR });
-    expect(failureSpacingLimits({ OMB_ROUTINE_FAILURE_SPACING_MS: "7200000", OMB_ROUTINE_FAILURE_SPACING_MAX_MS: "3600000" })).toMatchObject({ firstMs: 2 * HOUR, laterMs: 2 * HOUR });
+    expect(failureSpacingLimits({ SANREMES_ROUTINE_FAILURES_BEFORE_SPACING: "5", SANREMES_ROUTINE_FAILURE_SPACING_MS: "600000", SANREMES_ROUTINE_FAILURE_SPACING_MAX_MS: "1800000" })).toEqual({ runs: 5, firstMs: 10 * MINUTE, laterMs: 30 * MINUTE });
+    expect(failureSpacingLimits({ SANREMES_ROUTINE_FAILURES_BEFORE_SPACING: "0", SANREMES_ROUTINE_FAILURE_SPACING_MS: "5m", SANREMES_ROUTINE_FAILURE_SPACING_MAX_MS: "1000" })).toEqual({ runs: 3, firstMs: HOUR, laterMs: 4 * HOUR });
+    expect(failureSpacingLimits({ SANREMES_ROUTINE_FAILURE_SPACING_MS: "7200000", SANREMES_ROUTINE_FAILURE_SPACING_MAX_MS: "3600000" })).toMatchObject({ firstMs: 2 * HOUR, laterMs: 2 * HOUR });
   });
 });
 
 function harness(start?: RoutineManagerOptions["startTurn"], schedule: Parameters<RoutineManager["create"]>[0]["schedule"] = { type: "interval", everyMinutes: 5, anchorAt: START }) {
-  const dir = mkdtempSync(join(tmpdir(), "omb-routine-failure-spacing-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-routine-failure-spacing-"));
   dirs.push(dir);
   let now = START, task = 0;
   const started: Array<{ threadId: string; prompt: string }> = [], alerts: unknown[] = [];
@@ -94,7 +94,7 @@ function harness(start?: RoutineManagerOptions["startTurn"], schedule: Parameter
     onRunFailed: (_run, alert) => alerts.push(alert),
   };
   const manager = new RoutineManager(options);
-  manager.create({ name: "Sync the CRM", prompt: "Read new leads from the CRM and file them", botId: "maus-1", schedule });
+  manager.create({ name: "Sync the CRM", prompt: "Read new leads from the CRM and file them", botId: "sanremes-1", schedule });
   const working = () => manager.listRuns().filter((run) => run.status === "running");
   return {
     manager, started, alerts,
@@ -137,10 +137,10 @@ describe("a routine every 5 minutes whose tool server is dead", () => {
     expect(h.rows().at(-2)).toMatchObject({ status: "completed" });
   });
 
-  it("with the spacing set out of reach by OMB_ROUTINE_FAILURES_BEFORE_SPACING, starts one turn at every occurrence", async () => {
+  it("with the spacing set out of reach by SANREMES_ROUTINE_FAILURES_BEFORE_SPACING, starts one turn at every occurrence", async () => {
     // Six hours, not the day: the defaults would have spaced it out within the first. The clock is the harness's, so
     // nothing waits; the cost is real work per pass and per run, and a day of 288 runs took a Windows runner past 40 s.
-    vi.stubEnv("OMB_ROUTINE_FAILURES_BEFORE_SPACING", "100000");
+    vi.stubEnv("SANREMES_ROUTINE_FAILURES_BEFORE_SPACING", "100000");
     const h = harness();
     await h.passTo(START + 6 * HOUR, h.fail(DEAD_TOOL));
     console.log(`turns started in 6 hours with a dead tool server and no spacing: ${h.started.length}`);
@@ -151,8 +151,8 @@ describe("a routine every 5 minutes whose tool server is dead", () => {
 
 describe("a routine every minute by cron whose tool server is dead", () => {
   it("is accepted, stays on, and is spaced out the same way", async () => {
-    vi.stubEnv("OMB_ROUTINE_FAILURE_SPACING_MS", String(2 * MINUTE));
-    vi.stubEnv("OMB_ROUTINE_FAILURE_SPACING_MAX_MS", String(4 * MINUTE));
+    vi.stubEnv("SANREMES_ROUTINE_FAILURE_SPACING_MS", String(2 * MINUTE));
+    vi.stubEnv("SANREMES_ROUTINE_FAILURE_SPACING_MAX_MS", String(4 * MINUTE));
     const h = harness(undefined, { type: "cron", expression: "* * * * *", timeZone: "UTC" });
     await h.passTo(START + 12 * MINUTE, h.fail(DEAD_TOOL));
     const startMinutes = h.rows().filter((run) => run.startedAt != null).map((run) => (run.scheduledFor - START) / MINUTE);

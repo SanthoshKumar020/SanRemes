@@ -137,7 +137,7 @@ export class AntigravityCliLogin {
     const child = spawnCli(
       runtime.executablePath,
       antigravityLoginArgs(profile.directory),
-      { cwd: profile.directory, env, stdio: ["pipe", "pipe", "pipe"], box: { ro: [join(profile.directory, "omb-skills")] } },
+      { cwd: profile.directory, env, stdio: ["pipe", "pipe", "pipe"], box: { ro: [join(profile.directory, "sanremes-skills")] } },
       "bot",
     );
     child.stdin.on("error", () => {});

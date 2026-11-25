@@ -9,8 +9,8 @@ import { ChatMarkdown } from "./ChatMarkdown";
 import { FilePreviewContent } from "./HtmlFilePreview";
 
 const message = { threadId: "t", messageId: "m" };
-const linked = "/Users/maus/.openmausbot/workspaces/finance-head/Q3%20report";
-const onDisk = "/Users/maus/.openmausbot/workspaces/finance-head/Q3 report";
+const linked = "/Users/sanremes/.sanremes/workspaces/finance-head/Q3%20report";
+const onDisk = "/Users/sanremes/.sanremes/workspaces/finance-head/Q3 report";
 let host: HTMLDivElement, root: Root;
 
 beforeEach(() => {

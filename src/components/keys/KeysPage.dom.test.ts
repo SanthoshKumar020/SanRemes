@@ -507,7 +507,7 @@ describe("Boat's credit offer on the Boat card", () => {
       expect(offer(), JSON.stringify(box)).not.toBeNull();
       expect(offer()!.closest("[hidden]")).toBeNull();
       const words = offer()!.textContent!;
-      for (const text of ["$50 of Boat credit for you", "Boat runs the cloud computers behind MausBot.", "You claim it yourself: it isn't automatic."]) {
+      for (const text of ["$50 of Boat credit for you", "Boat runs the cloud computers behind SanRemes.", "You claim it yourself: it isn't automatic."]) {
         expect(words).toContain(text);
       }
       expect(buttons().map((button) => button.textContent)).toEqual(["Get Boat", "I bought it: claim my $50"]);
@@ -749,7 +749,7 @@ describe("Your own servers (SSH)", () => {
     type(field("Office CPU cores"), "3");
     await answered(() => button(rowFor("office-vps"), "Save").click());
     expect(lastBody()).toEqual({ vpsServers: [{ name: "Office", sshAlias: "office-vps", cpus: 3 }] });
-    render(() => createElement(VpsServerEditor, { key: "gone", serverId: "vps:office-vps/openmausbot-vps-bot-abc" }));
+    render(() => createElement(VpsServerEditor, { key: "gone", serverId: "vps:office-vps/sanremes-vps-bot-abc" }));
     expect(aliases()).toEqual([]);
   });
 

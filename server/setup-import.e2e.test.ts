@@ -3,7 +3,7 @@ import { lstatSync, mkdirSync, readFileSync, readlinkSync, writeFileSync } from 
 import { dirname, join, resolve } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { launchVerificationServer, runControlOmb, type VerificationServer } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb, type VerificationServer } from "../scripts/control-sanremes.ts";
 
 // The fixture server's HOME is its own disposable data folder, so the files planted here are the only ones it can find.
 const SENTINEL = "SENTINEL-e2e-credential-51c0";
@@ -63,8 +63,8 @@ describe("bringing in another AI tool's setup through the desktop app's own serv
 
   beforeAll(async () => {
     globalThis.fetch = (input, init = {}) => realFetch(input, { ...init,
-      headers: { ...Object.fromEntries(new Headers(init.headers)), "x-openmausbot-desktop-owner": owner } });
-    fixture = await launchVerificationServer({ ...process.env, OMB_TEST_DESKTOP_OWNER_TOKEN: owner });
+      headers: { ...Object.fromEntries(new Headers(init.headers)), "x-sanremes-desktop-owner": owner } });
+    fixture = await launchVerificationServer({ ...process.env, SANREMES_TEST_DESKTOP_OWNER_TOKEN: owner });
   });
   afterAll(async () => {
     globalThis.fetch = realFetch;

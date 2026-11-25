@@ -11,7 +11,7 @@ release
 *.zip
 *.log
 electron/resources/cloudflared*
-.omb-scratch
+.sanremes-scratch
 .env
 **/.env
 **/.env.*

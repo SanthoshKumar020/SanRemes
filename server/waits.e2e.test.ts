@@ -3,12 +3,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it } from "vitest";
 
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { WAIT_MESSAGES } from "./routes/waits.ts";
 import { removeTempDir } from "./testing/cleanup.ts";
 
 async function scout(name: string) {
-  const folder = mkdtempSync(join(tmpdir(), `omb-waits-${name}-`));
+  const folder = mkdtempSync(join(tmpdir(), `sanremes-waits-${name}-`));
   const gate = join(folder, "finish");
   const fixture = await launchVerificationServer({ FAKE_CLAUDE_MODE: "slow", FAKE_CLAUDE_SLOW_FINISH_GATE: gate });
   const evidence: unknown[] = [];
@@ -32,7 +32,7 @@ async function scout(name: string) {
   const turnToken = async () => {
     let token = "";
     await expect.poll(() => {
-      try { token = dump().mcpConfig.mcpServers.agents.env.OMB_COMMS_TOKEN; } catch { return false; }
+      try { token = dump().mcpConfig.mcpServers.agents.env.SANREMES_COMMS_TOKEN; } catch { return false; }
       return Boolean(token);
     }, { timeout: 15_000 }).toBe(true);
     return token;

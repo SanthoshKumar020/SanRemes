@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from "react";
-import type { MausState } from "@/lib/mascot";
+import type { SanRemesState } from "@/lib/mascot";
 import { avatarMarks, type AvatarKind } from "@/lib/avatar-marks";
 import { mascotFaceInk, type MascotFaceColor, type MascotMaterial } from "../../shared/bot-avatar";
 import { mountAvatar, type AvatarOptions, type MountedAvatar } from "../../packages/phone-protocol/src/open-bot-avatar/dom/index.ts";
@@ -17,7 +17,7 @@ const WAITING = look("waiting");
 const HAPPY = look("idle", "happy");
 const DONE = look("done");
 
-const LOOKS: Partial<Record<MausState, ObjectLook>> = {
+const LOOKS: Partial<Record<SanRemesState, ObjectLook>> = {
   thinking: look("thinking"),
   working: WORKING, writing: WORKING, loading: WORKING, searching: WORKING, radar: WORKING, orbit: WORKING,
   progress: WORKING, uploading: WORKING, sending: WORKING, receiving: WORKING,
@@ -27,13 +27,13 @@ const LOOKS: Partial<Record<MausState, ObjectLook>> = {
   happy: HAPPY, laughing: HAPPY, proud: HAPPY, playful: HAPPY,
 };
 
-export const objectLook = (state: MausState): ObjectLook => LOOKS[state] ?? IDLE;
+export const objectLook = (state: SanRemesState): ObjectLook => LOOKS[state] ?? IDLE;
 
 /** How long a bot celebrates after it finishes: one Done turn of the ribbon cage, and its settle. */
 const CHEER_MS = DONE_TURN_S * 1000 + 300;
 
 /** True for one celebration after the bot goes from thinking or working back to idle. */
-function useFinishCheer(state: MausState): boolean {
+function useFinishCheer(state: SanRemesState): boolean {
   const [cheering, setCheering] = useState(false);
   const was = useRef(state);
   useEffect(() => {
@@ -58,7 +58,7 @@ export type ObjectAvatarProps = {
   faceColor?: MascotFaceColor | null;
   material?: MascotMaterial;
   size?: number;
-  state?: MausState;
+  state?: SanRemesState;
   trackPointer?: boolean;
   animated?: boolean;
   label?: string;

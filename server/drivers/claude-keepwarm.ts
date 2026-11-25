@@ -79,7 +79,7 @@ export function keepWarmSettings(settings: Record<string, unknown> | null, denyC
   };
 }
 
-export const KEEP_WARM_DENY_HOOK = `process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: "OpenMausBot keep-warm ping: no tools" } }));\n`;
+export const KEEP_WARM_DENY_HOOK = `process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: "SanRemes keep-warm ping: no tools" } }));\n`;
 
 const count = (value: unknown): number => typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : 0;
 
@@ -158,7 +158,7 @@ export function runForkedPrompt<T>(opts: {
   const { contract, what } = opts;
   let dir: string;
   try {
-    dir = mkdtempSync(join(tmpdir(), "omb-keepwarm-"));
+    dir = mkdtempSync(join(tmpdir(), "sanremes-keepwarm-"));
   } catch (error) {
     return Promise.resolve(opts.failed(`the ${what} could not start: ${(error as Error).message}`));
   }
@@ -182,7 +182,7 @@ export function runForkedPrompt<T>(opts: {
     }
     args = keepWarmArgs(contract.args, { sessionId: opts.sessionId, mcpConfigPath, settingsPath, systemPromptPath }, opts.persist);
     // The harness's hook helper must never hear about a fork.
-    for (const key of Object.keys(env)) if (key.startsWith("OMB_HOOK_")) delete env[key];
+    for (const key of Object.keys(env)) if (key.startsWith("SANREMES_HOOK_")) delete env[key];
     // In the packaged app process.execPath is Electron: the deny hook runs it as node.
     if (process.versions.electron) env.ELECTRON_RUN_AS_NODE = "1";
   } catch (error) {

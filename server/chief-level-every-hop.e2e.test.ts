@@ -2,7 +2,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { handleToolCall, request } from "../scripts/mcp-server.ts";
 
 // A Chief's level reached the teammate it handed work to and stopped there: Clive on Approve for me, Ada ran at auto,

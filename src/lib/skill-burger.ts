@@ -9,9 +9,9 @@ import type { SavedWorkflow } from "../../shared/skill-burger/saved";
 
 export type { DraftChoices, DraftView, SavedWorkflow };
 
-const CHANGED = "omb:skill-burgers-changed";
+const CHANGED = "sanremes:skill-burgers-changed";
 /** A browser where someone switched the run list off starts each burger folded to its top bun. */
-export const RUN_CARD_KEY = "omb-show-run-card";
+export const RUN_CARD_KEY = "sanremes-show-run-card";
 
 export function burgerStartsFolded(): boolean {
   try {

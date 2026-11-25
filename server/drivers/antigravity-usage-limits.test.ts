@@ -55,7 +55,7 @@ interface FixtureOptions {
 }
 
 function fixture(options: FixtureOptions = {}) {
-  const directory = mkdtempSync(join(tmpdir(), "omb-antigravity-usage-"));
+  const directory = mkdtempSync(join(tmpdir(), "sanremes-antigravity-usage-"));
   scratch.push(directory);
   mkdirSync(join(directory, "antigravity-acp"));
   const tokenPath = join(directory, "antigravity-acp", "acp_token.json");

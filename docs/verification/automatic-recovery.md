@@ -74,7 +74,7 @@ to five). There is no switch; the card says when a backup is used.
 pnpm exec vitest run src/components/bot-panel/BackupAis.dom.test.ts src/components/BotSettingsDialog.simple.test.ts src/components/bot-settings/ModelSection.test.ts
 ```
 
-The pictures come from `control-omb ui launch --engine codex` (fake Claude and
+The pictures come from `control-sanremes ui launch --engine codex` (fake Claude and
 fake Codex in a disposable home): adding Codex in Simple saved
 `fallback: [{ instanceId: "codex", model: "gpt-fake-default" }]` on the bot and
 left `automaticRecovery` at `{ enabled: false }`.

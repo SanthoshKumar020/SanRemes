@@ -23,7 +23,7 @@ afterEach(async () => { for (const dir of scratches.splice(0)) await removeTempD
 
 const start = async (id: string, extra: Record<string, string> = {}) => {
   ensureDirs();
-  const scratch = mkdtempSync(join(tmpdir(), "omb-grok-background-"));
+  const scratch = mkdtempSync(join(tmpdir(), "sanremes-grok-background-"));
   scratches.push(scratch);
   mkdirSync(join(scratch, "grok"), { recursive: true });
   writeFileSync(join(scratch, "grok", "auth.json"), "{}");

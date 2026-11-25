@@ -3,7 +3,7 @@
 // a realistic job, plus two rows from before traces existed.
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { launchVerificationServer, runControlOmb } from "./control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "./control-sanremes.ts";
 import { fixtureApi, mountPreview, parkUntilSignal, type MountedPreview } from "./testing/preview-fixture.ts";
 
 const fixture = await launchVerificationServer(process.env, undefined, undefined, undefined, undefined, { scripted: true });
@@ -94,7 +94,7 @@ try {
   const tool = (owner: string, name: string, start: number, end: number, detail?: string, status = "ok", error?: string) => {
     const turn = turns[owner]!;
     spans.push({ kind: "tool", id: `${turn.threadId}:${turn.turnId}:seed-tool-${++serial}`, ...turn, name, startedAt: at(start), endedAt: at(end),
-      status, timedBy: name.startsWith("mcp__") ? "omb" : "engine", ...(detail ? { detail } : {}), ...(error ? { error } : {}) });
+      status, timedBy: name.startsWith("mcp__") ? "sanremes" : "engine", ...(detail ? { detail } : {}), ...(error ? { error } : {}) });
   };
   step(clive.id, 0, 6.9, 520, 14_000);
   tool(clive.id, "mcp__agents__coordinate_bots", 7.0, 7.6, "Researcher, Writer, Coder");

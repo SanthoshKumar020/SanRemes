@@ -76,14 +76,14 @@ posixOnly("Live call e2e", () => {
     chmodSync(FAKE_ACP, 0o755);
     chmodSync(FAKE_CODEX, 0o755);
     live = await startFakeOpenAiLive();
-    home = mkdtempSync(join(tmpdir(), "omb-live-call-"));
-    mkdirSync(join(home, ".openmausbot"), { recursive: true });
+    home = mkdtempSync(join(tmpdir(), "sanremes-live-call-"));
+    mkdirSync(join(home, ".sanremes"), { recursive: true });
     steerGate = join(home, "steer.gate");
     titleRoutes = join(home, "title-routes.json");
     writeFileSync(titleRoutes, JSON.stringify({ "Requests:\nwhat is six times seven": "Times table question" }));
     queueSteerGate = join(home, "queue-steer.gate");
     writeFileSync(
-      join(home, ".openmausbot", "config.json"),
+      join(home, ".sanremes", "config.json"),
       JSON.stringify({
         instances: {
           claude: {
@@ -119,10 +119,10 @@ posixOnly("Live call e2e", () => {
         ...(process.env.PATH ? { PATH: process.env.PATH } : {}),
         HOME: home,
         USERPROFILE: home,
-        OMB_PORT: String(port),
-        OMB_WEBHOOK_PORT: String(port + 1),
-        OMB_OPENAI_LIVE_URL: live.url,
-        OMB_OPENAI_LIVE_KEY: LIVE_KEY,
+        SANREMES_PORT: String(port),
+        SANREMES_WEBHOOK_PORT: String(port + 1),
+        SANREMES_OPENAI_LIVE_URL: live.url,
+        SANREMES_OPENAI_LIVE_KEY: LIVE_KEY,
       },
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -155,7 +155,7 @@ posixOnly("Live call e2e", () => {
       expect(JSON.stringify(started.body)).not.toContain(LIVE_KEY);
       expect(call).toMatchObject({ botId: bot.id, threadId: bot.threadId, client: "desktop" });
       expect(session.body).toMatchObject({ session: { client: { data_channel: { allowed_client_events: ["session.close"] } } } });
-      expect((session.body.session as { instructions: string }).instructions).toContain("runs in OpenMausBot on the user's own computer.");
+      expect((session.body.session as { instructions: string }).instructions).toContain("runs in SanRemes on the user's own computer.");
       await live.waitForAttach(session.id);
       await sse.until((frame) => frame.kind === "live.call" && frame.call?.callId === call.callId && frame.call?.status === "live");
 
@@ -340,7 +340,7 @@ posixOnly("Live call e2e", () => {
 
   it("ends a phone's call, and refuses it another, once the companion says it was unpaired", async () => {
     const bot = await createBot();
-    const phone = { "x-openmausbot-companion": "1", "x-openmausbot-companion-device": "phone-e2e" };
+    const phone = { "x-sanremes-companion": "1", "x-sanremes-companion-device": "phone-e2e" };
     const sse = await openSse(`${base}/api/events`);
     try {
       const before = live.sessions.length;
@@ -351,7 +351,7 @@ posixOnly("Live call e2e", () => {
       await live.waitForAttach(session.id);
       await sse.until((frame) => frame.kind === "live.call" && frame.call?.callId === call.callId && frame.call?.status === "live");
 
-      expect(await post("/api/live/device-revoked", {}, { ...phone, "x-openmausbot-companion-device": "phone-other" }))
+      expect(await post("/api/live/device-revoked", {}, { ...phone, "x-sanremes-companion-device": "phone-other" }))
         .toEqual({ status: 200, body: { call: null } });
       expect(await post("/api/live/device-revoked", {}, phone)).toMatchObject({ status: 200, body: { call: { callId: call.callId } } });
       await live.waitForCommand(session.id, (c) => c.type === "session.close", 5_000);
@@ -602,7 +602,7 @@ posixOnly("Live call e2e", () => {
 
 // Booted as a Cloud home behind its edge, with only loopback reachable.
 posixOnly("Live call on the person's Cloud", () => {
-  const HOST = "omb-t-0123456789ab.fly.dev";
+  const HOST = "sanremes-t-0123456789ab.fly.dev";
   const secret = randomBytes(32).toString("base64url");
   const OWNER_KEY = "sk-fake-cloud-owner";
   let child: ChildProcess;
@@ -631,8 +631,8 @@ posixOnly("Live call on the person's Cloud", () => {
   beforeAll(async () => {
     chmodSync(FAKE_CLAUDE, 0o755);
     live = await startFakeOpenAiLive();
-    home = mkdtempSync(join(tmpdir(), "omb-live-cloud-"));
-    const dataDir = join(home, ".openmausbot");
+    home = mkdtempSync(join(tmpdir(), "sanremes-live-cloud-"));
+    const dataDir = join(home, ".sanremes");
     mkdirSync(dataDir, { recursive: true });
     writeFileSync(join(dataDir, "config.json"), JSON.stringify({
       instances: {
@@ -642,7 +642,7 @@ posixOnly("Live call on the person's Cloud", () => {
       },
     }));
     mkdirSync(join(home, "web"));
-    writeFileSync(join(home, "web", "index.html"), "<!doctype html><title>OpenMausBot</title>");
+    writeFileSync(join(home, "web", "index.html"), "<!doctype html><title>SanRemes</title>");
     const port = await freePortBlock([0, 1]);
     base = `http://127.0.0.1:${port}`;
     // Only loopback answers: the fake GPT-Live. The Admin and OpenAI are offline.
@@ -653,12 +653,12 @@ posixOnly("Live call on the person's Cloud", () => {
       cwd: join(SERVER_DIR, ".."),
       env: {
         ...(process.env.PATH ? { PATH: process.env.PATH } : {}),
-        HOME: home, USERPROFILE: home, OMB_DATA_DIR: dataDir, OMB_STATIC_DIR: join(home, "web"),
-        OMB_PORT: String(port), OMB_WEBHOOK_PORT: String(port + 1),
-        OMB_CLOUD_ROLE: "home", OMB_CLOUD_MACHINE_ID: "3f9c2a4e-8b1d-4c6e-9a7f-2d5e8c1b0a93", OMB_CLOUD_ADMIN_URL: "https://cloud.example.test",
-        OMB_CLOUD_BOOTSTRAP_SECRET: secret, OMB_PUBLIC_URL: `https://${HOST}`,
-        // no OMB_OPENAI_LIVE_KEY: no plan includes one
-        OMB_OPENAI_LIVE_URL: live.url,
+        HOME: home, USERPROFILE: home, SANREMES_DATA_DIR: dataDir, SANREMES_STATIC_DIR: join(home, "web"),
+        SANREMES_PORT: String(port), SANREMES_WEBHOOK_PORT: String(port + 1),
+        SANREMES_CLOUD_ROLE: "home", SANREMES_CLOUD_MACHINE_ID: "3f9c2a4e-8b1d-4c6e-9a7f-2d5e8c1b0a93", SANREMES_CLOUD_ADMIN_URL: "https://cloud.example.test",
+        SANREMES_CLOUD_BOOTSTRAP_SECRET: secret, SANREMES_PUBLIC_URL: `https://${HOST}`,
+        // no SANREMES_OPENAI_LIVE_KEY: no plan includes one
+        SANREMES_OPENAI_LIVE_URL: live.url,
       },
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -675,11 +675,11 @@ posixOnly("Live call on the person's Cloud", () => {
       if (Date.now() > deadline) throw new Error(`the Cloud home never came up. output:\n${output}`);
       await new Promise((r) => setTimeout(r, 150));
     }
-    const pairing = JSON.stringify({ label: "OpenMausBot app (Cloud)", ttlSeconds: 300 });
+    const pairing = JSON.stringify({ label: "SanRemes app (Cloud)", ttlSeconds: 300 });
     const timestamp = String(Math.floor(Date.now() / 1000)), nonce = randomBytes(16).toString("base64url");
     const granted = await request("POST", "/api/cloud/pairing", JSON.parse(pairing), {
-      "x-omb-cloud-timestamp": timestamp, "x-omb-cloud-nonce": nonce,
-      "x-omb-cloud-signature": `v1=${cloudPairingSignature(secret, timestamp, nonce, pairing)}`,
+      "x-sanremes-cloud-timestamp": timestamp, "x-sanremes-cloud-nonce": nonce,
+      "x-sanremes-cloud-signature": `v1=${cloudPairingSignature(secret, timestamp, nonce, pairing)}`,
     });
     expect(granted.status, JSON.stringify(granted.body)).toBe(200);
     const paired = await request("POST", "/api/auth/pair", { code: granted.body.code });
@@ -730,7 +730,7 @@ posixOnly("Live call on the person's Cloud", () => {
 // No plan anywhere and no Live key: a phone's call starts once the person's own OpenAI key is in Settings → API keys.
 posixOnly("Live calls for everyone, with the person's own OpenAI key", () => {
   const OPENAI_KEY = "sk-fake-api-keys-openai";
-  const phone = { "x-openmausbot-companion": "1", "x-openmausbot-companion-device": "phone-byok" };
+  const phone = { "x-sanremes-companion": "1", "x-sanremes-companion-device": "phone-byok" };
   let child: ChildProcess;
   let home = "";
   let base = "";
@@ -750,8 +750,8 @@ posixOnly("Live calls for everyone, with the person's own OpenAI key", () => {
   beforeAll(async () => {
     chmodSync(FAKE_CLAUDE, 0o755);
     live = await startFakeOpenAiLive();
-    home = mkdtempSync(join(tmpdir(), "omb-live-byok-"));
-    const dataDir = join(home, ".openmausbot");
+    home = mkdtempSync(join(tmpdir(), "sanremes-live-byok-"));
+    const dataDir = join(home, ".sanremes");
     mkdirSync(dataDir, { recursive: true });
     writeFileSync(join(dataDir, "config.json"), JSON.stringify({
       instances: {
@@ -766,9 +766,9 @@ posixOnly("Live calls for everyone, with the person's own OpenAI key", () => {
       cwd: join(SERVER_DIR, ".."),
       env: {
         ...(process.env.PATH ? { PATH: process.env.PATH } : {}),
-        HOME: home, USERPROFILE: home, OMB_DATA_DIR: dataDir,
-        OMB_PORT: String(port), OMB_WEBHOOK_PORT: String(port + 1),
-        OMB_OPENAI_LIVE_URL: live.url,
+        HOME: home, USERPROFILE: home, SANREMES_DATA_DIR: dataDir,
+        SANREMES_PORT: String(port), SANREMES_WEBHOOK_PORT: String(port + 1),
+        SANREMES_OPENAI_LIVE_URL: live.url,
       },
       stdio: ["ignore", "pipe", "pipe"],
     });

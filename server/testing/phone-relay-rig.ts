@@ -1,4 +1,4 @@
-// The real server with OMB_PHONE_RELAY=1 for tests, beside a fake control plane that grants relay tokens and the fake
+// The real server with SANREMES_PHONE_RELAY=1 for tests, beside a fake control plane that grants relay tokens and the fake
 // relay those tokens open.
 import { spawn, type ChildProcess } from "node:child_process";
 import { generateKeyPairSync, randomBytes } from "node:crypto";
@@ -8,7 +8,7 @@ import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { verificationServerArgs, verificationServerEnvironment } from "../../scripts/control-omb.ts";
+import { verificationServerArgs, verificationServerEnvironment } from "../../scripts/control-sanremes.ts";
 import { b64u, ed25519RawPublicKey, mintRelayToken } from "../../companion/src/e2e/credentials.ts";
 import { startFakeRelay, type FakeRelay } from "../../companion/test/e2e/fake-relay.ts";
 import { waitFor } from "../../companion/test/e2e/wait.ts";
@@ -61,14 +61,14 @@ export async function startPhoneRelayRig(): Promise<PhoneRelayRig> {
     relay, hostId, credential, tokenRequests,
     async boot(extra = {}) {
       const port = await freePortBlock([0, 1]);
-      const dir = mkdtempSync(join(tmpdir(), "omb-phone-relay-e2e-"));
+      const dir = mkdtempSync(join(tmpdir(), "sanremes-phone-relay-e2e-"));
       mkdirSync(join(dir, "tmp"), { recursive: true });
       writeFileSync(join(dir, "tunnel-account.json"), JSON.stringify({ companionInstallationCredential: credential }), { mode: 0o600 });
       const env = {
         ...verificationServerEnvironment(process.env, dir, port),
-        OMB_PHONE_RELAY: "1",
-        OMB_PHONE_RELAY_URL: relay.url,
-        OMB_CONTROL_PLANE_URL: `http://127.0.0.1:${(controlPlane.address() as AddressInfo).port}`,
+        SANREMES_PHONE_RELAY: "1",
+        SANREMES_PHONE_RELAY_URL: relay.url,
+        SANREMES_CONTROL_PLANE_URL: `http://127.0.0.1:${(controlPlane.address() as AddressInfo).port}`,
         ...extra,
       };
       const log = join(dir, "server.log");
@@ -77,7 +77,7 @@ export async function startPhoneRelayRig(): Promise<PhoneRelayRig> {
       closeSync(fd);
       const server = { child, dataDir: dir, logPath: log, base: `http://127.0.0.1:${port}` };
       servers.push(server);
-      await waitFor(async () => (await fetch(`${server.base}/api/health`).then((r) => r.json(), () => null) as { app?: string } | null)?.app === "openmausbot", 30_000);
+      await waitFor(async () => (await fetch(`${server.base}/api/health`).then((r) => r.json(), () => null) as { app?: string } | null)?.app === "sanremes", 30_000);
       return server;
     },
     async close() {

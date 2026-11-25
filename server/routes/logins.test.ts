@@ -28,7 +28,7 @@ afterEach(async () => {
 });
 
 async function serve() {
-  const dir = mkdtempSync(join(tmpdir(), "omb-login-routes-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-login-routes-"));
   dirs.push(dir);
   const store = new VaultStore({ dataDir: dir });
   const vaults = { v1: { title: "Shared with OMB", items: [

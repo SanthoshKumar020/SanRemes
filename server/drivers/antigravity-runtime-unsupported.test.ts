@@ -22,7 +22,7 @@ describe("Antigravity on a platform Google publishes no runtime for", () => {
     for (const directory of directories.splice(0)) rmSync(directory, { recursive: true, force: true });
   });
   function dataDir() {
-    const directory = mkdtempSync(join(tmpdir(), "omb-agy-unsupported-"));
+    const directory = mkdtempSync(join(tmpdir(), "sanremes-agy-unsupported-"));
     directories.push(directory);
     return directory;
   }

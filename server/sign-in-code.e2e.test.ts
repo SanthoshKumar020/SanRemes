@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
 
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { removeTempDir } from "./testing/cleanup.ts";
 import { FakeLoginPage } from "./testing/fake-login-page.ts";
 import { freePortBlock } from "./testing/ports.ts";
@@ -24,7 +24,7 @@ const VERIFY = `<h1>Check your email</h1><p>We sent a 6-digit code to alice@exam
 const ACCOUNT = `<h1>Your account</h1><p>Signed in as alice@example.com</p><button id="cancel">Cancel subscription</button>`;
 
 async function fixtureWorld() {
-  const tools = mkdtempSync(join(tmpdir(), "omb-sign-in-code-e2e-"));
+  const tools = mkdtempSync(join(tmpdir(), "sanremes-sign-in-code-e2e-"));
   const inbox = join(tools, "inbox.txt");
   writeFileSync(inbox, "No new email.");
   const page = new FakeLoginPage(`${SHOP}/sign-in`, SIGN_IN);

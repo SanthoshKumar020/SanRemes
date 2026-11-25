@@ -67,7 +67,7 @@ describe.skipIf(process.platform === "win32")("a Team Cloud turn's box, through 
   });
 
   beforeAll(async () => {
-    scratch = mkdtempSync(join(tmpdir(), "omb-team-box-scope-"));
+    scratch = mkdtempSync(join(tmpdir(), "sanremes-team-box-scope-"));
     const fakeBwrap = join(scratch, "fake-bwrap.sh");
     writeFileSync(fakeBwrap, "#!/bin/sh\nexit 0\n");
     chmodSync(fakeBwrap, 0o755);

@@ -8,7 +8,7 @@ import { createTeamFilesHost } from "./team-files-host.ts";
 const dirs: string[] = [];
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 function host(options: { team?: boolean; boxOn?: boolean; edit?: boolean } = {}) {
-  const dataDir = mkdtempSync(join(tmpdir(), "omb-team-files-host-"));
+  const dataDir = mkdtempSync(join(tmpdir(), "sanremes-team-files-host-"));
   dirs.push(dataDir);
   const bots = [{ id: "payroll", teamFilesEdit: options.edit ?? false }, { id: "notes" }];
   return { dataDir, host: createTeamFilesHost({ team: options.team === false ? null : { name: "Acme" }, dataDir, bots: () => bots, boxOn: () => options.boxOn ?? true, askerOf: (threadId) => (threadId === "t-mira" ? "p_mira" : null) }) };

@@ -1,7 +1,7 @@
 // A person's and a bot's input to a page, on the default engine, through the real server: the pinned agent-browser and
 // its Chrome, the live view's event stream and action requests as the app sends them, and the bot's tools as a model
 // calls them. The page reports what it saw to this test's own server. Runs when agent-browser resolves (tools directory,
-// OMB_AGENT_BROWSER_PATH or PATH) or OMB_UI_E2E=1 asks for the download; otherwise skipped.
+// SANREMES_AGENT_BROWSER_PATH or PATH) or SANREMES_UI_E2E=1 asks for the download; otherwise skipped.
 import { execFile } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
@@ -12,13 +12,13 @@ import { afterAll, beforeAll, describe, expect, it, onTestFailed } from "vitest"
 import { resolveAgentBrowserBinary } from "../../server/browser-engine.ts";
 import type { PreviewStreamInput } from "../../src/lib/browser-stream-client.ts";
 import { liveAction } from "../../src/lib/browser-live-action.ts";
-import { launchVerificationServer, runControlOmb, type VerificationServer } from "../control-omb.ts";
-import { ensureUiBrowser, UI_TOOLS_DIR } from "./control-omb-ui.ts";
+import { launchVerificationServer, runControlOmb, type VerificationServer } from "../control-sanremes.ts";
+import { ensureUiBrowser, UI_TOOLS_DIR } from "./control-sanremes-ui.ts";
 
-const forced = process.env.OMB_UI_E2E === "1";
+const forced = process.env.SANREMES_UI_E2E === "1";
 const enabled = forced || Boolean(resolveAgentBrowserBinary({ dataDir: UI_TOOLS_DIR, env: process.env }));
 if (!enabled) {
-  console.log(`skipping browser input e2e: no agent-browser binary resolves (looked in ${UI_TOOLS_DIR}, OMB_AGENT_BROWSER_PATH and PATH); set OMB_UI_E2E=1 to install the pinned release`);
+  console.log(`skipping browser input e2e: no agent-browser binary resolves (looked in ${UI_TOOLS_DIR}, SANREMES_AGENT_BROWSER_PATH and PATH); set SANREMES_UI_E2E=1 to install the pinned release`);
 }
 const run = enabled ? it : it.skip;
 

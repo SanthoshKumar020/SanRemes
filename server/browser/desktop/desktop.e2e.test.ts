@@ -1,7 +1,7 @@
 // A bot's browser on a private display, end to end on real Chrome and a real Xvnc: a person's view through the desktop
 // route sees the window, its clicks and keys reach the page only while the person holds the browser, and the bot's own
-// clicks and typing still work on the same page once it is handed back. Runs where OMB_CDP_CHROME (or OMB_CDP_E2E=1) names
-// a Chrome and Xvnc is installed; skipped elsewhere. OMB_DESKTOP_MEASURE=1 also prints memory and CPU against headless.
+// clicks and typing still work on the same page once it is handed back. Runs where SANREMES_CDP_CHROME (or SANREMES_CDP_E2E=1) names
+// a Chrome and Xvnc is installed; skipped elsewhere. SANREMES_DESKTOP_MEASURE=1 also prints memory and CPU against headless.
 import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
@@ -318,7 +318,7 @@ async function omniboxPopups(profile: Shown): Promise<Array<{ url: string; seen?
       if (!session) throw new Error("not attached");
       // The driver evaluates only in an isolated world of a page's own.
       const { frameTree } = await session.send<{ frameTree: { frame: { id: string } } }>("Page.getFrameTree");
-      const { executionContextId } = await session.send<{ executionContextId: number }>("Page.createIsolatedWorld", { frameId: frameTree.frame.id, worldName: "omb-e2e-diagnostic" });
+      const { executionContextId } = await session.send<{ executionContextId: number }>("Page.createIsolatedWorld", { frameId: frameTree.frame.id, worldName: "sanremes-e2e-diagnostic" });
       const answer = await session.send<{ result: { value?: string } }>("Runtime.evaluate", { expression: "JSON.stringify({ visibility: document.visibilityState, size: [innerWidth, innerHeight], at: [screenX, screenY], text: document.body ? document.body.innerText.slice(0, 120) : '' })", contextId: executionContextId, returnByValue: true });
       popups.push({ url: info.url, seen: JSON.parse(answer.result.value ?? "null") });
     } catch (error) {
@@ -386,7 +386,7 @@ suite("a bot's browser on a private display", () => {
   beforeAll(async () => {
     fx = await FixtureServer.start();
     page = fx.page("/desk", PAGE);
-    root = mkdtempSync("/tmp/omb-desk-");
+    root = mkdtempSync("/tmp/sanremes-desk-");
     displays = new DisplaySupervisor({ root, xvnc: XVNC, bwrap: BWRAP });
     workspace = join(root, "workspace");
     mkdirSync(workspace);
@@ -721,7 +721,7 @@ suite("a bot's browser on a private display", () => {
     desk.close();
   }, hostTimeout(120_000));
 
-  it.runIf(process.env.OMB_DESKTOP_MEASURE === "1")("spends this much CPU on a picture stream under the desktop view, and none without one", async () => {
+  it.runIf(process.env.SANREMES_DESKTOP_MEASURE === "1")("spends this much CPU on a picture stream under the desktop view, and none without one", async () => {
     const animated = fx.page("/spin", `<!doctype html><style>@keyframes spin{to{transform:rotate(360deg)}}#s{width:300px;height:300px;background:#36c;animation:spin 1s linear infinite}</style><div id="s"></div>`);
     expect((await real.call(target, "agent_browser_open", { url: animated })).isError).toBeUndefined();
     const profile = real.service.profiles().find((candidate) => candidate.key === target.key)!;
@@ -744,7 +744,7 @@ suite("a bot's browser on a private display", () => {
     console.log(JSON.stringify({ animatedPageDesktopWatched: { cpuPercentWithPictureStream: withPictures, cpuPercentWithoutPictureStream: withoutPictures } }));
   }, hostTimeout(120_000));
 
-  it.runIf(process.env.OMB_DESKTOP_MEASURE === "1")("costs this much memory and CPU against a headless browser", async () => {
+  it.runIf(process.env.SANREMES_DESKTOP_MEASURE === "1")("costs this much memory and CPU against a headless browser", async () => {
     expect((await real.call(target, "agent_browser_open", { url: page })).isError).toBeUndefined();
     const profile = real.service.profiles().find((candidate) => candidate.key === target.key)!;
     const xvnc = xvncPid(profile.run!.opened.display!.socket)!;

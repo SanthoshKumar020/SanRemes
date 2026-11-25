@@ -1,6 +1,6 @@
 /**
  * A bot asking the person to sign in to a website themselves, in the place the
- * bot works. OpenMausBot never receives a website password: the person types it
+ * bot works. SanRemes never receives a website password: the person types it
  * into the page, and the bot uses the session the page keeps.
  */
 import type { SignInRequestCardData, Surface } from "./wire.ts";
@@ -96,8 +96,8 @@ export function signInOutcome(state: { done?: unknown; cancelled?: unknown; expi
  * credential card uses. */
 export function signInResumePrompt(site: string, outcome: "done" | "cancelled"): string {
   return outcome === "done"
-    ? `OpenMausBot sign-in update: the person finished signing in to ${site}. Check you are signed in, then continue the task that paused for it. Never ask them for a password or a one-time code in chat.`
-    : `OpenMausBot sign-in update: the person declined to sign in to ${site}. Continue without it if you can, or briefly explain what you could not do. Never ask them for a password or a one-time code in chat.`;
+    ? `SanRemes sign-in update: the person finished signing in to ${site}. Check you are signed in, then continue the task that paused for it. Never ask them for a password or a one-time code in chat.`
+    : `SanRemes sign-in update: the person declined to sign in to ${site}. Continue without it if you can, or briefly explain what you could not do. Never ask them for a password or a one-time code in chat.`;
 }
 
 export const HANDOFF_NEEDS: readonly HandoffNeed[] = ["sign_in", "captcha", "payment", "approval", "other"];
@@ -133,12 +133,12 @@ export function handoffResumePrompt(card: Pick<SignInRequestCardData, "instructi
   const note = card.note ? ` They added: ${JSON.stringify(card.note)}.` : "";
   const look = "Re-read the page first (a new snapshot or screenshot): your earlier refs are stale.";
   if (outcome === "done") {
-    return `OpenMausBot handoff update: outcome done. The person pressed I'm done on ${step}.${note} That is their claim and is unverified. ${look} Check the step really happened before you say or do anything that relies on it; if it did not, say what you see and ask what to do next. ${NEVER_IN_CHAT}`;
+    return `SanRemes handoff update: outcome done. The person pressed I'm done on ${step}.${note} That is their claim and is unverified. ${look} Check the step really happened before you say or do anything that relies on it; if it did not, say what you see and ask what to do next. ${NEVER_IN_CHAT}`;
   }
   if (outcome === "cancelled") {
-    return `OpenMausBot handoff update: outcome skipped. The person skipped ${step}.${note} Continue without that step if you can, or say briefly what you could not do. ${look} ${NEVER_IN_CHAT}`;
+    return `SanRemes handoff update: outcome skipped. The person skipped ${step}.${note} Continue without that step if you can, or say briefly what you could not do. ${look} ${NEVER_IN_CHAT}`;
   }
-  return `OpenMausBot handoff update: outcome expired. Nobody answered ${step} in time, so the request ended. ${look} Continue without it if you can, or say in one line that the step still needs the person. ${NEVER_IN_CHAT}`;
+  return `SanRemes handoff update: outcome expired. Nobody answered ${step} in time, so the request ended. ${look} Continue without it if you can, or say in one line that the step still needs the person. ${NEVER_IN_CHAT}`;
 }
 
 /** The resume line for any sign-in card: a handoff's own, else the site sign-in's. */

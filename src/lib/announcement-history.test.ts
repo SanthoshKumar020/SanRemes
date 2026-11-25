@@ -89,7 +89,7 @@ describe("the red dot", () => {
   });
 
   it("the newest of the browser's, the desktop's and the place's record counts", () => {
-    storage.set("omb.announcements.read-at", String(Date.parse("2026-11-19T00:00:00Z")));
+    storage.set("sanremes.announcements.read-at", String(Date.parse("2026-11-19T00:00:00Z")));
     expect(announcementsReadAt(person([readMark(Date.parse("2026-11-18T00:00:00Z"))], [readMark(Date.parse("2026-11-21T00:00:00Z"))]))).toBe(Date.parse("2026-11-21T00:00:00Z"));
     expect(announcementsReadAt(person([readMark(Date.parse("2026-11-22T00:00:00Z"))]))).toBe(Date.parse("2026-11-22T00:00:00Z"));
   });
@@ -149,7 +149,7 @@ describe("opening Announcements and seeing a popup", () => {
     const saved = vi.fn();
     markAnnouncementsRead(NOW, record(["tour-finished", readMark(1)]), { team: false, desktop, saved });
     await Promise.resolve(); await Promise.resolve();
-    expect(storage.get("omb.announcements.read-at")).toBe(String(NOW));
+    expect(storage.get("sanremes.announcements.read-at")).toBe(String(NOW));
     expect(desktop.seen).toHaveBeenCalledWith(readMark(NOW));
     expect(vi.mocked(api).mock.calls).toEqual([["/api/config", { method: "PUT", body: JSON.stringify({ onboarding: { hintsSeen: ["tour-finished", readMark(NOW)] } }) }]]);
     expect(saved).toHaveBeenCalledWith({ saved: true });
@@ -174,7 +174,7 @@ describe("opening Announcements and seeing a popup", () => {
     vi.mocked(api).mockRejectedValue(new Error("offline"));
     expect(() => markAnnouncementsRead(NOW, record(), { team: false, saved: vi.fn() })).not.toThrow();
     await Promise.resolve();
-    expect(storage.get("omb.announcements.read-at")).toBe(String(NOW));
+    expect(storage.get("sanremes.announcements.read-at")).toBe(String(NOW));
   });
 });
 

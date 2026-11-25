@@ -15,7 +15,7 @@ afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
 describe("upload links for connected-app files", () => {
   it("asks Composio with the project key, and the service for a member's own installation", async () => {
-    vi.stubEnv("OMB_COMPOSIO_API", undefined);
+    vi.stubEnv("SANREMES_COMPOSIO_API", undefined);
     const calls: Array<{ url: string; init?: RequestInit }> = [];
     vi.stubGlobal("fetch", answering({ key: "projects/p/requests/googledrive/report.pdf", new_presigned_url: "https://storage.composio.dev/p/report.pdf?X-Amz-Signature=1" }, calls));
     await expect(requestFileUpload(withKey, request)).resolves.toEqual({ key: "projects/p/requests/googledrive/report.pdf", url: "https://storage.composio.dev/p/report.pdf?X-Amz-Signature=1" });
@@ -28,7 +28,7 @@ describe("upload links for connected-app files", () => {
   });
 
   it("accepts a presigned upload link on Composio's Cloudflare R2 storage", async () => {
-    vi.stubEnv("OMB_COMPOSIO_API", undefined);
+    vi.stubEnv("SANREMES_COMPOSIO_API", undefined);
     const link = `https://temp.${"0123456789abcdef".repeat(2)}.r2.cloudflarestorage.com/517680/googledrive/report.pdf?X-Amz-Signature=1`;
     vi.stubGlobal("fetch", answering({ key: "projects/p/requests/googledrive/report.pdf", new_presigned_url: link }));
     await expect(requestFileUpload(withKey, request)).resolves.toEqual({ key: "projects/p/requests/googledrive/report.pdf", url: link });
@@ -37,7 +37,7 @@ describe("upload links for connected-app files", () => {
   });
 
   it("refuses a link anywhere but Composio's storage over HTTPS", async () => {
-    vi.stubEnv("OMB_COMPOSIO_API", undefined);
+    vi.stubEnv("SANREMES_COMPOSIO_API", undefined);
     const account = "0123456789abcdef".repeat(2);
     const r2 = `temp.${account}.r2.cloudflarestorage.com`;
     for (const link of [

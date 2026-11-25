@@ -45,7 +45,7 @@ function room(options: { threadId?: string; shared?: { messages: Map<string, Mes
     store: { messagesFor: (id) => threads.get(id) ?? [] },
     teammateReportContext: (requestId) => reports.get(requestId) ?? `[report ${requestId}]`,
   });
-  // `env: {}`: the developer's own OMB_ROOM_SESSIONS must not decide a test.
+  // `env: {}`: the developer's own SANREMES_ROOM_SESSIONS must not decide a test.
   const create = () => createRoomSessions({
     settings: () => ({ roomSessions: state.enabled }), env: {}, messagesFor: (id) => threads.get(id) ?? [], now: () => state.now,
   });
@@ -177,7 +177,7 @@ describe("which engines keep a room session", () => {
   it("is Claude Code alone, for as long as its driver keeps a quiet process", () => {
     expect(Object.keys(ROOM_SESSION_ENGINES)).toEqual(["claudeAgent"]);
     expect(roomSessionIdleMs("claudeAgent", {})).toBe(10 * 60_000);
-    expect(roomSessionIdleMs("claudeAgent", { OMB_CLAUDE_SESSION_IDLE_MS: "60000" })).toBe(60_000);
+    expect(roomSessionIdleMs("claudeAgent", { SANREMES_CLAUDE_SESSION_IDLE_MS: "60000" })).toBe(60_000);
     for (const other of ["codex", "museCode", "piAgent", "constructor", "toString"]) expect(roomSessionIdleMs(other, {})).toBeUndefined();
   });
 });
@@ -569,7 +569,7 @@ describe("room sessions: when a record is not trusted", () => {
   });
 
   it("starts again when anything in its standing configuration changed", () => {
-    const base = ["You are Editor, a bot in the room \"Edit bay\".", "/work", { instanceId: "claude", model: "opus", effort: "high" }, "ask", { agents: { env: { OMB_SKILL_AUTHORING_ENABLED: "0" } } }];
+    const base = ["You are Editor, a bot in the room \"Edit bay\".", "/work", { instanceId: "claude", model: "opus", effort: "high" }, "ask", { agents: { env: { SANREMES_SKILL_AUTHORING_ENABLED: "0" } } }];
     const changes: unknown[][] = [
       ["You are Editor, a bot in the room \"Cutting room\".", ...base.slice(1)],
       [base[0], "/elsewhere", ...base.slice(2)],
@@ -577,7 +577,7 @@ describe("room sessions: when a record is not trusted", () => {
       [...base.slice(0, 2), { instanceId: "claude", model: "opus", effort: "low" }, ...base.slice(3)],
       [...base.slice(0, 2), { instanceId: "claude", model: "opus", effort: "high", variant: "1m" }, ...base.slice(3)],
       [...base.slice(0, 3), "full", base[4]],
-      [...base.slice(0, 4), { agents: { env: { OMB_SKILL_AUTHORING_ENABLED: "1" } } }],
+      [...base.slice(0, 4), { agents: { env: { SANREMES_SKILL_AUTHORING_ENABLED: "1" } } }],
       [...base, "one more"],
     ];
     for (const changed of changes) {
@@ -1654,9 +1654,9 @@ describe("room sessions: long turns, and turns in other rooms meanwhile", () => 
   });
 
   it("keeps a reading longer than a record when the idle life is set above a day", () => {
-    // OMB_CLAUDE_SESSION_IDLE_MS may be anything up to 2^31-1 ms, and a
+    // SANREMES_CLAUDE_SESSION_IDLE_MS may be anything up to 2^31-1 ms, and a
     // record lives that long; a reading must not go before it.
-    vi.stubEnv("OMB_CLAUDE_SESSION_IDLE_MS", String(30 * 60 * MIN));
+    vi.stubEnv("SANREMES_CLAUDE_SESSION_IDLE_MS", String(30 * 60 * MIN));
     try {
       expect(roomSessionIdleMs("claudeAgent")).toBe(30 * 60 * MIN);
       const { r } = ready();

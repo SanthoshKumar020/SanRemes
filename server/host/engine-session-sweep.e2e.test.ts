@@ -2,7 +2,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSyn
 import { join } from "node:path";
 import { expect, it } from "vitest";
 
-import { launchVerificationServer, runControlOmb } from "../../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../../scripts/control-sanremes.ts";
 import { rebuiltSessionNotice } from "../resume-recovery.ts";
 import { engineSessionFolders } from "./delete-leftovers.ts";
 import { createLoggedSessions, liveSessions, sweepEngineSessions } from "./engine-session-sweep.ts";

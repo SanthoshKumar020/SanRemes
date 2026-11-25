@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowUp, Check, Plus } from "lucide-react";
-import { BotAvatar, MausAvatar } from "@/components/Avatar";
+import { BotAvatar, SanRemesAvatar } from "@/components/Avatar";
 import { engineReady } from "@/components/EngineLibrary";
 import { usePrefersReducedMotion } from "@/components/mascot-clock";
 import { brand, productName } from "@/lib/brand";
@@ -61,7 +61,7 @@ function DemoComposer({ reduced, onTyping }: { reduced: boolean; onTyping: (typi
 export function MeetScreen({ hosted, onNext }: { hosted: boolean; onNext: () => void }) {
   const { state } = useStore();
   const reduced = usePrefersReducedMotion();
-  const maus = myDefaultBot(state.bots, useViewerEmail());
+  const sanremes = myDefaultBot(state.bots, useViewerEmail());
   // An AI counts once it answered a test message (or cannot be sent one); OpenCode's free model only once picked here.
   const [chosen, setChosen] = useState<string | null>(null);
   const tested = useWelcomeAi(state.instances, !hosted, chosen, "meet");
@@ -107,10 +107,10 @@ export function MeetScreen({ hosted, onNext }: { hosted: boolean; onNext: () => 
       <span className="absolute left-1/2 top-[calc(50%-75px)] flex -translate-x-1/2 -translate-y-1/2" style={{ width: MASCOT_SIZE, height: MASCOT_SIZE }}>
         {logo ? (
           <img src={logo} alt="" width={MASCOT_SIZE} height={MASCOT_SIZE} className="size-full object-contain" />
-        ) : maus ? (
-          <BotAvatar bot={maus} size={MASCOT_SIZE} state={face} animated={!reduced} />
+        ) : sanremes ? (
+          <BotAvatar bot={sanremes} size={MASCOT_SIZE} state={face} animated={!reduced} />
         ) : (
-          <MausAvatar color="chrome" size={MASCOT_SIZE} state={face} animated={!reduced} label={DEFAULT_BOT_NAME} />
+          <SanRemesAvatar color="chrome" size={MASCOT_SIZE} state={face} animated={!reduced} label={DEFAULT_BOT_NAME} />
         )}
       </span>
       <DemoComposer reduced={reduced} onTyping={setTyping} />

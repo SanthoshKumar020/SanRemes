@@ -6,7 +6,7 @@ import { SessionClosed } from "../../src/e2e/session.ts";
 import { attachmentByte } from "./fake-harness.ts";
 import { events, freePort, http, json, pairViaRelay, spawnRelay, startRig, waitFor, type RelayProcess, type Rig } from "./rig.ts";
 
-const LONG = process.env.OMB_E2E_LONG === "1";
+const LONG = process.env.SANREMES_E2E_LONG === "1";
 let rig: Rig;
 let relay: RelayProcess;
 let relayPort: number;
@@ -37,7 +37,7 @@ describe("the sidecar's end-to-end connection, through the real relay", () => {
     deviceToken = paired.token;
     deviceId = paired.id;
     expect((await http(paired.session, "GET", "/api/threads/t1/messages", { token: "omb_other" })).status).toBe(401);
-    expect(json(await http(paired.session, "GET", "/api/health", { token: deviceToken }))).toEqual({ app: "openmausbot" });
+    expect(json(await http(paired.session, "GET", "/api/health", { token: deviceToken }))).toEqual({ app: "sanremes" });
     expect((await state()).devices).toEqual([expect.objectContaining({ id: deviceId, route: "relay", routes: "any", e2eAt: expect.any(Number) })]);
     paired.session.shutdown();
   });
@@ -103,7 +103,7 @@ describe("the sidecar's end-to-end connection, through the real relay", () => {
     expect(devices).not.toContain(before.id);
     expect((await fetch(`http://127.0.0.1:${rig.companionPort}/api/bots`, { headers: { authorization: `Bearer ${before.token}` } })).status).toBe(401);
     const fresh = await rig.direct(await state(), after.token);
-    expect(json(await http(fresh, "GET", "/api/health", { token: after.token }))).toEqual({ app: "openmausbot" });
+    expect(json(await http(fresh, "GET", "/api/health", { token: after.token }))).toEqual({ app: "sanremes" });
     fresh.shutdown();
   });
 

@@ -72,9 +72,9 @@ describe("the Settings window", () => {
   it("says which place a place page changes, and that account and app pages stay the same, without “place” for a person with one place", () => {
     expect(render("devices")).toContain("This computer");
     const account = render("account");
-    expect(account).toContain("Your MausBot account");
+    expect(account).toContain("Your SanRemes account");
     expect(account).not.toContain("Same on every place");
-    expect(render("appearance")).toContain("MausBot on this device");
+    expect(render("appearance")).toContain("SanRemes on this device");
   });
 
   const SIMPLE_NAV = ["overview", "devices", "ai", "vault", "usage", "transfer", "features", "account", "plan", "app", "appearance"];

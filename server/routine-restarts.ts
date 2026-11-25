@@ -1,17 +1,17 @@
 // What a server start does to routines when the server may be crashing and starting again in a loop. A start with no
-// desktop launch (a headless server) runs its startup routines at most once in OMB_STARTUP_ROUTINE_GAP_MS, counted from
+// desktop launch (a headless server) runs its startup routines at most once in SANREMES_STARTUP_ROUTINE_GAP_MS, counted from
 // the start that last ran them, and each start it skips adds to one row per routine. Runs a restart cut off start again
-// one after another, OMB_ROUTINE_RESTART_STAGGER_MS apart, not all at the same moment.
+// one after another, SANREMES_ROUTINE_RESTART_STAGGER_MS apart, not all at the same moment.
 import { envWhole } from "./env-limits.ts";
 import { ROUTINE_RETRY_MS } from "./routine-recovery.ts";
 
 export const STARTUP_ROUTINE_GAP_MS = 30 * 60_000;
 export const ROUTINE_RESTART_STAGGER_MS = 30_000;
 
-/** OMB_STARTUP_ROUTINE_GAP_MS, whole milliseconds from 0 (0 runs them at every start); anything else leaves the default. */
-export const startupRoutineGapMs = (env: NodeJS.ProcessEnv = process.env): number => envWhole(env.OMB_STARTUP_ROUTINE_GAP_MS, STARTUP_ROUTINE_GAP_MS, 0);
-/** OMB_ROUTINE_RESTART_STAGGER_MS, whole milliseconds from 0; anything else leaves the default. */
-export const restartStaggerMs = (env: NodeJS.ProcessEnv = process.env): number => envWhole(env.OMB_ROUTINE_RESTART_STAGGER_MS, ROUTINE_RESTART_STAGGER_MS, 0);
+/** SANREMES_STARTUP_ROUTINE_GAP_MS, whole milliseconds from 0 (0 runs them at every start); anything else leaves the default. */
+export const startupRoutineGapMs = (env: NodeJS.ProcessEnv = process.env): number => envWhole(env.SANREMES_STARTUP_ROUTINE_GAP_MS, STARTUP_ROUTINE_GAP_MS, 0);
+/** SANREMES_ROUTINE_RESTART_STAGGER_MS, whole milliseconds from 0; anything else leaves the default. */
+export const restartStaggerMs = (env: NodeJS.ProcessEnv = process.env): number => envWhole(env.SANREMES_ROUTINE_RESTART_STAGGER_MS, ROUTINE_RESTART_STAGGER_MS, 0);
 
 const HEADLESS_START = /^at:(\d{1,16})$/;
 

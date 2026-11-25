@@ -1,7 +1,7 @@
 # Published apps
 
 The Published apps page (Tools → Published apps) lists what bots put online: the pages this server published to a
-MausBot link, and the sites bots published to the person's own Netlify account, found from the `.netlify-site.json`
+SanRemes link, and the sites bots published to the person's own Netlify account, found from the `.netlify-site.json`
 records in the bots' own folders (`skills/publish-to-netlify/site-record.md`). A card's Preview, and a published link
 in a bot's message, open the app in a sandboxed frame beside the conversation. Delete takes an app down for good.
 
@@ -49,11 +49,11 @@ its preload out of frames.
 ## Renderer and server, end to end
 
 ```sh
-OMB_UI_EVIDENCE_DIR=evidence/published-apps pnpm exec vitest run scripts/testing/published-apps-ui.e2e.test.ts
+SANREMES_UI_EVIDENCE_DIR=evidence/published-apps pnpm exec vitest run scripts/testing/published-apps-ui.e2e.test.ts
 ```
 
 It runs when an agent-browser binary resolves, as in [Chat UI, driven headlessly](chat-ui.md), and is skipped
-otherwise; `OMB_UI_E2E=1` forces the verified download. The fixture's server gets `OMB_NETLIFY_API_URL`, the loopback
+otherwise; `SANREMES_UI_E2E=1` forces the verified download. The fixture's server gets `SANREMES_NETLIFY_API_URL`, the loopback
 stand-in (`server/testing/fake-netlify.ts`), which the launcher lets cross only when it is `http://127.0.0.1:PORT/api/v1`.
 
 - The real publish helper deploys two sites from Pepper's folder to the stand-in; one is then made to ask for a login.
@@ -66,7 +66,7 @@ stand-in (`server/testing/fake-netlify.ts`), which the launcher lets cross only 
   the stand-in and its record. The token appears in no answer, page or server log.
 - At 390 px wide the page is one column and the preview covers the screen.
 
-`OMB_PUBLISHED_APPS_REAL_SITES="https://one.netlify.app https://two.netlify.app"` also frames those public sites from a
+`SANREMES_PUBLISHED_APPS_REAL_SITES="https://one.netlify.app https://two.netlify.app"` also frames those public sites from a
 link in a message, read-only.
 
 Not proven here: a real Netlify account, the desktop app's own window (the Electron rules are asserted from source),

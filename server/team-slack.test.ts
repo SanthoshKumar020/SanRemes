@@ -17,7 +17,7 @@ afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: tru
 
 describe("teamSlackSignature", () => {
   it("signs as the Admin checks: the Slack context, the machine, the time, the nonce and the body's hash", () => {
-    // The value openmaus-cloud's teamSlackSignature gives for the same input.
+    // The value sanremes-cloud's teamSlackSignature gives for the same input.
     expect(teamSlackSignature("s3cret-s3cret", "machine-1", "1731662000", "nonce-nonce-nonce", '{"v":1}')).toBe("Ajtt5Il9oDl9T2EOM8ebLe5iTiDiES4oheQp2ZwcUTk");
   });
 });
@@ -166,10 +166,10 @@ describe("createTeamSlackReporter", () => {
     const { url, init } = seen[0]!, headers = init.headers as Record<string, string>;
     expect(url).toBe(`https://cloud.example.test${TEAM_SLACK_REPORT_PATH}`);
     expect(JSON.parse(String(init.body))).toEqual({ v: 1, ...report });
-    expect(headers["x-omb-cloud-machine"]).toBe("machine-1");
-    expect(headers["x-omb-cloud-timestamp"]).toBe("1731662000");
-    expect(headers["x-omb-cloud-nonce"]).toMatch(/^[A-Za-z0-9_-]{16,128}$/);
-    expect(headers["x-omb-cloud-signature"]).toBe(`v1=${teamSlackSignature("s3cret-s3cret", "machine-1", "1731662000", headers["x-omb-cloud-nonce"]!, String(init.body))}`);
+    expect(headers["x-sanremes-cloud-machine"]).toBe("machine-1");
+    expect(headers["x-sanremes-cloud-timestamp"]).toBe("1731662000");
+    expect(headers["x-sanremes-cloud-nonce"]).toMatch(/^[A-Za-z0-9_-]{16,128}$/);
+    expect(headers["x-sanremes-cloud-signature"]).toBe(`v1=${teamSlackSignature("s3cret-s3cret", "machine-1", "1731662000", headers["x-sanremes-cloud-nonce"]!, String(init.body))}`);
     expect(init.redirect).toBe("error");
   });
   it("reads the Admin's answers: over, later, refused; a Stop it mentions is never acted on", async () => {

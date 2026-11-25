@@ -19,7 +19,7 @@ let root: string, dataDir: string, home: string, claude: string, codex: string;
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), "engine-session-sweep-"));
   home = join(root, "home");
-  dataDir = join(home, ".openmausbot");
+  dataDir = join(home, ".sanremes");
   claude = join(home, ".claude");
   codex = join(dataDir, "providers", "codex-own", "h1", "codex");
   mkdirSync(join(dataDir, "events"), { recursive: true });
@@ -101,9 +101,9 @@ async function deps(mode: "on" | "report", extra: Partial<EngineSessionSweepDeps
 describe("the engine sessions' switch and inputs", () => {
   it("is off unless set", () => {
     expect(engineSessionSweepMode({})).toBe("off");
-    expect(engineSessionSweepMode({ OMB_ENGINE_SESSION_SWEEP: "yes please" })).toBe("off");
-    expect(engineSessionSweepMode({ OMB_ENGINE_SESSION_SWEEP: "report" })).toBe("report");
-    expect(engineSessionSweepMode({ OMB_ENGINE_SESSION_SWEEP: "on" })).toBe("on");
+    expect(engineSessionSweepMode({ SANREMES_ENGINE_SESSION_SWEEP: "yes please" })).toBe("off");
+    expect(engineSessionSweepMode({ SANREMES_ENGINE_SESSION_SWEEP: "report" })).toBe("report");
+    expect(engineSessionSweepMode({ SANREMES_ENGINE_SESSION_SWEEP: "on" })).toBe("on");
   });
 
   it("counts every cursor and handed session as live", () => {
@@ -131,7 +131,7 @@ describe("the engine sessions' switch and inputs", () => {
 });
 
 describe("sweepEngineSessions", () => {
-  it("removes MausBot's ended sessions a week idle and the CLI's old logs, and nothing else", async () => {
+  it("removes SanRemes's ended sessions a week idle and the CLI's old logs, and nothing else", async () => {
     const files = seed();
     const result = await sweepEngineSessions(await deps("on"));
     expect(result.sessions).toBe(1);

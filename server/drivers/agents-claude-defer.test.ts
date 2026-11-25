@@ -9,14 +9,14 @@ import { ALWAYS_LOAD_META, CLAUDE_ALWAYS_LOADED_TOOL_NAMES, CLAUDE_CHIEF_ALWAYS_
 import { agentsToolList } from "./agents-mcp.ts";
 
 const PROXY_SOURCE = join(dirname(fileURLToPath(import.meta.url)), "agents-proxy.ts");
-const BASE = { OMB_BOT_ID: "bot-defer", OMB_CHIEF_OF_STAFF: "1", OMB_COMPUTER_SELECTION: "1", OMB_SKILL_AUTHORING_ENABLED: "0", OMB_SHARED_COMPUTERS_ENABLED: "0", OMB_VOICE_NOTES: "0" };
+const BASE = { SANREMES_BOT_ID: "bot-defer", SANREMES_CHIEF_OF_STAFF: "1", SANREMES_COMPUTER_SELECTION: "1", SANREMES_SKILL_AUTHORING_ENABLED: "0", SANREMES_SHARED_COMPUTERS_ENABLED: "0", SANREMES_VOICE_NOTES: "0" };
 /** The catalog wire test's default and fullest profiles (both a Chief's), and a bot that is not a Chief. */
 const PROFILES: Record<string, Record<string, string>> = {
   default: BASE,
-  specialist: { ...BASE, OMB_CHIEF_OF_STAFF: "0" },
+  specialist: { ...BASE, SANREMES_CHIEF_OF_STAFF: "0" },
   fullest: {
-    ...BASE, OMB_SKILL_AUTHORING_ENABLED: "1", OMB_SHARED_COMPUTERS_ENABLED: "1", OMB_VOICE_NOTES: "1", OMB_X_RESEARCH: "1", OMB_RESEARCH: "1",
-    OMB_TEAM_PEOPLE: "1", OMB_IMAGE_GENERATION: "1", OMB_APP_HOSTING: "1",
+    ...BASE, SANREMES_SKILL_AUTHORING_ENABLED: "1", SANREMES_SHARED_COMPUTERS_ENABLED: "1", SANREMES_VOICE_NOTES: "1", SANREMES_X_RESEARCH: "1", SANREMES_RESEARCH: "1",
+    SANREMES_TEAM_PEOPLE: "1", SANREMES_IMAGE_GENERATION: "1", SANREMES_APP_HOSTING: "1",
   },
 };
 const DEFER = { [DEFER_TOOLS_ENV]: "1" };
@@ -35,11 +35,11 @@ describe("agents tools deferred on a Claude turn", () => {
   it("marks every tool outside the always-loaded set, and nothing without the switch or behind the bridge", () => {
     for (const env of Object.values(PROFILES)) {
       const tools = listed({ ...env, ...DEFER });
-      const loaded = env.OMB_CHIEF_OF_STAFF === "1" ? CLAUDE_CHIEF_ALWAYS_LOADED_TOOL_NAMES : CLAUDE_ALWAYS_LOADED_TOOL_NAMES;
+      const loaded = env.SANREMES_CHIEF_OF_STAFF === "1" ? CLAUDE_CHIEF_ALWAYS_LOADED_TOOL_NAMES : CLAUDE_ALWAYS_LOADED_TOOL_NAMES;
       expect(tools.filter((tool) => !marked(tool)).map((tool) => tool.name).every((name) => loaded.has(name))).toBe(true);
       expect(tools.filter(marked).length).toBeGreaterThan(35);
       expect(tools.find((tool) => tool.name === "list_bots")?._meta, "a deferred list_bots loses to Claude Code's ListAgents").toBeUndefined();
-      expect(marked(tools.find((tool) => tool.name === "coordinate_bots")!), "a Chief's hand-off needs no search first").toBe(env.OMB_CHIEF_OF_STAFF !== "1");
+      expect(marked(tools.find((tool) => tool.name === "coordinate_bots")!), "a Chief's hand-off needs no search first").toBe(env.SANREMES_CHIEF_OF_STAFF !== "1");
       for (const name of ["memory_update", "attach_file"]) expect(marked(tools.find((tool) => tool.name === name)!), name).toBe(true);
       expect(listed(env).some((tool) => tool._meta !== undefined)).toBe(false);
       expect(listed({ ...env, ...DEFER, [TOOL_BRIDGE_ENV]: "1" }).some((tool) => tool._meta !== undefined)).toBe(false);
@@ -49,7 +49,7 @@ describe("agents tools deferred on a Claude turn", () => {
   it("names only real catalog tools as always loaded", () => {
     const names = new Set([
       ...listed(PROFILES.fullest!).map((tool) => tool.name),
-      ...listed({ ...BASE, OMB_BOT_ID: WATCHER_OPTIONS_CARD_BOT_ID }).map((tool) => tool.name),
+      ...listed({ ...BASE, SANREMES_BOT_ID: WATCHER_OPTIONS_CARD_BOT_ID }).map((tool) => tool.name),
     ]);
     expect([...CLAUDE_CHIEF_ALWAYS_LOADED_TOOL_NAMES].filter((name) => !names.has(name))).toEqual([]);
   });
@@ -70,9 +70,9 @@ describe("agents tools deferred on a Claude turn", () => {
   });
 
   it("puts the marks on the proxy's tools/list wire", async () => {
-    const inherited = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("OMB_")));
+    const inherited = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("SANREMES_")));
     const child = spawn(process.execPath, [PROXY_SOURCE], {
-      env: { ...inherited, OMB_HARNESS_URL: "http://127.0.0.1:9", OMB_COMMS_TOKEN: "unused", OMB_TURN_DEPTH: "0", ...BASE, ...DEFER },
+      env: { ...inherited, SANREMES_HARNESS_URL: "http://127.0.0.1:9", SANREMES_COMMS_TOKEN: "unused", SANREMES_TURN_DEPTH: "0", ...BASE, ...DEFER },
       stdio: ["pipe", "pipe", "inherit"],
     });
     try {

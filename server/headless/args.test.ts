@@ -12,7 +12,7 @@ const usage = (fn: () => unknown) => {
 };
 
 describe("parseCommand", () => {
-  it("reads a verb's flags and values, with control-omb's flag forms", () => {
+  it("reads a verb's flags and values, with control-sanremes's flag forms", () => {
     expect(parseCommand(["run", "Room Lead", "Rehearse the launch", "--wait", "job", "--timeout", "30m", "--json"])).toEqual({
       verb: "run", positionals: ["Room Lead", "Rehearse the launch"], flags: { wait: "job", timeout: "30m", json: true },
     });

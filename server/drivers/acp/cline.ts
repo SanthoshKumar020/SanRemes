@@ -15,7 +15,7 @@ const DEFAULT_OPTION = { id: "cline-default", label: "Cline default (configured)
 const MODELS: ModelCatalog = { default: DEFAULT_OPTION.id, options: [DEFAULT_OPTION] };
 
 // Cline 3.0.74 refuses session/set_config_option `provider` while CLINE_PROVIDER is set, so the child gets this instead.
-const PROVIDER_ENV = "OMB_CLINE_PROVIDER";
+const PROVIDER_ENV = "SANREMES_CLINE_PROVIDER";
 
 type ClineSettings ={ provider: string; model?: string; apiKey?: string; auth?: { accessToken?: string; apiKey?: string } };
 
@@ -192,7 +192,7 @@ export const ClineAgentDriver = {
   async create(input: Parameters<ReturnType<typeof createAcpDriver>["create"]>[0]) {
     // Cline 3.0.70 records ACP mcpServers without connecting them; its native settings override connects
     // the scoped stdio servers instead, without rewriting the user's MCP file.
-    const directory = mkdtempSync(join(tmpdir(), "omb-cline-mcp-"));
+    const directory = mkdtempSync(join(tmpdir(), "sanremes-cline-mcp-"));
     const cleanup = () => {
       try { rmSync(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch {}
     };

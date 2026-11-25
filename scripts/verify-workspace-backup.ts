@@ -5,7 +5,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { closeSync, existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { launchVerificationServer, runControlOmb, type VerificationServer } from "./control-omb.ts";
+import { launchVerificationServer, runControlOmb, type VerificationServer } from "./control-sanremes.ts";
 import { waitForExit } from "../server/testing/cleanup.ts";
 import { escapeAttribute } from "../src/lib/composer-attachments.ts";
 import type { WorkspaceBackupExportStatus } from "../shared/workspace-backup.ts";
@@ -33,8 +33,8 @@ async function restartFixture(fixture: VerificationServer): Promise<ChildProcess
     LOCALAPPDATA: join(home, "AppData", "Local"), XDG_CONFIG_HOME: join(home, ".config"),
     XDG_CACHE_HOME: join(home, ".cache"), XDG_DATA_HOME: join(home, ".local", "share"),
     TEMP: temp, TMP: temp, TMPDIR: temp, HERMES_HOME: join(home, ".hermes"),
-    OMB_DATA_DIR: dataDir, OMB_PORT: new URL(fixture.info.url).port,
-    OMB_WEBHOOK_PORT: String(Number(new URL(fixture.info.url).port) + 1),
+    SANREMES_DATA_DIR: dataDir, SANREMES_PORT: new URL(fixture.info.url).port,
+    SANREMES_WEBHOOK_PORT: String(Number(new URL(fixture.info.url).port) + 1),
     FAKE_CLAUDE_MODE: "happy", FAKE_CLAUDE_DUMP: fixture.fixtureDumpPath,
     PATH: dirname(process.execPath),
   });
@@ -50,7 +50,7 @@ async function restartFixture(fixture: VerificationServer): Promise<ChildProcess
       try {
         const response = await fetch(`${fixture.info.url}/api/health`, { signal: AbortSignal.timeout(1_000) });
         const health = await response.json() as { app?: string; pid?: number };
-        if (response.ok && health.app === "openmausbot" && health.pid === child.pid) return child;
+        if (response.ok && health.app === "sanremes" && health.pid === child.pid) return child;
       } catch { /* Only this owned child can satisfy the PID handshake. */ }
       if (Date.now() >= deadline) throw new Error(`Restored fixture did not start; see ${fixture.info.logPath}`);
       await new Promise((done) => setTimeout(done, 100));
@@ -150,7 +150,7 @@ export async function verifyWorkspaceBackup(report: (event: unknown) => void = (
     const original = before.bots.find((candidate: { id: string }) => candidate.id === bot.id);
     assert.ok(original.messages.some((message: { text?: string }) => message.text?.includes("hello from fake claude")));
     const oldBytes = readFileSync(join(destination.info.dataDir, "bots.json"));
-    const clientState = { "omb-skin": "default", "omb-drafts": JSON.stringify({ [bot.threadId]: "Keep draft" }), "omb-webhook-credentials": "private-source-webhook-url", "unrelated-auth-token": "must-not-transfer" };
+    const clientState = { "sanremes-skin": "default", "sanremes-drafts": JSON.stringify({ [bot.threadId]: "Keep draft" }), "sanremes-webhook-credentials": "private-source-webhook-url", "unrelated-auth-token": "must-not-transfer" };
     const legacy = await api(source, "POST", "/api/workspace-backup/export", { password: PASSWORD, clientState });
     assert.equal(legacy.status, 200, JSON.stringify(legacy.body));
     assert.equal(legacy.body.summary.bots, before.bots.length);
@@ -237,7 +237,7 @@ export async function verifyWorkspaceBackup(report: (event: unknown) => void = (
     assert.ok(status.safetyCopyPath.startsWith(join(destination.info.dataDir, ".backups")));
     assert.deepEqual(readFileSync(join(status.safetyCopyPath, "data", "bots.json")), oldBytes);
     const preferences = await api(destination, "POST", "/api/workspace-backup/client-state", { restoreId: preview.body.id });
-    assert.deepEqual(preferences.body.clientState, { "omb-skin": "default", "omb-drafts": clientState["omb-drafts"] });
+    assert.deepEqual(preferences.body.clientState, { "sanremes-skin": "default", "sanremes-drafts": clientState["sanremes-drafts"] });
     await control(destination, "send", "--bot", bot.id, "--text", "Continue this restored conversation. Reply once.");
     assert.equal((await control(destination, "wait", "--bot", bot.id, "--timeout", "30") as { status: string }).status, "settled");
     await control(destination, "messages", "--bot", bot.id, "--limit", "20");

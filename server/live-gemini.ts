@@ -18,13 +18,13 @@ const TOKEN = /^auth_tokens\/[\w.-]{1,512}$/;
 
 /** Only a loopback http URL is accepted, read at call time. */
 export function geminiLiveBaseUrl(env: NodeJS.ProcessEnv = process.env): string {
-  const override = env.OMB_GEMINI_LIVE_URL?.trim() ?? "";
+  const override = env.SANREMES_GEMINI_LIVE_URL?.trim() ?? "";
   return /^http:\/\/127\.0\.0\.1:\d{1,5}$/.test(override) ? override : GEMINI_BASE;
 }
 
-/** `model` is OMB_GEMINI_LIVE_MODEL when that is a model id, else the default Live model. */
+/** `model` is SANREMES_GEMINI_LIVE_MODEL when that is a model id, else the default Live model. */
 export function geminiLiveEndpoint(env: NodeJS.ProcessEnv = process.env): LiveEndpoint {
-  const model = env.OMB_GEMINI_LIVE_MODEL?.trim().replace(/^models\//, "") ?? "";
+  const model = env.SANREMES_GEMINI_LIVE_MODEL?.trim().replace(/^models\//, "") ?? "";
   return { provider: "gemini", apiBase: `${geminiLiveBaseUrl(env)}/${API_VERSION}`, model: MODEL.test(model) ? model : GEMINI_LIVE_MODEL };
 }
 

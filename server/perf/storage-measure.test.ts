@@ -108,7 +108,7 @@ describe("on a Cloud home's perf host", () => {
   it("Measure again runs a pass now, and the report keeps a deleted bot's leftovers apart from the bots it lists", async () => {
     const home = mkdtempSync(join(tmpdir(), "storage-measure-"));
     dirs.push(home);
-    const data = join(home, ".openmausbot");
+    const data = join(home, ".sanremes");
     const write = (path: string, bytes: number) => { mkdirSync(join(path, ".."), { recursive: true }); writeFileSync(path, Buffer.alloc(bytes, 7)); };
     write(join(data, "workspaces", "bot-known", "notes.md"), 8_000);
     write(join(data, "workspaces", "bot-gone", "old.txt"), 3_000);

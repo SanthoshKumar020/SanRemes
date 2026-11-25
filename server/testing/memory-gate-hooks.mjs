@@ -1,11 +1,11 @@
-// Loaded with --import in isolated fixtures when OMB_TEST_MEMORY_GATE=1: the memory gate runs on any OS, and this machine's
+// Loaded with --import in isolated fixtures when SANREMES_TEST_MEMORY_GATE=1: the memory gate runs on any OS, and this machine's
 // memory is what <data dir>/host-memory.json says. Nothing else about the gate changes. While <data dir>/test-starter exists
 // this server is on the Starter plan.
 import { existsSync, readFileSync } from 'node:fs';
 import { registerHooks } from 'node:module';
 import { join } from 'node:path';
-const dataDir = process.env.OMB_DATA_DIR;
-if (!dataDir || dataDir !== process.env.HOME || process.env.OMB_TEST_MEMORY_GATE !== '1') {
+const dataDir = process.env.SANREMES_DATA_DIR;
+if (!dataDir || dataDir !== process.env.HOME || process.env.SANREMES_TEST_MEMORY_GATE !== '1') {
   throw new Error('The memory gate seam requires an explicitly isolated fixture');
 }
 const file = join(dataDir, 'host-memory.json');

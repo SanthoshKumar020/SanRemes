@@ -44,7 +44,7 @@ const recordSchema = z.object({
 /** Must match skills/publish-to-netlify/deploy.mjs `apiBase`: only a loopback stand-in may replace Netlify's address,
  * so a token can never be pointed at another host. */
 export function netlifyApiBase(env: NodeJS.ProcessEnv): string {
-  const override = env.OMB_NETLIFY_API_URL;
+  const override = env.SANREMES_NETLIFY_API_URL;
   return override && /^http:\/\/127\.0\.0\.1:\d{1,5}(\/[\w/.-]*)?$/.test(override) ? override.replace(/\/$/, "") : NETLIFY_API;
 }
 

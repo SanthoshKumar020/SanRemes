@@ -16,8 +16,8 @@ import { PhoneCodeCard, TypedCode, Waiting } from "./CodeCard";
 
 /** One copyable line to run on a new server: the sign-in a tunnel needs, then the server, in one go. */
 export const SERVER_COMMANDS = {
-  anywhere: "npx openmausbot account login && npx openmausbot serve --tunnel",
-  tailscale: "npx openmausbot serve --tailscale",
+  anywhere: "npx sanremes account login && npx sanremes serve --tunnel",
+  tailscale: "npx sanremes serve --tailscale",
 } as const;
 
 /** How often an open code checks whether a device has used it. */

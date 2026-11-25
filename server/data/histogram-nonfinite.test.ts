@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { createDataEngine } from "./engine.ts";
 
-const root = mkdtempSync(join(tmpdir(), "omb-histogram-finite-"));
+const root = mkdtempSync(join(tmpdir(), "sanremes-histogram-finite-"));
 const engine = createDataEngine({ botFolder: (id) => join(root, id), dataDir: join(root, "data") });
 const connection = "bot" as const;
 afterAll(async () => {

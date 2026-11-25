@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb, verificationServerEnvironment } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb, verificationServerEnvironment } from "../scripts/control-sanremes.ts";
 import { request } from "../scripts/mcp-server.ts";
 import { waitForExit } from "./testing/cleanup.ts";
 import { readRegistry } from "./testing/registry.ts";
@@ -29,7 +29,7 @@ async function setup(hang: boolean, fakeEnv: NodeJS.ProcessEnv) {
       return result;
     };
     const cli = async (...args: string[]) => {
-      const result = await runControlOmb(args, { env: { OPENMAUSBOT_URL: session.info.url } }) as any;
+      const result = await runControlOmb(args, { env: { OPENSANREMES_URL: session.info.url } }) as any;
       evidence.push({ command: args, result });
       return result;
     };
@@ -80,7 +80,7 @@ async function setup(hang: boolean, fakeEnv: NodeJS.ProcessEnv) {
 }
 
 /** Account environment is a persisted config setting, not writable through the public config patch: this changes only
- * the stopped fixture's own config. With DISABLE_COMPACT, Claude Code has no compaction and a summary is OpenMausBot's fold. */
+ * the stopped fixture's own config. With DISABLE_COMPACT, Claude Code has no compaction and a summary is SanRemes's fold. */
 const claudeEnvironment = (f: Awaited<ReturnType<typeof setup>>, values: Record<string, string>) => f.restart(() => {
   const path = join(f.session.info.dataDir, "config.json");
   const config = JSON.parse(readFileSync(path, "utf8"));
@@ -214,7 +214,7 @@ it.each([
   { native: "off", tokens: 190_000, compactions: 0 },
   { native: "auto", tokens: 190_000, compactions: 0 },
 ])("respects the selected account's native compaction setting ($native)", ({ native, tokens, compactions }) => fixture(async f => {
-  if (native !== undefined) await claudeEnvironment(f, { OMB_CLAUDE_AUTOCOMPACT: native });
+  if (native !== undefined) await claudeEnvironment(f, { SANREMES_CLAUDE_AUTOCOMPACT: native });
   await f.api(`/api/bots/${f.bot.id}/tasks/${f.thread}`, {
     modelSelection: { instanceId: "claude", model: "claude-sonnet-4-6[1m]" },
   }, "PATCH");
@@ -256,7 +256,7 @@ async function codexFixture(test: (f: Awaited<ReturnType<typeof codexSetup>>) =>
 }
 
 async function codexSetup(fakeEnv: NodeJS.ProcessEnv) {
-  const scratch = mkdtempSync(join(tmpdir(), "omb-codex-compact-e2e-"));
+  const scratch = mkdtempSync(join(tmpdir(), "sanremes-codex-compact-e2e-"));
   const callLog = join(scratch, "codex-calls.ndjson");
   const env = { ...process.env, FAKE_CODEX_MODE: "happy", FAKE_CODEX_CALL_LOG: callLog, FAKE_CODEX_THREAD_IDS: "distinct", FAKE_CODEX_CONTEXT_TOKENS: "1000,1000,270000",
     FAKE_CODEX_CONTEXT_TOKENS_AFTER_COMPACT: "40000", FAKE_CLAUDE_VERSION: "2.1.270", FAKE_CODEX_COMPACT_HOLD_FILE: join(scratch, "compact-hold"), ...fakeEnv };
@@ -281,7 +281,7 @@ async function codexSetup(fakeEnv: NodeJS.ProcessEnv) {
     };
     const cli = async (...args: string[]) => {
       try {
-        const result = await runControlOmb(args, { env: { OPENMAUSBOT_URL: session.info.url } }) as any;
+        const result = await runControlOmb(args, { env: { OPENSANREMES_URL: session.info.url } }) as any;
         evidence.push({ command: args, result });
         return result;
       } catch (error) {

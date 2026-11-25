@@ -1,7 +1,7 @@
 // A Cloud home's image carries engine CLIs in Node's own global npm prefix (/usr/local: the Dockerfile's
 // CLOUD_HOME_ENGINES), and the app installs and updates engines into the data folder's npm prefix (tools/npm), whose bin/
 // goes first on PATH. So a copy there shadows the image's even when the image's is newer, and the updater keeps
-// downloading it. With OMB_IMAGE_ENGINES=1 the image's copy is used unless the data folder holds a newer copy of the same
+// downloading it. With SANREMES_IMAGE_ENGINES=1 the image's copy is used unless the data folder holds a newer copy of the same
 // package (installed from Settings, or by an update a driver needs), and the updater leaves a copy that is not used alone.
 // Off by default, and never on Windows: desktop installs and every other server keep today's order. Nothing is removed.
 // The switch's value is `1` (the image's prefix is Node's own) or an absolute prefix.
@@ -13,7 +13,7 @@ import { registerPathDir, unregisterPathDir } from "./env-path.ts";
 import { LATEST, type EngineVersionPin } from "./engine-versions.ts";
 import { isNewerVersion } from "./update-check.ts";
 
-export const IMAGE_ENGINES_ENV = "OMB_IMAGE_ENGINES";
+export const IMAGE_ENGINES_ENV = "SANREMES_IMAGE_ENGINES";
 
 const VERSION = /^v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 

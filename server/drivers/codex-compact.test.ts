@@ -42,7 +42,7 @@ describe("Codex's own compaction of a kept app-server's thread (fake app-server)
     instance = await CodexDriver.create({
       instanceId: "codex-compact-test", displayName: "Codex Test", enabled: true,
       environment: { HOME: scratch, USERPROFILE: scratch, CODEX_HOME: home, FAKE_CODEX_MODE: "resume", FAKE_CODEX_CALL_LOG: log, FAKE_CODEX_THREAD_IDS: "distinct",
-        FAKE_CODEX_INTERRUPT_GRACE_MS: "300", ...(options.endpoint ? { OPENMAUSBOT_CODEX_API_KEY: "synthetic-endpoint-key" } : {}), ...environment },
+        FAKE_CODEX_INTERRUPT_GRACE_MS: "300", ...(options.endpoint ? { OPENSANREMES_CODEX_API_KEY: "synthetic-endpoint-key" } : {}), ...environment },
       config: { cli: options.cli ?? cli, fullAuto: false, ...(options.endpoint ? { endpoint: options.endpoint } : {}) },
     });
     recorder = recordEvents(instance.adapter);
@@ -75,7 +75,7 @@ describe("Codex's own compaction of a kept app-server's thread (fake app-server)
 
   beforeEach(() => {
     chmodSync(FAKE_CLI, 0o755);
-    scratch = mkdtempSync(join(tmpdir(), "omb-codex-compact-"));
+    scratch = mkdtempSync(join(tmpdir(), "sanremes-codex-compact-"));
     home = join(scratch, ".codex");
     mkdirSync(home);
     mkdirSync(NATIVE_DIR, { recursive: true });

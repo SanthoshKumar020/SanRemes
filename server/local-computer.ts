@@ -39,20 +39,20 @@ export function gatedLocalComputer(
       ...connection.env,
       // Packaged, execPath is Electron: without this the MCP client relaunches OMB instead of the headless gate.
       ELECTRON_RUN_AS_NODE: "1",
-      OMB_CUA_COMMAND: connection.command,
-      OMB_CUA_ARGS: JSON.stringify(connection.args),
-      OMB_CUA_PLATFORM: connection.platform,
-      OMB_CONTROL_URL: control.url,
-      OMB_CONTROL_TOKEN: control.token,
-      OMB_COMPUTER_JOURNAL: journal ? "1" : "0",
+      SANREMES_CUA_COMMAND: connection.command,
+      SANREMES_CUA_ARGS: JSON.stringify(connection.args),
+      SANREMES_CUA_PLATFORM: connection.platform,
+      SANREMES_CONTROL_URL: control.url,
+      SANREMES_CONTROL_TOKEN: control.token,
+      SANREMES_COMPUTER_JOURNAL: journal ? "1" : "0",
     },
   };
 }
 
 /** This computer's bridge also answers file tools (host-file-tools.ts); the person's approval level gates each call. */
 export function withHostFiles<T extends { env: Record<string, string>; scope?: "local-computer"; platform?: LocalComputerConnection["platform"] }>(connection: T): T {
-  if (connection.scope !== "local-computer" || !connection.env.OMB_CUA_COMMAND || !connection.platform) return connection;
-  return { ...connection, env: { ...connection.env, OMB_HOST_FILES: "1" } };
+  if (connection.scope !== "local-computer" || !connection.env.SANREMES_CUA_COMMAND || !connection.platform) return connection;
+  return { ...connection, env: { ...connection.env, SANREMES_HOST_FILES: "1" } };
 }
 
 type LegacyConnectionDescriptor = {
@@ -246,7 +246,7 @@ export function decodeLinuxDescriptor(value: LinuxConnectionDescriptor): LocalCo
       ...(wayland ? ["CUA_DRIVER_RS_ENABLE_WAYLAND"] : []),
     ]) ||
     (mcp.env as Record<string, unknown>).CUA_DRIVER_EMBEDDED !== "1" ||
-    (mcp.env as Record<string, unknown>).CUA_DRIVER_HOST_BUNDLE_ID !== "com.openmausbot.app" ||
+    (mcp.env as Record<string, unknown>).CUA_DRIVER_HOST_BUNDLE_ID !== "com.sanremes.app" ||
     (mcp.env as Record<string, unknown>).CUA_DRIVER_RS_UPDATE_CHECK !== "false" ||
     (mcp.env as Record<string, unknown>).CUA_DRIVER_RS_TELEMETRY_ENABLED !== "false" ||
     (wayland && (mcp.env as Record<string, unknown>).CUA_DRIVER_RS_ENABLE_WAYLAND !== "1")

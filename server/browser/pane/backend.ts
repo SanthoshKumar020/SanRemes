@@ -21,7 +21,7 @@ function marksDir(dataDir: string): string {
 /** Sign-ins are the profile's own and never shared between data folders; a temporary profile's die with the app. */
 export function panePartition(dataDir: string, key: string, nonce = () => randomBytes(4).toString("hex")): string {
   const hash = profileHash(workspaceId(dataDir), key);
-  return profileKind(key) === "temp" ? `omb-pane-${hash}-${nonce()}` : `persist:omb-pane-${hash}`;
+  return profileKind(key) === "temp" ? `sanremes-pane-${hash}-${nonce()}` : `persist:sanremes-pane-${hash}`;
 }
 
 export class PaneBackend implements Backend {

@@ -96,7 +96,7 @@ it("checks a server an engine reports failed at most once per address in ten min
 });
 
 it("tells the person once, across restarts, and again for a server whose address changed", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "omb-url-checks-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-url-checks-"));
   dirs.push(dir);
   const file = join(dir, "mcp-url-checks.json");
   let current: Record<string, { url: string }> = WIKI;

@@ -4,8 +4,8 @@ import { b64u } from "./credentials.ts";
 import { E2ESession, SEND_BUFFER_HIGH, SessionClosed, type RecordTransport } from "./session.ts";
 import { HANDSHAKE_DEADLINE_MS, TRANSPORT_RELAY, type KeyPair, type TransportByte } from "./noise.ts";
 
-export const DIRECT_PROTOCOL = "omb-e2e.v1";
-export const RELAY_PROTOCOL = "omb-relay.v1";
+export const DIRECT_PROTOCOL = "sanremes-e2e.v1";
+export const RELAY_PROTOCOL = "sanremes-relay.v1";
 const DRAIN_POLL_MS = 5;
 
 export interface DialOptions {

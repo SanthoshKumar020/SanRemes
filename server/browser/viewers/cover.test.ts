@@ -16,7 +16,7 @@ afterAll(async () => { for (const folder of folders) await removeTempDir(folder)
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function setup() {
-  const dataDir = mkdtempSync(join(tmpdir(), "omb-cover-"));
+  const dataDir = mkdtempSync(join(tmpdir(), "sanremes-cover-"));
   folders.push(dataDir);
   const backend = new FakeBackend(() => new FakeChrome({ documents: () => ({ title: "Page", text: "hello", elements: [] }) }));
   const service = new BrowserService({ dataDir, backend: () => backend, maxRunning: 4, idleMs: () => 600_000, takeoverMs: 200 });

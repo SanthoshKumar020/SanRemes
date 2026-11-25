@@ -61,11 +61,11 @@ async function read(response: { headers: { get(name: string): string | null }; t
 const agentsHeaders = (settings: Record<string, string>) => ({ authorization: "Bearer turn-capability",
   [AGENTS_ENV_HEADER]: Buffer.from(JSON.stringify(settings)).toString("base64url") });
 
-describe("OpenMausBot's own MCP servers over HTTP", () => {
+describe("SanRemes's own MCP servers over HTTP", () => {
   it("answers a browser session the way its stdio proxy does, with the turn's capability on every call", async () => {
     const init = await post("browser", { jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {} } });
     expect(init.status).toBe(200);
-    expect(await init.json()).toMatchObject({ id: 1, result: { protocolVersion: "2025-06-18", serverInfo: { name: "openmausbot-browser" } } });
+    expect(await init.json()).toMatchObject({ id: 1, result: { protocolVersion: "2025-06-18", serverInfo: { name: "sanremes-browser" } } });
     const notice = await post("browser", { jsonrpc: "2.0", method: "notifications/initialized" });
     expect([notice.status, await notice.text()]).toEqual([202, ""]);
     expect(await (await post("browser", { jsonrpc: "2.0", id: 2, method: "tools/list" })).json())
@@ -89,13 +89,13 @@ describe("OpenMausBot's own MCP servers over HTTP", () => {
     const list = async (settings: Record<string, string>) =>
       ((await (await post("agents", { jsonrpc: "2.0", id: 1, method: "tools/list" }, agentsHeaders(settings))).json()) as { result: { tools: Array<{ name: string }> } })
         .result.tools.map((tool) => tool.name);
-    const worker = await list({ OMB_BOT_ID: "w2", OMB_THREAD_ID: "t2" });
-    const chief = await list({ OMB_BOT_ID: "chief", OMB_THREAD_ID: "t1", OMB_CHIEF_OF_STAFF: "1" });
+    const worker = await list({ SANREMES_BOT_ID: "w2", SANREMES_THREAD_ID: "t2" });
+    const chief = await list({ SANREMES_BOT_ID: "chief", SANREMES_THREAD_ID: "t1", SANREMES_CHIEF_OF_STAFF: "1" });
     expect(worker).toContain("coordinate_bots");
     expect(chief.length).toBeGreaterThan(worker.length);
     internalCalls.length = 0;
     const call = await read(await post("agents", { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "list_bots", arguments: {} } },
-      agentsHeaders({ OMB_BOT_ID: "chief", OMB_THREAD_ID: "t1", OMB_HARNESS_URL: "http://203.0.113.9:1" })));
+      agentsHeaders({ SANREMES_BOT_ID: "chief", SANREMES_THREAD_ID: "t1", SANREMES_HARNESS_URL: "http://203.0.113.9:1" })));
     expect(call).toMatchObject({ id: 2, result: { content: [{ type: "text", text: expect.stringContaining("W1") }] } });
     expect(internalCalls).toEqual([
       expect.objectContaining({ path: "/api/internal/agents?self=chief", authorization: "Bearer turn-capability" }),
@@ -107,8 +107,8 @@ describe("OpenMausBot's own MCP servers over HTTP", () => {
     const tools = async (settings: Record<string, string>) =>
       ((await (await post("agents", { jsonrpc: "2.0", id: 1, method: "tools/list" }, agentsHeaders(settings))).json()) as { result: { tools: Array<{ name: string; _meta?: Record<string, unknown> }> } }).result.tools;
     const deferred = (list: Array<{ _meta?: Record<string, unknown> }>) => list.filter((tool) => tool._meta?.["anthropic/alwaysLoad"] === false).length;
-    expect(deferred(await tools({ OMB_BOT_ID: "w2", OMB_THREAD_ID: "t2" }))).toBe(0);
-    expect(deferred(await tools({ OMB_BOT_ID: "w2", OMB_THREAD_ID: "t2", OMB_AGENTS_DEFER_TOOLS: "1" }))).toBeGreaterThan(0);
+    expect(deferred(await tools({ SANREMES_BOT_ID: "w2", SANREMES_THREAD_ID: "t2" }))).toBe(0);
+    expect(deferred(await tools({ SANREMES_BOT_ID: "w2", SANREMES_THREAD_ID: "t2", SANREMES_AGENTS_DEFER_TOOLS: "1" }))).toBeGreaterThan(0);
   });
 
   it("lists no more of a server's tools than the turn's tool limit allows", async () => {
@@ -118,8 +118,8 @@ describe("OpenMausBot's own MCP servers over HTTP", () => {
     const agents = async (settings: Record<string, string>) =>
       ((await (await post("agents", { jsonrpc: "2.0", id: 6, method: "tools/list" }, agentsHeaders(settings))).json()) as { result: { tools: Array<{ name: string }> } })
         .result.tools.map((tool) => tool.name);
-    const whole = await agents({ OMB_BOT_ID: "w2", OMB_THREAD_ID: "t2" });
-    expect(await agents({ OMB_BOT_ID: "w2", OMB_THREAD_ID: "t2", [TOOL_LIMIT_ENV]: "3" })).toEqual(whole.slice(0, 3));
+    const whole = await agents({ SANREMES_BOT_ID: "w2", SANREMES_THREAD_ID: "t2" });
+    expect(await agents({ SANREMES_BOT_ID: "w2", SANREMES_THREAD_ID: "t2", [TOOL_LIMIT_ENV]: "3" })).toEqual(whole.slice(0, 3));
   });
 });
 
@@ -190,7 +190,7 @@ describe("a long tool call, and the stdio proxy's limits", () => {
 // The box's harness gate listens on a unix socket, which Windows refuses at a file path; the box runs only on Linux.
 describe.skipIf(process.platform === "win32")("an engine in the bot box", () => {
   it("reaches these servers through the box's harness gate, as its stdio proxies reach the routes behind them", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "omb-own-mcp-gate-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-own-mcp-gate-"));
     const gate = await openHarnessGate({ socketPath: join(dir, "harness.sock"), port: Number(new URL(base).port) });
     const call = (path: string, body: unknown) => new Promise<{ status: number; text: string }>((resolve, reject) => {
       const req = request({ socketPath: gate.socketPath, path, method: "POST", headers: { "content-type": "application/json",

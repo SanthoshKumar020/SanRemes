@@ -9,7 +9,7 @@ import { openSyncState } from "./cloud-sync-state.mjs";
 import { fakeCloud } from "./fixtures/cloud-sync-fake-cloud.mjs";
 
 function setup(t) {
-  const home = mkdtempSync(join(tmpdir(), "omb-sync-names-"));
+  const home = mkdtempSync(join(tmpdir(), "sanremes-sync-names-"));
   const local = join(home, "Local");
   mkdirSync(local);
   const state = openSyncState(join(home, "state.db"));

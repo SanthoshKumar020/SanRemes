@@ -25,9 +25,9 @@ afterEach(() => {
 });
 
 function fixture() {
-  const root = realpathSync(mkdtempSync(join(tmpdir(), "omb-cache-sweep-")));
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "sanremes-cache-sweep-")));
   dirs.push(root);
-  const home = join(root, "home"), dataDir = join(home, ".openmausbot");
+  const home = join(root, "home"), dataDir = join(home, ".sanremes");
   mkdirSync(dataDir, { recursive: true });
   const tools = tagged(home);
   return { root, home, dataDir, tools, app: join(dataDir, "cache") };
@@ -49,7 +49,7 @@ function put(path: string, kb: number, daysOld: number, stop: string): void {
   for (let p = path; p.startsWith(stop) && p !== stop; p = dirname(p)) utimesSync(p, at, at);
 }
 
-const ON = { OMB_CLOUD_ROLE: "home", OMB_CACHE_SWEEP: "on" };
+const ON = { SANREMES_CLOUD_ROLE: "home", SANREMES_CACHE_SWEEP: "on" };
 const cmdline = (pid: number) => { try { return readFileSync(`/proc/${pid}/cmdline`, "utf8").replaceAll("\0", " ").slice(0, 200); } catch { return "?"; } };
 const ROOMY = async () => ({ total: 100 * GIB, free: 50 * GIB });
 
@@ -65,7 +65,7 @@ function sweeper(f: ReturnType<typeof fixture>, overrides: Partial<CacheSweeperD
   made.stop();
   return { made, lines };
 }
-const withCap = (cap: string) => ({ env: { ...ON, OMB_CACHE_CAP_TOOLS: cap } });
+const withCap = (cap: string) => ({ env: { ...ON, SANREMES_CACHE_CAP_TOOLS: cap } });
 
 describe.skipIf(process.platform !== "linux")("the cache cap on real folders", () => {
   it("keeps a root under its cap, removing whole folders, least recently written first", async () => {
@@ -266,11 +266,11 @@ describe.skipIf(process.platform !== "linux")("the cache cap on real folders", (
 
   it("a folder goes out of sight first: renamed in its own root, never put back; what a stopped removal left is finished next time", async () => {
     const f = fixture();
-    put(join(f.tools, ".omb-trash-0a0b0c", "uv", "x"), 10, 9, f.tools);
-    put(join(f.tools, "huggingface", ".omb-trash-0d0e0f", "models--o--m", "x"), 10, 9, f.tools);
+    put(join(f.tools, ".sanremes-trash-0a0b0c", "uv", "x"), 10, 9, f.tools);
+    put(join(f.tools, "huggingface", ".sanremes-trash-0d0e0f", "models--o--m", "x"), 10, 9, f.tools);
     const outside = join(f.root, "outside");
     put(join(outside, "keep"), 1, 9, f.root);
-    symlinkSync(outside, join(f.tools, ".omb-trash-1a1b1c"));
+    symlinkSync(outside, join(f.tools, ".sanremes-trash-1a1b1c"));
     put(join(f.tools, "pip", "a"), 10, 9, f.tools);
     expect(await sweeper(f).made.clearCaches({ dryRun: false })).toMatchObject({ entries: 1, partial: 0 });
     expect(readdirSync(f.tools).sort()).toEqual([CACHE_TAG_FILE, "huggingface"]);
@@ -286,7 +286,7 @@ describe.skipIf(process.platform !== "linux")("the cache cap on real folders", (
     const { made } = sweeper(f);
     expect(await made.clearCaches({ dryRun: false })).toMatchObject({ entries: 1, partial: 1 });
     // What lies past the limit stays, under the renamed folder, and only that.
-    const left = readdirSync(f.tools).filter((name) => name.startsWith(".omb-trash-"));
+    const left = readdirSync(f.tools).filter((name) => name.startsWith(".sanremes-trash-"));
     expect(left).toHaveLength(1);
     expect(existsSync(join(f.tools, "uv"))).toBe(false);
     // A shallower tree goes whole.
@@ -384,7 +384,7 @@ describe.skipIf(process.platform !== "linux")("never outside the root", () => {
       const [root, name, precious] = process.argv.slice(2);
       const target = () => {
         if (existsSync(join(root, name))) return join(root, name);
-        const trash = readdirSync(root).find((entry) => entry.startsWith(".omb-trash-"));
+        const trash = readdirSync(root).find((entry) => entry.startsWith(".sanremes-trash-"));
         return trash ? join(root, trash) : null;
       };
       process.send?.("ready");
@@ -411,7 +411,7 @@ describe.skipIf(process.platform !== "linux")("never outside the root", () => {
       child.kill("SIGKILL");
       await exited;
       expect(readdirSync(precious), `run ${run}`).toHaveLength(100);
-      for (const name of readdirSync(f.tools)) if (name === "uv" || name.startsWith(".omb-trash-")) rmSync(join(f.tools, name), { recursive: true, force: true });
+      for (const name of readdirSync(f.tools)) if (name === "uv" || name.startsWith(".sanremes-trash-")) rmSync(join(f.tools, name), { recursive: true, force: true });
     }
   }, 120_000);
 });

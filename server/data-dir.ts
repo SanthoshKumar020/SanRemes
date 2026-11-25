@@ -9,7 +9,7 @@ let home: string | undefined;
 export function dataHome(): string {
   if (home !== undefined) return home;
   const real = homedir();
-  home = process.env.VITEST !== undefined && real === userInfo().homedir ? mkdtempSync(join(tmpdir(), "omb-test-home-")) : real;
+  home = process.env.VITEST !== undefined && real === userInfo().homedir ? mkdtempSync(join(tmpdir(), "sanremes-test-home-")) : real;
   return home;
 }
 
@@ -22,7 +22,7 @@ export interface DataHomes { under?: () => string; realHome?: () => string | nul
 export function testRunSignal(env: Env): string | null {
   if (env.VITEST !== undefined) return "VITEST";
   if (env.NODE_ENV === "test") return "NODE_ENV=test";
-  return env.OMB_BENCH === "1" ? "OMB_BENCH=1" : null;
+  return env.SANREMES_BENCH === "1" ? "SANREMES_BENCH=1" : null;
 }
 
 function canonical(path: string): string {
@@ -38,19 +38,19 @@ function accountHome(): string | null {
 }
 
 /**
- * The data folder: OMB_DATA_DIR, else `.openmausbot` under the home.
- * Security: a test or benchmark run (testRunSignal) with no OMB_DATA_DIR never gets the person's own data folder. It
+ * The data folder: SANREMES_DATA_DIR, else `.sanremes` under the home.
+ * Security: a test or benchmark run (testRunSignal) with no SANREMES_DATA_DIR never gets the person's own data folder. It
  * throws instead, since the folder is fixed when server/config.ts is first imported and a later assignment is ignored.
  */
 export function defaultDataDir(env: Env = process.env, under: () => string = dataHome, realHome: () => string | null = accountHome): string {
-  if (env.OMB_DATA_DIR) return env.OMB_DATA_DIR;
+  if (env.SANREMES_DATA_DIR) return env.SANREMES_DATA_DIR;
   const base = under();
   const signal = testRunSignal(env);
   if (signal) {
     const real = realHome();
     if (real && canonical(base) === canonical(real)) {
-      throw new Error(`${signal} marks this as a test or benchmark run, and OMB_DATA_DIR is not set: refusing to use the real data folder ${join(base, ".openmausbot")}. Set OMB_DATA_DIR to a temp folder in the environment before the process starts; setting it inside the script is too late.`);
+      throw new Error(`${signal} marks this as a test or benchmark run, and SANREMES_DATA_DIR is not set: refusing to use the real data folder ${join(base, ".sanremes")}. Set SANREMES_DATA_DIR to a temp folder in the environment before the process starts; setting it inside the script is too late.`);
     }
   }
-  return join(base, ".openmausbot");
+  return join(base, ".sanremes");
 }

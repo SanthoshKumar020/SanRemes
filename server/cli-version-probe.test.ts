@@ -91,7 +91,7 @@ it("reports an unrecognized failure without claiming the CLI is missing or expos
 });
 
 it("does not report one copy's version for another copy that PATH now finds first", async () => {
-  const root = mkdtempSync(join(tmpdir(), "omb-cli-probe-"));
+  const root = mkdtempSync(join(tmpdir(), "sanremes-cli-probe-"));
   try {
     const [newer, older] = ["newer", "older"].map((name) => {
       const dir = join(root, name);
@@ -121,7 +121,7 @@ it("launches the checked copy by its path on Windows, where spawn resolves the a
 });
 
 it("checks the version of the copy the caller's PATH finds, by its path on Windows, so a PATH change cannot swap the copy mid-check", async () => {
-  const root = mkdtempSync(join(tmpdir(), "omb-cli-probe-win-"));
+  const root = mkdtempSync(join(tmpdir(), "sanremes-cli-probe-win-"));
   try {
     for (const file of ["claude", "claude.cmd"]) writeFileSync(join(root, file), "");
     const checked = findCliCandidates("claude", root)[0];

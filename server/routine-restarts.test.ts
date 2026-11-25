@@ -19,7 +19,7 @@ afterEach(() => {
 });
 
 function server(launchId?: () => string) {
-  const dir = mkdtempSync(join(tmpdir(), "omb-routine-restarts-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-routine-restarts-"));
   dirs.push(dir);
   let now = START, task = 0;
   const started: Array<{ threadId: string; trigger: string }> = [];
@@ -46,10 +46,10 @@ function server(launchId?: () => string) {
   };
 }
 
-const daily = { name: "Morning brief", prompt: "Brief me", botId: "maus-1", runOnStartup: true, schedule: { type: "daily" as const, time: "23:00", weekdays: [0, 1, 2, 3, 4, 5, 6] } };
+const daily = { name: "Morning brief", prompt: "Brief me", botId: "sanremes-1", runOnStartup: true, schedule: { type: "daily" as const, time: "23:00", weekdays: [0, 1, 2, 3, 4, 5, 6] } };
 
 describe("a headless server's startup routines", () => {
-  it("run at most once in OMB_STARTUP_ROUTINE_GAP_MS while the server crashes and starts again every minute", async () => {
+  it("run at most once in SANREMES_STARTUP_ROUTINE_GAP_MS while the server crashes and starts again every minute", async () => {
     const s = server();
     const routine = s.first.create(daily);
     let last: RoutineManager | undefined;
@@ -62,13 +62,13 @@ describe("a headless server's startup routines", () => {
     expect(startups).toHaveLength(2);
     const skipped = last!.listRuns().filter((run) => run.status === "missed");
     expect(skipped.map((run) => [run.routineId, run.triggerSource, run.skipped?.count, run.error])).toEqual([
-      [routine.id, "startup", 29, "Not run at 29 starts because OpenMausBot started again soon after the start that last ran it"],
-      [routine.id, "startup", 29, "Not run at 29 starts because OpenMausBot started again soon after the start that last ran it"],
+      [routine.id, "startup", 29, "Not run at 29 starts because SanRemes started again soon after the start that last ran it"],
+      [routine.id, "startup", 29, "Not run at 29 starts because SanRemes started again soon after the start that last ran it"],
     ]);
   });
 
-  it("run at every start with OMB_STARTUP_ROUTINE_GAP_MS=0", async () => {
-    vi.stubEnv("OMB_STARTUP_ROUTINE_GAP_MS", "0");
+  it("run at every start with SANREMES_STARTUP_ROUTINE_GAP_MS=0", async () => {
+    vi.stubEnv("SANREMES_STARTUP_ROUTINE_GAP_MS", "0");
     const s = server();
     s.first.create(daily);
     for (let minute = 0; minute < 10; minute++) {
@@ -98,13 +98,13 @@ describe("a headless server's startup routines", () => {
     expect(startupDecision(undefined, `at:${START}`, START + STARTUP_ROUTINE_GAP_MS)).toEqual({ run: true, marker: `at:${START + STARTUP_ROUTINE_GAP_MS}` });
     // A clock set back runs them rather than holding them for good.
     expect(startupDecision(undefined, `at:${START}`, START - HOUR)).toMatchObject({ run: true });
-    expect(startupRoutineGapMs({ OMB_STARTUP_ROUTINE_GAP_MS: "60000" })).toBe(MINUTE);
-    expect(startupRoutineGapMs({ OMB_STARTUP_ROUTINE_GAP_MS: "30m" })).toBe(STARTUP_ROUTINE_GAP_MS);
+    expect(startupRoutineGapMs({ SANREMES_STARTUP_ROUTINE_GAP_MS: "60000" })).toBe(MINUTE);
+    expect(startupRoutineGapMs({ SANREMES_STARTUP_ROUTINE_GAP_MS: "30m" })).toBe(STARTUP_ROUTINE_GAP_MS);
   });
 });
 
 describe("runs a restart cut off", () => {
-  it("start again one after another, OMB_ROUTINE_RESTART_STAGGER_MS apart, not all at once", async () => {
+  it("start again one after another, SANREMES_ROUTINE_RESTART_STAGGER_MS apart, not all at once", async () => {
     const s = server();
     for (let i = 0; i < 4; i++) s.first.runNow(s.first.create({ ...daily, name: `Brief ${i}`, runOnStartup: false }).id);
     await s.first.tick();

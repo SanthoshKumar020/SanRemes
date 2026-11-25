@@ -32,7 +32,7 @@ describe("the device list", () => {
         { id: "local", kind: "local", name: "This computer" },
         { id: "home", kind: "remote", name: "My Cloud", origin: "https://ada.mausbot.cloud", home: true },
         { id: "mini", kind: "remote", name: "Studio", origin: "http://studio-mini.tail1234.ts.net:8799" },
-        { id: "vps", kind: "remote", name: "Hetzner box", origin: "https://maus.example.com" },
+        { id: "vps", kind: "remote", name: "Hetzner box", origin: "https://sanremes.example.com" },
         { id: "lan", kind: "remote", name: "Old PC", origin: "http://192.168.1.40:8799" },
       ]),
       statuses: [status("mini", { behind: true, version: "0.1.170", install: "global" }), status("vps", { state: "cantReach" }), status("lan", { state: "signedOut" })],
@@ -175,7 +175,7 @@ describe("the bots on each device", () => {
   it("puts each bot on the device it works on, once, and makes a device of each cloud desktop", () => {
     const out = withBots(devices(), [
       row("b1", "local", "local", "ready"), row("b1", "local", "local", "ready", { threadId: "t1" }), row("b2", "vm", "vm:b2", "asleep"),
-      row("b3", "vps", "vps:gpu/omb-b3", "ready", { vps: { serverId: vpsServerId("gpu"), alias: "gpu", container: "omb-b3" } }),
+      row("b3", "vps", "vps:gpu/sanremes-b3", "ready", { vps: { serverId: vpsServerId("gpu"), alias: "gpu", container: "sanremes-b3" } }),
       row("b2", "cloud", "cloud:b2", "asleep"), row("b3", "browser", null, "unknown"), row("b1", "auto", null, "unknown"),
     ], "computer", named);
     expect(Object.fromEntries(out.map((device) => [device.id, device.bots ?? []]))).toEqual({ here: ["b1", "b2"], "vps:gpu": ["b3"], "cloud:b2": ["b2"] });

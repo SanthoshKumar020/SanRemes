@@ -404,7 +404,7 @@ export const PiDriver: ProviderDriver<PiConfig> = {
       // A cursor that cannot be resumed here starts a new session, which gets the conversation the harness built for it.
       if (!sessionPath && typeof turn.resumeCursor === "string" && !turn.sessionReset && turn.recoveryText?.trim()) turn = { ...turn, text: turn.recoveryText };
       const childArgs = [...piTurnArgs(sessionDir), "-e", SPAWNED_PROXIES.piMcpExtension];
-      const mcpTempDir = mkdtempSync(join(tmpdir(), "omb-pi-mcp-"));
+      const mcpTempDir = mkdtempSync(join(tmpdir(), "sanremes-pi-mcp-"));
       const scopeReadyPath = toolScope !== undefined ? join(mcpTempDir, "scope-ready.json") : undefined;
       try {
         writeFileSync(join(mcpTempDir, "mcp.json"), JSON.stringify({ mcpServers: mcpServers ?? {}, toolScope, scopeReadyPath, approvalMode: turn.approvalMode, askUser }), { mode: 0o600 });
@@ -423,7 +423,7 @@ export const PiDriver: ProviderDriver<PiConfig> = {
             stdio: ["pipe", "pipe", "pipe"],
             cwd: turn.cwd,
             box: { rw: [sessionDir, mcpTempDir] },
-            env: piEnvironment({ ...turnEnv, OMB_MCP_CONFIG: join(mcpTempDir, "mcp.json") }),
+            env: piEnvironment({ ...turnEnv, SANREMES_MCP_CONFIG: join(mcpTempDir, "mcp.json") }),
           }, "bot");
         } catch (err) {
           try {
@@ -831,7 +831,7 @@ export const PiDriver: ProviderDriver<PiConfig> = {
           ready = receipt.ok === true && JSON.stringify(receipt.toolScope) === JSON.stringify(toolScope);
         } catch { /* Missing or malformed readiness is never a grant. */ }
         if (!ready) {
-          const message = "Pi tool selection enforcement is unavailable. Update Pi and check the OpenMausBot extension before retrying.";
+          const message = "Pi tool selection enforcement is unavailable. Update Pi and check the SanRemes extension before retrying.";
           emit({ ...base(threadId, turnId), type: "runtime.error", message });
           settle(false);
           throw new Error(message);

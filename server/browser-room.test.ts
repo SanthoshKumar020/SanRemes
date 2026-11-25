@@ -8,8 +8,8 @@ describe("the task limit a server runs under", () => {
   it("reads a container's cgroup v2 limit, the tightest over the cgroup and its parents", () => {
     expect(pidsLimit(files({ "/proc/self/cgroup": "0::/\n", "/sys/fs/cgroup/pids.max": "2048\n" }))).toBe(2048);
     expect(pidsLimit(files({
-      "/proc/self/cgroup": "0::/system.slice/omb.service\n",
-      "/sys/fs/cgroup/system.slice/omb.service/pids.max": "max\n",
+      "/proc/self/cgroup": "0::/system.slice/sanremes.service\n",
+      "/sys/fs/cgroup/system.slice/sanremes.service/pids.max": "max\n",
       "/sys/fs/cgroup/system.slice/pids.max": "1000\n",
     }))).toBe(1000);
   });
@@ -21,11 +21,11 @@ describe("the task limit a server runs under", () => {
   });
 
   it("on a hybrid host, reads v1's limit when the unified v2 hierarchy has none, and takes the tighter of both", () => {
-    const hybrid = "12:pids:/system.slice/omb.service\n4:memory:/system.slice/omb.service\n0::/system.slice/omb.service\n";
-    expect(pidsLimit(files({ "/proc/self/cgroup": hybrid, "/sys/fs/cgroup/pids/system.slice/omb.service/pids.max": "700\n" }))).toBe(700);
+    const hybrid = "12:pids:/system.slice/sanremes.service\n4:memory:/system.slice/sanremes.service\n0::/system.slice/sanremes.service\n";
+    expect(pidsLimit(files({ "/proc/self/cgroup": hybrid, "/sys/fs/cgroup/pids/system.slice/sanremes.service/pids.max": "700\n" }))).toBe(700);
     expect(pidsLimit(files({
       "/proc/self/cgroup": hybrid,
-      "/sys/fs/cgroup/pids/system.slice/omb.service/pids.max": "700\n",
+      "/sys/fs/cgroup/pids/system.slice/sanremes.service/pids.max": "700\n",
       "/sys/fs/cgroup/unified/system.slice/pids.max": "300\n",
     }))).toBe(300);
   });
@@ -41,15 +41,15 @@ describe("how many browsers run at once", () => {
     expect(browserRoomSize({ pids: 200, memoryBytes: 512 * 1024 ** 2 })).toBe(1);
   });
 
-  it("takes OMB_BROWSER_MAX_RUNNING over all of that", () => {
+  it("takes SANREMES_BROWSER_MAX_RUNNING over all of that", () => {
     expect(browserRoomSize({ override: "9", pids: 1000, memoryBytes: GiB })).toBe(9);
   });
 
-  it("refuses an OMB_BROWSER_MAX_RUNNING that is not 1 or more with a log line, 0 included, and sizes by the limits", () => {
+  it("refuses an SANREMES_BROWSER_MAX_RUNNING that is not 1 or more with a log line, 0 included, and sizes by the limits", () => {
     for (const override of ["0", "zero", "-2", "1.5"]) {
       const warn = vi.fn();
       expect(browserRoomSize({ override, pids: 1000, memoryBytes: 8 * GiB }, warn)).toBe(2);
-      expect(warn).toHaveBeenCalledWith(expect.stringContaining(`OMB_BROWSER_MAX_RUNNING="${override}" is not a whole number of at least 1`));
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining(`SANREMES_BROWSER_MAX_RUNNING="${override}" is not a whole number of at least 1`));
     }
     const quiet = vi.fn();
     expect(browserRoomSize({ override: undefined, pids: 1000, memoryBytes: 8 * GiB }, quiet)).toBe(2);

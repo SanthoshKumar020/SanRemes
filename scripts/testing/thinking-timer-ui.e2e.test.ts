@@ -1,7 +1,7 @@
 // The Thinking readout counts from the server's turn-start stamp (for a group,
 // its speaker's claim), not from when the conversation was last selected.
 // Needs the pinned agent-browser binary: runs when one resolves (tools
-// directory, OMB_AGENT_BROWSER_PATH or PATH) or OMB_UI_E2E=1 asks for the
+// directory, SANREMES_AGENT_BROWSER_PATH or PATH) or SANREMES_UI_E2E=1 asks for the
 // verified download; otherwise skipped.
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
@@ -12,25 +12,25 @@ import { afterAll, afterEach, describe, expect, it } from "vitest";
 
 import { resolveAgentBrowserBinary } from "../../server/browser-engine.ts";
 import { removeTempDir, waitForExit } from "../../server/testing/cleanup.ts";
-import { runControlOmb } from "../control-omb.ts";
-import { UI_TOOLS_DIR } from "./control-omb-ui.ts";
+import { runControlOmb } from "../control-sanremes.ts";
+import { UI_TOOLS_DIR } from "./control-sanremes-ui.ts";
 import { fixtureApi } from "./preview-fixture.ts";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
-const CLI = join(ROOT, "scripts", "control-omb.ts");
-const forced = process.env.OMB_UI_E2E === "1";
+const CLI = join(ROOT, "scripts", "control-sanremes.ts");
+const forced = process.env.SANREMES_UI_E2E === "1";
 const binary = resolveAgentBrowserBinary({ dataDir: UI_TOOLS_DIR, env: process.env });
 const enabled = forced || Boolean(binary);
 if (!enabled) {
-  console.log(`skipping thinking-timer ui e2e: no agent-browser binary resolves (looked in ${UI_TOOLS_DIR}, OMB_AGENT_BROWSER_PATH and PATH); set OMB_UI_E2E=1 to install the pinned release`);
+  console.log(`skipping thinking-timer ui e2e: no agent-browser binary resolves (looked in ${UI_TOOLS_DIR}, SANREMES_AGENT_BROWSER_PATH and PATH); set SANREMES_UI_E2E=1 to install the pinned release`);
 }
 const run = enabled ? it : it.skip;
 // A cold run downloads the binary and Chrome; a warm one launches in seconds.
 const LAUNCH_TIMEOUT_MS = forced ? 600_000 : 180_000;
 
-// OMB_UI_EVIDENCE_DIR keeps the screenshot (CI uploads it); otherwise it is temporary.
-const evidenceDir = process.env.OMB_UI_EVIDENCE_DIR ? resolve(ROOT, process.env.OMB_UI_EVIDENCE_DIR) : mkdtempSync(join(tmpdir(), "omb-ui-evidence-"));
-const ownsEvidenceDir = !process.env.OMB_UI_EVIDENCE_DIR;
+// SANREMES_UI_EVIDENCE_DIR keeps the screenshot (CI uploads it); otherwise it is temporary.
+const evidenceDir = process.env.SANREMES_UI_EVIDENCE_DIR ? resolve(ROOT, process.env.SANREMES_UI_EVIDENCE_DIR) : mkdtempSync(join(tmpdir(), "sanremes-ui-evidence-"));
+const ownsEvidenceDir = !process.env.SANREMES_UI_EVIDENCE_DIR;
 
 interface Launched {
   child: ReturnType<typeof spawn>;

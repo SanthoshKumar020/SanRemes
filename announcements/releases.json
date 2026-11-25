@@ -57,7 +57,7 @@
         {
           "title": "Models and providers",
           "items": [
-            "**Antigravity can now run on Google's own CLI.** New setups use it. If you already use Antigravity, nothing changes until you choose **Switch to Google Antigravity CLI** on its card in Settings → AI; you then sign in with Google once more. Where Antigravity is in use, MausBot now installs Google's CLI by itself.",
+            "**Antigravity can now run on Google's own CLI.** New setups use it. If you already use Antigravity, nothing changes until you choose **Switch to Google Antigravity CLI** on its card in Settings → AI; you then sign in with Google once more. Where Antigravity is in use, SanRemes now installs Google's CLI by itself.",
             "**OpenRouter bots in Advanced mode** can choose the model their memory upkeep uses.",
             "**Codex:** the \"ultra\" reasoning level on models that offer it, and every fast service tier.",
             "**Grok:** memory upkeep runs on the bot's own model (no more payment errors from Grok's default).",
@@ -68,7 +68,7 @@
           ]
         },
         {
-          "title": "MausBot Cloud",
+          "title": "SanRemes Cloud",
           "items": [
             "**Settings → Storage** shows what is filling your Cloud's disk, by kind and by bot, and a quiet line in the sidebar tells you when it passes 80% and 90%. Owners and admins only.",
             "**A browser that uses too much memory no longer freezes the whole Cloud.** When memory is nearly gone, that one browser is closed and its task stops with a clear message; everything else keeps running.",
@@ -107,7 +107,7 @@
             "**Skill Burger.** While a bot works, a small card in the chat's corner stacks one layer for each real step it takes: an app action, a command that changed something, a file it wrote, a page it opened. Save a run as a workflow skill the bot can repeat.",
             "**Memory per conversation.** A bot used for separate matters, such as one conversation per client, now keeps each matter's notes in that conversation. What it learns about you still applies everywhere.",
             "**The Library tab shows everything a bot made**, across all its conversations, newest first. It's also much faster to open for bots with many conversations or big histories.",
-            "**Teammates on other servers.** In Advanced mode, an admin can add a bot that lives on another OpenMausBot server, and your bots can hand it work like any teammate. Settings → You and your bots → Teammates on other servers.",
+            "**Teammates on other servers.** In Advanced mode, an admin can add a bot that lives on another SanRemes server, and your bots can hand it work like any teammate. Settings → You and your bots → Teammates on other servers.",
             "**Bots ask teammates for as many redos as the work needs.** A teammate on another server gets at most 4 redos per request.",
             "**Change a setting for many bots at once.** A bot can apply one change to several bots, or all of them, with a single Undo.",
             "**`/fork`** in the message box opens the fork panel.",
@@ -402,7 +402,7 @@
           ]
         },
         {
-          "title": "MausBot Cloud",
+          "title": "SanRemes Cloud",
           "items": [
             "**Clearer Cloud sign-in:** when a saved sign-in on this computer can't be used, the app says so and offers to clear it and sign in again, instead of showing \"couldn't reach\". A browser sign-in that is still open can be cancelled from the same sheet to use the email code.",
             "**When this computer can't connect to your Cloud's address,** the app names the address and suggests checking a VPN, firewall or DNS filter. It also waits between tries instead of asking again at once."
@@ -465,7 +465,7 @@
         {
           "title": "Getting started",
           "items": [
-            "**Claude, ChatGPT and OpenCode are all first choices** when you set up MausBot, on desktop and in the Cloud welcome. OpenCode installs in one click and has free models that need no account.",
+            "**Claude, ChatGPT and OpenCode are all first choices** when you set up SanRemes, on desktop and in the Cloud welcome. OpenCode installs in one click and has free models that need no account.",
             "**The Teams popup links to Team plans,** and everyone sees it once more."
           ]
         },
@@ -539,7 +539,7 @@
             "**DeepSeek voice:** replies read aloud in Stella or Tide, and dictation, on your existing DeepSeek key.",
             "**GPT-Image-2.6 image models,** with a Detail level and markup edits.",
             "**A Chief can propose a bot's MCP servers** during team setup; you confirm them on a card.",
-            "**A bundled openmausbot-docs skill** answers questions about configuring the app.",
+            "**A bundled sanremes-docs skill** answers questions about configuring the app.",
             "**Rooms:** a steer folds only into the bot it is meant for.",
             "**Faster sends and recent-work lookups** on servers with many threads.",
             "**Sidebar:** the open conversation goes back to a plain grey fill.",
@@ -786,7 +786,7 @@
           "items": [
             "**Pairing no longer gets stuck on \"Secure access needs attention\".** If your computer had saved a secure address that is no longer in use, pairing waited 30 seconds and gave up. It now pairs through the encrypted relay straight away and repairs the address in the background.",
             "**A computer that lost its sign-in details for remote access gets them back automatically.**",
-            "**A step-by-step connection check.** When pairing fails, and in Settings → Phone & devices, you see which step is the problem (this computer, your MausBot account, the relay, your phone's way in) and what to do. **Copy diagnostics** gives you a summary to send us, with nothing private in it.",
+            "**A step-by-step connection check.** When pairing fails, and in Settings → Phone & devices, you see which step is the problem (this computer, your SanRemes account, the relay, your phone's way in) and what to do. **Copy diagnostics** gives you a summary to send us, with nothing private in it.",
             "**Steadier connection to the relay:** it reconnects when your network changes and after sleep, and notices a connection that has gone quiet."
           ]
         },
@@ -866,7 +866,7 @@
           "title": "Bots can change app settings for you",
           "items": [
             "**Ask a bot to change a setting and it does it,** with an **Undo** in the chat.",
-            "**You can make MausBot a regular bot** if you don't want it as your helper."
+            "**You can make SanRemes a regular bot** if you don't want it as your helper."
           ]
         },
         {
@@ -943,7 +943,7 @@
         {
           "title": "Cloud computers",
           "items": [
-            "**A cloud computer that stops answering is no longer shown as ready.** MausBot restarts it once when that is safe, tells you and the bot plainly, and the computer panel has **Restart computer** and **Replace computer**.",
+            "**A cloud computer that stops answering is no longer shown as ready.** SanRemes restarts it once when that is safe, tells you and the bot plainly, and the computer panel has **Restart computer** and **Replace computer**.",
             "**A cloud computer that fails to start can be reset** from the same panel.",
             "**A lent computer's menu names the bot using it.**"
           ]
@@ -1038,8 +1038,8 @@
         {
           "title": "Pairing a phone is clearer",
           "items": [
-            "**Only the pairing code is a QR code now.** The desktop app no longer shows store codes or download links: install MausBot from the App Store or Google Play, then pair.",
-            "**The pairing screen says what to scan with:** open MausBot on your phone and scan the code from inside the app.",
+            "**Only the pairing code is a QR code now.** The desktop app no longer shows store codes or download links: install SanRemes from the App Store or Google Play, then pair.",
+            "**The pairing screen says what to scan with:** open SanRemes on your phone and scan the code from inside the app.",
             "**A paired phone can delete a bot.**"
           ]
         },
@@ -1103,7 +1103,7 @@
         {
           "title": "Models and engines",
           "items": [
-            "**Ollama, found for you.** MausBot finds Ollama running on your computer and adds it in one click, shows the models you've pulled, and lets you turn a model's thinking off or pick its level.",
+            "**Ollama, found for you.** SanRemes finds Ollama running on your computer and adds it in one click, shows the models you've pulled, and lets you turn a model's thinking off or pick its level.",
             "**Reasoning levels for OpenAI and OpenRouter API models.**",
             "**Star a model** to keep it at the top of its provider.",
             "**Amazon Bedrock** as a way to run Claude.",
@@ -1123,7 +1123,7 @@
           "title": "Phones",
           "items": [
             "**A clear notice when an older phone app stops connecting away from Wi-Fi.** Update the app on your phone, then open it once on the same Wi-Fi as your computer. Phone & devices has a **Pair again** button if you need it, and your bots now give the same answer.",
-            "**Self-hosted servers can pair a phone through MausBot's relay,** with no domain or open port. Start the server with `--relay`. It is new: tell us how it goes."
+            "**Self-hosted servers can pair a phone through SanRemes's relay,** with no domain or open port. Start the server with `--relay`. It is new: tell us how it goes."
           ]
         },
         {
@@ -1165,7 +1165,7 @@
           "title": "Other",
           "items": [
             "**The ModelGo card** now shows on your first launch of this version if you haven't seen it.",
-            "**MausBot can tell you about news with a card,** without an app update. Set `OMB_DISABLE_ANNOUNCEMENTS=1` to turn it off.",
+            "**SanRemes can tell you about news with a card,** without an app update. Set `SANREMES_DISABLE_ANNOUNCEMENTS=1` to turn it off.",
             "**Traditional Chinese** is fully translated."
           ]
         },
@@ -1201,7 +1201,7 @@
         {
           "title": "ModelGo",
           "items": [
-            "**ModelGo is a new AI provider.** Add a ModelGo API key in Settings and pick from the models your key offers. ModelGo sponsors MausBot, and you'll see a one-time card about it."
+            "**ModelGo is a new AI provider.** Add a ModelGo API key in Settings and pick from the models your key offers. ModelGo sponsors SanRemes, and you'll see a one-time card about it."
           ]
         },
         {

@@ -12,10 +12,10 @@ import { fileURLToPath } from "node:url";
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const ref = process.argv[2] ?? "main";
 const total = Number(process.argv[3] ?? 200_000);
-const directory = mkdtempSync(join(tmpdir(), "omb-start-scans-bench-"));
+const directory = mkdtempSync(join(tmpdir(), "sanremes-start-scans-bench-"));
 process.env.HOME = directory;
 process.env.USERPROFILE = directory;
-process.env.OMB_DATA_DIR = join(directory, "data");
+process.env.SANREMES_DATA_DIR = join(directory, "data");
 
 const baselineFiles = ["message-db", "procs"].map((name) => ({ name, path: join(ROOT, "server", `${name}.bench-baseline.ts`) }));
 for (const { name, path } of baselineFiles) writeFileSync(path, execFileSync("git", ["show", `${ref}:server/${name}.ts`], { cwd: ROOT }));

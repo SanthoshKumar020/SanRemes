@@ -28,7 +28,7 @@ import { createEngineUpdater } from "../engine-updates.ts";
 import { AntigravityDriver } from "./antigravity.ts";
 
 // The opt-in, before any module reads it: this file tests the native CLI switched on.
-vi.hoisted(() => { process.env.OMB_ANTIGRAVITY_NATIVE_CLI = "1"; });
+vi.hoisted(() => { process.env.SANREMES_ANTIGRAVITY_NATIVE_CLI = "1"; });
 
 const FAKE_ACP = join(dirname(fileURLToPath(import.meta.url)), "..", "testing", "fake-acp-cli.ts");
 const WINDOWS = process.platform === "win32";
@@ -38,7 +38,7 @@ const scratch: string[] = [];
 const instances: ProviderInstance[] = [];
 
 function folder(): string {
-  const directory = mkdtempSync(join(tmpdir(), "omb-antigravity-cli-"));
+  const directory = mkdtempSync(join(tmpdir(), "sanremes-antigravity-cli-"));
   scratch.push(directory);
   return directory;
 }
@@ -439,7 +439,7 @@ describe.skipIf(WINDOWS)("a native CLI set as the engine's own path", () => {
     const directory = folder(), seen = join(directory, "env"), program = join(directory, "antigravity");
     writeFileSync(program, `#!/bin/sh\n/usr/bin/env > ${JSON.stringify(seen)}\necho 1.5.7\n`);
     chmodSync(program, 0o755);
-    await expect(resolveAntigravityRuntime(program, { PATH: "/usr/bin:/bin", ANTHROPIC_API_KEY: "provider-key", OMB_CLOUD_TOKEN: "control-plane", anthropic_api_key: "lower-provider", xai_api_key: "lower-workspace", KEEP_ME: "kept" }, folder()))
+    await expect(resolveAntigravityRuntime(program, { PATH: "/usr/bin:/bin", ANTHROPIC_API_KEY: "provider-key", SANREMES_CLOUD_TOKEN: "control-plane", anthropic_api_key: "lower-provider", xai_api_key: "lower-workspace", KEEP_ME: "kept" }, folder()))
       .resolves.toMatchObject({ harnessPath: null, version: "1.5.7" });
     const env = readFileSync(seen, "utf8");
     expect(env).toContain("KEEP_ME=kept");
@@ -482,7 +482,7 @@ describe.skipIf(WINDOWS)("a native CLI set as the engine's own path", () => {
     expect(launch.argv.slice(0, 2)).toEqual(["acp", "--gemini-dir"]);
     expect(launch.argv.slice(3)).toEqual(["--app-data-dir", "antigravity-acp"]);
     expect(launch.env.ANTIGRAVITY_HARNESS_PATH).toBeUndefined();
-    expect(JSON.parse(readFileSync(`${fake.dump}.initialize.json`, "utf8")).clientInfo).toEqual({ name: "openmausbot", version: "0.0.0" });
+    expect(JSON.parse(readFileSync(`${fake.dump}.initialize.json`, "utf8")).clientInfo).toEqual({ name: "sanremes", version: "0.0.0" });
   }, 90_000);
 
   it("fails closed when the CLI does not confirm default mode", async () => {

@@ -86,7 +86,7 @@ const storedSchema = z.object({
   name: z.string(),
   prompt: z.string(),
   botId: z.string().min(1),
-  runOn: z.enum(["maus", "cloud"]),
+  runOn: z.enum(["sanremes", "cloud"]),
   enabled: z.boolean(),
   app: z.string().min(1),
   appName: z.string(),
@@ -275,14 +275,14 @@ export class AppTriggerManager {
     if (this.options.botState(input.botId) === "missing") throw new AppTriggerError("That bot no longer exists.", 404);
     const app = input.app.trim().toLowerCase();
     const type = await this.remote(() => this.options.broker.triggerType(input.event.trim()));
-    if (!type) throw new AppTriggerError(`${input.event} is not an event OpenMausBot can watch. Call trigger_info action=events to see the events this app offers.`, 404);
+    if (!type) throw new AppTriggerError(`${input.event} is not an event SanRemes can watch. Call trigger_info action=events to see the events this app offers.`, 404);
     if (type.toolkit !== app) throw new AppTriggerError(`${type.slug} is a ${appLabel(type.toolkit)} event, not ${appLabel(app)}.`);
     const account = await this.resolveAccount(input.botId, app, input.account);
     const filter = cleanFilter(input.filter);
     const config = triggerConfig(type, input.config ?? {}, filter);
     const now = this.now();
     const trigger: StoredTrigger = {
-      id: input.id ?? randomUUID(), name, prompt, botId: input.botId, runOn: input.runOn ?? "maus", enabled: input.enabled ?? true,
+      id: input.id ?? randomUUID(), name, prompt, botId: input.botId, runOn: input.runOn ?? "sanremes", enabled: input.enabled ?? true,
       app, appName: appLabel(app), event: type.slug, eventName: type.name || type.slug, delivery: type.type === "poll" ? "poll" : "instant",
       accountId: account.id, ...(account.alias ? { accountLabel: account.alias } : {}), config, ...(filter ? { filter } : {}),
       remote: { state: "pending" }, ...(input.sourceThreadId ? { sourceThreadId: input.sourceThreadId } : {}),
@@ -439,7 +439,7 @@ export class AppTriggerManager {
     const trigger = this.triggers.find((candidate) => candidate.id === id);
     if (!trigger) return null;
     if (!this.botMayUse(trigger.botId, trigger.app, trigger.accountId)) throw new AppTriggerError(ACCOUNT_NOT_ALLOWED, 403);
-    const data = { omb_test: true, note: "A test run started from OpenMausBot." };
+    const data = { omb_test: true, note: "A test run started from SanRemes." };
     if (trigger.remote.triggerId && trigger.remote.state === "active" && this.options.service().available) {
       try {
         await this.options.broker.testEvent(trigger.remote.triggerId, data);
@@ -818,7 +818,7 @@ export class AppTriggerManager {
     const service = this.options.service();
     if (service.available) return;
     throw new AppTriggerError(service.reason === "self-hosted"
-      ? "App events need OpenMausBot's connected apps. This server uses its own Composio key, so it cannot watch apps yet: use a schedule that checks the app, or a webhook."
+      ? "App events need SanRemes's connected apps. This server uses its own Composio key, so it cannot watch apps yet: use a schedule that checks the app, or a webhook."
       : "Connected apps are not set up here, so app events are unavailable.", 409);
   }
 

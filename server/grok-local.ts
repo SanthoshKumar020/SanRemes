@@ -104,7 +104,7 @@ function rosterBots(machine: SetupMachine): string[] {
 
 const key = (text: string) => text.trim().toLowerCase();
 
-/** The roster row of the Bot an export names. Grok Bot lets names repeat, so the MausBot bot there adds the first 8
+/** The roster row of the Bot an export names. Grok Bot lets names repeat, so the SanRemes bot there adds the first 8
  * characters of the Bot's id to a repeated name; a name that still fits several rows, or none, picks nothing. */
 function rosterRow(bots: Array<Record<string, unknown>>, exportName: string): Record<string, unknown> | "noMatch" | "ambiguous" {
   const name = key(exportName);

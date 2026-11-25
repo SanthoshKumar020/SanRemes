@@ -62,12 +62,12 @@ it("runs Ben's private check-back in his chat, for his request, with no human ac
   const sent = await team.as(ben, "POST", `/api/bots/${scout.id}/messages`, { text: "Send the payroll export, then check at 4 it reached the bank", threadId: benThread });
   expect(sent.status, JSON.stringify(sent.body)).toBe(202);
   let token = "";
-  await until(() => { token = dump()?.mcpConfig?.mcpServers?.agents?.env?.OMB_COMMS_TOKEN ?? ""; return Boolean(token) && prompt().includes("payroll export"); }, 30_000);
+  await until(() => { token = dump()?.mcpConfig?.mcpServers?.agents?.env?.SANREMES_COMMS_TOKEN ?? ""; return Boolean(token) && prompt().includes("payroll export"); }, 30_000);
   const set = await fetch(`${team.base}/api/internal/check-backs`, { method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
     body: JSON.stringify({ when: "in 1 minute", note: "see the payroll export reached the bank" }) });
   expect(set.status, await set.clone().text()).toBe(201);
 
-  const stored = JSON.parse(readFileSync(join(team.home, ".openmausbot", "check-backs.json"), "utf8")).checkBacks;
+  const stored = JSON.parse(readFileSync(join(team.home, ".sanremes", "check-backs.json"), "utf8")).checkBacks;
   expect(stored).toMatchObject([{ botId: scout.id, threadId: benThread, origin: { kind: "user", person: BEN_KEY } }]);
 
   rmSync(file("hang-mode"), { force: true });
@@ -86,11 +86,11 @@ it("runs Ben's private check-back in his chat, for his request, with no human ac
 
   await until(() => prompt().includes("What to check: see the payroll export reached the bank"), 100_000);
   await until(async () => (await lines(ben)).rows.some((row) => row.checkBack!.status === "started"), 30_000);
-  const woken = dump()?.mcpConfig?.mcpServers?.agents?.env?.OMB_COMMS_TOKEN as string;
+  const woken = dump()?.mcpConfig?.mcpServers?.agents?.env?.SANREMES_COMMS_TOKEN as string;
   const next = await fetch(`${team.base}/api/internal/check-backs`, { method: "POST", headers: { authorization: `Bearer ${woken}`, "content-type": "application/json" },
     body: JSON.stringify({ when: "in 3 hours", note: "look once more" }) });
   expect(next.status, `the woken turn runs as Ben's request: ${await next.clone().text()}`).toBe(201);
-  expect(JSON.parse(readFileSync(join(team.home, ".openmausbot", "check-backs.json"), "utf8")).checkBacks)
+  expect(JSON.parse(readFileSync(join(team.home, ".sanremes", "check-backs.json"), "utf8")).checkBacks)
     .toMatchObject([{ threadId: benThread, note: "look once more", origin: { kind: "user", person: BEN_KEY } }]);
   const rows = (await team.as(ben, "GET", `/api/threads/${benThread}/messages?limit=200`)).body.messages as Row[];
   expect(rows.filter((row) => row.role === "user" && String(row.text ?? "").includes("[Check back:"))).toEqual([]);

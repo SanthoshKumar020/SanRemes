@@ -15,7 +15,7 @@ afterEach(() => {
   for (const watch of watches.splice(0)) watch.stop();
   for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
-const tempDir = () => { const dir = mkdtempSync(join(tmpdir(), "omb-stall-")); dirs.push(dir); return dir; };
+const tempDir = () => { const dir = mkdtempSync(join(tmpdir(), "sanremes-stall-")); dirs.push(dir); return dir; };
 
 function heldMainThreadForStallWatchTest(ms: number): number {
   const until = Date.now() + ms;

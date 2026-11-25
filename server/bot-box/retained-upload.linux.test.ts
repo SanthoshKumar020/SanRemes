@@ -12,12 +12,12 @@ import { detectBox } from "./detect.ts";
 import { boxUploadsDir } from "./plan.ts";
 import { attachmentsForBox } from "../box-attachments.ts";
 
-const ENV = { PATH: process.env.PATH ?? "/usr/local/bin:/usr/bin:/bin", OMB_BOT_BOX: "1" };
+const ENV = { PATH: process.env.PATH ?? "/usr/local/bin:/usr/bin:/bin", SANREMES_BOT_BOX: "1" };
 const detection = detectBox({ env: ENV });
 
 describe.skipIf(detection.box !== "bwrap")(`an upload added after a box in its bot's own folder started (${detection.box === "bwrap" ? "bubblewrap works here" : `skipped: ${detection.reason}`})`, () => {
-  const root = mkdtempSync(join(tmpdir(), "omb-retained-upload-"));
-  const home = join(root, "home"), dataDir = join(home, ".openmausbot"), uploads = join(dataDir, "attachments");
+  const root = mkdtempSync(join(tmpdir(), "sanremes-retained-upload-"));
+  const home = join(root, "home"), dataDir = join(home, ".sanremes"), uploads = join(dataDir, "attachments");
   const own = join(dataDir, "workspaces", "bot-a"), conversationFolder = join(dataDir, "task-workspaces", "bot-a", "room-1");
   const box = new BotBox();
   beforeAll(async () => {

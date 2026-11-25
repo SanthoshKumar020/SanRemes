@@ -25,7 +25,7 @@ const qa = (rounds = 1) => wf([
     review: { rounds, example: "Rio: re-check your top finding" },
   },
   { id: "s2", kind: "ai", deterministic: false, label: "Review what came back and report", prompt: "Give a short verdict.", input: { $step: "s1", path: "text" } },
-], { site: { default: "https://mausbot.com", label: "site" } });
+], { site: { default: "https://sanremes.com", label: "site" } });
 
 /** A coordinator: hands out request ids, and settles each when the test says so. */
 function team(roster: Array<{ id: string; name: string; title?: string }> = [{ id: "kiwi", name: "Kiwi", title: "Accessibility tester" }, { id: "rio", name: "Rio", title: "Performance tester" }, { id: "miso", name: "Miso", title: "Content tester" }]) {
@@ -99,8 +99,8 @@ describe("a saved delegation", () => {
   it("says which saved inputs it reused when the request gave none", async () => {
     const t = team();
     const envelope = await startRun({ name: "qa", botId: "lead", threadId: "t1", sha256: "x", workflow: qa() }, harness(t.exec).deps);
-    expect(envelope.defaults).toEqual([{ name: "site", value: "https://mausbot.com" }]);
-    expect(runText(envelope as never)).toContain('the run used the saved value: site = "https://mausbot.com"');
+    expect(envelope.defaults).toEqual([{ name: "site", value: "https://sanremes.com" }]);
+    expect(runText(envelope as never)).toContain('the run used the saved value: site = "https://sanremes.com"');
   });
 
   it("finishes when the review says every reply is done, and stops sending back after the allowed rounds", async () => {
@@ -127,7 +127,7 @@ describe("a saved delegation", () => {
     const sent = await h.resume("Zed");
     expect(sent).toMatchObject({ requiresInput: { type: "teammates" } });
     expect(t.sent.map((call) => [call.botIds, call.message])).toEqual([
-      [["ada"], "QA-test https://mausbot.com for accessibility."], [["zed"], "QA-test https://mausbot.com for speed."], [["miso"], "QA-test https://mausbot.com for content."],
+      [["ada"], "QA-test https://sanremes.com for accessibility."], [["zed"], "QA-test https://sanremes.com for speed."], [["miso"], "QA-test https://sanremes.com for content."],
     ]);
   });
 

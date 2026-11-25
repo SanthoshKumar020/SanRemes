@@ -40,9 +40,9 @@ const TURN_POLL_MS = 15_000;
 export const PASS_EVERY_MS = 6 * 60 * 60_000;
 const YIELD_EVERY = 500;
 
-/** OMB_TOOL_RESULTS_SWEEP: `report` (or `dry-run`) counts and changes nothing; `on` removes; anything else is off. */
+/** SANREMES_TOOL_RESULTS_SWEEP: `report` (or `dry-run`) counts and changes nothing; `on` removes; anything else is off. */
 export function toolResultsSweepMode(env: NodeJS.ProcessEnv): ToolResultsSweepMode {
-  const raw = env.OMB_TOOL_RESULTS_SWEEP?.trim().toLowerCase();
+  const raw = env.SANREMES_TOOL_RESULTS_SWEEP?.trim().toLowerCase();
   if (raw === "report" || raw === "dry-run") return "report";
   return raw === "on" ? "on" : "off";
 }
@@ -166,7 +166,7 @@ export function sweepLine(result: ToolResultsSweepResult): string {
     + (result.stopped ? " (stopped for a move, a backup or a running turn; the next pass carries on)" : "");
 }
 
-/** Cloud homes only, and only with OMB_TOOL_RESULTS_SWEEP set: a pass when due, at the earliest FIRST_PASS_MS after start. */
+/** Cloud homes only, and only with SANREMES_TOOL_RESULTS_SWEEP set: a pass when due, at the earliest FIRST_PASS_MS after start. */
 export function startToolResultsSweep(deps: { cloudHome: boolean; env: NodeJS.ProcessEnv; dataDir: string; root: string; paused?(): boolean; turnsRunning?(): boolean; log?(line: string): void }): boolean {
   const mode = toolResultsSweepMode(deps.env);
   if (!deps.cloudHome || mode === "off") return false;

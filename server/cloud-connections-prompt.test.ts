@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createConnectionPrompt, type ConnectionPromptSources } from "./cloud-connections-prompt.ts";
 import type { McpAuthState } from "./mcp-oauth.ts";
 
-const ORIGIN = "https://omb-u-1.fly.dev";
+const ORIGIN = "https://sanremes-u-1.fly.dev";
 const SERVERS = {
   dodo: { command: "npx", args: ["-y", "dodopayments-mcp"], env: {}, enabled: true },
   linear: { type: "http", url: "https://mcp.linear.app/sse", headers: {}, enabled: true },
@@ -26,7 +26,7 @@ describe("what a bot on My Cloud is told about connections that need the person"
   it("a server to sign in to, with its link, and one that runs on the person's computer, only of those the bot uses", () => {
     const prompt = createConnectionPrompt(sources({ linear: "needs-sign-in", jira: "none", off: "needs-sign-in" }), ORIGIN);
     expect(prompt({})).toBe(
-      " Not connected on My Cloud yet: linear (sign in here: https://omb-u-1.fly.dev/?connect=mcp%3Alinear); jira (sign in here: https://omb-u-1.fly.dev/?connect=mcp%3Ajira)."
+      " Not connected on My Cloud yet: linear (sign in here: https://sanremes-u-1.fly.dev/?connect=mcp%3Alinear); jira (sign in here: https://sanremes-u-1.fly.dev/?connect=mcp%3Ajira)."
       + " When a task needs one, say in plain words that it needs the person once on My Cloud and give its link; do not try another way."
       + " Runs only on the person's computer Milind's MacBook, not on My Cloud: notes (it uses files or an address only Milind's MacBook has). It worked there before the bots moved here. If a task needs one, tell the person in plain words that it stayed on Milind's MacBook and why, not that it was never set up, and do not write your own replacement.");
     expect(prompt({ mcpServers: ["dodo", "notes"] })).toBe(" Runs only on the person's computer Milind's MacBook, not on My Cloud: notes (it uses files or an address only Milind's MacBook has). It worked there before the bots moved here. If a task needs one, tell the person in plain words that it stayed on Milind's MacBook and why, not that it was never set up, and do not write your own replacement.");
@@ -36,7 +36,7 @@ describe("what a bot on My Cloud is told about connections that need the person"
   it("in a turn, a server on the person's computer is named only when it can't be reached now, with the reason lending gives", () => {
     const prompt = createConnectionPrompt(sources(), ORIGIN);
     expect(prompt({ mcpServers: ["notes"] }, new Map()), "reached through the lent computer: nothing to say").toBe("");
-    const offline = "notes runs on your Mac (Milind's MacBook), which is offline right now: OpenMausBot on it is closed, or the Mac is asleep or off.";
+    const offline = "notes runs on your Mac (Milind's MacBook), which is offline right now: SanRemes on it is closed, or the Mac is asleep or off.";
     expect(prompt({ mcpServers: ["notes"] }, new Map([["notes", offline]]))).toBe(
       ` Runs on the person's own computer and can't be reached now: ${offline} If a task needs one, tell the person that in plain words, and do not write your own replacement.`);
   });
@@ -55,7 +55,7 @@ describe("what a bot on My Cloud is told about connections that need the person"
       "google-docs": { type: "http", url: "https://docs-mcp.example/mcp", headers: {}, enabled: true },
     };
     const source: ConnectionPromptSources = { mcpServers: () => servers, mcpAuth: () => "needs-sign-in", composioConnected: async () => ({}) };
-    const link = (name: string) => `sign in here: https://omb-u-1.fly.dev/?connect=mcp%3A${name}`;
+    const link = (name: string) => `sign in here: https://sanremes-u-1.fly.dev/?connect=mcp%3A${name}`;
     const apps: Record<string, { slug: string; label: string; connected: boolean }> = {
       "google-drive": { slug: "googledrive", label: "Google Drive", connected: true },
       "google-sheets": { slug: "googlesheets", label: "Google Sheets", connected: false },
@@ -68,7 +68,7 @@ describe("what a bot on My Cloud is told about connections that need the person"
       expect(prompt({}, undefined, (name) => apps[name] ?? null)).toBe(
         " Not signed in on My Cloud, but connected here as connected apps: google-drive (Google Drive). When a task needs one, use that connected app through the composio tools instead; do not send the person to sign in to the server."
         + ` Not signed in on My Cloud yet, and also connected here as connected apps: google-docs (${link("google-docs")}; connected app: Google Docs). When a task needs one, use the connected app through the composio tools; give the server's link only when the task needs that server itself.`
-        + " Can't be signed in from OpenMausBot (their sign-in works only in another app): google-sheets (connect Google Sheets as a connected app instead); google-slides." + elsewhere);
+        + " Can't be signed in from SanRemes (their sign-in works only in another app): google-sheets (connect Google Sheets as a connected app instead); google-slides." + elsewhere);
     });
 
     it("in a turn that cannot use the app (its tool selection, scopes, policy or no connected apps): no app, and still no link that cannot finish", () => {
@@ -76,7 +76,7 @@ describe("what a bot on My Cloud is told about connections that need the person"
       for (const appFor of [undefined, () => null]) {
         expect(prompt({}, undefined, appFor)).toBe(
           ` Not connected on My Cloud yet: google-docs (${link("google-docs")}). When a task needs one, say in plain words that it needs the person once on My Cloud and give its link; do not try another way.`
-          + " Can't be signed in from OpenMausBot (their sign-in works only in another app): google-drive; google-sheets; google-slides." + elsewhere);
+          + " Can't be signed in from SanRemes (their sign-in works only in another app): google-drive; google-sheets; google-slides." + elsewhere);
       }
     });
   });

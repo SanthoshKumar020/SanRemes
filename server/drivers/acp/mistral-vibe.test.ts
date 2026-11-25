@@ -21,7 +21,7 @@ describe("Mistral (Vibe) ACP driver", () => {
 
   beforeEach(() => {
     ensureDirs();
-    scratch = mkdtempSync(join(tmpdir(), "omb-mistral-vibe-contract-"));
+    scratch = mkdtempSync(join(tmpdir(), "sanremes-mistral-vibe-contract-"));
   });
 
   afterEach(async () => {
@@ -39,7 +39,7 @@ describe("Mistral (Vibe) ACP driver", () => {
       enabled: true,
       environment: {
         VIBE_HOME: join(scratch, "vibe-home"),
-        VIBE_KEYCHAIN_SERVICE: "omb-test-no-such-entry",
+        VIBE_KEYCHAIN_SERVICE: "sanremes-test-no-such-entry",
         FAKE_ACP_AUTH_METHOD: "browser-auth",
         FAKE_ACP_IMAGE_CAPABILITY: "1",
         FAKE_ACP_AGENT_NAME: "@mistralai/mistral-vibe",
@@ -148,7 +148,7 @@ describe("Mistral (Vibe) ACP driver", () => {
     const agents = (token: string) => ({
       command: process.execPath,
       args: ["/app/dist-server/agents-proxy.js"],
-      env: { OMB_HARNESS_URL: "http://127.0.0.1:8799", OMB_COMMS_TOKEN: token, OMB_BOT_ID: "sprout", OMB_THREAD_ID: "mistral-vibe-bearer" },
+      env: { SANREMES_HARNESS_URL: "http://127.0.0.1:8799", SANREMES_COMMS_TOKEN: token, SANREMES_BOT_ID: "sprout", SANREMES_THREAD_ID: "mistral-vibe-bearer" },
     });
     const reply = async (text: string, token: string, resume: boolean) => {
       const { turnId } = await instance.adapter.sendTurn({
@@ -174,7 +174,7 @@ describe("Mistral (Vibe) ACP driver", () => {
     const agents = (token: string) => ({
       command: process.execPath,
       args: ["/app/dist-server/agents-proxy.js"],
-      env: { OMB_HARNESS_URL: "http://127.0.0.1:8799", OMB_COMMS_TOKEN: token, OMB_BOT_ID: "sprout", OMB_THREAD_ID: "mistral-vibe-refused" },
+      env: { SANREMES_HARNESS_URL: "http://127.0.0.1:8799", SANREMES_COMMS_TOKEN: token, SANREMES_BOT_ID: "sprout", SANREMES_THREAD_ID: "mistral-vibe-refused" },
     });
     const run = async (text: string, token: string, resume: boolean) => {
       const { turnId } = await instance.adapter.sendTurn({

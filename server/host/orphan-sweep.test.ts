@@ -31,7 +31,7 @@ function age(path: string, days: number): void {
 }
 
 function fixture(over: Partial<OrphanSweepDeps> = {}) {
-  const sandbox = mkdtempSync(join(tmpdir(), "omb-orphan-sweep-"));
+  const sandbox = mkdtempSync(join(tmpdir(), "sanremes-orphan-sweep-"));
   made.push(sandbox);
   const dataDir = join(sandbox, "data");
   const outside = join(sandbox, "outside");
@@ -91,17 +91,17 @@ const allThere = (f: Fixture) => Object.values(present(f.files)).every(Boolean);
 describe("the orphan sweep's switches", () => {
   it("is off unless set, and reads report (or dry-run) and remove", () => {
     expect(orphanSweepMode({})).toBe("off");
-    expect(orphanSweepMode({ OMB_ORPHAN_SWEEP: "yes" })).toBe("off");
-    expect(orphanSweepMode({ OMB_ORPHAN_SWEEP: " Report " })).toBe("report");
-    expect(orphanSweepMode({ OMB_ORPHAN_SWEEP: "dry-run" })).toBe("report");
-    expect(orphanSweepMode({ OMB_ORPHAN_SWEEP: "remove" })).toBe("remove");
+    expect(orphanSweepMode({ SANREMES_ORPHAN_SWEEP: "yes" })).toBe("off");
+    expect(orphanSweepMode({ SANREMES_ORPHAN_SWEEP: " Report " })).toBe("report");
+    expect(orphanSweepMode({ SANREMES_ORPHAN_SWEEP: "dry-run" })).toBe("report");
+    expect(orphanSweepMode({ SANREMES_ORPHAN_SWEEP: "remove" })).toBe("remove");
   });
 
   it("removes at most 10% of the conversations on disk unless told otherwise", () => {
     expect(orphanSweepMaxShare({})).toBe(10);
-    expect(orphanSweepMaxShare({ OMB_ORPHAN_SWEEP_MAX_SHARE: "60" })).toBe(60);
-    expect(orphanSweepMaxShare({ OMB_ORPHAN_SWEEP_MAX_SHARE: "lots" })).toBe(10);
-    expect(orphanSweepMaxShare({ OMB_ORPHAN_SWEEP_MAX_SHARE: "150" })).toBe(10);
+    expect(orphanSweepMaxShare({ SANREMES_ORPHAN_SWEEP_MAX_SHARE: "60" })).toBe(60);
+    expect(orphanSweepMaxShare({ SANREMES_ORPHAN_SWEEP_MAX_SHARE: "lots" })).toBe(10);
+    expect(orphanSweepMaxShare({ SANREMES_ORPHAN_SWEEP_MAX_SHARE: "150" })).toBe(10);
   });
 
   it("off: reads and changes nothing", async () => {

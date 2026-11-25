@@ -210,7 +210,7 @@ export function linuxTreeUse(pid: number, rows: () => readonly ProcessRow[] = ()
 
 export type TurnsSetting = number | "auto" | "off";
 
-/** OMB_TURNS_MAX_RUNNING: a whole number of turns at once; "off" or 0 for no gate at all; "auto", unset or anything else
+/** SANREMES_TURNS_MAX_RUNNING: a whole number of turns at once; "off" or 0 for no gate at all; "auto", unset or anything else
  * for a number worked out from the server's memory and pids limit. */
 export function turnsSetting(value: string | undefined): TurnsSetting {
   const text = value?.trim().toLowerCase();
@@ -222,12 +222,12 @@ export type GateHost = "cloud" | "server" | null;
 
 /** Where turns wait for room. A Cloud home, as before. A self-hosted Linux server in a container that was given a memory
  * or pids limit, which is where a turn too many ends in a killed engine or a refused spawn. Any self-hosted server whose
- * operator set OMB_TURNS_MAX_RUNNING to a number or "auto". Never the desktop app's own server. */
+ * operator set SANREMES_TURNS_MAX_RUNNING to a number or "auto". Never the desktop app's own server. */
 export function gateHost(env: NodeJS.ProcessEnv = process.env, platform: NodeJS.Platform = process.platform, limited: () => boolean = containerLimited): GateHost {
-  if ((env.OMB_CLOUD_ROLE === "home" || env.OMB_CLOUD_ROLE === "team") && platform === "linux") return "cloud";
-  if (env.OMB_DESKTOP_PARENT === "1") return null;
-  const setting = turnsSetting(env.OMB_TURNS_MAX_RUNNING);
+  if ((env.SANREMES_CLOUD_ROLE === "home" || env.SANREMES_CLOUD_ROLE === "team") && platform === "linux") return "cloud";
+  if (env.SANREMES_DESKTOP_PARENT === "1") return null;
+  const setting = turnsSetting(env.SANREMES_TURNS_MAX_RUNNING);
   if (setting === "off") return null;
-  if (typeof setting === "number" || env.OMB_TURNS_MAX_RUNNING?.trim().toLowerCase() === "auto") return "server";
+  if (typeof setting === "number" || env.SANREMES_TURNS_MAX_RUNNING?.trim().toLowerCase() === "auto") return "server";
   return platform === "linux" && limited() ? "server" : null;
 }

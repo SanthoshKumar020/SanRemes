@@ -85,8 +85,8 @@ export function slotLimit(raw: string | undefined, fallback: number): number {
 }
 
 /** One-off text calls nobody is waiting on (first-message suggestions, memory upkeep, skill review, thread titles): each
- * is an engine CLI process. OMB_BACKGROUND_TEXT_MAX sets how many run at once across all bots. */
-export const backgroundTextSlots = createJobSlots(slotLimit(process.env.OMB_BACKGROUND_TEXT_MAX, 3));
+ * is an engine CLI process. SANREMES_BACKGROUND_TEXT_MAX sets how many run at once across all bots. */
+export const backgroundTextSlots = createJobSlots(slotLimit(process.env.SANREMES_BACKGROUND_TEXT_MAX, 3));
 
-/** git processes the checkpoints of all bots run at once; OMB_CHECKPOINT_GIT_MAX sets it. */
-export const checkpointGitSlots = createJobSlots(slotLimit(process.env.OMB_CHECKPOINT_GIT_MAX, 4));
+/** git processes the checkpoints of all bots run at once; SANREMES_CHECKPOINT_GIT_MAX sets it. */
+export const checkpointGitSlots = createJobSlots(slotLimit(process.env.SANREMES_CHECKPOINT_GIT_MAX, 4));

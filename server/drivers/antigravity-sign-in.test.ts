@@ -37,7 +37,7 @@ const scratch: string[] = [];
 const instances: ProviderInstance[] = [];
 
 function fakeRuntime(source?: string) {
-  const directory = mkdtempSync(join(tmpdir(), "omb-antigravity-sign-in-"));
+  const directory = mkdtempSync(join(tmpdir(), "sanremes-antigravity-sign-in-"));
   scratch.push(directory);
   const executable = join(directory, "fake-antigravity.ts");
   const harness = join(directory, process.platform === "win32" ? "localharness_external.exe" : "localharness_external");
@@ -211,7 +211,7 @@ describe("a sign-in the runtime asks for in the middle of a turn", () => {
     [{ code: -32000, message: "Request failed", data: { reason: "UNAUTHENTICATED" } }, true],
     [{ code: -32000, message: "Authentication failed: getaddrinfo ENOTFOUND oauth2.googleapis.com" }, false],
     [{ code: -32000, message: "Login check failed: getaddrinfo EAI_AGAIN oauth2.googleapis.com" }, false],
-  ])("reads the runtime's own words, not the method OpenMausBot called (%j)", (answer, expected) => {
+  ])("reads the runtime's own words, not the method SanRemes called (%j)", (answer, expected) => {
     expect(antigravitySignInError(acpRpcError(answer, "authenticate"))).toBe(expected);
   });
 
@@ -459,7 +459,7 @@ describe("the runtime's launch environment", () => {
       const absent = join(fake.directory, "absent");
       expect(await antigravityBrowserHelperProblem(profile.environment, absent)).toBe("it could not be started");
       await expect(verifyAntigravityBrowserHelper(profile, absent)).rejects.toThrow(
-        "Google sign-in cannot start: the helper that passes the sign-in link to OpenMausBot failed a check (it could not be started).");
+        "Google sign-in cannot start: the helper that passes the sign-in link to SanRemes failed a check (it could not be started).");
       const script = join(fake.directory, process.platform === "win32" ? "helper.cmd" : "helper.txt");
       writeFileSync(script, "not a program\n");
       expect(await antigravityBrowserHelperProblem(profile.environment, script)).toBe("it could not be started");

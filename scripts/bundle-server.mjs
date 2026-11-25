@@ -33,8 +33,8 @@ const ENTRY_POINTS = [
   "index.ts",
   "message-search.worker.ts",
   "text-changes.worker.ts",
-  // the `openmausbot` command
-  "openmausbot.ts",
+  // the `sanremes` command
+  "sanremes.ts",
   "pair-cli.ts",
   "workspace-backup.worker.ts",
   // the stall watch's thread (perf/stall-watch.ts)
@@ -51,7 +51,7 @@ const ENTRY_POINTS = [
   "local-computer.ts",
   "local-computer-proxy.ts",
   // the hook helper Claude Code runs at PostToolUse/PreCompact/SessionStart/Stop
-  "hooks/omb-hook.ts",
+  "hooks/sanremes-hook.ts",
   "container-mcp.ts",
   "vps-container-mcp.ts",
   "permission-proxy.ts",
@@ -104,7 +104,7 @@ await build({
   plugins: [serverLocalePlugin],
 });
 
-// `openmausbot serve --tunnel` spawns the connector guardian as its own
+// `sanremes serve --tunnel` spawns the connector guardian as its own
 // process, so it must exist as a file beside the server.
 await build({
   entryPoints: [join(root, "electron", "managed-companion-guardian-main.mjs")],

@@ -30,7 +30,7 @@ const DOWNLOAD_TIMEOUT_MS = 10 * 60_000;
 /** agent-browser's restore looks up a filename prefix; fixed-length keys keep `work` from restoring `work-client`. */
 export function browserRestoreKey(session: string): string {
   if (!/^[A-Za-z0-9_.-]{1,96}$/.test(session)) throw new Error("Invalid browser session.");
-  return `omb-${createHash("sha256").update(session).digest("hex")}`;
+  return `sanremes-${createHash("sha256").update(session).digest("hex")}`;
 }
 
 const PROFILES_DIR = "agent-browser-profiles";
@@ -57,7 +57,7 @@ export function browserSessionsDirectory(env: NodeJS.ProcessEnv): string {
 }
 
 function managedBrowserConfigPath(env: NodeJS.ProcessEnv): string {
-  return join(browserSessionsDirectory(env), "..", "omb-managed-config.json");
+  return join(browserSessionsDirectory(env), "..", "sanremes-managed-config.json");
 }
 
 function ensureManagedBrowserConfig(env: NodeJS.ProcessEnv): string {
@@ -222,7 +222,7 @@ function portInFile(path: string): number[] {
 }
 
 /** The stream servers of this machine's agent-browser daemons: agent-browser 0.37 upgrades a WebSocket from any origin. */
-export function agentBrowserStreamPorts(env: NodeJS.ProcessEnv = browserRuntimeEnv({ AGENT_BROWSER_SESSION: "omb" })): number[] {
+export function agentBrowserStreamPorts(env: NodeJS.ProcessEnv = browserRuntimeEnv({ AGENT_BROWSER_SESSION: "sanremes" })): number[] {
   const directory = dirname(browserDaemonFile(env, ".stream"));
   try { return readdirSync(directory).filter((name) => name.endsWith(".stream")).flatMap((name) => portInFile(join(directory, name))); }
   catch { return []; }
@@ -294,7 +294,7 @@ export async function prepareBrowserSessionState(
 }
 
 export type BrowserEngineStatus =
-  /** `managed`: the engine OMB installed (bundled or pinned), not one named by OMB_AGENT_BROWSER_PATH or found on PATH. */
+  /** `managed`: the engine OMB installed (bundled or pinned), not one named by SANREMES_AGENT_BROWSER_PATH or found on PATH. */
   | { kind: "ready"; binaryPath: string; version: string; managed: boolean; warning?: string }
   | { kind: "unavailable"; reason: string; installable: boolean };
 
@@ -385,7 +385,7 @@ interface BrowserLookupOptions {
 }
 
 function packagedBrowser(options: BrowserLookupOptions) {
-  const resources = (options.env ?? process.env).OMB_RESOURCES_PATH;
+  const resources = (options.env ?? process.env).SANREMES_RESOURCES_PATH;
   if (!resources) return null;
   try {
     return browserBundlePaths(join(resolve(resources), "browser-engine"), `${options.platform ?? process.platform}-${options.arch ?? process.arch}`);
@@ -402,7 +402,7 @@ export function resolveAgentBrowserBinary(options: BrowserLookupOptions = {}): s
   const env = options.env ?? process.env;
   const platform = options.platform ?? process.platform;
   const exists = options.exists ?? existsSync;
-  const override = env.OMB_AGENT_BROWSER_PATH?.trim();
+  const override = env.SANREMES_AGENT_BROWSER_PATH?.trim();
   if (override) return resolve(override) && exists(resolve(override)) ? resolve(override) : null;
   const bundle = packagedBrowser(options);
   if (bundle && exists(bundle.directory)) return completePackage(bundle, exists) ? bundle.engine : null;
@@ -551,7 +551,7 @@ export function browserEngineStatus(options: BrowserLookupOptions = {}): Browser
     return { kind: "ready", binaryPath, version, managed, ...(warning ? { warning } : {}) };
   }
   if (bundle && (options.exists ?? existsSync)(bundle.directory)) {
-    return { kind: "unavailable", reason: "The desktop browser bundle is incomplete. Reinstall or update OpenMausBot to repair it.", installable: false };
+    return { kind: "unavailable", reason: "The desktop browser bundle is incomplete. Reinstall or update SanRemes to repair it.", installable: false };
   }
   const platform = options.platform ?? process.platform;
   const arch = options.arch ?? process.arch;

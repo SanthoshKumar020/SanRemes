@@ -31,7 +31,7 @@ describe("claudeToolSearchSetting", () => {
   };
 
   beforeEach(() => {
-    root = mkdtempSync(join(tmpdir(), "omb-tool-search-"));
+    root = mkdtempSync(join(tmpdir(), "sanremes-tool-search-"));
     home = join(root, "home");
     mkdirSync(home);
     env = { HOME: home };

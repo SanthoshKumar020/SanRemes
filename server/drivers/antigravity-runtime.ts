@@ -7,7 +7,7 @@
 //     and keeping an installed CLI that is newer than the channel's).
 // Each account's CLI path chooses its runtime: `antigravity` the native CLI (what Switch to Google Antigravity CLI in
 // Settings saves, one way), `agy_acp_server` the pinned runtime (kept for configurations that already name it). With neither, a computer that has the pinned runtime keeps it and a new install takes the CLI, with the
-// pinned runtime as the fallback where the channel has no build or cannot be reached; OMB_ANTIGRAVITY_NATIVE_CLI=1 gives
+// pinned runtime as the fallback where the channel has no build or cannot be reached; SANREMES_ANTIGRAVITY_NATIVE_CLI=1 gives
 // such an account the CLI even where the pinned runtime is installed. Nothing removes the pinned runtime. A saved `agy`
 // path is never started.
 import { createHash, randomUUID } from "node:crypto";
@@ -297,7 +297,7 @@ export async function resolveAntigravityRuntime(
     if (installedCli) return installedCli;
     throw new AntigravitySetupError(CLI_NOT_INSTALLED);
   }
-  // OMB_ANTIGRAVITY_NATIVE_CLI=1: an account with no runtime of its own runs the CLI once it is installed here.
+  // SANREMES_ANTIGRAVITY_NATIVE_CLI=1: an account with no runtime of its own runs the CLI once it is installed here.
   if (installedCli && (ANTIGRAVITY_CLI_FIRST || await cliCameFirst(runtimeRoot(baseDir)))) return installedCli;
   // A computer that has the pinned runtime keeps running it for an account with no runtime of its own.
   const asset = resolveAntigravityReleaseAsset();
@@ -351,7 +351,7 @@ async function extractPinnedArchive(
 }
 
 /** A computer the app already put a pinned runtime on keeps it: only a new install, one that already runs the native
- * CLI, a CLI path that asks for it, or OMB_ANTIGRAVITY_NATIVE_CLI=1 takes the CLI. Null when the pinned runtime is the
+ * CLI, a CLI path that asks for it, or SANREMES_ANTIGRAVITY_NATIVE_CLI=1 takes the CLI. Null when the pinned runtime is the
  * one to install: the CLI's own failure is thrown unless this is a new install the pinned runtime can stand in for. */
 async function installNativeCli(options: AntigravityInstallOptions, root: string): Promise<AntigravityRuntime | null> {
   if (!ANTIGRAVITY_NATIVE_CLI || options.asset !== undefined) return null;
@@ -543,7 +543,7 @@ export async function antigravityNothingInstalled(baseDir = DATA_DIR, env: NodeJ
 let channelAnswer: { at: number; version: string } | undefined;
 
 /** The native CLI's version when an account here runs it and Google's channel has a newer one. An account runs it when
- * its CLI path asks for it, or when no pinned runtime is installed to go first. With OMB_ANTIGRAVITY_NATIVE_CLI=1 a
+ * its CLI path asks for it, or when no pinned runtime is installed to go first. With SANREMES_ANTIGRAVITY_NATIVE_CLI=1 a
  * computer that runs the pinned runtime is also offered the move to the CLI, from the version it runs. The channel's
  * answer is kept for an hour, so an update found while the engine is busy is still there on the next look; a channel
  * that did not answer is asked again. */

@@ -12,7 +12,7 @@ const reply = (id: string, at: number, text: string, extra: Partial<Message> = {
 const app = (id: string, at: number, title: string, doc = `doc-${id}`): Message =>
   ({ id, parentId: null, at, role: "bot", kind: "app", text: title, app: { v: 1, source: { kind: "html" }, title, doc, rev: 0 } }) as unknown as Message;
 const record = (pageId: string, updatedAt: number, cards: Array<[string, string]>, over: Partial<PublishedPageRecord> = {}): PublishedPageRecord => ({
-  pageId, url: `https://${pageId}.mausbot.page/`, title: `Page ${pageId}`, botId: "scout", source: `/work/${pageId}`,
+  pageId, url: `https://${pageId}.sanremes.page/`, title: `Page ${pageId}`, botId: "scout", source: `/work/${pageId}`,
   cards: cards.map(([threadId, messageId]) => ({ threadId, messageId })), createdAt: updatedAt, updatedAt, ...over,
 });
 
@@ -44,7 +44,7 @@ describe("collectBotLibrary", () => {
     const pages = [record("eeeeeeeeeeeeeeeeeeee", 30, [["del-a", "p1"], ["del-b", "p2"], ["del-c", "p3"]])];
     const library = collectBotLibrary({ botId: "scout", threadIds: ["del-a", "del-c"], pages });
     expect(library.apps.map((each) => each.title)).toEqual(["Kept"]);
-    expect(library.pages).toEqual([{ threadId: "del-c", messageId: "p3", at: 30, title: "Page eeeeeeeeeeeeeeeeeeee", url: "https://eeeeeeeeeeeeeeeeeeee.mausbot.page/" }]);
+    expect(library.pages).toEqual([{ threadId: "del-c", messageId: "p3", at: 30, title: "Page eeeeeeeeeeeeeeeeeeee", url: "https://eeeeeeeeeeeeeeeeeeee.sanremes.page/" }]);
     expect(collectBotLibrary({ botId: "scout", threadIds: ["del-a"], pages: [] }).pages).toEqual([]);
   });
 

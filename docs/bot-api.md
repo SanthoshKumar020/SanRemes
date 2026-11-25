@@ -32,7 +32,7 @@ curl -X POST "https://your.domain/hooks/api/bots/<botId>/messages" \
 The address lives under the webhook receiver's `/hooks` path, so wherever this
 bot's webhooks are reachable (a Cloud's public name, a self-hosted edge that
 forwards `/hooks/*` as [deploy/Caddyfile](../deploy/Caddyfile) does, or
-`OMB_WEBHOOK_PUBLIC_URL`) the API is too; nothing new to open.
+`SANREMES_WEBHOOK_PUBLIC_URL`) the API is too; nothing new to open.
 
 The JSON body takes:
 
@@ -68,7 +68,7 @@ saved memory and the thread itself, whoever writes there next:
 - It runs confined and in Ask, whatever the bot's own level, with none of its
   saved allowances. Nothing answers an approval for the caller.
 - It has no shell, computer, browser, phone, connected apps, MCP servers or data
-  tools, and none of OpenMausBot's own tools, so it can't start a thread, ask a
+  tools, and none of SanRemes's own tools, so it can't start a thread, ask a
   teammate, make a routine or webhook, change the bot, write its memory or search
   other conversations.
 - It works in the thread's own empty folder, and its words stay out of the person's
@@ -111,7 +111,7 @@ Who and where:
   Anyone who may manage the key can take the mark off.
 - Never on a team's Cloud or a shared or hosted workspace (one with members on
   its sign-in list), except a hosted workspace whose operator set the
-  dedicated policy `OMB_SHARED_WORKSPACE_FULL_ACCESS=1`, where an admin may.
+  dedicated policy `SANREMES_SHARED_WORKSPACE_FULL_ACCESS=1`, where an admin may.
 - Never for guest links or webhooks: only a Bot API key carries it.
 - **New key** starts without the mark, and switching the API off forgets it.
   Marking and unmarking, including the mark a new key or switching the API off
@@ -137,7 +137,7 @@ one row per burst. Neither ever holds the key.
 
 ## Bot to bot across servers
 
-A bot on one OpenMausBot server can hand work to a bot on another, over
+A bot on one SanRemes server can hand work to a bot on another, over
 Tailscale, a LAN or the internet, through that bot's Bot API. Its owner turns on
 **Bot API** for the bot there and gives you the address and key from its card.
 
@@ -166,7 +166,7 @@ hand it work with `coordinate_bots`, by that id or its name (a bot on this
 server with the same name wins):
 
 - The brief goes once, with secrets taken out, marked as coming from a bot on
-  another OpenMausBot server. The asking bot reads that thread at 30, 60 and then
+  another SanRemes server. The asking bot reads that thread at 30, 60 and then
   every 120 seconds, and waits as long as the other server's `retry-after` says
   (up to five minutes). If it keeps answering busy or can't be reached (more
   than five times), or gives any other error, the hand-off ends with the
@@ -190,6 +190,6 @@ no Bot API on a Cloud's Starter plan.
 
 ## Apps built on it
 
-- [MausBot Notch](https://github.com/jgonzalez007/mausbot-notch) (community,
+- [SanRemes Notch](https://github.com/jgonzalez007/sanremes-notch) (community,
   macOS): a notch app that talks to your bots through the Bot API. **Option+Space**
   opens and closes the notch. It is maintained outside this repository.

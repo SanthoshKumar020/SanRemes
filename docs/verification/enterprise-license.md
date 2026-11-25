@@ -5,7 +5,7 @@
 - Find the bundled enterprise layer in every shipped layout: a checkout
   (`enterprise/` beside `server/`), the npm package (`<package>/enterprise/`
   beside `dist-server/`), and the Docker image and packaged desktop, which
-  carry `dist-server/` alone (`dist-server/enterprise/`). `OMB_ENTERPRISE_DIR`,
+  carry `dist-server/` alone (`dist-server/enterprise/`). `SANREMES_ENTERPRISE_DIR`,
   when set, is the only place looked at.
 - From 30 days before a key expires: `expiresInDays` on `/api/edition`, a
   warning in the startup log, and a banner in Settings for admins. The dates
@@ -27,7 +27,7 @@ pnpm test:packaged-server
 checks which copy wins, the warning window, the grace period and the moment it
 ends. `enterprise/server/register.test.ts` issues keys with a throwaway signing
 pair and checks the layer accepts a key that lapsed less than 7 days ago and
-refuses it after. `server/license-expiry-api.test.ts` boots the `control-omb`
+refuses it after. `server/license-expiry-api.test.ts` boots the `control-sanremes`
 fixture with a stand-in layer whose key expires in 12 days, expired 2 days
 ago, or expires in 90 days, and reads `/api/edition`, the server log, and
 `/api/config` as an admin and as a chat-only device.

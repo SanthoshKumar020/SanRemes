@@ -52,7 +52,7 @@ test("a failed server says why in a word from its list, and a main-window crash 
 });
 
 test("nothing is sent with the switch off, in development, under the smoke tests or in CI", () => {
-  for (const options of [{ choice: false }, { packaged: false }, { env: { OMB_SMOKE_TEST: "1" } }, { env: { CI: "true" } }]) {
+  for (const options of [{ choice: false }, { packaged: false }, { env: { SANREMES_SMOKE_TEST: "1" } }, { env: { CI: "true" } }]) {
     const { analytics, sent } = launch(options);
     analytics.stage("started");
     analytics.stage("server_failed");

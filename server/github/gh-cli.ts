@@ -1,9 +1,9 @@
 // Finding and running GitHub CLI for the sign-in (sign-in.ts). Two copies can run:
-//   - the person's own `gh` on This computer, found on PATH: read for their own sign-in, and run for OpenMausBot's sign-in
+//   - the person's own `gh` on This computer, found on PATH: read for their own sign-in, and run for SanRemes's sign-in
 //     when it is new enough (GH_SIGN_IN_FLOOR) to take every flag below;
 //   - the app's pinned copy (gh-release.ts), downloaded and checked on the first sign-in that needs it.
 // Security: gh keeps a sign-in in the OS credential store under one name whatever its config folder, and its login and
-// logout delete entries there. OpenMausBot's own runs therefore get a private HOME (macOS finds no login keychain
+// logout delete entries there. SanRemes's own runs therefore get a private HOME (macOS finds no login keychain
 // through it), a D-Bus session address that leads nowhere (godbus uses a set address as it is, and without one it would
 // find /run/user/<uid>/bus by the uid: the person's Secret Service) and `--insecure-storage`, so the token is only ever
 // in the private config folder; and they never run `gh auth logout` (sign-in.ts deletes the folder instead). Windows'
@@ -68,18 +68,18 @@ export function ghCredentialTargets(output: string): string[] {
   return [...found];
 }
 
-/** gh's `auth login` for OpenMausBot's own sign-in. */
+/** gh's `auth login` for SanRemes's own sign-in. */
 export function loginArgs(version: readonly number[] | null): string[] {
   return ["auth", "login", "--hostname", "github.com", "--git-protocol", "https", "--web", "--insecure-storage", "--clipboard=false",
     ...(versionAtLeast(version, EXPIRING_FLAG_FROM) ? ["--expiring=false"] : [])];
 }
 
-/** What the server passes on to OpenMausBot's own gh runs: where programs are, the proxy and certificate settings, and on
+/** What the server passes on to SanRemes's own gh runs: where programs are, the proxy and certificate settings, and on
  * Windows what any program needs to start. Never a token (GH_TOKEN, GITHUB_TOKEN), a D-Bus address or the server's HOME. */
 const PASSED = ["PATH", "LANG", "LC_ALL", "HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "NO_PROXY", "no_proxy", "ALL_PROXY", "all_proxy",
   "SSL_CERT_FILE", "SSL_CERT_DIR", "SystemRoot", "SYSTEMROOT", "windir", "ComSpec", "PATHEXT", "TEMP", "TMP", "TMPDIR"] as const;
 
-/** The environment of OpenMausBot's own gh runs for one sign-in folder (`home` and `config` are private to it). */
+/** The environment of SanRemes's own gh runs for one sign-in folder (`home` and `config` are private to it). */
 export function ownGhEnv(folders: { home: string; config: string }, base: NodeJS.ProcessEnv = process.env, platform: NodeJS.Platform = process.platform): Record<string, string> {
   const env: Record<string, string> = {};
   for (const name of PASSED) {
@@ -116,7 +116,7 @@ export function ownGhEnv(folders: { home: string; config: string }, base: NodeJS
 export function personalGhEnv(base: NodeJS.ProcessEnv = process.env): Record<string, string> {
   const env: Record<string, string | undefined> = { ...base, PATH: augmentedPath(), GH_NO_UPDATE_NOTIFIER: "1", GH_PROMPT_DISABLED: "1", GH_SPINNER_DISABLED: "1", NO_COLOR: "1" };
   stripWorkspaceCredentialEnv(env);
-  for (const name of Object.keys(env)) if (name.startsWith("OMB_")) delete env[name];
+  for (const name of Object.keys(env)) if (name.startsWith("SANREMES_")) delete env[name];
   return Object.fromEntries(Object.entries(env).filter((entry): entry is [string, string] => typeof entry[1] === "string"));
 }
 

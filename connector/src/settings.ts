@@ -5,21 +5,21 @@ export const CONNECTOR_VERSION = "1.0.0";
 
 /** Docker objects the connector owns. */
 export const NAMES = {
-  connector: "mausbot-connector",
-  connectorNext: "mausbot-connector-next",
-  home: "mausbot-home",
-  dataVolume: "mausbot-data",
-  stateVolume: "mausbot-connector",
-  snapshotVolume: "mausbot-snapshot",
-  backupPrefix: "mausbot-backup-",
+  connector: "sanremes-connector",
+  connectorNext: "sanremes-connector-next",
+  home: "sanremes-home",
+  dataVolume: "sanremes-data",
+  stateVolume: "sanremes-connector",
+  snapshotVolume: "sanremes-snapshot",
+  backupPrefix: "sanremes-backup-",
 } as const;
 
 export const LABELS = {
-  role: "com.mausbot.role",
-  instance: "com.mausbot.instance",
-  created: "com.mausbot.created",
-  image: "com.mausbot.image",
-  env: "com.mausbot.env",
+  role: "com.sanremes.role",
+  instance: "com.sanremes.instance",
+  created: "com.sanremes.created",
+  image: "com.sanremes.image",
+  env: "com.sanremes.env",
 } as const;
 
 /** Backups the connector keeps; a newer one replaces the oldest. */
@@ -27,28 +27,28 @@ export const BACKUPS_KEPT = 3;
 
 /** Inside the connector's container. */
 export const PATHS = {
-  state: process.env.MAUSBOT_STATE_DIR || "/state",
-  docker: process.env.MAUSBOT_DOCKER_SOCKET || "/var/run/docker.sock",
-  /** /etc/mausbot on the host, mounted read-only: the seccomp profile install.sh put there. */
-  hostConfig: process.env.MAUSBOT_HOST_CONFIG_DIR || "/etc/mausbot",
+  state: process.env.SANREMES_STATE_DIR || "/state",
+  docker: process.env.SANREMES_DOCKER_SOCKET || "/var/run/docker.sock",
+  /** /etc/sanremes on the host, mounted read-only: the seccomp profile install.sh put there. */
+  hostConfig: process.env.SANREMES_HOST_CONFIG_DIR || "/etc/sanremes",
   /** The connector's own copies, which install.sh installs from this image. */
-  profiles: process.env.MAUSBOT_PROFILES_DIR || "/app/profiles",
-  /** /var/log/mausbot on the host, mounted read-write: the audit log the server's owner reads. */
-  audit: process.env.MAUSBOT_AUDIT_DIR || "/var/log/mausbot",
-  /** In the container's own /tmp: `mausbot-connector job` reaches the running connector here. */
-  jobs: process.env.MAUSBOT_JOBS_SOCKET || "/tmp/mausbot-jobs.sock",
-  /** /var/lib/mausbot/update on the host, on a customer-run server only: where an update is handed to the server's own updater. */
-  update: process.env.MAUSBOT_UPDATE_DIR || "/var/lib/mausbot/update",
+  profiles: process.env.SANREMES_PROFILES_DIR || "/app/profiles",
+  /** /var/log/sanremes on the host, mounted read-write: the audit log the server's owner reads. */
+  audit: process.env.SANREMES_AUDIT_DIR || "/var/log/sanremes",
+  /** In the container's own /tmp: `sanremes-connector job` reaches the running connector here. */
+  jobs: process.env.SANREMES_JOBS_SOCKET || "/tmp/sanremes-jobs.sock",
+  /** /var/lib/sanremes/update on the host, on a customer-run server only: where an update is handed to the server's own updater. */
+  update: process.env.SANREMES_UPDATE_DIR || "/var/lib/sanremes/update",
 } as const;
 
 export const AUDIT_FILE = "audit.jsonl";
 
-export const SECCOMP_FILE = "seccomp-omb-home.json";
-export const APPARMOR_PROFILE = "omb-home-narrow";
+export const SECCOMP_FILE = "seccomp-sanremes-home.json";
+export const APPARMOR_PROFILE = "sanremes-home-narrow";
 
 /** Where the home's edge listens on the server: loopback only, reached by the connector. */
 export const HOME_PORT = 8080;
-/** With OMB_CLOUD_EDGE_TLS=1 the edge also serves HTTPS on the owner's domain here, published on IPv4 only: over IPv6, Docker's
+/** With SANREMES_CLOUD_EDGE_TLS=1 the edge also serves HTTPS on the owner's domain here, published on IPv4 only: over IPv6, Docker's
  * proxy on the default bridge hands every client the bridge's address, the connector's own, so one stranger's wrong
  * pairing codes would lock out the Admin's signed pairing too. */
 export const HOME_TLS_PORT = 443;
@@ -77,11 +77,11 @@ export const HIDEPID_CAPABILITIES = ["SYS_ADMIN", "SETPCAP"] as const;
 
 /** The home's secrets: kept out of its container's environment (docker inspect shows that) once its launcher reads the file. */
 export const HOME_SECRET_ENV = [
-  "OMB_CLOUD_BOOTSTRAP_SECRET", "OMB_CLOUD_BOAT_TOKEN", "OMB_CLOUD_VOICE_TOKEN", "OMB_CLOUD_DECIDER_TOKEN", "OMB_CLOUD_AI_TOKEN",
-  "OMB_CLOUD_CONNECTED_APPS_GRANT", "OMB_CLOUD_X_TOKEN", "OMB_CLOUD_HOSTING_TOKEN", "OMB_CLOUD_TUNNEL_TOKEN",
+  "SANREMES_CLOUD_BOOTSTRAP_SECRET", "SANREMES_CLOUD_BOAT_TOKEN", "SANREMES_CLOUD_VOICE_TOKEN", "SANREMES_CLOUD_DECIDER_TOKEN", "SANREMES_CLOUD_AI_TOKEN",
+  "SANREMES_CLOUD_CONNECTED_APPS_GRANT", "SANREMES_CLOUD_X_TOKEN", "SANREMES_CLOUD_HOSTING_TOKEN", "SANREMES_CLOUD_TUNNEL_TOKEN",
 ] as const;
 /** In the home: a read-only folder holding only `secrets.json`, root's alone. The launcher reads it at start. */
-export const HOME_SECRETS_TARGET = "/run/mausbot";
+export const HOME_SECRETS_TARGET = "/run/sanremes";
 /** In the connector's state volume: the folder mounted at HOME_SECRETS_TARGET. */
 export const HOME_SECRETS_DIR = "home-secrets";
 export const HOME_SECRETS_FILE = "secrets.json";

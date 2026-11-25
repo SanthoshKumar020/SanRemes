@@ -1,5 +1,5 @@
 // Slack on a personal Cloud (docs/team-slack.md): a My Cloud, with no team. The Admin's part is played here: a session
-// opened for the owner through the signed pairing (label "Slack (MausBot Cloud)"), the three routes called with it,
+// opened for the owner through the signed pairing (label "Slack (SanRemes Cloud)"), the three routes called with it,
 // and a stand-in Admin that takes the Cloud's signed reports and checks them as the real one does. A channel message
 // and a direct message each become an ordinary conversation of the owner's. Disposable homes and the synthetic Claude
 // CLI; no Slack and no real Admin are reached.
@@ -16,7 +16,7 @@ import { teamRosterSignature } from "./cloud-team-roster.ts";
 import { TEAM_SLACK_FILE, TEAM_SLACK_REPORT_PATH, teamSlackSignature } from "./team-slack.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
 
-const SLACK_LABEL = "Slack (MausBot Cloud)";
+const SLACK_LABEL = "Slack (SanRemes Cloud)";
 const ENGINE = `const { existsSync } = process.getBuiltinModule("node:fs");
 const dir = process.env.FAKE_CLAUDE_FIXTURE_DIR;
 process.env.FAKE_CLAUDE_DUMP = dir + "/dump.json";
@@ -48,10 +48,10 @@ const admin = {
 };
 let adminServer: Server, fx: CloudSendFixture;
 let owner = "", ownerSlack = "";
-let scout: Bot, mausbot: Bot;
+let scout: Bot, sanremes: Bot;
 
 const file = (name: string) => join(fx.root, "cloud", name);
-const dataFile = (name: string) => join(fx.root, "cloud", ".openmausbot", name);
+const dataFile = (name: string) => join(fx.root, "cloud", ".sanremes", name);
 async function as(token: string | null, method: string, path: string, body?: unknown): Promise<{ status: number; body: any }> {
   const response = await fetch(`${fx.cloudBase}${path}`, { method, headers: { ...fx.edge, ...(token ? { authorization: `Bearer ${token}` } : {}),
     ...(body === undefined ? {} : { "content-type": "application/json" }) }, body: body === undefined ? undefined : JSON.stringify(body) });
@@ -89,8 +89,8 @@ beforeAll(async () => {
       const raw = Buffer.concat(chunks).toString("utf8"), headers = req.headers as Record<string, string>;
       const answer = (status: number, body: unknown) => { res.writeHead(status, { "content-type": "application/json" }); res.end(JSON.stringify(body)); };
       if (req.url !== TEAM_SLACK_REPORT_PATH || req.method !== "POST") return answer(404, { error: "not found" });
-      const machine = headers["x-omb-cloud-machine"] ?? "", timestamp = headers["x-omb-cloud-timestamp"] ?? "", nonce = headers["x-omb-cloud-nonce"] ?? "";
-      const presented = /^v1=([A-Za-z0-9_-]{43})$/.exec(headers["x-omb-cloud-signature"] ?? "")?.[1];
+      const machine = headers["x-sanremes-cloud-machine"] ?? "", timestamp = headers["x-sanremes-cloud-timestamp"] ?? "", nonce = headers["x-sanremes-cloud-nonce"] ?? "";
+      const presented = /^v1=([A-Za-z0-9_-]{43})$/.exec(headers["x-sanremes-cloud-signature"] ?? "")?.[1];
       const expected = Buffer.from(teamSlackSignature(fx.secret, machine, timestamp, nonce, raw), "base64url"), given = Buffer.from(presented ?? "", "base64url");
       if (machine !== fx.cloudMachineId || Math.abs(Date.now() / 1000 - Number(timestamp)) > 300 || !/^[A-Za-z0-9_-]{16,128}$/.test(nonce) || given.length !== expected.length || !timingSafeEqual(given, expected)) {
         admin.refused++;
@@ -105,7 +105,7 @@ beforeAll(async () => {
   });
   await new Promise<void>((resolve) => adminServer.listen(0, "127.0.0.1", resolve));
   fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-slack-${randomBytes(8).toString("hex")}`, cloudEngine: ENGINE,
-    cloudEnv: { OMB_BOT_BOX: "0", FIXTURE_ADMIN_STAND_IN: `http://127.0.0.1:${(adminServer.address() as AddressInfo).port}` } });
+    cloudEnv: { SANREMES_BOT_BOX: "0", FIXTURE_ADMIN_STAND_IN: `http://127.0.0.1:${(adminServer.address() as AddressInfo).port}` } });
   writeFileSync(file("markers.json"), JSON.stringify(ANSWERS));
   writeFileSync(file("tool-calls.json"), "[]");
   writeFileSync(file("release"), "");
@@ -117,8 +117,8 @@ beforeAll(async () => {
   const created = await as(owner, "POST", "/api/bots", { name: "Scout" });
   expect(created.status, JSON.stringify(created.body)).toBe(201);
   scout = created.body.bot as Bot;
-  mausbot = (await bots()).find((bot) => bot.defaultBot)!;
-  expect(mausbot, "a My Cloud has its MausBot").toBeTruthy();
+  sanremes = (await bots()).find((bot) => bot.defaultBot)!;
+  expect(sanremes, "a My Cloud has its SanRemes").toBeTruthy();
 }, hostTimeout(180_000));
 
 afterEach(async () => {
@@ -139,7 +139,7 @@ it("the owner's session lists every bot, each usable in a channel; no session is
   expect(mine.status, JSON.stringify(mine.body)).toBe(200);
   const listed = mine.body.bots as { id: string; name: string; shared: boolean }[];
   expect(listed.find((bot) => bot.id === scout.id)).toEqual({ id: scout.id, name: "Scout", shared: true });
-  expect(listed.find((bot) => bot.id === mausbot.id)).toEqual({ id: mausbot.id, name: mausbot.name, shared: true });
+  expect(listed.find((bot) => bot.id === sanremes.id)).toEqual({ id: sanremes.id, name: sanremes.name, shared: true });
   for (const refused of [await as(null, "GET", "/api/slack/team/bots"), await slack(null, { audience: "team", text: "hello" })]) {
     expect(refused.status).toBe(403);
     expect(refused.body.bots ?? refused.body.accepted).toBeUndefined();
@@ -193,14 +193,14 @@ it("the same id again starts nothing new and answers as the first did", async ()
   expect(statuses(first.id).filter((status) => status === "completed")).toHaveLength(1);
 }, hostTimeout(120_000));
 
-it("a direct message is an ordinary conversation too, with the owner's MausBot by default; either audience continues a conversation", async () => {
+it("a direct message is an ordinary conversation too, with the owner's SanRemes by default; either audience continues a conversation", async () => {
   const sent = await slack(ownerSlack, { audience: "member", bot: { default: true }, text: "Private notes please" });
   expect(sent.status, JSON.stringify(sent.body)).toBe(202);
-  expect(sent.body.bot).toEqual({ id: mausbot.id, name: mausbot.name });
+  expect(sent.body.bot).toEqual({ id: sanremes.id, name: sanremes.name });
   directThread = sent.body.conversationId;
   await finished(sent.id);
   expect(lastReport(sent.id).text).toBe(ANSWERS["Private notes please"]);
-  expect(await taskOf(mausbot.id, directThread)).toMatchObject({ title: "Slack DM: Private notes please" });
+  expect(await taskOf(sanremes.id, directThread)).toMatchObject({ title: "Slack DM: Private notes please" });
   expect((await rows(directThread)).find((row) => row.role === "user")).toMatchObject({ text: "Private notes please" });
 
   const named = await slack(ownerSlack, { audience: "member", bot: { name: "SCOUT" }, conversationId: null, text: "Is the report out?" });
@@ -281,8 +281,8 @@ it("every report is signed in Slack's own context with the bootstrap secret, and
   expect(admin.refused).toBe(0);
   expect(admin.taken.length).toBeGreaterThan(10);
   for (const { headers, raw } of admin.taken) {
-    const [timestamp, nonce, signature] = [headers["x-omb-cloud-timestamp"]!, headers["x-omb-cloud-nonce"]!, headers["x-omb-cloud-signature"]!];
-    expect(headers["x-omb-cloud-machine"]).toBe(fx.cloudMachineId);
+    const [timestamp, nonce, signature] = [headers["x-sanremes-cloud-timestamp"]!, headers["x-sanremes-cloud-nonce"]!, headers["x-sanremes-cloud-signature"]!];
+    expect(headers["x-sanremes-cloud-machine"]).toBe(fx.cloudMachineId);
     expect(signature).toBe(`v1=${teamSlackSignature(fx.secret, fx.cloudMachineId, timestamp, nonce, raw)}`);
     expect(signature).not.toBe(`v1=${teamRosterSignature(fx.secret, fx.cloudMachineId, timestamp, nonce, raw)}`);
     expect(signature).not.toBe(`v1=${cloudRequestSignature(fx.secret, timestamp, nonce, "POST", TEAM_SLACK_REPORT_PATH, raw)}`);
@@ -291,7 +291,7 @@ it("every report is signed in Slack's own context with the bootstrap secret, and
   const { raw } = admin.taken[0]!;
   const send = (sign: (timestamp: string, nonce: string) => string) => {
     const timestamp = String(Math.floor(Date.now() / 1000)), nonce = randomBytes(18).toString("base64url");
-    return fetch(base, { method: "POST", body: raw, headers: { "content-type": "application/json", "x-omb-cloud-machine": fx.cloudMachineId, "x-omb-cloud-timestamp": timestamp, "x-omb-cloud-nonce": nonce, "x-omb-cloud-signature": `v1=${sign(timestamp, nonce)}` } });
+    return fetch(base, { method: "POST", body: raw, headers: { "content-type": "application/json", "x-sanremes-cloud-machine": fx.cloudMachineId, "x-sanremes-cloud-timestamp": timestamp, "x-sanremes-cloud-nonce": nonce, "x-sanremes-cloud-signature": `v1=${sign(timestamp, nonce)}` } });
   };
   expect((await send((timestamp, nonce) => teamSlackSignature(randomBytes(32).toString("base64url"), fx.cloudMachineId, timestamp, nonce, raw))).status).toBe(401);
   expect((await send((timestamp, nonce) => teamSlackSignature(fx.secret, fx.cloudMachineId, timestamp, nonce, raw))).status).toBe(200);

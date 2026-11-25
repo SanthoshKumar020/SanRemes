@@ -42,8 +42,8 @@ async function until(done: () => Promise<boolean>, what: string) {
 
 beforeAll(async () => {
   chmodSync(fake, 0o755);
-  home = mkdtempSync(join(tmpdir(), "omb-codex-room-history-"));
-  const dataDir = join(home, ".openmausbot");
+  home = mkdtempSync(join(tmpdir(), "sanremes-codex-room-history-"));
+  const dataDir = join(home, ".sanremes");
   mkdirSync(dataDir);
   callLog = join(home, "codex-calls.jsonl");
   writeFileSync(join(dataDir, "config.json"), JSON.stringify({ instances: {
@@ -51,7 +51,7 @@ beforeAll(async () => {
   } }));
   child = spawn(process.execPath, [join(root, "server", "index.ts")], {
     cwd: root,
-    env: { ...process.env, HOME: home, USERPROFILE: home, OMB_DATA_DIR: dataDir, CODEX_HOME: join(home, ".codex"), OMB_PORT: String(port) },
+    env: { ...process.env, HOME: home, USERPROFILE: home, SANREMES_DATA_DIR: dataDir, CODEX_HOME: join(home, ".codex"), SANREMES_PORT: String(port) },
     stdio: ["ignore", "pipe", "pipe"],
   });
   child.stderr!.on("data", (data) => { stderr += data; });

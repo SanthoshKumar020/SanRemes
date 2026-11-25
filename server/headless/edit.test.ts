@@ -17,7 +17,7 @@ function harness(verb: "edit" | "set-model" = "edit") {
     const io: HeadlessIo = { out: (text) => out.push(text), err: () => undefined, readStdin: async () => "Corrected request" };
     const options = verb === "edit" ? ["--message", "m1"] : ["--model", "claude/claude-sonnet-5-5"];
     const code = await runHeadless([verb, ...argv, ...options, "--json"], {
-      env: { OPENMAUSBOT_URL: "http://127.0.0.1:19999" }, io, callTool: callTool as any, request: request as any,
+      env: { OPENSANREMES_URL: "http://127.0.0.1:19999" }, io, callTool: callTool as any, request: request as any,
     });
     return { code, result: JSON.parse(out[0]!) };
   };

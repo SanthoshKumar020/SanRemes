@@ -4,7 +4,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { request } from "../scripts/mcp-server.ts";
 import { readHandoffs } from "./testing/handoff-rows.ts";
 
@@ -13,7 +13,7 @@ const LINE = "JOB: find out where my mail lives";
 
 it("stops one hand-off and leaves the next request in that teammate's thread going", async () => {
   const session = await launchVerificationServer(process.env, undefined, undefined, undefined, undefined, { scripted: true });
-  const cli = (...args: string[]) => runControlOmb(args, { env: { OPENMAUSBOT_URL: session.info.url } }) as Promise<any>;
+  const cli = (...args: string[]) => runControlOmb(args, { env: { OPENSANREMES_URL: session.info.url } }) as Promise<any>;
   const post = (path: string) => request(path, { method: "POST", body: "{}" }, session.info.url)
     .then((body: any) => ({ status: 200, body }), (error: { status?: number }) => ({ status: error.status }));
   const api = (path: string) => request(path, {}, session.info.url) as Promise<any>;

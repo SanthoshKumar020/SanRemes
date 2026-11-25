@@ -7,11 +7,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it } from "vitest";
 
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { removeTempDir } from "./testing/cleanup.ts";
 
 it("wakes the same bot in the same conversation at its time with no human action, and Cancel stops another", async () => {
-  const folder = mkdtempSync(join(tmpdir(), "omb-check-backs-"));
+  const folder = mkdtempSync(join(tmpdir(), "sanremes-check-backs-"));
   const gate = join(folder, "finish");
   const fixture = await launchVerificationServer({ FAKE_CLAUDE_MODE: "slow", FAKE_CLAUDE_SLOW_FINISH_GATE: gate });
   const evidence: unknown[] = [];
@@ -35,7 +35,7 @@ it("wakes the same bot in the same conversation at its time with no human action
   const turnToken = async () => {
     let token = "";
     await expect.poll(() => {
-      try { token = dump().mcpConfig.mcpServers.agents.env.OMB_COMMS_TOKEN; } catch { return false; }
+      try { token = dump().mcpConfig.mcpServers.agents.env.SANREMES_COMMS_TOKEN; } catch { return false; }
       return Boolean(token);
     }, { timeout: 15_000 }).toBe(true);
     return token;

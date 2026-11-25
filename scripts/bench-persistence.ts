@@ -12,9 +12,9 @@ if (process.argv.includes("--bots")) {
   process.exit(0);
 }
 
-const directory = mkdtempSync(join(tmpdir(), "omb-persistence-bench-"));
-const previousDataDir = process.env.OMB_DATA_DIR;
-process.env.OMB_DATA_DIR = directory;
+const directory = mkdtempSync(join(tmpdir(), "sanremes-persistence-bench-"));
+const previousDataDir = process.env.SANREMES_DATA_DIR;
+process.env.SANREMES_DATA_DIR = directory;
 mkdirSync(join(directory, "events"));
 const db = await import("../server/message-db.ts");
 const { EventBus } = await import("../server/harness/bus.ts");
@@ -94,7 +94,7 @@ try {
   await bus.flush();
   await db.closeMessageSearch();
   db.closeMessageDb();
-  if (previousDataDir === undefined) delete process.env.OMB_DATA_DIR;
-  else process.env.OMB_DATA_DIR = previousDataDir;
+  if (previousDataDir === undefined) delete process.env.SANREMES_DATA_DIR;
+  else process.env.SANREMES_DATA_DIR = previousDataDir;
   rmSync(directory, { recursive: true, force: true });
 }

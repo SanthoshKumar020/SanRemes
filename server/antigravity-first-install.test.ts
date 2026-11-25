@@ -1,5 +1,5 @@
 // The engine updater's first install of Google's Antigravity CLI on a computer with no Antigravity runtime at all: only
-// when the server is opted in (OMB_ANTIGRAVITY_NATIVE_CLI=1) or Antigravity is in use here, from Google's channel with
+// when the server is opted in (SANREMES_ANTIGRAVITY_NATIVE_CLI=1) or Antigravity is in use here, from Google's channel with
 // the card install's checks, and never on a computer that has the Classic runtime.
 import { createHash } from "node:crypto";
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, truncateSync, writeFileSync } from "node:fs";
@@ -24,7 +24,7 @@ afterEach(async () => {
 });
 
 function folder(): string {
-  const directory = mkdtempSync(join(tmpdir(), "omb-antigravity-first-"));
+  const directory = mkdtempSync(join(tmpdir(), "sanremes-antigravity-first-"));
   scratch.push(directory);
   return directory;
 }
@@ -88,7 +88,7 @@ async function updaterFor(baseDir: string, served: Awaited<ReturnType<typeof cha
 
 describe.skipIf(WINDOWS)("the engine updater on a computer with no Antigravity runtime", () => {
   it("installs Google's CLI in its pass when the server is opted in, as a first install rather than an update", async () => {
-    vi.stubEnv("OMB_ANTIGRAVITY_NATIVE_CLI", "1");
+    vi.stubEnv("SANREMES_ANTIGRAVITY_NATIVE_CLI", "1");
     vi.resetModules();
     const baseDir = folder();
     const served = await channel();

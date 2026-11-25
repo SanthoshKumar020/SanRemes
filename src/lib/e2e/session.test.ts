@@ -104,7 +104,7 @@ async function startNode(): Promise<RelayNode> {
       if (first.t !== "phone" || first.v !== 1) return refuse(phone, 4400);
       if (first.hid !== b64u(HOST_ID) || !node.admitted.has(String(first.adm))) return refuse(phone, 4404);
       if (node.stall) return void phone.send(JSON.stringify({ t: "ready" }));
-      const data = new NodeWebSocket(node.computer ?? ready.relayTransport, "omb-e2e.v1");
+      const data = new NodeWebSocket(node.computer ?? ready.relayTransport, "sanremes-e2e.v1");
       data.on("open", () => {
         phone.send(JSON.stringify({ t: "ready" }));
         phone.on("message", (bytes: RawData, binary: boolean) => (binary ? data.send(bytes as Buffer) : refuse(phone, 4400)));

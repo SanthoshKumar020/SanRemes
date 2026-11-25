@@ -9,7 +9,7 @@ import {
 } from "react";
 import { cn } from "@/lib/cn";
 import { avatarMarks, type AvatarKind } from "@/lib/avatar-marks";
-import { CHROME_EYES, CHROME_GRADIENT, MAUS_COLORS, type MausColor, type MausMotion, type MausState } from "@/lib/mascot";
+import { CHROME_EYES, CHROME_GRADIENT, MAUS_COLORS, type SanRemesColor, type SanRemesMotion, type SanRemesState } from "@/lib/mascot";
 import { CursorAvatar, type CursorAvatarHandle } from "./CursorAvatar";
 import { ACTIVE_STATES } from "./mascot-motion";
 import { MOTION_BEAT_MS } from "./mascot-beat";
@@ -30,7 +30,7 @@ const POINTER_GAZE = { forward: 1, authored: 0.25 };
 
 interface MotionFaces
   extends Partial<
-    Record<Exclude<MausMotion, "none">, { state?: MausState; blink?: boolean; spin?: number }>
+    Record<Exclude<SanRemesMotion, "none">, { state?: SanRemesState; blink?: boolean; spin?: number }>
   > {}
 
 const MOTION_FACE: MotionFaces = {
@@ -61,7 +61,7 @@ function mix(hex: string, toward: string, t: number): string {
     .join("")}`;
 }
 
-const gradientFor = (color: MausColor, custom?: string): [string, string, string] => {
+const gradientFor = (color: SanRemesColor, custom?: string): [string, string, string] => {
   if (!custom && color === "chrome") return CHROME_GRADIENT;
   const fill = custom ?? MAUS_COLORS[color] ?? MAUS_COLORS.green;
   return [mix(fill, "#ffffff", 0.55), fill, mix(fill, "#000000", 0.42)];
@@ -70,10 +70,10 @@ const gradientFor = (color: MausColor, custom?: string): [string, string, string
 /** A bot's own body colour when it picked one, else undefined. */
 const customFill = (value: unknown): string | undefined => mascotBodyColorSchema.safeParse(value).data;
 
-const roomGradients = new Map<MausColor, [string, string, string]>();
+const roomGradients = new Map<SanRemesColor, [string, string, string]>();
 
 /** One array per colour, so a memoised mascot drawn with it does not draw again. */
-export function roomAvatarGradient(color: MausColor): [string, string, string] {
+export function roomAvatarGradient(color: SanRemesColor): [string, string, string] {
   let gradient = roomGradients.get(color);
   if (!gradient) {
     const fill = `var(--identity-${color})`;
@@ -82,15 +82,15 @@ export function roomAvatarGradient(color: MausColor): [string, string, string] {
   return gradient;
 }
 
-export type MausAvatarHandle = CursorAvatarHandle;
+export type SanRemesAvatarHandle = CursorAvatarHandle;
 
-export type MausAvatarProps = {
-  color: MausColor;
-  state?: MausState;
+export type SanRemesAvatarProps = {
+  color: SanRemesColor;
+  state?: SanRemesState;
   expression?: number;
   size?: number;
   label?: string;
-  motion?: MausMotion;
+  motion?: SanRemesMotion;
   motionKey?: number;
   turn?: number;
   gaze?: { x?: number; y?: number };
@@ -114,7 +114,7 @@ export type MausAvatarProps = {
   kind?: AvatarKind;
 };
 
-function MausAvatarComponent(props: MausAvatarProps, ref: React.Ref<MausAvatarHandle>) {
+function SanRemesAvatarComponent(props: SanRemesAvatarProps, ref: React.Ref<SanRemesAvatarHandle>) {
   const { bodyId, color, size, state, motion, motionKey, gaze, trackPointer, animated, label, kind } = props;
   if (isCarvedBody(bodyId)) {
     return (
@@ -179,8 +179,8 @@ function GradientAvatarComponent(
     faceColor,
     bodyColor,
     kind,
-  }: MausAvatarProps,
-  ref: React.Ref<MausAvatarHandle>,
+  }: SanRemesAvatarProps,
+  ref: React.Ref<SanRemesAvatarHandle>,
 ) {
   const silhouette = MASCOT_BODIES[botMascotBody(bodyId)];
   const custom = customFill(bodyColor);
@@ -194,7 +194,7 @@ function GradientAvatarComponent(
     setExpression: (index: number) => inner.current?.setExpression(index),
   }));
 
-  const [motionState, setMotionState] = useState<MausState | null>(null);
+  const [motionState, setMotionState] = useState<SanRemesState | null>(null);
   useEffect(() => {
     // A beat's face ends with it: a caller that stops animating mid-beat leaves the bot's own state, not the beat's.
     if (motion === "none" || animated === false) return setMotionState(null);
@@ -240,13 +240,13 @@ function GradientAvatarComponent(
 
 const GradientAvatar = forwardRef(GradientAvatarComponent);
 
-export const MausAvatar = memo(forwardRef(MausAvatarComponent));
+export const SanRemesAvatar = memo(forwardRef(SanRemesAvatarComponent));
 
-export type BotAvatarProps = Omit<MausAvatarProps, "color" | "gradient"> & {
+export type BotAvatarProps = Omit<SanRemesAvatarProps, "color" | "gradient"> & {
   readable?: boolean;
   bot: {
     name?: string;
-    color: MausColor;
+    color: SanRemesColor;
     avatarUrl?: string | null;
     avatarCrop?: BotAvatarCrop;
     avatarZoom?: number;
@@ -289,7 +289,7 @@ export function BotAvatar({ bot, size = 44, label, readable = false, ...mascotPr
 
   if (outcome !== "flatImage") {
     return (
-      <MausAvatar
+      <SanRemesAvatar
         bodyId={wornBody(bot.mascotBody, bot.color, festival)}
         {...mascotProps}
         color={bot.color}

@@ -7,15 +7,15 @@ import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
 import { resolveAgentBrowserBinary } from "../../server/browser-engine.ts";
 import { waitForExit } from "../../server/testing/cleanup.ts";
-import { runControlOmb } from "../control-omb.ts";
-import { ENABLE_ADVANCED_UI, UI_TOOLS_DIR } from "./control-omb-ui.ts";
+import { runControlOmb } from "../control-sanremes.ts";
+import { ENABLE_ADVANCED_UI, UI_TOOLS_DIR } from "./control-sanremes-ui.ts";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const binary = resolveAgentBrowserBinary({ dataDir: UI_TOOLS_DIR, env: process.env });
-const forced = process.env.OMB_UI_E2E === "1";
+const forced = process.env.SANREMES_UI_E2E === "1";
 const enabled = forced || Boolean(binary);
 const launchTimeout = forced && !binary ? 600_000 : 180_000;
-if (!enabled) console.log("skipping Slack settings UI e2e: no agent-browser; set OMB_UI_E2E=1 to install the pinned release");
+if (!enabled) console.log("skipping Slack settings UI e2e: no agent-browser; set SANREMES_UI_E2E=1 to install the pinned release");
 
 describe("Slack management in agent settings", () => {
   let child: ChildProcess | undefined;
@@ -25,7 +25,7 @@ describe("Slack management in agent settings", () => {
     let output = "";
     let errors = "";
     let info: { ui: string; url: string; botId: string; dataDir: string; logPath: string } | undefined;
-    child = spawn(process.execPath, ["--experimental-strip-types", join(ROOT, "scripts/control-omb.ts"), "ui", "launch"], {
+    child = spawn(process.execPath, ["--experimental-strip-types", join(ROOT, "scripts/control-sanremes.ts"), "ui", "launch"], {
       cwd: ROOT, env: process.env, stdio: ["ignore", "pipe", "pipe"],
     });
     child.stdout!.on("data", (chunk: Buffer) => { output += String(chunk); });

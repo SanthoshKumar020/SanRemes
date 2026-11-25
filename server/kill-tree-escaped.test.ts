@@ -23,7 +23,7 @@ const alive = (pid: number) => {
 
 describe.runIf(posix)("execCli timeout", () => {
   it("stops a SIGTERM-ignoring grandchild that left the process group", async () => {
-    dir = mkdtempSync(join(tmpdir(), "omb-escaped-"));
+    dir = mkdtempSync(join(tmpdir(), "sanremes-escaped-"));
     const pidFile = join(dir, "pid");
     const sleeper = "process.on('SIGTERM',()=>{});setInterval(()=>{},1000)";
     const wrapper = `process.on('SIGTERM',()=>{});`

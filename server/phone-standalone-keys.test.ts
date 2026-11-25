@@ -6,9 +6,9 @@ import type { AddressInfo } from "node:net";
 import { join } from "node:path";
 import { expect, it } from "vitest";
 
-import { launchVerificationServer } from "../scripts/control-omb.ts";
+import { launchVerificationServer } from "../scripts/control-sanremes.ts";
 
-const PHONE = { "x-openmausbot-companion": "1", "x-openmausbot-companion-device": "phone-1" };
+const PHONE = { "x-sanremes-companion": "1", "x-sanremes-companion-device": "phone-1" };
 
 async function provider() {
   const heard: string[] = [];

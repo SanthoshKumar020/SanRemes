@@ -1,6 +1,6 @@
 // How much of the server's memory one bot may use. By default this only watches and writes down: a bot over its cap is
 // recorded ("would have stopped": its measured memory, the cap, its engines, the room left) in the health report's perf
-// part and the server log, and nothing is signalled or closed. Only a number of MB set in OMB_BOT_MEMORY_MAX_MB makes it
+// part and the server log, and nothing is signalled or closed. Only a number of MB set in SANREMES_BOT_MEMORY_MAX_MB makes it
 // act, and then only when the server is short of memory, only on the bot using the most, and in steps: what the bot left
 // running and its idle engines first, then (measured again, still over) its largest busy engine, never all at once; a
 // stopped engine's conversations then have their browsers closed. A process several bots share, or one other
@@ -22,7 +22,7 @@ import { attributeRows, type BotTally, type FootprintOwner, type FootprintUnit }
 import type { ProcessRow } from "./perf/process-buckets.ts";
 import type { GateHost } from "./process-room.ts";
 
-export const BOT_MEMORY_ENV = "OMB_BOT_MEMORY_MAX_MB";
+export const BOT_MEMORY_ENV = "SANREMES_BOT_MEMORY_MAX_MB";
 const MB = 1_048_576;
 /** No cap is set below a busy engine at its largest (engine-memory's ENGINE_MAX_BYTES) with its browser open. */
 export const BOT_CAP_FLOOR_BYTES = 1500 * MB + BROWSER_BYTES;
@@ -57,12 +57,12 @@ export interface CapInputs {
   turns?: number;
 }
 
-/** "log": watch and write down only (the default); "enforce": act, set by a number in OMB_BOT_MEMORY_MAX_MB. */
+/** "log": watch and write down only (the default); "enforce": act, set by a number in SANREMES_BOT_MEMORY_MAX_MB. */
 export type CapMode = "log" | "enforce";
 /** The memory one engine of a bot may use: a bot with several engines running (several conversations) may use that many. */
 export interface CapSetting { mode: CapMode; bytes: number }
 
-/** OMB_BOT_MEMORY_MAX_MB: a number of MB to enforce (any Linux host, desktop included: the watchdog reads /proc); "off" or 0 for no watchdog at all;
+/** SANREMES_BOT_MEMORY_MAX_MB: a number of MB to enforce (any Linux host, desktop included: the watchdog reads /proc); "off" or 0 for no watchdog at all;
  * unset or "auto" to only write down where a bot goes over the default, which is computed wherever turns wait for room
  * (never on the desktop): twice one bot's fair share of the memory (the memory over the turns that may run at once), at
  * least an engine at its largest with its browser, at most 80% of the memory. */
@@ -249,7 +249,7 @@ export class BotMemoryWatchdog {
         over.logged = true;
         noted.push(event(bot, setting.mode === "log" ? "logged" : "held"));
         this.#note(noted.at(-1)!, setting.mode === "log"
-          ? "watch only, nothing stopped (set OMB_BOT_MEMORY_MAX_MB to a number of MB to enforce)"
+          ? "watch only, nothing stopped (set SANREMES_BOT_MEMORY_MAX_MB to a number of MB to enforce)"
           : "nothing stopped: the server has room to spare");
       }
       return noted;

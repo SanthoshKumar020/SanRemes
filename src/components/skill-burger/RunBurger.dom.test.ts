@@ -124,13 +124,13 @@ it("shows a burger the turn changed, with that change's Undo", async () => {
 it("asks for a burger's inputs in one form, filled with the saved values, and runs with what the person gave", async () => {
   const { RunWithInputs } = await import("./RunInputs");
   const ran: Array<Record<string, string>> = [];
-  fixture.api.mockImplementation(async () => ({ workflow: { version: 1, summary: "QA", args: { site: { default: "https://mausbot.com" } }, steps: [] } }));
+  fixture.api.mockImplementation(async () => ({ workflow: { version: 1, summary: "QA", args: { site: { default: "https://sanremes.com" } }, steps: [] } }));
   const skill = { name: "qa", summary: "QA a site", sha256: "x", savedAt: "", layers: [], args: ["site"], botId: "lead" };
   await act(async () => root.render(createElement(RunWithInputs, { skill, onRun: (inputs: Record<string, string>) => ran.push(inputs), className: "", panelAction: "run-skill-burger:qa" })));
   const run = host.querySelector<HTMLButtonElement>('button[data-panel-action="run-skill-burger:qa"]')!;
   await act(async () => run.click());
   const field = host.querySelector<HTMLInputElement>("[data-burger-run-inputs] input")!;
-  expect(field.value).toBe("https://mausbot.com");
+  expect(field.value).toBe("https://sanremes.com");
   await act(async () => {
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(field, "https://example.org");
     field.dispatchEvent(new Event("input", { bubbles: true }));

@@ -32,7 +32,7 @@ function install(prefix: string, pkg: string, version: string): string {
 }
 
 function machine() {
-  const root = mkdtempSync(join(tmpdir(), "omb-image-engines-"));
+  const root = mkdtempSync(join(tmpdir(), "sanremes-image-engines-"));
   folders.push(root);
   const image = join(root, "usr-local");
   const data = join(root, "data");
@@ -42,18 +42,18 @@ function machine() {
 describe("the switch", () => {
   it("is off unless set to 1 or an absolute prefix, and always off on Windows", () => {
     expect(imageEnginesOn({ env: {}, platform: "linux" })).toBe(false);
-    expect(imageEnginesOn({ env: { OMB_IMAGE_ENGINES: "0" }, platform: "linux" })).toBe(false);
-    expect(imageEnginesOn({ env: { OMB_IMAGE_ENGINES: "true" }, platform: "linux" })).toBe(false);
-    expect(imageEnginesOn({ env: { OMB_IMAGE_ENGINES: "relative/prefix" }, platform: "linux" })).toBe(false);
-    expect(imageEnginesOn({ env: { OMB_IMAGE_ENGINES: "1" }, platform: "linux" })).toBe(true);
-    expect(imageEnginesOn({ env: { OMB_IMAGE_ENGINES: "/usr/local" }, platform: "linux" })).toBe(true);
-    expect(imageEnginesOn({ env: { OMB_IMAGE_ENGINES: "1" }, platform: "win32" })).toBe(false);
-    expect(imageEnginesOn({ env: { OMB_IMAGE_ENGINES: "1" }, platform: "darwin" })).toBe(true);
+    expect(imageEnginesOn({ env: { SANREMES_IMAGE_ENGINES: "0" }, platform: "linux" })).toBe(false);
+    expect(imageEnginesOn({ env: { SANREMES_IMAGE_ENGINES: "true" }, platform: "linux" })).toBe(false);
+    expect(imageEnginesOn({ env: { SANREMES_IMAGE_ENGINES: "relative/prefix" }, platform: "linux" })).toBe(false);
+    expect(imageEnginesOn({ env: { SANREMES_IMAGE_ENGINES: "1" }, platform: "linux" })).toBe(true);
+    expect(imageEnginesOn({ env: { SANREMES_IMAGE_ENGINES: "/usr/local" }, platform: "linux" })).toBe(true);
+    expect(imageEnginesOn({ env: { SANREMES_IMAGE_ENGINES: "1" }, platform: "win32" })).toBe(false);
+    expect(imageEnginesOn({ env: { SANREMES_IMAGE_ENGINES: "1" }, platform: "darwin" })).toBe(true);
   });
 
   it("finds the image's prefix from Node's own place, or the absolute prefix it names", () => {
-    expect(imagePrefix({ env: { OMB_IMAGE_ENGINES: "/opt/image" } })).toBe("/opt/image");
-    expect(imagePrefix({ env: { OMB_IMAGE_ENGINES: "1" } })).toBe(join(process.execPath, "..", ".."));
+    expect(imagePrefix({ env: { SANREMES_IMAGE_ENGINES: "/opt/image" } })).toBe("/opt/image");
+    expect(imagePrefix({ env: { SANREMES_IMAGE_ENGINES: "1" } })).toBe(join(process.execPath, "..", ".."));
     expect(runningImageVersion(CLAUDE, "/nowhere", { env: {} })).toBeNull();
   });
 });
@@ -86,8 +86,8 @@ describe.skipIf(process.platform === "win32")("the PATH engines run from", () =>
 
   function boot(m: ReturnType<typeof machine>, switchOn: boolean) {
     vi.stubEnv("PATH", `${join(m.image, "bin")}:/usr/bin:/bin`);
-    vi.stubEnv("OMB_TEST_SEALED_PATH", "1");
-    vi.stubEnv("OMB_IMAGE_ENGINES", switchOn ? m.image : "");
+    vi.stubEnv("SANREMES_TEST_SEALED_PATH", "1");
+    vi.stubEnv("SANREMES_IMAGE_ENGINES", switchOn ? m.image : "");
     registerEnginesBinDir(m.data, []);
   }
 
@@ -108,7 +108,7 @@ describe.skipIf(process.platform === "win32")("the PATH engines run from", () =>
     boot(m, true);
     expect(findCliCandidates("claude")[0]).toBe(image);
     expect(findCliCandidates("codex")[0]).toBe(join(m.image, "bin", "codex"));
-    expect(sharedCopies(m.data, { env: { OMB_IMAGE_ENGINES: m.image } }).map((copy) => copy.pkg).sort()).toEqual([CLAUDE, CODEX]);
+    expect(sharedCopies(m.data, { env: { SANREMES_IMAGE_ENGINES: m.image } }).map((copy) => copy.pkg).sort()).toEqual([CLAUDE, CODEX]);
   });
 
   it("runs a newer copy someone installed in the data folder", () => {
@@ -161,7 +161,7 @@ describe.skipIf(process.platform === "win32")("the engine updater with image cop
     const m = machine();
     install(m.image, CLAUDE, "2.1.330");
     install(m.image, CODEX, "0.171.0");
-    vi.stubEnv("OMB_IMAGE_ENGINES", m.image);
+    vi.stubEnv("SANREMES_IMAGE_ENGINES", m.image);
     const { engines, npmLatest, updateNpm, installStandalone } = updater(m, { [CLAUDE]: "2.1.300", [CODEX]: "0.160.0" });
     await engines.check();
     expect(npmLatest).not.toHaveBeenCalled();
@@ -183,7 +183,7 @@ describe.skipIf(process.platform === "win32")("the engine updater with image cop
   it("keeps a newer copy in the data folder up to date, as today", async () => {
     const m = machine();
     install(m.image, CLAUDE, "2.1.330");
-    vi.stubEnv("OMB_IMAGE_ENGINES", m.image);
+    vi.stubEnv("SANREMES_IMAGE_ENGINES", m.image);
     const { engines, updateNpm } = updater(m, { [CLAUDE]: "2.1.340" });
     await engines.check();
     expect(updateNpm).toHaveBeenCalledOnce();
@@ -193,7 +193,7 @@ describe.skipIf(process.platform === "win32")("the engine updater with image cop
   it("installs a newer copy when the image's is below what the driver needs", async () => {
     const m = machine();
     install(m.image, CLAUDE, "2.1.200");
-    vi.stubEnv("OMB_IMAGE_ENGINES", m.image);
+    vi.stubEnv("SANREMES_IMAGE_ENGINES", m.image);
     const { engines, updateNpm } = updater(m, { [CLAUDE]: "2.1.100" });
     await engines.check();
     expect(updateNpm.mock.calls[0]![0]).toMatchObject({ pkg: CLAUDE, version: "2.1.350" });
@@ -203,7 +203,7 @@ describe.skipIf(process.platform === "win32")("the engine updater with image cop
     const m = machine();
     install(m.image, CLAUDE, "2.1.330");
     install(m.image, CODEX, "0.171.0");
-    vi.stubEnv("OMB_IMAGE_ENGINES", m.image);
+    vi.stubEnv("SANREMES_IMAGE_ENGINES", m.image);
     const { engines, updateNpm } = updater(m, { [CLAUDE]: "2.1.300", [CODEX]: "0.172.0" });
     await engines.check();
     expect(updateNpm.mock.calls.map(([options]) => options.pkg)).toEqual([CLAUDE]);
@@ -212,7 +212,7 @@ describe.skipIf(process.platform === "win32")("the engine updater with image cop
   it("keeps updating a data-folder copy a saved CLI path runs", async () => {
     const m = machine();
     install(m.image, CLAUDE, "2.1.330");
-    vi.stubEnv("OMB_IMAGE_ENGINES", m.image);
+    vi.stubEnv("SANREMES_IMAGE_ENGINES", m.image);
     const { engines, updateNpm } = updater(m, { [CLAUDE]: "2.1.300" }, [join(enginesBinDir(m.data), "claude")]);
     await engines.check();
     expect(updateNpm).toHaveBeenCalledOnce();

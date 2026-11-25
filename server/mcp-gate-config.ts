@@ -16,13 +16,13 @@ export function appMountFor(name: string, turn: Pick<SendTurnInput, "integration
   const app = turn.integrations?.mcpApps?.[name];
   const agents = turn.integrations?.agents?.env;
   if (!app || !Object.hasOwn(turn.integrations?.custom ?? {}, name)) return undefined;
-  if (!agents?.OMB_HARNESS_URL || !agents.OMB_COMMS_TOKEN) return undefined;
-  return { server: name, harnessUrl: agents.OMB_HARNESS_URL, token: agents.OMB_COMMS_TOKEN, extension: app.extension };
+  if (!agents?.SANREMES_HARNESS_URL || !agents.SANREMES_COMMS_TOKEN) return undefined;
+  return { server: name, harnessUrl: agents.SANREMES_HARNESS_URL, token: agents.SANREMES_COMMS_TOKEN, extension: app.extension };
 }
 
-/** `OMB_MCP_RESULT_BUDGET=0` mounts bot servers directly, for a bot that needs whole payloads. */
+/** `SANREMES_MCP_RESULT_BUDGET=0` mounts bot servers directly, for a bot that needs whole payloads. */
 export function resultBudget(env: NodeJS.ProcessEnv = process.env): number {
-  const raw = env.OMB_MCP_RESULT_BUDGET;
+  const raw = env.SANREMES_MCP_RESULT_BUDGET;
   if (raw === undefined || raw === "") return DEFAULT_RESULT_BUDGET;
   const parsed = Number(raw);
   return Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : DEFAULT_RESULT_BUDGET;
@@ -77,7 +77,7 @@ export function limitUngatedOutput(
     const server = Object.hasOwn(mounted, name) ? mounted[name] as { env?: Record<string, string> } | undefined : undefined;
     if (!server) continue;
     // A gate trims on its own budget; one set to 0 passes whole payloads through, so it needs the limit unset too.
-    const gateBudget = server.env?.OMB_GATE_BUDGET;
+    const gateBudget = server.env?.SANREMES_GATE_BUDGET;
     if (gateBudget !== undefined) {
       if (Number(gateBudget) <= 0) return;
       continue;
@@ -148,8 +148,8 @@ export function mcpStdioServer(server: unknown, options: StdioServerOptions = {}
     directory = JSON.stringify({ name: options.directory.name, ...(scope.scope ? { toolScope: scope.scope } : {}) });
   }
   const settings = {
-    OMB_REMOTE_MCP_SERVER: JSON.stringify(remote),
-    ...(directory ? { OMB_REMOTE_MCP_DIRECTORY: directory } : {}),
+    SANREMES_REMOTE_MCP_SERVER: JSON.stringify(remote),
+    ...(directory ? { SANREMES_REMOTE_MCP_DIRECTORY: directory } : {}),
     ...(options.apps ? { [REMOTE_MCP_APPS_ENV]: JSON.stringify(options.apps) } : {}),
   };
   return {
@@ -179,7 +179,7 @@ export function gateServer(input: {
   apps?: AppMount;
   /** The engine's provider limits each listed tool schema, so the gate fits them to its profile. */
   schemaProfile?: ToolSchemaProfileId;
-  /** The engine's provider limits how many tools a request carries: the gate lists at most OMB_TOOL_LIMIT of them. */
+  /** The engine's provider limits how many tools a request carries: the gate lists at most SANREMES_TOOL_LIMIT of them. */
   limitsTools?: boolean;
 }): { command: string; args: string[]; env: Record<string, string> } | null {
   const { name, server, budget, apps, schemaProfile, limitsTools } = input;
@@ -210,15 +210,15 @@ export function gateServer(input: {
   // whatever the turn decided earlier.
   const upstream = scoped && name === "agents" ? unbridgedServer(spec) : spec;
   const env = {
-    OMB_GATE_NAME: name,
-    OMB_GATE_UPSTREAM: JSON.stringify({ command: upstream.command, args: upstream.args ?? [], env: upstream.env ?? {} }),
-    OMB_GATE_SPILL_DIR: spillDir(input.threadId),
-    OMB_GATE_BUDGET: String(budget),
-    ...(scoped ? { OMB_GATE_TOOL_SCOPE: JSON.stringify(parsed.scope) } : {}),
-    ...(directory ? { OMB_GATE_DIRECTORY: "1" } : {}),
+    SANREMES_GATE_NAME: name,
+    SANREMES_GATE_UPSTREAM: JSON.stringify({ command: upstream.command, args: upstream.args ?? [], env: upstream.env ?? {} }),
+    SANREMES_GATE_SPILL_DIR: spillDir(input.threadId),
+    SANREMES_GATE_BUDGET: String(budget),
+    ...(scoped ? { SANREMES_GATE_TOOL_SCOPE: JSON.stringify(parsed.scope) } : {}),
+    ...(directory ? { SANREMES_GATE_DIRECTORY: "1" } : {}),
     ...(apps && !remote ? { [GATE_APPS_ENV]: JSON.stringify(apps) } : {}),
   };
-  if (input.configEnvName && ((!scoped && !(apps && !remote)) || !/^OMB_GATE_CONFIG_[a-f0-9]{64}$/.test(input.configEnvName))) {
+  if (input.configEnvName && ((!scoped && !(apps && !remote)) || !/^SANREMES_GATE_CONFIG_[a-f0-9]{64}$/.test(input.configEnvName))) {
     throw new Error("Invalid private MCP gate configuration.");
   }
   return {
@@ -241,6 +241,6 @@ export function gateQueryTools(servers: Readonly<Record<string, unknown>>): stri
     if (!Array.isArray(args) || args[0] !== SPAWNED_PROXIES.mcpGate) return [];
     let config: Record<string, unknown> | undefined = env;
     if (args[1] === "--config-env") try { config = JSON.parse(env?.[String(args[2])] ?? "{}"); } catch { return []; }
-    return Number(config?.OMB_GATE_BUDGET) > 0 ? [`mcp__${name}__${QUERY_TOOL_NAME}`] : [];
+    return Number(config?.SANREMES_GATE_BUDGET) > 0 ? [`mcp__${name}__${QUERY_TOOL_NAME}`] : [];
   });
 }

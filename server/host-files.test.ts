@@ -10,13 +10,13 @@ import { withHostFiles } from "./local-computer.ts";
 
 describe("the bridge's switch", () => {
   it("turns on only for this desktop's own gated computer", () => {
-    const gated = { command: "node", args: [], env: { OMB_CUA_COMMAND: "cua-driver" } as Record<string, string>, platform: "win32" as const, scope: "local-computer" as const };
-    expect(withHostFiles(gated).env.OMB_HOST_FILES).toBe("1");
+    const gated = { command: "node", args: [], env: { SANREMES_CUA_COMMAND: "cua-driver" } as Record<string, string>, platform: "win32" as const, scope: "local-computer" as const };
+    expect(withHostFiles(gated).env.SANREMES_HOST_FILES).toBe("1");
     const vm = { command: "node", args: [], env: {}, platform: "linux" as const };
     expect(withHostFiles(vm)).toBe(vm);
     expect(withHostFiles({ ...gated, env: {} }).env).toEqual({});
     const turn = withHostFileTools({ localComputer: gated, agents: { command: "agents", args: [], env: {} } });
-    expect(turn?.localComputer?.env.OMB_HOST_FILES).toBe("1");
+    expect(turn?.localComputer?.env.SANREMES_HOST_FILES).toBe("1");
     expect(turn?.agents).toEqual({ command: "agents", args: [], env: {} });
     const none = { agents: { command: "agents", args: [], env: {} } };
     expect(withHostFileTools(none)).toBe(none);
@@ -34,7 +34,7 @@ describe("file tools on disk", () => {
   });
   const fixture = () => {
     // Native, as the tools resolve: on Windows it also spells out a short (8.3) temp folder name such as RUNNER~1.
-    const root = realpathSync.native(mkdtempSync(join(tmpdir(), "omb-host-files-")));
+    const root = realpathSync.native(mkdtempSync(join(tmpdir(), "sanremes-host-files-")));
     made.push(root);
     const home = join(root, "home");
     mkdirSync(join(home, "Documents"), { recursive: true });

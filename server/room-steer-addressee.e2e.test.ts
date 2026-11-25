@@ -3,13 +3,13 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { request } from "../scripts/mcp-server.ts";
 import { readHandoffs } from "./testing/handoff-rows.ts";
 
 it("with parallel room jobs off, an unnamed steer while a member works a handed job stays queued for the lead and stops nothing", async () => {
   const session = await launchVerificationServer(process.env, undefined, undefined, undefined, undefined, { scripted: true });
-  const env = { OPENMAUSBOT_URL: session.info.url };
+  const env = { OPENSANREMES_URL: session.info.url };
   const cli = (...args: string[]) => runControlOmb(args, { env }) as Promise<any>;
   const api = (path: string, body?: unknown, method = "POST") => request(path, body === undefined ? {} : { method, headers: { Origin: session.info.url }, body: JSON.stringify(body) }, session.info.url) as Promise<any>;
   try {

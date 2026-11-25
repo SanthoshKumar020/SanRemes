@@ -7,47 +7,47 @@ export const CREDENTIAL_ENV_NAMES = [
   "XAI_API_KEY",
   "MISTRAL_API_KEY",
   "CEREBRAS_API_KEY",
-  "OMB_GROQ_API_KEY",
-  "OMB_GREENFERENCE_API_KEY",
-  "OMB_MODELGO_API_KEY",
-  "OMB_META_API_KEY",
-  "OMB_DEEPSEEK_API_KEY",
-  "OMB_ANTHROPIC_API_KEY",
-  "OMB_ANTHROPIC_API_URL",
-  "OMB_HOSTED_MODEL_TOKEN",
-  "OMB_HOSTED_MODELS",
+  "SANREMES_GROQ_API_KEY",
+  "SANREMES_GREENFERENCE_API_KEY",
+  "SANREMES_MODELGO_API_KEY",
+  "SANREMES_META_API_KEY",
+  "SANREMES_DEEPSEEK_API_KEY",
+  "SANREMES_ANTHROPIC_API_KEY",
+  "SANREMES_ANTHROPIC_API_URL",
+  "SANREMES_HOSTED_MODEL_TOKEN",
+  "SANREMES_HOSTED_MODELS",
   "OPENAI_COMPAT_API_KEY",
   "OPENAI_COMPAT_URL",
-  "OMB_OPENAI_API_KEY",
-  "OMB_OPENROUTER_API_KEY",
+  "SANREMES_OPENAI_API_KEY",
+  "SANREMES_OPENROUTER_API_KEY",
   "BOX_TOKEN",
   "OPENCODE_API_KEY",
-  "OMB_TTS_KEY",
-  "OMB_FISH_AUDIO_API_KEY",
-  "OMB_GEMINI_API_KEY",
-  "OMB_JEV_API_KEY",
-  "OMB_OPENROUTER_DECIDER_KEY",
-  "OMB_WORKERS_AI_TOKEN",
-  "OMB_CUSTOM_DECIDER_KEY",
-  "OMB_OPENAI_IMAGE_KEY",
-  "OMB_CUSTOM_IMAGE_KEY",
-  "OMB_GEMINI_IMAGE_KEY",
-  "OMB_OPENAI_LIVE_KEY",
-  "OMB_TREG_KEY",
-  "OMB_POSTIZ_API_KEY",
+  "SANREMES_TTS_KEY",
+  "SANREMES_FISH_AUDIO_API_KEY",
+  "SANREMES_GEMINI_API_KEY",
+  "SANREMES_JEV_API_KEY",
+  "SANREMES_OPENROUTER_DECIDER_KEY",
+  "SANREMES_WORKERS_AI_TOKEN",
+  "SANREMES_CUSTOM_DECIDER_KEY",
+  "SANREMES_OPENAI_IMAGE_KEY",
+  "SANREMES_CUSTOM_IMAGE_KEY",
+  "SANREMES_GEMINI_IMAGE_KEY",
+  "SANREMES_OPENAI_LIVE_KEY",
+  "SANREMES_TREG_KEY",
+  "SANREMES_POSTIZ_API_KEY",
   "COMPOSIO_API_KEY",
-  "OMB_COMPOSIO_BROKER_TOKEN",
-  "OMB_CLOUD_BOAT_TOKEN",
-  "OMB_CLOUD_VOICE_TOKEN",
-  "OMB_CLOUD_DECIDER_TOKEN",
-  "OMB_CLOUD_AI_TOKEN",
-  "OMB_CLOUD_X_TOKEN",
-  "OMB_CLOUD_HOSTING_TOKEN",
-  "OMB_CLOUD_CONNECTED_APPS_GRANT",
+  "SANREMES_COMPOSIO_BROKER_TOKEN",
+  "SANREMES_CLOUD_BOAT_TOKEN",
+  "SANREMES_CLOUD_VOICE_TOKEN",
+  "SANREMES_CLOUD_DECIDER_TOKEN",
+  "SANREMES_CLOUD_AI_TOKEN",
+  "SANREMES_CLOUD_X_TOKEN",
+  "SANREMES_CLOUD_HOSTING_TOKEN",
+  "SANREMES_CLOUD_CONNECTED_APPS_GRANT",
   // Private even though they are not traditional API credentials.
-  "OMB_BROWSER_CONNECTION",
-  "OMB_USER_DATA",
-  "OMB_BOAT_API",
+  "SANREMES_BROWSER_CONNECTION",
+  "SANREMES_USER_DATA",
+  "SANREMES_BOAT_API",
 ];
 
 // Kept in parity with server/redact.ts: unmistakable token formats are masked wherever they appear, keyed or not.
@@ -281,7 +281,7 @@ export function buildDiagnosticsReport({
   now = new Date().toISOString(),
 } = {}) {
   const lines = [];
-  lines.push("OpenMausBot diagnostics");
+  lines.push("SanRemes diagnostics");
   lines.push(`Generated: ${now}`);
   lines.push("");
   lines.push("## App");
@@ -336,7 +336,7 @@ export function buildDiagnosticsReport({
 export function diagnosticsFileName(date = new Date()) {
   const pad = (n) => String(n).padStart(2, "0");
   return (
-    `openmausbot-diagnostics-${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}` +
+    `sanremes-diagnostics-${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}` +
     `-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}.txt`
   );
 }

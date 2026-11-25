@@ -123,7 +123,7 @@ export function githubGrant(deps: GithubGrantDeps): BrokerGrant {
         resolve(outcome);
         asked.destroy();
       };
-      const asked = send(input, "GET", `${repoPath}/info/refs?service=git-upload-pack`, { "user-agent": "git/2.0 (openmausbot-broker)", ...(token ? { authorization: basic(token) } : {}) }, (answer) => {
+      const asked = send(input, "GET", `${repoPath}/info/refs?service=git-upload-pack`, { "user-agent": "git/2.0 (sanremes-broker)", ...(token ? { authorization: basic(token) } : {}) }, (answer) => {
         if (answer.statusCode !== 200) { answer.resume(); return finish({ failed: `GitHub answered ${answer.statusCode}` }); }
         let body = Buffer.alloc(0);
         answer.on("data", (chunk: Buffer) => {

@@ -31,7 +31,7 @@ const json = (status: number, body: unknown) => new Response(JSON.stringify(body
 const fetchMock = vi.fn<(path: string, init?: RequestInit) => Promise<Response>>();
 const openExternal = vi.fn(async () => true);
 const store = { state: {}, dispatch: vi.fn(), flushBotPatches: vi.fn(async () => null) } as unknown as ReturnType<typeof useStore>;
-const LINK = "https://page000000000000000000001.mausbot.page/";
+const LINK = "https://page000000000000000000001.sanremes.page/";
 const LIVE: PublishedPageCard = { state: "live", title: "Pricing", pageId: "page000000000000000000001", url: LINK, usage: { pages: 1, limit: 5 } };
 
 let host: HTMLDivElement;
@@ -60,7 +60,7 @@ const button = (label: string, within: ParentNode = document) => Array.from(with
   .find((element) => element.textContent?.trim() === label || element.getAttribute("aria-label") === label)!;
 const click = (label: string, within?: ParentNode) => act(async () => { button(label, within).click(); await new Promise((resolve) => setTimeout(resolve, 0)); });
 const chips = () => JSON.parse(host.querySelector("[data-chips]")!.getAttribute("data-chips")!) as unknown[];
-const documents = () => fetchMock.mock.calls.map(([path]) => new URL(path, "http://omb.test")).filter((url) => url.pathname.endsWith("/app"));
+const documents = () => fetchMock.mock.calls.map(([path]) => new URL(path, "http://sanremes.test")).filter((url) => url.pathname.endsWith("/app"));
 const posts = (ending: string) => fetchMock.mock.calls.filter(([path, init]) => path.endsWith(ending) && init?.method === "POST").map(([, init]) => JSON.parse(String(init!.body)));
 const fromFrame = (data: unknown, source: unknown) => act(async () => {
   window.dispatchEvent(new MessageEvent("message", { data, source: source as MessageEventSource }));
@@ -71,7 +71,7 @@ const PICK = { jsonrpc: "2.0", method: POINTED_METHOD, params: { tag: "button", 
 beforeEach(() => {
   fetchMock.mockReset();
   fetchMock.mockImplementation(async (path) => {
-    const url = new URL(path, "http://omb.test");
+    const url = new URL(path, "http://sanremes.test");
     if (url.pathname.endsWith("/app/publish")) return json(200, { ok: true, card: LIVE });
     if (url.pathname.endsWith("/unpublish")) return json(200, { ok: true, card: { ...LIVE, state: "unpublished" } });
     const rev = url.searchParams.get("rev");
@@ -129,7 +129,7 @@ describe("a bot's page in the chat", () => {
     await fromFrame(PICK, inlineFrame().contentWindow);
     expect(chips()).toEqual([]);
     await click("Point", card());
-    expect(posted).toHaveBeenCalledWith({ jsonrpc: "2.0", method: "mausbot/point", params: { on: true } }, "*");
+    expect(posted).toHaveBeenCalledWith({ jsonrpc: "2.0", method: "sanremes/point", params: { on: true } }, "*");
     expect(card().textContent).toContain("Click the part of the page you want changed.");
     await fromFrame(PICK, window);
     expect(chips()).toEqual([]);
@@ -146,7 +146,7 @@ describe("a bot's page in the chat", () => {
     expect(posted).toHaveBeenCalledWith(marksMessage(["main > section:nth-of-type(2) > button", "footer > a"]), "*");
     await act(async () => { window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })); });
     expect(button("Point", card()).getAttribute("aria-pressed")).toBe("false");
-    expect(posted).toHaveBeenCalledWith({ jsonrpc: "2.0", method: "mausbot/point", params: { on: false } }, "*");
+    expect(posted).toHaveBeenCalledWith({ jsonrpc: "2.0", method: "sanremes/point", params: { on: false } }, "*");
   });
 
   it("sends Point and the numbered outlines again to the frame a reload puts in place", async () => {
@@ -160,7 +160,7 @@ describe("a bot's page in the chat", () => {
     await act(async () => { inlineFrame().dispatchEvent(new Event("load")); });
     // The new page starts with Point off, so it is told Point is still on before it gets the outlines.
     expect(posted.mock.calls.map(([message]) => message)).toEqual([
-      { jsonrpc: "2.0", method: "mausbot/point", params: { on: true } },
+      { jsonrpc: "2.0", method: "sanremes/point", params: { on: true } },
       marksMessage(["main > section:nth-of-type(2) > button"]),
     ]);
   });
@@ -227,12 +227,12 @@ describe("a bot's page in the chat", () => {
 
     act(() => setAdvancedMode(true));
     await click("Pin to sidebar", card());
-    expect(JSON.parse(localStorage.getItem("omb-web-panels")!)).toEqual([
+    expect(JSON.parse(localStorage.getItem("sanremes-web-panels")!)).toEqual([
       { id: "panel-1", name: "Pricing", page: { botId: "pepper", threadId: "t1", messageId: "a1" } },
     ]);
     expect(button("Unpin", card()).getAttribute("aria-pressed")).toBe("true");
     await click("Unpin", card());
-    expect(JSON.parse(localStorage.getItem("omb-web-panels")!)).toEqual([]);
+    expect(JSON.parse(localStorage.getItem("sanremes-web-panels")!)).toEqual([]);
 
     act(() => setWebPanels(Array.from({ length: MAX_WEB_PANELS }, (_, i) => ({ id: `p${i}`, name: `P${i}`, url: `https://p${i}.example/` }))));
     expect(button("Pin to sidebar", card()).disabled).toBe(true);
@@ -245,13 +245,13 @@ describe("a bot's page in the chat", () => {
     setAdvancedMode(true);
     await render(row(payload()));
     // Another window's write whose storage event hasn't arrived yet.
-    localStorage.setItem("omb-web-panels", JSON.stringify([{ id: "panel-9", name: "Other", url: "https://other.example/" }]));
+    localStorage.setItem("sanremes-web-panels", JSON.stringify([{ id: "panel-9", name: "Other", url: "https://other.example/" }]));
     await click("Pin to sidebar", card());
-    expect(JSON.parse(localStorage.getItem("omb-web-panels")!).map((panel: { name: string }) => panel.name)).toEqual(["Other", "Pricing"]);
+    expect(JSON.parse(localStorage.getItem("sanremes-web-panels")!).map((panel: { name: string }) => panel.name)).toEqual(["Other", "Pricing"]);
     // The other window unpins everything; Unpin here must not pin the page again.
-    localStorage.setItem("omb-web-panels", "[]");
+    localStorage.setItem("sanremes-web-panels", "[]");
     await click("Unpin", card());
-    expect(localStorage.getItem("omb-web-panels")).toBe("[]");
+    expect(localStorage.getItem("sanremes-web-panels")).toBe("[]");
     act(() => { setWebPanels([]); setAdvancedMode(false); });
   });
 

@@ -1,15 +1,15 @@
 #!/bin/sh
-# MausBot's server as your own user's service, with rootless Podman: no root, no Docker. One line, run as yourself:
+# SanRemes's server as your own user's service, with rootless Podman: no root, no Docker. One line, run as yourself:
 #
-#   curl -fsSL https://raw.githubusercontent.com/milind-soni/OpenMausBot/main/deploy/podman/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/SanthoshKumar020/SanRemes/main/deploy/podman/install.sh | sh
 #   ... | sh -s -- --lan                 also answer other devices on this network (private addresses only)
 #   ... | sh -s -- --uninstall           stops and removes the service; keeps your data
 #
-# It writes a Quadlet unit (~/.config/containers/systemd/openmausbot.container) that runs the published server image,
+# It writes a Quadlet unit (~/.config/containers/systemd/sanremes.container) that runs the published server image,
 # pinned by its digest, as your user: systemd restarts it when it fails, and starts it at boot once your user may run
 # services without being logged in (it prints the one `loginctl enable-linger` line for that; it never runs sudo).
-# Your data stays in ~/.local/share/openmausbot/data. Running it again repairs the install and never touches your data.
-# Updates, with a copy of the data first and a way back: ~/.local/share/openmausbot/update.sh
+# Your data stays in ~/.local/share/sanremes/data. Running it again repairs the install and never touches your data.
+# Updates, with a copy of the data first and a way back: ~/.local/share/sanremes/update.sh
 #
 # WARNING: the server shares this machine's network, with less isolation than the Docker install (docs/self-hosting.md,
 # Podman). A port a bot or tool opens on 0.0.0.0 is open on every address of the machine; bots reach every service on
@@ -21,16 +21,16 @@ set -eu
 
 settings() {
   IMAGE_REPO=ghcr.io/milind-soni/openmausbot
-  STABLE_URL=https://raw.githubusercontent.com/milind-soni/OpenMausBot/channels/stable.json
-  RELEASES_URL=https://api.github.com/repos/milind-soni/OpenMausBot/releases/latest
-  REPOSITORY_FILES=https://raw.githubusercontent.com/milind-soni/OpenMausBot
-  PINNED='^ghcr\.io/milind-soni/openmausbot@sha256:[0-9a-f]{64}$'
+  STABLE_URL=https://raw.githubusercontent.com/SanthoshKumar020/SanRemes/channels/stable.json
+  RELEASES_URL=https://api.github.com/repos/SanthoshKumar020/SanRemes/releases/latest
+  REPOSITORY_FILES=https://raw.githubusercontent.com/SanthoshKumar020/SanRemes
+  PINNED='^ghcr\.io/SanthoshKumar020/sanremes@sha256:[0-9a-f]{64}$'
   # One copy of this repository's files to use instead (https://… or file:///…), as deploy/install.sh takes it.
-  SOURCE_ASKED="${OMB_INSTALL_SOURCE:-}"
-  INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/openmausbot"
+  SOURCE_ASKED="${SANREMES_INSTALL_SOURCE:-}"
+  INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/sanremes"
   UNIT_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/containers/systemd"
-  NAME=openmausbot
-  HEALTH_WAIT_S="${OMB_INSTALL_HEALTH_WAIT_S:-240}"
+  NAME=sanremes
+  HEALTH_WAIT_S="${SANREMES_INSTALL_HEALTH_WAIT_S:-240}"
   MODE=install
   DIR_GIVEN=no
   LAN=""
@@ -54,7 +54,7 @@ usage() {
   say "  --local            answer this machine only again (the default)"
   say "  --port N           the server's port on this machine (default 8799; webhooks use the next one)"
   say "  --public-url URL   the HTTPS address a proxy or tunnel in front of it serves, for pairing links"
-  say "  --dir PATH         where the data and settings live (default ~/.local/share/openmausbot)"
+  say "  --dir PATH         where the data and settings live (default ~/.local/share/sanremes)"
   say "  --uninstall        stop and remove the service; keeps the data"
 }
 
@@ -91,9 +91,9 @@ parse() {
   esac
   case "$PUBLIC_URL" in
     "" | https://*) ;;
-    *) fail "--public-url takes the https:// address people open, like https://maus.example.com." ;;
+    *) fail "--public-url takes the https:// address people open, like https://sanremes.example.com." ;;
   esac
-  case "$PUBLIC_URL" in *[!A-Za-z0-9:/._-]*) fail "--public-url takes a plain address, like https://maus.example.com." ;; esac
+  case "$PUBLIC_URL" in *[!A-Za-z0-9:/._-]*) fail "--public-url takes a plain address, like https://sanremes.example.com." ;; esac
   UNIT="$UNIT_DIR/$NAME.container"
 }
 
@@ -112,12 +112,12 @@ choose_dir() {
   INSTALL_DIR=$(printf '%s' "$INSTALL_DIR" | sed 's|//*$||')
   case "$INSTALL_DIR" in
     /?*) ;;
-    *) fail "--dir takes an absolute path of a folder, like /srv/openmausbot." ;;
+    *) fail "--dir takes an absolute path of a folder, like /srv/sanremes." ;;
   esac
   existing=$(installed_dir || true)
   if [ -n "$existing" ] && [ "$existing" != "$INSTALL_DIR" ]; then
     if [ "$DIR_GIVEN" = yes ]; then
-      fail "This user's MausBot service already uses $existing, and --dir names $INSTALL_DIR. Nothing was changed. Run this again with --dir $existing, or without --dir. To move it: --uninstall first, move the folder, then install with --dir and the new place."
+      fail "This user's SanRemes service already uses $existing, and --dir names $INSTALL_DIR. Nothing was changed. Run this again with --dir $existing, or without --dir. To move it: --uninstall first, move the folder, then install with --dir and the new place."
     fi
     INSTALL_DIR=$existing
     note "The service already uses $INSTALL_DIR, so this run does too (--dir names it)."
@@ -157,7 +157,7 @@ user_systemd() {
 }
 
 quadlet_binary() {
-  for candidate in ${OMB_INSTALL_QUADLET:-} /usr/libexec/podman/quadlet /usr/lib/podman/quadlet /usr/local/libexec/podman/quadlet; do
+  for candidate in ${SANREMES_INSTALL_QUADLET:-} /usr/libexec/podman/quadlet /usr/lib/podman/quadlet /usr/local/libexec/podman/quadlet; do
     if [ -x "$candidate" ]; then
       printf '%s' "$candidate"
       return 0
@@ -226,26 +226,26 @@ unset_env() { # file name
 # The image by digest: the one update.sh pinned, else the stable channel's, else the newest release's (only while no
 # version is stable: the channel answers 404). As update.sh decides it, and never a tag that moves (`latest`).
 choose_image() {
-  asked="${OMB_INSTALL_IMAGE:-}"
-  pinned=$(env_value "$INSTALL_DIR/.env" OMB_IMAGE)
+  asked="${SANREMES_INSTALL_IMAGE:-}"
+  pinned=$(env_value "$INSTALL_DIR/.env" SANREMES_IMAGE)
   if [ -n "$asked" ]; then
-    case "$asked" in *[!A-Za-z0-9/:._@-]*) fail "OMB_INSTALL_IMAGE is not an image name." ;; esac
+    case "$asked" in *[!A-Za-z0-9/:._@-]*) fail "SANREMES_INSTALL_IMAGE is not an image name." ;; esac
     case "${asked##*/}" in
       *@sha256:*) ;;
-      *:latest) fail "OMB_INSTALL_IMAGE names the latest tag, which follows every commit. Name a release, like $IMAGE_REPO:v0.1.151." ;;
+      *:latest) fail "SANREMES_INSTALL_IMAGE names the latest tag, which follows every commit. Name a release, like $IMAGE_REPO:v0.1.151." ;;
       *:?*) ;;
-      *) fail "OMB_INSTALL_IMAGE needs a release tag, like $IMAGE_REPO:v0.1.151." ;;
+      *) fail "SANREMES_INSTALL_IMAGE needs a release tag, like $IMAGE_REPO:v0.1.151." ;;
     esac
     IMAGE=$asked
     ok "version: $IMAGE, as asked"
   elif [ -n "$pinned" ]; then
-    case "$pinned" in *[!A-Za-z0-9/:._@-]*) fail "OMB_IMAGE in $INSTALL_DIR/.env is not an image name." ;; esac
+    case "$pinned" in *[!A-Za-z0-9/:._@-]*) fail "SANREMES_IMAGE in $INSTALL_DIR/.env is not an image name." ;; esac
     IMAGE=$pinned
     case "$IMAGE" in
       *@sha256:*) ;;
       *)
         # update.sh's rollback can name the image that ran before by a name of this machine's own
-        # (openmausbot-before-update:local), which no registry has: never pulled, pinned by the digest it came with.
+        # (sanremes-before-update:local), which no registry has: never pulled, pinned by the digest it came with.
         if podman image exists "$IMAGE" 2>/dev/null; then
           digest=$(podman image inspect -f '{{range .RepoDigests}}{{println .}}{{end}}' "$IMAGE" 2>/dev/null | grep -E "^${IMAGE_REPO}@sha256:[0-9a-f]{64}$" | head -n 1 || true)
           if [ -z "$digest" ]; then
@@ -260,8 +260,8 @@ choose_image() {
   else
     stable_image
   fi
-  say "Downloading MausBot (the first time is about a gigabyte)..."
-  podman pull -q "$IMAGE" >/dev/null || fail "MausBot could not be downloaded ($IMAGE; Podman's message is above). Check this machine's outbound HTTPS, then run this again."
+  say "Downloading SanRemes (the first time is about a gigabyte)..."
+  podman pull -q "$IMAGE" >/dev/null || fail "SanRemes could not be downloaded ($IMAGE; Podman's message is above). Check this machine's outbound HTTPS, then run this again."
   # A tag moves; the digest does not, so a restart never brings a different version than update.sh chose.
   case "$IMAGE" in
     *@sha256:*) ;;
@@ -275,7 +275,7 @@ choose_image() {
           ;;
         esac
       done
-      [ -n "$digest" ] || fail "MausBot $IMAGE was downloaded, but Podman did not say its digest, so it cannot be pinned (a tag moves, a digest does not). Nothing was changed. Run this again, or name the image by its digest: OMB_INSTALL_IMAGE=$repo@sha256:..."
+      [ -n "$digest" ] || fail "SanRemes $IMAGE was downloaded, but Podman did not say its digest, so it cannot be pinned (a tag moves, a digest does not). Nothing was changed. Run this again, or name the image by its digest: SANREMES_INSTALL_IMAGE=$repo@sha256:..."
       IMAGE=$digest
       ;;
   esac
@@ -290,12 +290,12 @@ stable_image() {
   rm -f "$body"
   case "$code" in
     200)
-      printf '%s' "$IMAGE" | grep -Eq "$PINNED" || fail "The stable channel ($STABLE_URL) names no image this installer accepts. Nothing was changed. Run this again later, or name a version: OMB_INSTALL_IMAGE=$IMAGE_REPO:v0.1.151"
+      printf '%s' "$IMAGE" | grep -Eq "$PINNED" || fail "The stable channel ($STABLE_URL) names no image this installer accepts. Nothing was changed. Run this again later, or name a version: SANREMES_INSTALL_IMAGE=$IMAGE_REPO:v0.1.151"
       ok "version: the stable channel"
       ;;
     404)
       release=$(curl -fsS --max-time 20 "$RELEASES_URL" 2>/dev/null | sed -n 's/.*"tag_name": *"\(v[0-9][0-9.]*\)".*/\1/p' | head -n 1)
-      [ -n "$release" ] || fail "The newest MausBot release could not be read from api.github.com. Check this machine's outbound HTTPS, then run this again."
+      [ -n "$release" ] || fail "The newest SanRemes release could not be read from api.github.com. Check this machine's outbound HTTPS, then run this again."
       IMAGE="$IMAGE_REPO:$release"
       ok "version: $release, the newest release (no version is stable yet)"
       ;;
@@ -303,13 +303,13 @@ stable_image() {
   esac
 }
 
-# The image's own user and group (its `maus`): the container runs as them, mapped to this user by keep-id, so the data
+# The image's own user and group (its `sanremes`): the container runs as them, mapped to this user by keep-id, so the data
 # folder stays this user's own on the host. Never a recursive chown (`:U`).
 image_user() {
   RUN_UID=$(podman run --rm --network none --entrypoint id "$IMAGE" -u 2>/dev/null || true)
   RUN_GID=$(podman run --rm --network none --entrypoint id "$IMAGE" -g 2>/dev/null || true)
   case "$RUN_UID:$RUN_GID" in
-    *[!0-9:]* | : | :* | *:) fail "The MausBot image did not say which user it runs as. Run this again; if it still fails, send us this line." ;;
+    *[!0-9:]* | : | :* | *:) fail "The SanRemes image did not say which user it runs as. Run this again; if it still fails, send us this line." ;;
   esac
 }
 
@@ -323,30 +323,30 @@ write_settings() {
   [ -d "$DATA_DIR" ] || mkdir -m 700 "$DATA_DIR"
   if [ ! -f "$INSTALL_DIR/server.env" ]; then
     write_file "$INSTALL_DIR/server.env" 600 <<'ENV'
-# The server's settings (docs/self-hosting.md). The Podman installer sets OMB_PORT, OMB_WEBHOOK_PORT, OMB_LAN and
-# OMB_PUBLIC_URL when asked, and keeps every other line. Apply a change with: systemctl --user restart openmausbot
-OMB_PORT=8799
-OMB_WEBHOOK_PORT=8800
-OMB_SERVER_NAME=mausbot-podman
-OMB_CLI_PREFIX=podman exec -it openmausbot openmausbot
+# The server's settings (docs/self-hosting.md). The Podman installer sets SANREMES_PORT, SANREMES_WEBHOOK_PORT, SANREMES_LAN and
+# SANREMES_PUBLIC_URL when asked, and keeps every other line. Apply a change with: systemctl --user restart sanremes
+SANREMES_PORT=8799
+SANREMES_WEBHOOK_PORT=8800
+SANREMES_SERVER_NAME=sanremes-podman
+SANREMES_CLI_PREFIX=podman exec -it sanremes sanremes
 ENV
   fi
   if [ -n "$PORT" ]; then
-    set_env "$INSTALL_DIR/server.env" OMB_PORT "$PORT"
-    set_env "$INSTALL_DIR/server.env" OMB_WEBHOOK_PORT "$((PORT + 1))"
+    set_env "$INSTALL_DIR/server.env" SANREMES_PORT "$PORT"
+    set_env "$INSTALL_DIR/server.env" SANREMES_WEBHOOK_PORT "$((PORT + 1))"
   fi
   case "$LAN" in
-    1) set_env "$INSTALL_DIR/server.env" OMB_LAN 1 ;;
-    0) unset_env "$INSTALL_DIR/server.env" OMB_LAN ;;
+    1) set_env "$INSTALL_DIR/server.env" SANREMES_LAN 1 ;;
+    0) unset_env "$INSTALL_DIR/server.env" SANREMES_LAN ;;
   esac
   if [ -n "$PUBLIC_URL" ]; then
-    set_env "$INSTALL_DIR/server.env" OMB_PUBLIC_URL "$PUBLIC_URL"
-    set_env "$INSTALL_DIR/server.env" OMB_WEBHOOK_PUBLIC_URL "$PUBLIC_URL"
+    set_env "$INSTALL_DIR/server.env" SANREMES_PUBLIC_URL "$PUBLIC_URL"
+    set_env "$INSTALL_DIR/server.env" SANREMES_WEBHOOK_PUBLIC_URL "$PUBLIC_URL"
   fi
-  SERVER_PORT=$(env_value "$INSTALL_DIR/server.env" OMB_PORT)
+  SERVER_PORT=$(env_value "$INSTALL_DIR/server.env" SANREMES_PORT)
   SERVER_PORT=${SERVER_PORT:-8799}
   # The install's own settings, which update.sh reads and pins: the image, nothing else.
-  set_env "$INSTALL_DIR/.env" OMB_IMAGE "$IMAGE"
+  set_env "$INSTALL_DIR/.env" SANREMES_IMAGE "$IMAGE"
   # update.sh knows this install by this file: the unit it updates.
   printf '%s\n' "$UNIT" | write_file "$INSTALL_DIR/podman.unit" 600
 }
@@ -364,16 +364,16 @@ unit_text() {
   label=""
   if selinux_on; then label=":Z"; fi
   cat <<UNIT
-# Written by MausBot's Podman installer (deploy/podman/install.sh), and written again each time it runs. The server's
+# Written by SanRemes's Podman installer (deploy/podman/install.sh), and written again each time it runs. The server's
 # settings are in $INSTALL_DIR/server.env; update.sh changes Image= below.
 [Unit]
-Description=MausBot server (rootless Podman)
-Documentation=https://github.com/milind-soni/OpenMausBot/blob/main/docs/self-hosting.md#podman-rootless-as-a-service
+Description=SanRemes server (rootless Podman)
+Documentation=https://github.com/SanthoshKumar020/SanRemes/blob/main/docs/self-hosting.md#podman-rootless-as-a-service
 
 [Container]
 ContainerName=$NAME
 Image=$IMAGE
-# The host's network, as a server started with npx has it: it listens on 127.0.0.1 (OMB_LAN=1: private addresses too),
+# The host's network, as a server started with npx has it: it listens on 127.0.0.1 (SANREMES_LAN=1: private addresses too),
 # and every other device pairs. No port is forwarded into a container.
 # WARNING: this isolates less than the Docker install. Any port a bot or a tool opens on 0.0.0.0 is open on every
 # address of this machine, a VPS's public one too, whatever --local says; bots run unboxed beside the data folder that
@@ -386,12 +386,12 @@ UserNS=keep-id:uid=$RUN_UID,gid=$RUN_GID
 Volume=$DATA_DIR:/data$label
 EnvironmentFile=$INSTALL_DIR/server.env
 # How the app knows this install, for the update command it shows: $(shown_dir)/update.sh
-Environment=OMB_PODMAN_SERVICE=$(shown_dir)
+Environment=SANREMES_PODMAN_SERVICE=$(shown_dir)
 # Chrome's shared memory, as the Docker install gives it. The image brings its own init (tini).
 ShmSize=512m
 # curl's own limit: Podman 4.9 does not end a check that hangs on a server that accepts and never answers. The port is
-# read in the container when the check runs (server.env's OMB_PORT); systemd turns the doubled dollar into one.
-HealthCmd=curl -sf --max-time 4 http://127.0.0.1:\$\${OMB_PORT:-8799}/api/health | grep -q openmausbot
+# read in the container when the check runs (server.env's SANREMES_PORT); systemd turns the doubled dollar into one.
+HealthCmd=curl -sf --max-time 4 http://127.0.0.1:\$\${SANREMES_PORT:-8799}/api/health | grep -q sanremes
 HealthInterval=30s
 HealthTimeout=5s
 HealthRetries=3
@@ -448,7 +448,7 @@ place_update() {
   note "update.sh could not be downloaded; run this again later to place it."
 }
 
-answers() { curl -sf --max-time 5 "http://127.0.0.1:$SERVER_PORT/api/health" 2>/dev/null | grep -q openmausbot; }
+answers() { curl -sf --max-time 5 "http://127.0.0.1:$SERVER_PORT/api/health" 2>/dev/null | grep -q sanremes; }
 
 wait_healthy() {
   waited=0
@@ -465,22 +465,22 @@ port_taken() { ss -ltnH "( sport = :$1 )" 2>/dev/null | grep -q .; }
 start_service() {
   update_busy
   if ! systemctl --user is-active --quiet "$NAME" && port_taken "$SERVER_PORT"; then
-    fail "Something else on this machine already listens on port $SERVER_PORT (another MausBot server?). Stop it, or run this again with --port and a free port, like --port 8811."
+    fail "Something else on this machine already listens on port $SERVER_PORT (another SanRemes server?). Stop it, or run this again with --port and a free port, like --port 8811."
   fi
   if [ "$CHANGED" = yes ] || ! systemctl --user is-active --quiet "$NAME"; then
-    say "Starting MausBot..."
+    say "Starting SanRemes..."
     systemctl --user restart "$NAME" ||
-      fail "MausBot could not be started. Its log: journalctl --user -u $NAME -n 50"
+      fail "SanRemes could not be started. Its log: journalctl --user -u $NAME -n 50"
   fi
-  wait_healthy || fail "MausBot started but did not answer within $HEALTH_WAIT_S seconds. Its log: journalctl --user -u $NAME -n 50"
+  wait_healthy || fail "SanRemes started but did not answer within $HEALTH_WAIT_S seconds. Its log: journalctl --user -u $NAME -n 50"
 }
 
 finish() {
   say ""
-  say "MausBot is running as your user's service ($NAME), on http://127.0.0.1:$SERVER_PORT."
-  if [ "$(env_value "$INSTALL_DIR/server.env" OMB_LAN)" = 1 ]; then say "Its port $SERVER_PORT also answers other devices on this network, from private addresses only, over plain http; each device pairs."; fi
+  say "SanRemes is running as your user's service ($NAME), on http://127.0.0.1:$SERVER_PORT."
+  if [ "$(env_value "$INSTALL_DIR/server.env" SANREMES_LAN)" = 1 ]; then say "Its port $SERVER_PORT also answers other devices on this network, from private addresses only, over plain http; each device pairs."; fi
   say ""
-  say "  Pair a device   podman exec -it $NAME openmausbot pair"
+  say "  Pair a device   podman exec -it $NAME sanremes pair"
   say "  Log             journalctl --user -u $NAME -f"
   say "  Update          $INSTALL_DIR/update.sh"
   say "  Data            $DATA_DIR"
@@ -492,7 +492,7 @@ finish() {
   say "  - Every account and program on this machine counts as the owner on port $SERVER_PORT, and can attach to Chrome's"
   say "    debugging port."
   say "Use it on a machine only you sign in to, behind a host firewall:"
-  say "https://github.com/milind-soni/OpenMausBot/blob/main/docs/self-hosting.md#podman-rootless-as-a-service"
+  say "https://github.com/SanthoshKumar020/SanRemes/blob/main/docs/self-hosting.md#podman-rootless-as-a-service"
   say ""
   if linger_on; then
     say "It starts at boot, without anyone logged in."
@@ -525,10 +525,10 @@ run_uninstall() {
   rm -f "$UNIT"
   systemctl --user daemon-reload 2>/dev/null || true
   rm -f "$INSTALL_DIR/podman.unit"
-  say "MausBot's service is stopped and removed. Your data stays in $DATA_DIR."
+  say "SanRemes's service is stopped and removed. Your data stays in $DATA_DIR."
   say "To remove the data too (some files belong to the container's other ids, so through Podman):"
   say "  podman unshare rm -rf $INSTALL_DIR"
-  say "The copies of the data update.sh kept: podman volume ls --filter label=com.mausbot.role=update-backup"
+  say "The copies of the data update.sh kept: podman volume ls --filter label=com.sanremes.role=update-backup"
   say "The downloaded images: podman image ls ghcr.io/milind-soni/openmausbot"
 }
 

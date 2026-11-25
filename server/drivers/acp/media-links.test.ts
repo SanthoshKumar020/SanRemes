@@ -5,7 +5,7 @@ import { afterAll, describe, expect, it } from "vitest";
 
 import { acpMediaUri, findMediaPaths, readAcpMediaLinks } from "./media-links.ts";
 
-const scratch = mkdtempSync(join(tmpdir(), "omb-media-links-"));
+const scratch = mkdtempSync(join(tmpdir(), "sanremes-media-links-"));
 const folder = join(scratch, "a folder");
 mkdirSync(folder);
 const clip = join(folder, "clip one.mp4");

@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, expect, it } from "vitest";
-import { runControlOmb, verificationServerEnvironment } from "../scripts/control-omb.ts";
+import { runControlOmb, verificationServerEnvironment } from "../scripts/control-sanremes.ts";
 import { removeTempDir, waitForExit } from "./testing/cleanup.ts";
 import { freePortBlock } from "./testing/ports.ts";
 
@@ -21,7 +21,7 @@ afterEach(async () => {
 });
 
 function freshHome(extra: Record<string, unknown> = {}): string {
-  const home = mkdtempSync(join(tmpdir(), "omb-engine-status-"));
+  const home = mkdtempSync(join(tmpdir(), "sanremes-engine-status-"));
   homes.push(home);
   mkdirSync(join(home, "tmp"), { recursive: true });
   writeFileSync(join(home, "config.json"), JSON.stringify({

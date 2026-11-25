@@ -17,7 +17,7 @@ import { markLeftBehind } from "./testing/cloud-left-behind.ts";
 import { freePortBlock } from "./testing/ports.ts";
 
 const SERVER_DIR = dirname(fileURLToPath(import.meta.url));
-const HOST = "omb-t-0123456789ab.fly.dev";
+const HOST = "sanremes-t-0123456789ab.fly.dev";
 const secret = randomBytes(32).toString("base64url");
 let home = "";
 let base = "";
@@ -42,11 +42,11 @@ async function api(method: string, path: string, options: { body?: unknown; toke
 }
 
 async function adminPairing(): Promise<string> {
-  const body = JSON.stringify({ label: "OpenMausBot app (Cloud)", ttlSeconds: 300 });
+  const body = JSON.stringify({ label: "SanRemes app (Cloud)", ttlSeconds: 300 });
   const timestamp = String(Math.floor(Date.now() / 1000)), nonce = randomBytes(16).toString("base64url");
   const response = await fetch(`${base}/api/cloud/pairing`, { method: "POST", headers: {
     host: HOST, "x-forwarded-for": "203.0.113.9", "x-forwarded-proto": "https", "content-type": "application/json",
-    "x-omb-cloud-timestamp": timestamp, "x-omb-cloud-nonce": nonce, "x-omb-cloud-signature": `v1=${cloudPairingSignature(secret, timestamp, nonce, body)}`,
+    "x-sanremes-cloud-timestamp": timestamp, "x-sanremes-cloud-nonce": nonce, "x-sanremes-cloud-signature": `v1=${cloudPairingSignature(secret, timestamp, nonce, body)}`,
   }, body });
   const granted = await response.json() as { code: string };
   const paired = await api("POST", "/api/auth/pair", { body: { code: granted.code } });
@@ -58,7 +58,7 @@ async function adminPairing(): Promise<string> {
 async function leftBehind(of: { threadIds?: string[]; routineIds?: string[] }) {
   for (const proxy of proxies.splice(0)) proxy.kill();
   await waitForExit(child, { signal: "SIGTERM" });
-  markLeftBehind(join(home, ".openmausbot"), of);
+  markLeftBehind(join(home, ".sanremes"), of);
   await boot();
 }
 
@@ -86,7 +86,7 @@ async function agentsFor(start: () => Promise<void>, botId: string, threadId?: s
       let found: Turn;
       try { found = JSON.parse(text) as Turn; } catch { continue; }
       const env = found.mcpConfig?.mcpServers?.agents?.env;
-      if (env?.OMB_BOT_ID === botId && (!threadId || env.OMB_THREAD_ID === threadId)) { turn = found; turnDump = name; return true; }
+      if (env?.SANREMES_BOT_ID === botId && (!threadId || env.SANREMES_THREAD_ID === threadId)) { turn = found; turnDump = name; return true; }
     }
     return false;
   }, { timeout: 15_000 }).toBe(true);
@@ -119,8 +119,8 @@ function lend(env: { id: string; name: string; origin: string }, desktop: Pick<P
 }
 
 beforeAll(async () => {
-  home = mkdtempSync(join(tmpdir(), "omb-cloud-lending-"));
-  const dataDir = join(home, ".openmausbot");
+  home = mkdtempSync(join(tmpdir(), "sanremes-cloud-lending-"));
+  const dataDir = join(home, ".sanremes");
   mkdirSync(dataDir, { recursive: true });
   mkdirSync(turnDumps());
   const cli = join(home, "fixture-claude.mjs");
@@ -153,7 +153,7 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
 
 let port = 0;
 async function boot() {
-  const dataDir = join(home, ".openmausbot");
+  const dataDir = join(home, ".sanremes");
   const offlinePrelude = `data:text/javascript,${encodeURIComponent('const real = globalThis.fetch; globalThis.fetch = async (url, init) => String(url).startsWith("http://127.0.0.1:") ? real(url, init) : new Response("offline fixture", { status: 503 });')}`;
   // The memory gate's seam (testing/memory-gate-hooks.mjs): this machine's memory is host-memory.json's, on every OS.
   const memoryGate = pathToFileURL(join(SERVER_DIR, "testing", "memory-gate-hooks.mjs")).href;
@@ -162,9 +162,9 @@ async function boot() {
     env: {
       PATH: process.env.PATH, ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}),
       // The seam takes only a fixture whose home is its data folder.
-      HOME: dataDir, USERPROFILE: dataDir, OMB_DATA_DIR: dataDir, OMB_TEST_MEMORY_GATE: "1", OMB_PORT: String(port), OMB_WEBHOOK_PORT: String(port + 1),
-      OMB_CLOUD_ROLE: "home", OMB_CLOUD_MACHINE_ID: "3f9c2a4e-8b1d-4c6e-9a7f-2d5e8c1b0a93", OMB_CLOUD_ADMIN_URL: "https://cloud.example.test",
-      OMB_CLOUD_BOOTSTRAP_SECRET: secret, OMB_PUBLIC_URL: `https://${HOST}`,
+      HOME: dataDir, USERPROFILE: dataDir, SANREMES_DATA_DIR: dataDir, SANREMES_TEST_MEMORY_GATE: "1", SANREMES_PORT: String(port), SANREMES_WEBHOOK_PORT: String(port + 1),
+      SANREMES_CLOUD_ROLE: "home", SANREMES_CLOUD_MACHINE_ID: "3f9c2a4e-8b1d-4c6e-9a7f-2d5e8c1b0a93", SANREMES_CLOUD_ADMIN_URL: "https://cloud.example.test",
+      SANREMES_CLOUD_BOOTSTRAP_SECRET: secret, SANREMES_PUBLIC_URL: `https://${HOST}`,
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -187,7 +187,7 @@ afterAll(async () => {
 });
 
 it("offers lending on a Cloud home with the maintainer flag still off", async () => {
-  expect((await api("GET", "/.well-known/openmausbot/environment")).body.capabilities).toMatchObject({ sharedComputers: true });
+  expect((await api("GET", "/.well-known/sanremes/environment")).body.capabilities).toMatchObject({ sharedComputers: true });
   expect((await api("GET", "/api/config", { token: owner })).body.features.sharedComputers).toBe(false);
   expect(await api("GET", "/api/shared-computers", { token: owner })).toEqual({ status: 200, body: { computers: [], known: [] } });
 });
@@ -211,7 +211,7 @@ it("the person's Mac, lent by itself through the real connector, is usable by th
   const guestsRoom = (await api("POST", "/api/groups", { token: owner, body: { name: "Guest's room", memberIds: [roomBot.id], setup: { bulletin: "", defaultResponder: { kind: "member", botId: roomBot.id } } } })).body.group;
   await leftBehind({ threadIds: [guestOpened, guestsRoom.threadId], routineIds: [rewritten.id] });
 
-  const folderPath = realpathSync(mkdtempSync(join(tmpdir(), "omb-cloud-lent-folder-")));
+  const folderPath = realpathSync(mkdtempSync(join(tmpdir(), "sanremes-cloud-lent-folder-")));
   writeFileSync(join(folderPath, "plan.md"), "from the Mac");
   const env = { id: "my-cloud", name: "My Cloud", origin: base };
   // A folder this Mac lent My Cloud read only before lending was automatic: the automatic grant keeps it as it was.
@@ -471,14 +471,14 @@ it("on a Cloud home the owner's answer to an options card is recorded as the own
   const made = (await api("POST", "/api/bots", { token: owner, body: { name: "Watcher", modelSelection: { instanceId: "claude", model: "claude-sonnet-5" } } })).body.bot;
   for (const proxy of proxies.splice(0)) proxy.kill();
   await waitForExit(child, { signal: "SIGTERM" });
-  const botsFile = join(home, ".openmausbot", "bots.json");
+  const botsFile = join(home, ".sanremes", "bots.json");
   writeFileSync(botsFile, readFileSync(botsFile, "utf8").replaceAll(made.id, WATCHER_OPTIONS_CARD_BOT_ID));
   await boot();
   const agents = await agentsFor(async () => {
     expect((await api("POST", `/api/bots/${WATCHER_OPTIONS_CARD_BOT_ID}/messages`, { token: owner, body: { text: "Check the build." } })).status).toBe(202);
   }, WATCHER_OPTIONS_CARD_BOT_ID);
-  const posted = await fetch(`${agents.env.OMB_HARNESS_URL}/api/internal/options-card`, {
-    method: "POST", headers: { authorization: `Bearer ${agents.env.OMB_COMMS_TOKEN}`, "content-type": "application/json" },
+  const posted = await fetch(`${agents.env.SANREMES_HARNESS_URL}/api/internal/options-card`, {
+    method: "POST", headers: { authorization: `Bearer ${agents.env.SANREMES_COMMS_TOKEN}`, "content-type": "application/json" },
     body: JSON.stringify({ title: "Deploy now?", subtitle: "The build is green.", options: ["Yes", "No"] }),
   });
   expect(posted.status, await posted.clone().text()).toBe(201);
@@ -492,7 +492,7 @@ it("on a Cloud home the owner's answer to an options card is recorded as the own
 // remembers each lent computer by name and platform across its own restarts, and its bots say which it is and since when.
 it("My Cloud remembers a lent computer across its restart, says it is offline by name and platform, and that a stopped one is no longer lent", async () => {
   const device = ({ win32: "PC", darwin: "Mac" } as Record<string, string>)[process.platform] ?? "computer";
-  const folderPath = realpathSync(mkdtempSync(join(tmpdir(), "omb-cloud-lent-again-")));
+  const folderPath = realpathSync(mkdtempSync(join(tmpdir(), "sanremes-cloud-lent-again-")));
   writeFileSync(join(folderPath, "plan.md"), "from the computer");
   const env = { id: "my-cloud", name: "My Cloud", origin: base };
   connector?.close();
@@ -531,7 +531,7 @@ it("My Cloud remembers a lent computer across its restart, says it is offline by
   expect(away.say, "on the person's own Cloud the bot asks with a card instead of explaining the fix").toContain("If the request needs it, call ask_for_computer");
   const refused = await call("shared_computer", { computer_id: id, action: "list_files", folder_id: randomUUID(), path: "." });
   expect(refused.isError).toBe(true);
-  expect(JSON.stringify(refused)).toContain(`is offline: OpenMausBot on that ${device} is closed, or the ${device} is asleep or off.`);
+  expect(JSON.stringify(refused)).toContain(`is offline: SanRemes on that ${device} is closed, or the ${device} is asleep or off.`);
   for (const text of [away.say, JSON.stringify(refused)]) if (device !== "Mac") expect(text).not.toMatch(/\bMac\b/u);
 
   // Lent again from the same computer, then paused there: no longer lent, not merely offline.
@@ -542,7 +542,7 @@ it("My Cloud remembers a lent computer across its restart, says it is offline by
   await expect.poll(async () => (await api("GET", "/api/shared-computers", { token: owner })).body.known, { timeout: 5000 })
     .toEqual([expect.objectContaining({ online: false, lent: false, scopes: { folders: 0, terminal: false, screen: true, internet: false, chrome: false } })]);
   call = await ask();
-  expect(JSON.parse((await call("list_shared_computers")).content[0].text).say).toMatch(new RegExp(`^Their ${device} .+ no longer shares itself with the Cloud: OpenMausBot on it is paused`, "u"));
+  expect(JSON.parse((await call("list_shared_computers")).content[0].text).say).toMatch(new RegExp(`^Their ${device} .+ no longer shares itself with the Cloud: SanRemes on it is paused`, "u"));
   connector.close();
   connector = undefined;
   rmSync(join(home, "desktop-profile"), { recursive: true, force: true });
@@ -552,7 +552,7 @@ it("My Cloud remembers a lent computer across its restart, says it is offline by
 // An update or a host reboot restarts My Cloud under a lending computer. That is not a sign-out: the desktop keeps its one
 // sign-in a quarter hour for a session that really ended, and its switch says it is waiting rather than to open My Cloud.
 it("a computer lending while My Cloud restarts waits for it, never asks to open My Cloud, and is lent again by itself", async () => {
-  const folderPath = realpathSync(mkdtempSync(join(tmpdir(), "omb-cloud-lent-restart-")));
+  const folderPath = realpathSync(mkdtempSync(join(tmpdir(), "sanremes-cloud-lent-restart-")));
   const env = { id: "my-cloud", name: "My Cloud", origin: base };
   const problems: string[] = [];
   let signIns = 0;
@@ -579,7 +579,7 @@ it("a computer lending while My Cloud restarts waits for it, never asks to open 
 it("a Mac signed in to My Cloud is lent by itself, its home folder with editing, and the menu bar's Pause takes it back until Resume", async () => {
   const env = { id: "my-cloud", name: "My Cloud", origin: base };
   connector?.close();
-  const macHome = realpathSync(mkdtempSync(join(tmpdir(), "omb-automatic-home-")));
+  const macHome = realpathSync(mkdtempSync(join(tmpdir(), "sanremes-automatic-home-")));
   mkdirSync(join(macHome, "Documents"));
   rmSync(join(home, "desktop-profile"), { recursive: true, force: true });
   connector = createComputerSharing({
@@ -604,7 +604,7 @@ it("a Mac signed in to My Cloud is lent by itself, its home folder with editing,
 it("paused, the PC still hears a bot that needs it: one card in the chat, the app's own prompt once, and Turn on on the card turns it on so the bot's call carries on", async () => {
   const env = { id: "my-cloud", name: "My Cloud", origin: base };
   connector?.close();
-  const pcHome = realpathSync(mkdtempSync(join(tmpdir(), "omb-asks-home-")));
+  const pcHome = realpathSync(mkdtempSync(join(tmpdir(), "sanremes-asks-home-")));
   rmSync(join(home, "desktop-profile"), { recursive: true, force: true });
   const prompts: string[] = [];
   connector = createComputerSharing({
@@ -645,7 +645,7 @@ it("paused, the PC still hears a bot that needs it: one card in the chat, the ap
 
 it("a routine the bot changes in the owner's own chat keeps the lent computer on its next scheduled run, as does one its own run changes; one remade beside an old report is refused, and the app says why on every run until it is saved", async () => {
   const device = ({ win32: "PC", darwin: "Mac" } as Record<string, string>)[process.platform] ?? "computer";
-  const folderPath = realpathSync(mkdtempSync(join(tmpdir(), "omb-cloud-lent-routines-")));
+  const folderPath = realpathSync(mkdtempSync(join(tmpdir(), "sanremes-cloud-lent-routines-")));
   writeFileSync(join(folderPath, "plan.md"), "from the computer");
   const env = { id: "my-cloud", name: "My Cloud", origin: base };
   connector?.close();
@@ -654,7 +654,7 @@ it("a routine the bot changes in the owner's own chat keeps the lent computer on
   await connector.saveCloud(env, { folders: [{ id: randomUUID(), name: "Plans", path: folderPath, write: false }], screen: false });
   await expect.poll(() => connector!.cloudState(env).connected, { timeout: 8000 }).toBe(true);
   const [computer] = (await api("GET", "/api/shared-computers", { token: owner })).body.computers;
-  const authors = () => JSON.parse(readFileSync(join(home, ".openmausbot", "lending-routines.json"), "utf8"));
+  const authors = () => JSON.parse(readFileSync(join(home, ".sanremes", "lending-routines.json"), "utf8"));
   const lent = (listing: any) => JSON.parse(listing.content[0].text);
   const applied = (result: unknown) => { const text = JSON.stringify(result); expect(text).not.toContain("isError\":true"); return text; };
   const made = (result: unknown) => /trigger id ([\w-]+)/u.exec(applied(result))?.[1] ?? "";

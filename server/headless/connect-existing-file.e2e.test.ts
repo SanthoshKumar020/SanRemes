@@ -2,13 +2,13 @@ import { existsSync, lstatSync, mkdtempSync, readFileSync, readlinkSync, symlink
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, expect, it } from "vitest";
-import { launchVerificationServer, type VerificationServer } from "../../scripts/control-omb.ts";
+import { launchVerificationServer, type VerificationServer } from "../../scripts/control-sanremes.ts";
 import { removeTempDir } from "../testing/cleanup.ts";
 import { runHeadless } from "./main.ts";
 import type { HeadlessIo } from "./output.ts";
 
 let fixture: VerificationServer;
-const dir = mkdtempSync(join(tmpdir(), "omb-connect-existing-"));
+const dir = mkdtempSync(join(tmpdir(), "sanremes-connect-existing-"));
 
 beforeAll(async () => { fixture = await launchVerificationServer(); }, 120_000);
 afterAll(async () => {
@@ -19,7 +19,7 @@ afterAll(async () => {
 async function api(path: string, body?: unknown) {
   const response = await fetch(fixture.info.url + path, {
     method: body === undefined ? "GET" : "POST",
-    headers: { "content-type": "application/json", "x-openmausbot-cli": "1", origin: fixture.info.url },
+    headers: { "content-type": "application/json", "x-sanremes-cli": "1", origin: fixture.info.url },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
   expect(response.ok).toBe(true);

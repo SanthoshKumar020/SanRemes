@@ -5,7 +5,7 @@ import { vpsContainerRunArgs } from "./vps-computer.ts";
 import { vpsConfigForBot, vpsLimits } from "./vps-hosts.ts";
 import { vpsServersSchema } from "./vps-config.ts";
 
-const NAME = "openmausbot-vps-bot-abc123";
+const NAME = "sanremes-vps-bot-abc123";
 
 describe("VPS desktop resources", () => {
   it("defaults to 4 GB and 2 cores", () => {

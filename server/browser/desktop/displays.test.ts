@@ -87,7 +87,7 @@ describe("display supervisor", () => {
     const policy = join(first.socket, "..", "policy");
     expect(first.wrap.command).toBe("/usr/bin/bwrap");
     expect(first.wrap.args).toEqual(expect.arrayContaining(["--ro-bind", policy, "/etc/opt/chrome_for_testing/policies/managed"]));
-    expect(JSON.parse(readFileSync(join(policy, "openmausbot.json"), "utf8")).URLBlocklist).toContain("file://*");
+    expect(JSON.parse(readFileSync(join(policy, "sanremes.json"), "utf8")).URLBlocklist).toContain("file://*");
   });
 
   it("gives browsers that start together different displays, each with its own folder", async () => {

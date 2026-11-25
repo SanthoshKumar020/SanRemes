@@ -32,7 +32,7 @@ type Call = { method: string; sessionId?: string; meta?: Record<string, unknown>
 
 const start = async (extra: Record<string, string>, driver: "grok" | "custom" = "grok") => {
   ensureDirs();
-  const scratch = mkdtempSync(join(tmpdir(), "omb-grok-signals-"));
+  const scratch = mkdtempSync(join(tmpdir(), "sanremes-grok-signals-"));
   scratches.push(scratch);
   mkdirSync(join(scratch, "grok"), { recursive: true });
   writeFileSync(join(scratch, "grok", "auth.json"), "{}");
@@ -64,7 +64,7 @@ describe("Grok's prompt_complete", () => {
     expect(of(events, "turn.completed")).toEqual([expect.objectContaining({ ok: true, stopReason: null })]);
     expect(of(events, "thread.token-usage.updated")).toEqual([expect.objectContaining({ input: 20, output: 7 })]);
     const prompt = calls().find((call) => call.method === "session/prompt")!;
-    expect(prompt.meta).toEqual({ promptId: expect.stringMatching(/^omb-prompt-[\w-]+$/), requestId: prompt.meta?.promptId });
+    expect(prompt.meta).toEqual({ promptId: expect.stringMatching(/^sanremes-prompt-[\w-]+$/), requestId: prompt.meta?.promptId });
   });
 
   it("ends the turn on the notification alone when no reply comes", async () => {

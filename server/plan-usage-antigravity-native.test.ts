@@ -63,7 +63,7 @@ describe("an Antigravity account's limits when it runs the native CLI", () => {
   });
 
   it.skipIf(process.platform === "win32")("is told from files alone, starting no program: an antigravity beside a pinned harness is pinned", async () => {
-    const folder = mkdtempSync(join(tmpdir(), "omb-usage-native-"));
+    const folder = mkdtempSync(join(tmpdir(), "sanremes-usage-native-"));
     try {
       const ran = join(folder, "ran");
       const program = `#!/bin/sh\n/usr/bin/touch ${JSON.stringify(ran)}\necho 1.5.14\n`;

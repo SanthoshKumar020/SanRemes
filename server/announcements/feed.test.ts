@@ -12,7 +12,7 @@ const NOW = Date.parse("2026-12-01T10:00:00Z");
 const scratch: string[] = [];
 afterEach(() => { for (const dir of scratch.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 
-const dataDir = () => { const dir = mkdtempSync(join(tmpdir(), "omb-announcements-")); scratch.push(dir); return dir; };
+const dataDir = () => { const dir = mkdtempSync(join(tmpdir(), "sanremes-announcements-")); scratch.push(dir); return dir; };
 const card = (id: string, extra: Record<string, unknown> = {}) => ({
   id, kind: "product", title: "Title", body: "Body.", primary: { label: "Open", action: { open_url: "https://example.com/" } }, ends: "2026-12-31T00:00:00Z", ...extra,
 });

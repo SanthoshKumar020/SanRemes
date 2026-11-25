@@ -16,9 +16,9 @@ afterEach(() => {
 describe("window preferences", () => {
   it("applies a frame with the preference's setter and ignores a value the schema refuses", async () => {
     applyWindowPref({ kind: "window-pref", id: "general.sendKey", value: "mod-enter" });
-    expect(values.get("omb-send-key")).toBe("mod-enter");
+    expect(values.get("sanremes-send-key")).toBe("mod-enter");
     applyWindowPref({ kind: "window-pref", id: "general.sendKey", value: "space" });
-    expect(values.get("omb-send-key")).toBe("mod-enter");
+    expect(values.get("sanremes-send-key")).toBe("mod-enter");
     applyWindowPref({ kind: "window-pref", id: "general.notificationSounds", value: false });
     applyWindowPref({ kind: "window-pref", id: "appearance.pinnedCircles", value: true });
     expect(await windowPrefValues()).toMatchObject({ "general.sendKey": "mod-enter", "general.notificationSounds": false, "appearance.pinnedCircles": true });

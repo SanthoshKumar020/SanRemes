@@ -33,7 +33,7 @@ afterEach(() => {
 
 describe("the phone stream's address", () => {
   it("is the phone's stream route on the page's own origin", () => {
-    expect(phoneStreamUrl("p1", { protocol: "http:", host: "omb.test" })).toBe("ws://omb.test/api/usb-phones/p1/stream");
+    expect(phoneStreamUrl("p1", { protocol: "http:", host: "sanremes.test" })).toBe("ws://sanremes.test/api/usb-phones/p1/stream");
     expect(phoneStreamUrl("a b", { protocol: "https:", host: "cloud.test" })).toBe("wss://cloud.test/api/usb-phones/a%20b/stream");
   });
 });

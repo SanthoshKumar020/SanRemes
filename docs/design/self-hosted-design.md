@@ -1,4 +1,4 @@
-# Self-hosted MausBot — design
+# Self-hosted SanRemes — design
 
 Version 1, 2026-11-10. Each section says what it decides; [Status against the code](#status-against-the-code) says
 what exists today. Anything not listed there as built is planned.
@@ -105,21 +105,21 @@ The Coolify hosted-workspace path (never proven on a real install). `fleet` stay
 
 ## The customer-run mode
 
-Decided: the server installer brings MausBot; the connector attaches to that install and the Admin never starts it.
+Decided: the server installer brings SanRemes; the connector attaches to that install and the Admin never starts it.
 
-- **Chosen on the server.** `connector/install.sh` picks `customer-run` when `/opt/openmausbot/compose.yaml` exists
-  and starts the connector with `MAUSBOT_MODE=customer-run`; the enrolment writes the mode into the connector's state.
+- **Chosen on the server.** `connector/install.sh` picks `customer-run` when `/opt/sanremes/compose.yaml` exists
+  and starts the connector with `SANREMES_MODE=customer-run`; the enrolment writes the mode into the connector's state.
   The stricter of the two always wins, and nothing the Admin sends changes it. A connector started in `operated` mode
-  refuses to enrol where the owner's MausBot already runs.
+  refuses to enrol where the owner's SanRemes already runs.
 - **Enforced on the server, three times over for jobs.** A job outside the list is refused as it arrives
   (`checkCustomerRunJob`), again at the desk every job passes through (`jobDesk`), and the home the connector attached
   to has no code path for it (`AdoptedHome`). Each refusal is a line in the audit log.
 - **We cannot replace the connector.** `self-update` from the Admin is refused in this mode: any older connector image
   is still in our registry, and one from before the mode would run as `operated`. Only root on the server replaces
-  it (`mausbot-connector job self-update`), and even then not with an older version or one that names none
+  it (`sanremes-connector job self-update`), and even then not with an older version or one that names none
   (`images.ts neverOlder`, on the image's version label).
 - **Updates only move forward.** An `update` to an image older than the one running, or without a version label, is
-  refused by the connector after it pulls the image and again by `mausbot-update-runner` on the host, which is the
+  refused by the connector after it pulls the image and again by `sanremes-update-runner` on the host, which is the
   check that cannot be bypassed from the connector's container. Going back is the owner's, with `update.sh` by hand.
   `SERVER_VERSION_FLOOR` (and `FLOOR` in the runner; a test holds them equal) is a second floor, to be set to the
   first release with the hardened profile; it is `0.0.0` until such a release exists.
@@ -130,12 +130,12 @@ Decided: the server installer brings MausBot; the connector attaches to that ins
 - **The report is rebuilt, not filtered.** `reducedHeartbeat` and `reducedReply` copy named fields; every string is an
   enumerated code or matches a pattern (a version, an image reference, a machine's own name for itself). A failed job
   sends its code and a fixed sentence; the reason stays in the audit log.
-- **Adoption.** `AdoptedHome` finds the Compose project `openmausbot` (service `omb`, Caddy in front, `/data` bound
+- **Adoption.** `AdoptedHome` finds the Compose project `sanremes` (service `sanremes`, Caddy in front, `/data` bound
   to a folder). `start`, `stop` and `restart` start and stop those containers. `backup` and `restore` copy that folder
   to and from Docker volumes on the same server with helpers run from the home's own image.
 - **Update: the server's own updater.** The connector never recreates the owner's containers and never writes the
-  owner's `.env`. It leaves `id` and `image` in `/var/lib/mausbot/update/request`; a systemd path unit on the host runs
-  `mausbot-update-runner`, which checks the image again and runs `/opt/openmausbot/update.sh --image <digest>`; the
+  owner's `.env`. It leaves `id` and `image` in `/var/lib/sanremes/update/request`; a systemd path unit on the host runs
+  `sanremes-update-runner`, which checks the image again and runs `/opt/sanremes/update.sh --image <digest>`; the
   connector reads the exit code. So a connected update and a hand-run update are the same code, with the same copy,
   health check, rollback and journal. Chosen over driving Compose from inside the connector (which would need the
   install folder writable in a container and a Compose binary in the image) and over recreating containers through
@@ -143,7 +143,7 @@ Decided: the server installer brings MausBot; the connector attaches to that ins
 - **Seat count.** The home answers `GET /api/seats` with a number, to an admin session or its own loopback. The
   connector reads it with one fixed command run inside the home's container, together with `/api/health` and the
   version.
-- **Pause.** `mausbot-connector pause` writes a file in the connector's state; the running connector reads it before
+- **Pause.** `sanremes-connector pause` writes a file in the connector's state; the running connector reads it before
   every job and request.
 
 ### What the Admin must know
@@ -173,12 +173,12 @@ Read at the commit that adds the customer-run mode. "Built" means the code is in
   `agent.ts`, `jobs.ts`).
 - The customer-run mode described above: the job and request lists, the reduced report with a seat count, the mode in
   the enrolment handshake, pause, and attaching to an installer-made server (`customer-run.ts`,
-  `customer-run-requests.ts`, `adopted-home.ts`, `host/mausbot-update-runner.sh`, `server/routes/seats.ts`).
+  `customer-run-requests.ts`, `adopted-home.ts`, `host/sanremes-update-runner.sh`, `server/routes/seats.ts`).
 - A server the team's Owner has not accepted answers only `status` and `host-health` (`agent.ts`).
-- The audit log on the customer's server, `/var/log/mausbot/audit.jsonl`: one line per job, step, result and Admin
+- The audit log on the customer's server, `/var/log/sanremes/audit.jsonl`: one line per job, step, result and Admin
   request, each carrying the hash of the line before it. A job that changes something is refused when it cannot be
   logged (`audit.ts`, `jobs.ts`).
-- The owner's policy file, `/etc/mausbot/policy.json`: the job kinds we may run, and a hold on updates (`policy.ts`).
+- The owner's policy file, `/etc/sanremes/policy.json`: the job kinds we may run, and a hold on updates (`policy.ts`).
 - On an operated server, `update` with a safety copy of the data and a rollback of image and data when the new
   version does not report healthy (`home.ts`).
 - The connector's own installer with a preflight, `connector/install.sh`, which the Admin is to serve with its address
@@ -188,14 +188,14 @@ Read at the commit that adds the customer-run mode. "Built" means the code is in
 ### Different from this document
 
 - **Updates on a connected server need `update.sh` in place.** The connector hands an update to
-  `/opt/openmausbot/update.sh`. The installer places that file only once it and the update command have merged (see
+  `/opt/sanremes/update.sh`. The installer places that file only once it and the update command have merged (see
   In review), so until then the `update` job is refused with `update_unavailable` and nothing changes.
 - **Backups stay on the server.** `backup` copies the data to a Docker volume on the same server. A bucket the
   customer configures is phase 2.
-- **Pausing is a command.** `mausbot-connector pause`; a switch in Settings is planned. The heartbeat keeps going
+- **Pausing is a command.** `sanremes-connector pause`; a switch in Settings is planned. The heartbeat keeps going
   while paused.
 - **Emailed sign-in codes pass through us unless the customer sets a mail server.** Pairing codes never do. So
-  principle 2 holds for sign-in by pairing code always, and by emailed code only with `OMB_SIGNIN_SMTP_URL`.
+  principle 2 holds for sign-in by pairing code always, and by emailed code only with `SANREMES_SIGNIN_SMTP_URL`.
 - **The home's own traffic is unchanged by connecting.** A report a person sends by tagging `@devs` carries their
   message, the bot's name and recent log lines to us, and its status is asked hourly while it is open; browser
   analytics are on until a person turns them off. Principle 6 is about the connector; these are the docs page's
@@ -222,7 +222,7 @@ Read at the commit that adds the customer-run mode. "Built" means the code is in
 
 Written and under review, not merged:
 
-- **The installer** (`deploy/install.sh`, #5158): the preflight, the install under `/opt/openmausbot`, and for a
+- **The installer** (`deploy/install.sh`, #5158): the preflight, the install under `/opt/sanremes`, and for a
   version with the hardened profile the host's preparation for the bots' sandbox and the server's own self-check of
   it. It places `update.sh` and keeps the version that pins.
 - **The `stable` channel and the one-command update with rollback** for standalone servers (`deploy/update.sh`,

@@ -33,7 +33,7 @@ async function call(origin: string, path: string, init: RequestInit = {}, signal
   return { status: response.status, body: await response.json().catch(() => ({})) as Rec };
 }
 
-/** `maus.example.com` is https, `localhost:8799` http: the address a person types, as an origin. */
+/** `sanremes.example.com` is https, `localhost:8799` http: the address a person types, as an origin. */
 function typedOrigin(typed: string): string {
   const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(typed) ? typed : `${/^(?:localhost|127\.|\[::1\])/i.test(typed) ? "http" : "https"}://${typed}`;
   return withScheme.replace(/\/+$/, "");
@@ -55,8 +55,8 @@ async function serverToSignInTo(ctx: VerbContext): Promise<string> {
   try {
     return await mcp.probeBaseUrls(DISCOVERY_PORTS.map((port) => `http://127.0.0.1:${port}`));
   } catch {
-    throw new HeadlessError("MausBot is not running on this computer", EXIT.unreachable,
-      "open the MausBot app, or name a server: openmausbot login https://maus.example.com (an OpenMausBot account for --tunnel is openmausbot account login)");
+    throw new HeadlessError("SanRemes is not running on this computer", EXIT.unreachable,
+      "open the SanRemes app, or name a server: sanremes login https://sanremes.example.com (an SanRemes account for --tunnel is sanremes account login)");
   }
 }
 
@@ -67,7 +67,7 @@ export function defaultServerName(origin: string): string {
   return url.hostname.replace(/[^\w.-]/g, "-").slice(0, 80);
 }
 
-/** A server run by `openmausbot serve` with owner trust makes a code for a program on its own computer, as `connect` does. */
+/** A server run by `sanremes serve` with owner trust makes a code for a program on its own computer, as `connect` does. */
 async function signInDirectly(origin: string, label: string, scopes: string[], signal: AbortSignal): Promise<Rec | null> {
   const minted = await call(origin, "/api/auth/pairing", { method: "POST", body: JSON.stringify({ label, scopes }) }, signal);
   if (minted.status !== 200 || typeof minted.body.code !== "string") return null;
@@ -80,14 +80,14 @@ async function signInWithCard(ctx: VerbContext, origin: string, label: string, s
   const verifierHash = createHash("sha256").update(verifier).digest("base64url");
   const started = await call(origin, "/api/auth/cli-login", { method: "POST", body: JSON.stringify({ label, scope, verifierHash }) }, ctx.signal);
   if (started.status === 404) {
-    throw new HeadlessError("this server does not take openmausbot login yet", EXIT.failed, "update MausBot there, or use openmausbot connect URL --code CODE --out FILE");
+    throw new HeadlessError("this server does not take sanremes login yet", EXIT.failed, "update SanRemes there, or use sanremes connect URL --code CODE --out FILE");
   }
   if (started.status !== 201 || typeof started.body.id !== "string") {
     throw new HeadlessError(`the server would not start a sign-in: ${started.body.error ?? started.status}`, started.status === 403 ? EXIT.notAllowed : EXIT.failed);
   }
   const code = String(started.body.code);
   if (desktopApp(environment) && LOOPBACK.test(origin)) {
-    ctx.io.err(`MausBot is asking you to allow this terminal. Check the code in the app matches, then press Allow:\n\n    ${code}\n`);
+    ctx.io.err(`SanRemes is asking you to allow this terminal. Check the code in the app matches, then press Allow:\n\n    ${code}\n`);
   } else {
     const opened = await ctx.openBrowser(`${origin}/`);
     ctx.io.err(`${opened ? "Opened" : "Open"} ${origin}/ in your browser. Sign in there if it asks, check the code matches, then press Allow:\n\n    ${code}\n`);
@@ -103,24 +103,24 @@ async function signInWithCard(ctx: VerbContext, origin: string, label: string, s
     const polled = await call(origin, `/api/auth/cli-login/${encodeURIComponent(started.body.id)}`, { method: "POST", body: JSON.stringify({ verifier }) }, ctx.signal);
     if (polled.status === 202) continue;
     if (polled.status === 200 && typeof polled.body.token === "string") return polled.body;
-    if (polled.body.state === "denied") throw new HeadlessError("the sign-in was denied in MausBot", EXIT.notAllowed);
+    if (polled.body.state === "denied") throw new HeadlessError("the sign-in was denied in SanRemes", EXIT.notAllowed);
     throw new HeadlessError(`the sign-in did not finish: ${polled.body.error ?? polled.status}`, polled.status === 403 ? EXIT.notAllowed : EXIT.failed,
-      "run openmausbot login again");
+      "run sanremes login again");
   }
-  throw new HeadlessError("nobody allowed the sign-in within ten minutes", EXIT.failed, "run openmausbot login again, then press Allow in MausBot");
+  throw new HeadlessError("nobody allowed the sign-in within ten minutes", EXIT.failed, "run sanremes login again, then press Allow in SanRemes");
 }
 
 export async function loginVerb(ctx: VerbContext): Promise<VerbOutcome> {
   const saved = savedOnly(ctx);
   const scope = oneOf(flag(ctx.flags, "scope"), "--scope", ["all", "chat"] as const, "all") === "chat" ? "client" : "admin";
   const origin = await serverToSignInTo(ctx);
-  const described = await call(origin, "/.well-known/openmausbot/environment", {}, ctx.signal).catch(() => null);
+  const described = await call(origin, "/.well-known/sanremes/environment", {}, ctx.signal).catch(() => null);
   if (described?.status !== 200 || typeof described.body.environmentId !== "string") {
-    throw new HeadlessError(`no MausBot server answers at ${origin}`, EXIT.unreachable, "check the address, and that MausBot is running there");
+    throw new HeadlessError(`no SanRemes server answers at ${origin}`, EXIT.unreachable, "check the address, and that SanRemes is running there");
   }
   const environment = described.body;
   const name = flag(ctx.flags, "name")?.trim() || defaultServerName(origin);
-  const label = `openmausbot CLI on ${hostname().slice(0, 50)}`;
+  const label = `sanremes CLI on ${hostname().slice(0, 50)}`;
   const scopes = scope === "admin" ? ["admin", "client"] : ["client"];
   const direct = LOOPBACK.test(origin) && !desktopApp(environment) ? await signInDirectly(origin, label, scopes, ctx.signal) : null;
   const answer = direct ?? await signInWithCard(ctx, origin, label, scope, environment);
@@ -146,9 +146,9 @@ export async function logoutVerb(ctx: VerbContext): Promise<VerbOutcome> {
   const name = ctx.positionals[0]?.trim() || saved.current()?.name;
   const server = name ? saved.get(name) : null;
   if (!name || !server) {
-    if (ctx.positionals[0]) throw new HeadlessError(`no saved server named "${name}"`, EXIT.notFound, "openmausbot servers lists them");
+    if (ctx.positionals[0]) throw new HeadlessError(`no saved server named "${name}"`, EXIT.notFound, "sanremes servers lists them");
     return { result: { ok: true, signedOut: null }, exitCode: EXIT.done,
-      human: ["You are not signed in to any server. (To release a --tunnel address and sign this machine out of its OpenMausBot account: openmausbot account logout.)"] };
+      human: ["You are not signed in to any server. (To release a --tunnel address and sign this machine out of its SanRemes account: sanremes account logout.)"] };
   }
   const token = saved.token(name);
   const ended = token
@@ -166,13 +166,13 @@ export async function whoamiVerb(ctx: VerbContext): Promise<VerbOutcome> {
   const client = await ctx.client();
   const [session, environment] = await Promise.all([
     client.json<Rec>("/api/auth/session"),
-    client.json<Rec>("/.well-known/openmausbot/environment").catch(() => ({} as Rec)),
+    client.json<Rec>("/.well-known/sanremes/environment").catch(() => ({} as Rec)),
   ]);
   const where = `${environment.label ? `"${environment.label}" ` : ""}(${client.baseUrl})`;
   const who = session.kind === "session"
     ? `"${session.label || "unnamed"}" on ${where}: ${reach(session.scopes ?? [])}${typeof session.expiresAt === "number" ? `, until ${day(session.expiresAt)}` : ""}`
     : session.trust === "service" || desktopApp(environment)
-      ? `this computer, not signed in, on ${where}: you can look; a change needs openmausbot login`
+      ? `this computer, not signed in, on ${where}: you can look; a change needs sanremes login`
       : `this computer's owner on ${where}`;
   return {
     result: { ok: true, url: client.baseUrl, server: { label: environment.label, environmentId: environment.environmentId }, botShell: ctx.botShell,
@@ -185,7 +185,7 @@ export async function whoamiVerb(ctx: VerbContext): Promise<VerbOutcome> {
 export async function useVerb(ctx: VerbContext): Promise<VerbOutcome> {
   const saved = savedOnly(ctx);
   const name = ctx.positionals[0]?.trim();
-  if (!name) throw usageError("name a saved server", "openmausbot servers lists them");
+  if (!name) throw usageError("name a saved server", "sanremes servers lists them");
   saved.use(name);
   const server = saved.get(name)!;
   return { result: { ok: true, current: name, url: server.url }, exitCode: EXIT.done, human: [`Every command now goes to "${server.label}" (${server.url}).`] };
@@ -199,6 +199,6 @@ export async function serversVerb(ctx: VerbContext): Promise<VerbOutcome> {
     exitCode: EXIT.done,
     human: rows.length
       ? rows.map((server) => `${server.current ? "*" : " "} ${server.name}  ${server.url}  "${server.label}"  ${reach(server.scopes)}${server.expiresAt ? `, until ${day(server.expiresAt)}` : ""}`)
-      : ["No saved servers. Sign in with: openmausbot login [SERVER]"],
+      : ["No saved servers. Sign in with: sanremes login [SERVER]"],
   };
 }

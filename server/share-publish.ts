@@ -1,12 +1,12 @@
-// Sends a template folder to the MausBot Admin (openmaus-cloud server/community-submissions.ts), which opens a pull
+// Sends a template folder to the SanRemes Admin (sanremes-cloud server/community-submissions.ts), which opens a pull
 // request on the community repository from its own GitHub App: nobody needs a GitHub account. The request is signed the
-// way page publishing signs its token request: a desktop's MausBot sign-in token, or a Cloud home's machine signature
-// over the label `omb-community-v1`.
+// way page publishing signs its token request: a desktop's SanRemes sign-in token, or a Cloud home's machine signature
+// over the label `sanremes-community-v1`.
 import { COMMUNITY_REPOSITORY_URL } from "../shared/share-card.ts";
 import { pagesAuthHeaders, type PagesAccess } from "./pages/access.ts";
 
 export const COMMUNITY_SUBMISSIONS_PATH = "/api/cloud/community/submissions";
-export const COMMUNITY_SIGNATURE_LABEL = "omb-community-v1";
+export const COMMUNITY_SIGNATURE_LABEL = "sanremes-community-v1";
 /** The Admin's caps on one folder. */
 export const COMMUNITY_MAX_FILES = 200, COMMUNITY_MAX_BYTES = 4 * 1024 * 1024;
 const TIMEOUT_MS = 60_000;
@@ -52,7 +52,7 @@ export function createCommunityPublisher(options: { access: () => PagesAccess | 
       const access = options.access();
       if (!access) {
         const reason = availability() ?? "unavailable";
-        return { ok: false, reason, message: reason === "sign_in" ? "Sign in to MausBot to publish." : "Publishing isn't available here." };
+        return { ok: false, reason, message: reason === "sign_in" ? "Sign in to SanRemes to publish." : "Publishing isn't available here." };
       }
       const body = JSON.stringify(submission);
       let response: Response;
@@ -73,7 +73,7 @@ export function createCommunityPublisher(options: { access: () => PagesAccess | 
       }
       if (response.status === 401) {
         return access.kind === "desktop"
-          ? { ok: false, reason: "sign_in", message: "Your MausBot sign-in has ended. Sign in again to publish." }
+          ? { ok: false, reason: "sign_in", message: "Your SanRemes sign-in has ended. Sign in again to publish." }
           : { ok: false, reason: "failed", message: UNAVAILABLE };
       }
       if (response.status === 404 || response.status === 501) return { ok: false, reason: "unavailable", message: "Publishing isn't available here." };

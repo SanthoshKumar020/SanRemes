@@ -310,7 +310,7 @@ describe("Simple-mode sidebar layout", () => {
   });
 
   it("keeps Simple's tiles to bots, even with pages pinned: a bot's pages are in its bot panel's Library tab", () => {
-    fixture.storage.set("omb-web-panels", JSON.stringify([
+    fixture.storage.set("sanremes-web-panels", JSON.stringify([
       { id: "board", name: "Fleet board", url: "http://127.0.0.1:7841/" },
       { id: "report", name: "Weekly report", page: { botId: "atlas", threadId: "atlas-thread", messageId: "m" } },
     ]));
@@ -321,7 +321,7 @@ describe("Simple-mode sidebar layout", () => {
     const grid = render().tree.find((node) => node.type === SidebarTileGrid)!.props as Record<string, unknown>;
     expect(Object.keys(grid).sort()).toEqual(["corner", "pinned", "primary", "row"]);
     expect([(grid.primary as Bot).id, ...(grid.pinned as Bot[]).map((candidate) => candidate.id)]).toEqual(["chief", "atlas"]);
-    fixture.storage.delete("omb-web-panels");
+    fixture.storage.delete("sanremes-web-panels");
   });
 
   const edge = (tree: ReactElement<Props>[]) => tree.find((node) => node.type === SidebarResizeHandle)?.props as Parameters<typeof SidebarResizeHandle>[0] | undefined;
@@ -397,7 +397,7 @@ describe("Simple-mode sidebar layout", () => {
 
   it("opens the command palette instead when a side panel holds the sidebar collapsed", () => {
     const opened = vi.fn();
-    window.addEventListener("omb:open-command-palette", opened);
+    window.addEventListener("sanremes:open-command-palette", opened);
     const search = railSearch(render(true).tree);
     expect(edge(render(true).tree), "no edge to drag while a side panel holds it collapsed").toBeUndefined();
     search();

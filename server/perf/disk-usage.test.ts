@@ -19,7 +19,7 @@ afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: tru
 function volume() {
   const home = mkdtempSync(join(tmpdir(), "disk-usage-"));
   dirs.push(home);
-  const data = join(home, ".openmausbot");
+  const data = join(home, ".sanremes");
   const write = (path: string, bytes = 1_000) => { mkdirSync(join(path, ".."), { recursive: true }); writeFileSync(path, Buffer.alloc(bytes, 7)); };
   write(join(data, "messages.db"), 20_000);
   write(join(data, "workspaces", "bot-known", "Acme merger plan.md"), 8_000);

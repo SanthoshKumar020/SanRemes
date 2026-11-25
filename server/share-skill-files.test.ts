@@ -15,7 +15,7 @@ const SCRIPT = "import os\ntoken = os.environ['REPORT_TOKEN']\nprint('ok')\n";
 const KEY = `ghp_${"a".repeat(36)}`;
 const folders: string[] = [];
 const scratch = () => {
-  const dir = mkdtempSync(join(tmpdir(), "omb-share-files-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-share-files-"));
   folders.push(dir);
   return dir;
 };

@@ -16,13 +16,13 @@ import type { Routine } from "../routines.ts";
 import type { BotRecord } from "../store.ts";
 import type { TurnOwner } from "../turn-resources.ts";
 
-export const CLOUD_COMPUTER_IDLE_MS = Math.max(1_000, Number(process.env.OMB_CLOUD_COMPUTER_IDLE_MS) || 10 * 60_000);
+export const CLOUD_COMPUTER_IDLE_MS = Math.max(1_000, Number(process.env.SANREMES_CLOUD_COMPUTER_IDLE_MS) || 10 * 60_000);
 /** A computer stays on while a routine that uses it is due this soon. Longer than the idle window, so a routine every 30
  * minutes or more often never waits on a wake: each wake spends one start from the Boat account's pool, shared by every customer. */
 export const ROUTINE_DUE_SOON_MS = 30 * 60_000;
 const MAX_LISTING_RETRY_MS = 60 * 60_000;
 /** Above a slow first start; Boat's own ready wait is 90 seconds. */
-export const CLOUD_COMPUTER_START_BUDGET_MS = Math.max(1_000, Number(process.env.OMB_CLOUD_COMPUTER_START_BUDGET_MS) || 150_000);
+export const CLOUD_COMPUTER_START_BUDGET_MS = Math.max(1_000, Number(process.env.SANREMES_CLOUD_COMPUTER_START_BUDGET_MS) || 150_000);
 export const CLOUD_COMPUTER_STARTING = "The cloud computer is still starting. This call was not performed. Take a fresh screenshot in a moment.";
 export const CLOUD_COMPUTER_DID_NOT_START = "the cloud computer didn't start in time";
 /** The provider says ready and the computer is silent. Worded apart from a start that failed, and passing: three runs in
@@ -230,7 +230,7 @@ export function createCloudComputerPower(deps: CloudComputerPowerDeps) {
     if (!answer.ok) throw notAnswering(answer);
   }
 
-  /** A passing failure: the turn's next computer call claims again, however often (`keepsTrying`), since MausBot keeps
+  /** A passing failure: the turn's next computer call claims again, however often (`keepsTrying`), since SanRemes keeps
    * bringing the computer back meanwhile. */
   const passing = (why: string) => Object.assign(new Error(why), { status: 503, transient: true, keepsTrying: true });
 

@@ -12,12 +12,12 @@ import { detectBox } from "./detect.ts";
 import { bwrapArgs, planBox, type BoxRequest } from "./plan.ts";
 import { toolCacheEnvironment } from "./tool-caches.ts";
 
-const detection = detectBox({ env: { ...process.env, OMB_BOT_BOX: "1" } });
+const detection = detectBox({ env: { ...process.env, SANREMES_BOT_BOX: "1" } });
 const available = detection.box === "bwrap" && detection.tools !== null;
-const root = mkdtempSync(join(tmpdir(), "omb-tool-caches-box-"));
+const root = mkdtempSync(join(tmpdir(), "sanremes-tool-caches-box-"));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
 
-const home = join(root, "home"), dataDir = join(home, ".openmausbot");
+const home = join(root, "home"), dataDir = join(home, ".sanremes");
 const ana = audienceHome(dataDir, memberAudience("p_ana")), ben = audienceHome(dataDir, memberAudience("p_ben"));
 const cwd = join(dataDir, "task-workspaces", "bot-a", "t1");
 

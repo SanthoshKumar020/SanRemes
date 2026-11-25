@@ -87,7 +87,7 @@ afterEach(() => {
 
 let seq = 0;
 function workspace() {
-  const cwd = mkdtempSync(join(tmpdir(), "omb-ckpt-perf-ws-"));
+  const cwd = mkdtempSync(join(tmpdir(), "sanremes-ckpt-perf-ws-"));
   scratchDirs.push(cwd);
   seq += 1;
   return { bot: `ckpt-perf-bot-${seq}`, cwd };
@@ -134,7 +134,7 @@ function countObjects({ count = 0, size = 0, sizePack = 0 }: { count?: number; s
 
 /** Is the temp volume case-insensitive (macOS default APFS, NTFS)? */
 const caseInsensitiveTmp = (() => {
-  const probe = mkdtempSync(join(tmpdir(), "omb-ckpt-perf-case-"));
+  const probe = mkdtempSync(join(tmpdir(), "sanremes-ckpt-perf-case-"));
   scratchDirs.push(probe);
   writeFileSync(join(probe, "probe"), "");
   return existsSync(join(probe, "PROBE"));
@@ -175,7 +175,7 @@ describe("incremental shadow index", () => {
     // The four reads start together; the pin goes on the old HEAD beside the add, then moves with HEAD.
     expect(subcommands()).toEqual(["ls-files", "log", "ls-files", "ls-files", "update-ref", "add", "write-tree", "commit-tree", "update-ref"]);
     expect(shadowGit(bot, cwd, "rev-parse", "HEAD").trim()).toBe(changed);
-    expect(shadowGit(bot, cwd, "for-each-ref", "--format=%(objectname)", "refs/omb-live/").trim()).toBe(changed);
+    expect(shadowGit(bot, cwd, "for-each-ref", "--format=%(objectname)", "refs/sanremes-live/").trim()).toBe(changed);
     // The loose-object count is taken behind the snapshot, not inside it.
     await drain(bot, cwd);
     expect(subcommands().slice(9)).toEqual(["count-objects", "update-ref"]);
@@ -193,7 +193,7 @@ describe("incremental shadow index", () => {
     hooks.calls = [];
     expect(await snapshot(bot, cwd, "unchanged", undefined, { pin: "dispatch-2" })).toBe(first);
     expect(subcommands()).toEqual(["ls-files", "log", "ls-files", "ls-files", "update-ref", "add"]);
-    expect(shadowGit(bot, cwd, "for-each-ref", "--format=%(objectname)", "refs/omb-live/").trim()).toBe(first);
+    expect(shadowGit(bot, cwd, "for-each-ref", "--format=%(objectname)", "refs/sanremes-live/").trim()).toBe(first);
     await drain(bot, cwd);
     expect(subcommands()).not.toContain("count-objects");
     // An edit made outside the app between two turns is in the next snapshot.
@@ -204,7 +204,7 @@ describe("incremental shadow index", () => {
     expect(subcommands()).toContain("write-tree");
     expect(shadowGit(bot, cwd, "show", `${edited}:a.txt`)).toBe("edited outside the app");
     // The earlier turn's pin still holds its own commit.
-    expect(shadowGit(bot, cwd, "for-each-ref", "--format=%(objectname)", "refs/omb-live/").trim().split("\n").sort()).toEqual([first, edited].sort());
+    expect(shadowGit(bot, cwd, "for-each-ref", "--format=%(objectname)", "refs/sanremes-live/").trim().split("\n").sort()).toEqual([first, edited].sort());
     await release(bot, cwd, "dispatch-2");
     await release(bot, cwd, "dispatch-3");
   });
@@ -272,7 +272,7 @@ describe("incremental shadow index", () => {
     expect(await snapshot(bot, cwd, "cannot stage", undefined, { pin: "dispatch-4" })).toBeNull();
     hooks.inject = null;
     await drain(bot, cwd);
-    expect(shadowGit(bot, cwd, "for-each-ref", "--format=%(objectname)", "refs/omb-live/").trim()).toBe("");
+    expect(shadowGit(bot, cwd, "for-each-ref", "--format=%(objectname)", "refs/sanremes-live/").trim()).toBe("");
     expect(await snapshot(bot, cwd, "later")).toBe(first);
   });
 
@@ -734,7 +734,7 @@ describe("a snapshot that fails", () => {
       expect(await snapshot(bot, cwd, `failing ${turn}`, undefined, { pin: `dispatch-${turn}` })).toBeNull();
       expect(String(warn.mock.calls.at(-1)?.[0])).toContain("checkpoint not taken");
     }
-    expect(shadowGit(bot, cwd, "for-each-ref", "--format=%(objectname)", "refs/omb-live/").trim()).toBe("");
+    expect(shadowGit(bot, cwd, "for-each-ref", "--format=%(objectname)", "refs/sanremes-live/").trim()).toBe("");
     // The same bot in another folder is untouched, and so is this folder once git works again.
     broken = false;
     expect(await snapshot(bot, other.cwd, "other folder")).toMatch(/^[0-9a-f]{40}$/);
@@ -768,7 +768,7 @@ describe("a snapshot that fails", () => {
       writeFileSync(join(cwd, "a.txt"), "two");
       const second = await snapshot(bot, cwd, "second", undefined, { pin: "dispatch-2" });
       expect(second, lock).toMatch(/^[0-9a-f]{40}$/);
-      expect(shadowGit(bot, cwd, "for-each-ref", "--format=%(objectname)", "refs/omb-live/").trim(), lock).toBe(second);
+      expect(shadowGit(bot, cwd, "for-each-ref", "--format=%(objectname)", "refs/sanremes-live/").trim(), lock).toBe(second);
       expect(warn, lock).not.toHaveBeenCalled();
       await release(bot, cwd, "dispatch-2");
       warn.mockRestore();
@@ -798,7 +798,7 @@ describe("a folder being read ahead when its turn starts", () => {
 describe("collections", () => {
   it("prune only what was unreachable before they started, and say so on disk while they run", async () => {
     const { bot, cwd } = workspace();
-    const marker = join(shadowOf(bot, cwd), ".git", "omb-collecting");
+    const marker = join(shadowOf(bot, cwd), ".git", "sanremes-collecting");
     writeFileSync(join(cwd, "a.txt"), "one");
     await snapshot(bot, cwd, "first");
     let during: string | null = null;

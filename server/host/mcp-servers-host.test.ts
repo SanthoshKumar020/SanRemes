@@ -28,7 +28,7 @@ function script(data: string, ...parts: string[]): string {
 }
 
 function setup(options: { boxed?: boolean; data?: string; bots?: Array<{ id: string; name: string; mcpServers?: string[]; toolScope?: unknown }>; urls?: Record<string, UrlAnswer>; policy?: <T extends object>(servers: Record<string, T>) => Record<string, T>; botsPath?: () => BrokerPath | null } = {}) {
-  const data = options.data ?? mkdtempSync(join(tmpdir(), "omb-mcp-host-"));
+  const data = options.data ?? mkdtempSync(join(tmpdir(), "sanremes-mcp-host-"));
   if (!options.data) dirs.push(data);
   const cfg: AppConfig = {
     mcpServers: {
@@ -141,7 +141,7 @@ it("a restart, or turning a server off and on, shows in what the next turn start
   await host.health.settled();
   const notes = () => host.mounted(PAUL).notes as { env: Record<string, string> };
   const fresh = JSON.stringify(host.mounted(PAUL).notes);
-  expect(notes().env.OMB_MCP_RESTART).toBeUndefined();
+  expect(notes().env.SANREMES_MCP_RESTART).toBeUndefined();
 
   host.health.changed("notes");
   const restarted = JSON.stringify(host.mounted(PAUL).notes);
@@ -231,7 +231,7 @@ it("a package runner's first check waits for its download; any other program's k
 });
 
 it("starts a server with its key read from the Vault, tells a bot the item keeps out, and says when the key is gone", async () => {
-  const data = mkdtempSync(join(tmpdir(), "omb-mcp-host-"));
+  const data = mkdtempSync(join(tmpdir(), "sanremes-mcp-host-"));
   dirs.push(data);
   const vault = new VaultStore({ dataDir: data });
   const secret = vault.saveSecret({ name: "Stripe secret key", value: "sk_fake-mounted", source: "card", bots: ["iris"] });
@@ -262,7 +262,7 @@ it("starts a server with its key read from the Vault, tells a bot the item keeps
 });
 
 it("ties a saved grant to the server as config.json holds it: a restart or a new key value keeps it, a changed server ends it", async () => {
-  const data = mkdtempSync(join(tmpdir(), "omb-mcp-host-"));
+  const data = mkdtempSync(join(tmpdir(), "sanremes-mcp-host-"));
   dirs.push(data);
   const vault = new VaultStore({ dataDir: data });
   const secret = vault.saveSecret({ name: "Stripe secret key", value: "sk_fake-first", source: "card", bots: "all" });
@@ -297,10 +297,10 @@ it("ties a saved grant to the server as config.json holds it: a restart or a new
   saved.set(PAUL.id, [beforeRestart]);
   host.health.changed("stripe");
   host.health.changed("stripe");
-  expect((host.mounted(IRIS).stripe as { env: Record<string, string> }).env.OMB_MCP_RESTART, "the restart still reaches the engine").toBe("2");
+  expect((host.mounted(IRIS).stripe as { env: Record<string, string> }).env.SANREMES_MCP_RESTART, "the restart still reaches the engine").toBe("2");
   expect(earlier(IRIS), "the old key changed with every restart").not.toBe(beforeRestart);
   expect(key(IRIS)).toBe(first);
-  expect(host.grantSpecs(host.mounted(IRIS)).stripe).not.toHaveProperty("env.OMB_MCP_RESTART");
+  expect(host.grantSpecs(host.mounted(IRIS)).stripe).not.toHaveProperty("env.SANREMES_MCP_RESTART");
 
   vault.updateSecret(secret.id, { value: "sk_fake-rotated" });
   host.keyChanged(secret.id);
@@ -341,7 +341,7 @@ it("ties a saved grant to the server as config.json holds it: a restart or a new
 
 it("keeps a turn starting when its bot's grants cannot be saved in their new form", async () => {
   const cfg = { mcpServers: { plain: { command: "npx", args: ["plain-mcp"], env: {}, enabled: true } } } as unknown as AppConfig;
-  const data = mkdtempSync(join(tmpdir(), "omb-mcp-host-"));
+  const data = mkdtempSync(join(tmpdir(), "sanremes-mcp-host-"));
   dirs.push(data);
   const host = createMcpServersHost({
     dataDir: data, cfg: () => cfg, persist: () => {}, bots: () => [IRIS], startsServers: () => true, boxed: () => false, policy: (servers) => servers, tell: () => {},
@@ -356,7 +356,7 @@ it("keeps a turn starting when its bot's grants cannot be saved in their new for
 });
 
 it("forgets which Vault items a server could read when its bot's own server goes with the bot", () => {
-  const data = mkdtempSync(join(tmpdir(), "omb-mcp-host-"));
+  const data = mkdtempSync(join(tmpdir(), "sanremes-mcp-host-"));
   dirs.push(data);
   const vault = new VaultStore({ dataDir: data });
   vault.grantMcpKeys("bot-server", ["77777777-7777-4777-8777-777777777777"]);
@@ -369,7 +369,7 @@ it("forgets which Vault items a server could read when its bot's own server goes
 });
 
 it("forgets the sign-in of a bot's own web connection when it goes with the bot, so a new one by that name starts signed out", () => {
-  const data = mkdtempSync(join(tmpdir(), "omb-mcp-host-"));
+  const data = mkdtempSync(join(tmpdir(), "sanremes-mcp-host-"));
   dirs.push(data);
   const url = "https://mcp.linear.app/mcp";
   const oauth = new McpOAuthManager({ file: join(data, "mcp-oauth.json") });
@@ -382,7 +382,7 @@ it("forgets the sign-in of a bot's own web connection when it goes with the bot,
 });
 
 it("still forgets the sign-in when forgetting the server's Vault items fails", () => {
-  const data = mkdtempSync(join(tmpdir(), "omb-mcp-host-"));
+  const data = mkdtempSync(join(tmpdir(), "sanremes-mcp-host-"));
   dirs.push(data);
   const forgotten: string[] = [];
   const cfg = { mcpServers: { linear_iris: { type: "http", url: "https://mcp.linear.app/mcp", headers: {}, enabled: true, bot: "iris" } } } as unknown as AppConfig;

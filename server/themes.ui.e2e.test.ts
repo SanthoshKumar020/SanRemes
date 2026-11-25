@@ -1,16 +1,16 @@
 // A person's theme in a real browser against a real server (temporary home): it paints the window live, Settings lists
 // it, the reset keys and ?safe-look both get back to the default look; a picture and an animation on the chat's backdrop
 // paint under the messages. Runs where a Chromium and playwright-core are named:
-//   OMB_UI_CHROMIUM=<chrome or headless shell> OMB_UI_PLAYWRIGHT_CORE=<playwright-core dir> OMB_UI_DIST=<vite build dir>
-//   [OMB_UI_SHOTS=<folder for screenshots>] vitest run server/themes.ui.e2e.test.ts
+//   SANREMES_UI_CHROMIUM=<chrome or headless shell> SANREMES_UI_PLAYWRIGHT_CORE=<playwright-core dir> SANREMES_UI_DIST=<vite build dir>
+//   [SANREMES_UI_SHOTS=<folder for screenshots>] vitest run server/themes.ui.e2e.test.ts
 import { createRequire } from "node:module";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, expect, it, vi } from "vitest";
 import { WELCOME_VERSION } from "../electron/onboarding-record.mjs";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 
-const { OMB_UI_CHROMIUM: chromiumPath, OMB_UI_PLAYWRIGHT_CORE: playwrightPath, OMB_UI_DIST: dist, OMB_UI_SHOTS: shots } = process.env;
+const { SANREMES_UI_CHROMIUM: chromiumPath, SANREMES_UI_PLAYWRIGHT_CORE: playwrightPath, SANREMES_UI_DIST: dist, SANREMES_UI_SHOTS: shots } = process.env;
 const ready = Boolean(chromiumPath && playwrightPath && dist);
 
 let fixture: Awaited<ReturnType<typeof launchVerificationServer>>;
@@ -95,7 +95,7 @@ it.skipIf(!ready)("paints a theme's picture and animation on the chat's backdrop
     '[data-look="chat-backdrop"]::before { content: ""; position: absolute; inset: -50%; background: conic-gradient(red, blue, red); opacity: 0.2; animation: bg-turn 60s linear infinite; }',
     "@keyframes bg-turn { to { transform: rotate(1turn); } }",
   ].join("\n");
-  const imported = await api("POST", "/api/themes/import", { mausbotTheme: 1, id: "sky", theme: { name: "Sky", css }, assets: { "sky.png": `data:image/png;base64,${PNG}` } });
+  const imported = await api("POST", "/api/themes/import", { sanremesTheme: 1, id: "sky", theme: { name: "Sky", css }, assets: { "sky.png": `data:image/png;base64,${PNG}` } });
   expect(imported.status).toBeLessThan(300);
   const page = await browser.newPage({ viewport: { width: 1280, height: 820 }, reducedMotion: "no-preference" });
   const pictures: number[] = [];
@@ -105,7 +105,7 @@ it.skipIf(!ready)("paints a theme's picture and animation on the chat's backdrop
   await greeting.waitFor();
   const skipTour = page.getByRole("button", { name: "Skip tour" });
   if (await skipTour.isVisible().catch(() => false)) await skipTour.click();
-  for (let n = 0; n < 5 && await page.locator("[data-mausbot-welcome]").isVisible().catch(() => false); n++) {
+  for (let n = 0; n < 5 && await page.locator("[data-sanremes-welcome]").isVisible().catch(() => false); n++) {
     await page.keyboard.press("Escape");
     await page.waitForTimeout(500);
   }

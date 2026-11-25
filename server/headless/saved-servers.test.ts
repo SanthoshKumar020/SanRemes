@@ -1,4 +1,4 @@
-import "../testing/scrub-ambient-omb-env.ts";
+import "../testing/scrub-ambient-sanremes-env.ts";
 
 import { mkdtempSync, readFileSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -10,7 +10,7 @@ import { inBotShell } from "./bot-shell.ts";
 import { openClient } from "./client.ts";
 import { cliConfigDir, SavedServers, type SecurityRunner } from "./saved-servers.ts";
 
-const home = mkdtempSync(join(tmpdir(), "omb-saved-"));
+const home = mkdtempSync(join(tmpdir(), "sanremes-saved-"));
 afterAll(() => removeTempDir(home));
 
 /** A stand-in for macOS `security`: a map, so no keychain is touched. Records every argv to prove a session is never on one. */
@@ -40,9 +40,9 @@ const server = { url: "http://127.0.0.1:8799", environmentId: "env-1", label: "S
 
 describe("saved servers", () => {
   it("lives under the command's own HOME or XDG_CONFIG_HOME, never the process's", () => {
-    expect(cliConfigDir({ HOME: "/h" }, "darwin")).toBe(join("/h", ".config", "openmausbot"));
-    expect(cliConfigDir({ HOME: "/h", XDG_CONFIG_HOME: "/x" }, "linux")).toBe(join("/x", "openmausbot"));
-    expect(cliConfigDir({ USERPROFILE: "C:\\u", APPDATA: "C:\\a" }, "win32")).toBe(join("C:\\a", "openmausbot"));
+    expect(cliConfigDir({ HOME: "/h" }, "darwin")).toBe(join("/h", ".config", "sanremes"));
+    expect(cliConfigDir({ HOME: "/h", XDG_CONFIG_HOME: "/x" }, "linux")).toBe(join("/x", "sanremes"));
+    expect(cliConfigDir({ USERPROFILE: "C:\\u", APPDATA: "C:\\a" }, "win32")).toBe(join("C:\\a", "sanremes"));
     expect(cliConfigDir({}, "linux")).toBeNull();
   });
 
@@ -50,9 +50,9 @@ describe("saved servers", () => {
     const keychain = fakeKeychain();
     const saved = new SavedServers({ env: { HOME: join(home, "mac") }, platform: "darwin", security: keychain.runner });
     expect(saved.save("local", server, "omb_sess_secret_value")).toBe("keychain");
-    expect(keychain.items.get("openmausbot-cli/local")).toBe("omb_sess_secret_value");
+    expect(keychain.items.get("sanremes-cli/local")).toBe("omb_sess_secret_value");
     expect(keychain.argv.flat().join(" ")).not.toContain("omb_sess_secret_value");
-    const file = join(home, "mac", ".config", "openmausbot", "servers.json");
+    const file = join(home, "mac", ".config", "sanremes", "servers.json");
     expect(readFileSync(file, "utf8")).not.toContain("omb_sess_secret_value");
     if (process.platform !== "win32") expect(statSync(file).mode & 0o777).toBe(0o600);
     expect(saved.token("local")).toBe("omb_sess_secret_value");
@@ -64,12 +64,12 @@ describe("saved servers", () => {
 
   it.skipIf(process.platform === "win32")("falls back to a file only this user can read when there is no Keychain", () => {
     const saved = new SavedServers({ env: { HOME: join(home, "linux") }, platform: "linux", security: () => { throw new Error("no security on Linux"); } });
-    expect(saved.save("box", { ...server, url: "https://maus.example.com" }, "omb_sess_file_value")).toBe("file");
-    const file = join(home, "linux", ".config", "openmausbot", "sessions", "box");
+    expect(saved.save("box", { ...server, url: "https://sanremes.example.com" }, "omb_sess_file_value")).toBe("file");
+    const file = join(home, "linux", ".config", "sanremes", "sessions", "box");
     expect(statSync(file).mode & 0o777).toBe(0o600);
     expect(saved.token("box")).toBe("omb_sess_file_value");
-    expect(saved.at("https://maus.example.com")?.name).toBe("box");
-    expect(saved.at("https://maus.example.com.evil.test")).toBeNull();
+    expect(saved.at("https://sanremes.example.com")?.name).toBe("box");
+    expect(saved.at("https://sanremes.example.com.evil.test")).toBeNull();
   });
 
   it("sends a saved session only to the exact address it was made at, and never from a bot's shell", async () => {
@@ -94,10 +94,10 @@ describe("saved servers", () => {
     expect(named.identity).toMatchObject({ kind: "saved" });
 
     // In a bot's shell main.ts passes no saved servers at all, so the person's session is never read.
-    expect(inBotShell({ OMB_DESKTOP_PARENT: "1" })).toBe(true);
-    expect(inBotShell({ OMB_HOOK_TOKEN_FILE: "/tmp/x" })).toBe(true);
-    expect(inBotShell({ OMB_COMMS_TOKEN: "t" })).toBe(true);
-    expect(inBotShell({ OMB_ENGINE_TAG: "0123456789abcdef0123456789abcdef" })).toBe(true);
-    expect(inBotShell({ HOME: "/h", OMB_PORT: "8799", OMB_DATA_DIR: "/d" })).toBe(false);
+    expect(inBotShell({ SANREMES_DESKTOP_PARENT: "1" })).toBe(true);
+    expect(inBotShell({ SANREMES_HOOK_TOKEN_FILE: "/tmp/x" })).toBe(true);
+    expect(inBotShell({ SANREMES_COMMS_TOKEN: "t" })).toBe(true);
+    expect(inBotShell({ SANREMES_ENGINE_TAG: "0123456789abcdef0123456789abcdef" })).toBe(true);
+    expect(inBotShell({ HOME: "/h", SANREMES_PORT: "8799", SANREMES_DATA_DIR: "/d" })).toBe(false);
   });
 });

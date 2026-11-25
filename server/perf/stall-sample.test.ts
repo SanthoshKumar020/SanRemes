@@ -6,8 +6,8 @@ const frame = (functionName: string, url = "", lineNumber = 0) => ({ functionNam
 
 describe("codeLocation", () => {
   it("keeps the file's place in the app and drops the machine's paths", () => {
-    const root = "/home/ada/OpenMausBot";
-    expect(codeLocation(frame("redactSecretsInText", "file:///home/ada/OpenMausBot/shared/redact.ts", 92), root)).toBe("redactSecretsInText shared/redact.ts:93:5");
+    const root = "/home/ada/SanRemes";
+    expect(codeLocation(frame("redactSecretsInText", "file:///home/ada/SanRemes/shared/redact.ts", 92), root)).toBe("redactSecretsInText shared/redact.ts:93:5");
     expect(codeLocation(frame("x", "file:///app/dist-server/index.js", 10), "/app")).toBe("x dist-server/index.js:11:5");
     expect(codeLocation(frame("parse", "file:///Users/ada/app/node_modules/@scope/pkg/lib/a.js"), "/Users/ada/app")).toBe("parse @scope/pkg/lib/a.js:1:5");
     expect(codeLocation(frame("readFileSync", "node:fs"), root)).toBe("readFileSync node:fs:1:5");
@@ -17,16 +17,16 @@ describe("codeLocation", () => {
   });
 
   it("matches the app's own folder, not a `packages` or `server` folder above it", () => {
-    const root = "/srv/packages/server/OpenMausBot";
+    const root = "/srv/packages/server/SanRemes";
     expect(codeLocation(frame("tick", `file://${root}/server/perf/x.ts`, 1), root)).toBe("tick server/perf/x.ts:2:5");
     expect(codeLocation(frame("tick", "file:///srv/packages/other/y.ts", 1), root)).toBe("tick y.ts:2:5");
   });
 
   it("finds the app's own folder in a Windows path or file URL", () => {
-    const root = "C:\\a\\OpenMausBot";
-    expect(codeLocation(frame("tick", "file:///C:/a/OpenMausBot/server/perf/x.ts", 1), root)).toBe("tick server/perf/x.ts:2:5");
-    expect(codeLocation(frame("tick", "C:\\a\\OpenMausBot\\server\\perf\\x.ts", 1), root)).toBe("tick server/perf/x.ts:2:5");
-    expect(codeLocation(frame("tick", "file:///c:/a/OpenMausBot/server/perf/x.ts", 1), root)).toBe("tick server/perf/x.ts:2:5");
+    const root = "C:\\a\\SanRemes";
+    expect(codeLocation(frame("tick", "file:///C:/a/SanRemes/server/perf/x.ts", 1), root)).toBe("tick server/perf/x.ts:2:5");
+    expect(codeLocation(frame("tick", "C:\\a\\SanRemes\\server\\perf\\x.ts", 1), root)).toBe("tick server/perf/x.ts:2:5");
+    expect(codeLocation(frame("tick", "file:///c:/a/SanRemes/server/perf/x.ts", 1), root)).toBe("tick server/perf/x.ts:2:5");
     expect(codeLocation(frame("tick", "file:///D:/elsewhere/y.ts", 1), root)).toBe("tick y.ts:2:5");
   });
 

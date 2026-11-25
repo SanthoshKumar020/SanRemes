@@ -20,7 +20,7 @@ describe("Kimi session model selection", () => {
 
   beforeEach(() => {
     ensureDirs();
-    scratch = mkdtempSync(join(tmpdir(), "omb-kimi-model-"));
+    scratch = mkdtempSync(join(tmpdir(), "sanremes-kimi-model-"));
   });
 
   afterEach(async () => {

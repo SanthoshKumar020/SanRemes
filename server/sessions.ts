@@ -30,10 +30,10 @@ export function daysMs(value: string | undefined, fallbackDays: number): number 
   const ok = Number.isInteger(days) && days >= 1 && days <= 3650;
   return (ok ? days : fallbackDays) * 24 * 60 * 60_000;
 }
-/** OMB_SESSION_TTL_DAYS (default 30): a session used with half its term or less left renews for the full term. */
-export const SESSION_TTL_MS = daysMs(process.env.OMB_SESSION_TTL_DAYS, 30);
-/** OMB_SESSION_MAX_DAYS (default 180): renewal never passes this, so a stolen cookie has a bounded life. */
-export const SESSION_MAX_AGE_MS = daysMs(process.env.OMB_SESSION_MAX_DAYS, 180);
+/** SANREMES_SESSION_TTL_DAYS (default 30): a session used with half its term or less left renews for the full term. */
+export const SESSION_TTL_MS = daysMs(process.env.SANREMES_SESSION_TTL_DAYS, 30);
+/** SANREMES_SESSION_MAX_DAYS (default 180): renewal never passes this, so a stolen cookie has a bounded life. */
+export const SESSION_MAX_AGE_MS = daysMs(process.env.SANREMES_SESSION_MAX_DAYS, 180);
 export const SESSION_RENEW_WHEN_LEFT_MS = SESSION_TTL_MS / 2;
 /** A team session the roster check keeps alive was used within this long. */
 const TEAM_ACTIVE_MS = 60 * 60_000;
@@ -87,7 +87,7 @@ const sessionSchema = z.object({
   owner: z.string().max(254).optional(),
   /** A Team Cloud's sign-in for moving one bot in (server/team-move-in.ts): it reaches that bot's move routes only. */
   moveIn: z.string().regex(/^[\w-]{1,128}$/).optional(),
-  /** An access token for a script (`openmausbot token create`): it ends at expiresAt and never renews. */
+  /** An access token for a script (`sanremes token create`): it ends at expiresAt and never renews. */
   token: z.literal(true).optional(),
 });
 
@@ -209,13 +209,13 @@ const within = (value: unknown, min: number, max: number): number | null | undef
   value === undefined ? undefined : typeof value === "number" && Number.isInteger(value) && value >= min && value <= max ? value : null;
 
 /** POST /api/auth/pairing's body: `ttlMs` keeps the code open up to a day; `tokenTtlMs` makes the session it opens an
- * access token, bounded by OMB_SESSION_MAX_DAYS like every session. */
+ * access token, bounded by SANREMES_SESSION_MAX_DAYS like every session. */
 export function pairingRequest(body: unknown): PairingRequest | { error: string } {
   const record: Record<string, unknown> = body && typeof body === "object" && !Array.isArray(body) ? Object(body) : {};
   const ttlMs = within(record.ttlMs, 60_000, PAIRING_CODE_MAX_TTL_MS);
   if (ttlMs === null) return { error: "ttlMs must be a whole number of milliseconds, from one minute to 24 hours" };
   const tokenTtlMs = within(record.tokenTtlMs, 60_000, SESSION_MAX_AGE_MS);
-  if (tokenTtlMs === null) return { error: `a token lasts from one minute to ${Math.floor(SESSION_MAX_AGE_MS / DAY_MS)} days on this server (OMB_SESSION_MAX_DAYS)` };
+  if (tokenTtlMs === null) return { error: `a token lasts from one minute to ${Math.floor(SESSION_MAX_AGE_MS / DAY_MS)} days on this server (SANREMES_SESSION_MAX_DAYS)` };
   const scopes = Array.isArray(record.scopes) ? record.scopes.filter((v): v is Scope => v === "admin" || v === "client") : undefined;
   return {
     ...(typeof record.label === "string" ? { label: record.label } : {}), ...(scopes ? { scopes } : {}),

@@ -2,8 +2,8 @@
 // folder gets two sites from the real publish helper, on a loopback stand-in for Netlify that also serves them. The
 // page lists them, the preview frames one beside the chat (from its card and from a link in the bot's message), the
 // framed site reports what it could reach of the app (nothing), and Delete removes the site on the stand-in and its
-// record. Needs the pinned agent-browser binary: runs when one resolves (tools directory, OMB_AGENT_BROWSER_PATH or
-// PATH) or OMB_UI_E2E=1 asks for the verified download; otherwise skipped.
+// record. Needs the pinned agent-browser binary: runs when one resolves (tools directory, SANREMES_AGENT_BROWSER_PATH or
+// PATH) or SANREMES_UI_E2E=1 asks for the verified download; otherwise skipped.
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -17,19 +17,19 @@ import { removeTempDir, waitForExit } from "../../server/testing/cleanup.ts";
 import { startFakeNetlify } from "../../server/testing/fake-netlify.ts";
 // @ts-expect-error the skill's helper is plain JavaScript with no types
 import { publish } from "../../skills/publish-to-netlify/deploy.mjs";
-import { runControlOmb } from "../control-omb.ts";
-import { agentBrowser, sessionEnv, UI_TOOLS_DIR, type UiHandle } from "./control-omb-ui.ts";
+import { runControlOmb } from "../control-sanremes.ts";
+import { agentBrowser, sessionEnv, UI_TOOLS_DIR, type UiHandle } from "./control-sanremes-ui.ts";
 import { fixtureApi } from "./preview-fixture.ts";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
-const forced = process.env.OMB_UI_E2E === "1";
+const forced = process.env.SANREMES_UI_E2E === "1";
 const enabled = forced || Boolean(resolveAgentBrowserBinary({ dataDir: UI_TOOLS_DIR, env: process.env }));
-if (!enabled) console.log("skipping published apps ui e2e: no agent-browser binary resolves; set OMB_UI_E2E=1 to install the pinned release");
+if (!enabled) console.log("skipping published apps ui e2e: no agent-browser binary resolves; set SANREMES_UI_E2E=1 to install the pinned release");
 const LAUNCH_TIMEOUT_MS = forced ? 600_000 : 180_000;
 const TOKEN = "nfp_published_apps_ui_token_0123456789abcdef";
 
-const evidenceDir = process.env.OMB_UI_EVIDENCE_DIR ? resolve(ROOT, process.env.OMB_UI_EVIDENCE_DIR) : mkdtempSync(join(tmpdir(), "omb-ui-evidence-"));
-afterAll(async () => { if (!process.env.OMB_UI_EVIDENCE_DIR) await removeTempDir(evidenceDir); });
+const evidenceDir = process.env.SANREMES_UI_EVIDENCE_DIR ? resolve(ROOT, process.env.SANREMES_UI_EVIDENCE_DIR) : mkdtempSync(join(tmpdir(), "sanremes-ui-evidence-"));
+afterAll(async () => { if (!process.env.SANREMES_UI_EVIDENCE_DIR) await removeTempDir(evidenceDir); });
 
 /** What a hostile site would try first, written into the page so the frame's own text says how each attempt went. */
 const SITE = (name: string, color: string) => `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${name}</title><style>
@@ -39,7 +39,7 @@ header{padding:28px 32px;font-size:30px;font-weight:700}main{padding:0 32px}li{m
 const tries = {
   bridge: () => typeof window.ogb,
   parentBridge: () => typeof parent.ogb,
-  mausbot: () => typeof window.mausbot,
+  sanremes: () => typeof window.sanremes,
   parentDocument: () => parent.document.title,
   parentStorage: () => parent.localStorage.length,
   topAddress: () => top.location.href,
@@ -57,7 +57,7 @@ for (const [name, attempt] of Object.entries(tries)) {
 </script></body></html>`;
 
 async function launch(env: NodeJS.ProcessEnv): Promise<{ child: ReturnType<typeof spawn>; info: { ui: string; url: string; botId: string; dataDir: string; logPath: string } }> {
-  const child = spawn(process.execPath, ["--experimental-strip-types", join(ROOT, "scripts", "control-omb.ts"), "ui", "launch"], {
+  const child = spawn(process.execPath, ["--experimental-strip-types", join(ROOT, "scripts", "control-sanremes.ts"), "ui", "launch"], {
     cwd: ROOT, env, stdio: ["ignore", "pipe", "pipe"], detached: process.platform !== "win32",
   });
   let stdout = "", stderr = "";
@@ -86,11 +86,11 @@ async function until<T>(probe: () => Promise<T> | T, what: string, timeoutMs = 3
 }
 
 (enabled ? it : it.skip)("lists what a bot published, previews it beside the chat in a sandbox that reaches nothing, and deletes it", async () => {
-  const scratch = mkdtempSync(join(tmpdir(), "omb-published-apps-"));
+  const scratch = mkdtempSync(join(tmpdir(), "sanremes-published-apps-"));
   const replyFile = join(scratch, "reply.txt"), tokenFile = join(scratch, "netlify-token");
   writeFileSync(tokenFile, TOKEN);
   const fake = await startFakeNetlify(TOKEN);
-  const { child, info } = await launch({ ...process.env, OMB_NETLIFY_API_URL: fake.url, FAKE_CLAUDE_REPLY_FILE: replyFile });
+  const { child, info } = await launch({ ...process.env, SANREMES_NETLIFY_API_URL: fake.url, FAKE_CLAUDE_REPLY_FILE: replyFile });
   try {
     const api = fixtureApi(info.url, { headers: { origin: info.url } });
     const ui = (verb: string, ...args: string[]) => runControlOmb(["ui", verb, "--ui", info.ui, ...args]) as Promise<Record<string, any>>;
@@ -109,7 +109,7 @@ async function until<T>(probe: () => Promise<T> | T, what: string, timeoutMs = 3
     mkdirSync(evidenceDir, { recursive: true });
     await viewport(1280, 860);
     // Advanced mode keeps the Tools section in the sidebar; Simple mode has the same entry in the account menu.
-    await evaluate(`localStorage.setItem("omb-advanced-mode", "1"); window.dispatchEvent(new StorageEvent("storage", { key: "omb-advanced-mode" })); true`);
+    await evaluate(`localStorage.setItem("sanremes-advanced-mode", "1"); window.dispatchEvent(new StorageEvent("storage", { key: "sanremes-advanced-mode" })); true`);
 
     // Nothing published yet: the page says what it is and how to get the first app.
     await until(() => evaluate(`Boolean(document.querySelector('[data-sidebar-nav="published-apps"]'))`), "the Tools section's Published apps entry");
@@ -125,7 +125,7 @@ async function until<T>(probe: () => Promise<T> | T, what: string, timeoutMs = 3
       const project = join(workspace, folder);
       mkdirSync(join(project, "dist"), { recursive: true });
       writeFileSync(join(project, "dist", "index.html"), SITE(title, color));
-      const env = { OMB_NETLIFY_API_URL: fake.url, OMB_BOT_ID: info.botId };
+      const env = { SANREMES_NETLIFY_API_URL: fake.url, SANREMES_BOT_ID: info.botId };
       const result = await publish(["--dir", join(project, "dist"), "--project", project, "--token-file", tokenFile, "--title", title, "--bot-name", "Pepper", ...extra], env, { pollMs: 50, privateAfterMs: 200 });
       expect(result, JSON.stringify(result)).toMatchObject({ ok: true, state: "ready" });
       return { project, env, siteId: result.siteId as string, url: result.url as string };
@@ -176,7 +176,7 @@ async function until<T>(probe: () => Promise<T> | T, what: string, timeoutMs = 3
       .toEqual([bakery.url, "allow-scripts allow-same-origin allow-forms allow-popups", "no-referrer"]);
     await until(() => shows("probe referrer: none"), "the framed site to report its probes");
     const probes = [...new Set(JSON.stringify(await ui("snapshot")).match(/probe \w+: [\w ]+/g))].sort();
-    expect(probes).toEqual(["probe bridge: undefined", "probe mausbot: undefined", "probe navigateTop: blocked", "probe ownStorage: works", "probe parentBridge: blocked", "probe parentDocument: blocked",
+    expect(probes).toEqual(["probe bridge: undefined", "probe sanremes: undefined", "probe navigateTop: blocked", "probe ownStorage: works", "probe parentBridge: blocked", "probe parentDocument: blocked",
       "probe parentStorage: blocked", "probe referrer: none", "probe topAddress: blocked"]);
     expect(await evaluate("location.href")).toContain("127.0.0.1");
     await shot("preview-desktop");
@@ -201,9 +201,9 @@ async function until<T>(probe: () => Promise<T> | T, what: string, timeoutMs = 3
     await shot("preview-from-link-desktop");
     await press('aside[data-app-preview] button[aria-label="Close preview"]');
 
-    // With OMB_PUBLISHED_APPS_REAL_SITES (addresses separated by spaces) the same link click frames real public sites,
+    // With SANREMES_PUBLISHED_APPS_REAL_SITES (addresses separated by spaces) the same link click frames real public sites,
     // read-only: nothing is deployed and Netlify's API is never called.
-    for (const [index, site] of (process.env.OMB_PUBLISHED_APPS_REAL_SITES ?? "").split(/\s+/).filter(Boolean).entries()) {
+    for (const [index, site] of (process.env.SANREMES_PUBLISHED_APPS_REAL_SITES ?? "").split(/\s+/).filter(Boolean).entries()) {
       writeFileSync(replyFile, `Here it is: ${site}`);
       await ui("type", "--name", "Message Pepper", "--text", `show me site ${index + 1}`);
       await ui("press", "--keys", "Enter");

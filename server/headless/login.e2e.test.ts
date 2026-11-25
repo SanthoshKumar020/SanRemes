@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { randomBytes } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { launchVerificationServer, type VerificationServer } from "../../scripts/control-omb.ts";
+import { launchVerificationServer, type VerificationServer } from "../../scripts/control-sanremes.ts";
 import { removeTempDir } from "../testing/cleanup.ts";
 import { runHeadless, type HeadlessOptions } from "./main.ts";
 import type { HeadlessIo } from "./output.ts";
@@ -25,14 +25,14 @@ function fakeKeychain(): SecurityRunner {
   };
 }
 
-describe("openmausbot login, then status, bots, stop and threads against the desktop app's own server", () => {
+describe("sanremes login, then status, bots, stop and threads against the desktop app's own server", () => {
   let fixture: VerificationServer;
   const owner = randomBytes(32).toString("base64url");
-  const home = mkdtempSync(join(tmpdir(), "omb-cli-home-"));
+  const home = mkdtempSync(join(tmpdir(), "sanremes-cli-home-"));
   const security = fakeKeychain();
   const asApp = async (method: string, path: string, body?: unknown) => {
     const response = await fetch(`${fixture.info.url}${path}`, {
-      method, headers: { "content-type": "application/json", "x-openmausbot-desktop-owner": owner, origin: fixture.info.url },
+      method, headers: { "content-type": "application/json", "x-sanremes-desktop-owner": owner, origin: fixture.info.url },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
     return await response.json() as Record<string, any>;
@@ -46,9 +46,9 @@ describe("openmausbot login, then status, bots, stop and threads against the des
 
   beforeAll(async () => {
     const realFetch = globalThis.fetch;
-    globalThis.fetch = (input, init = {}) => realFetch(input, { ...init, headers: { ...Object.fromEntries(new Headers(init.headers)), "x-openmausbot-desktop-owner": owner } });
+    globalThis.fetch = (input, init = {}) => realFetch(input, { ...init, headers: { ...Object.fromEntries(new Headers(init.headers)), "x-sanremes-desktop-owner": owner } });
     try {
-      fixture = await launchVerificationServer({ ...process.env, OMB_TEST_DESKTOP_OWNER_TOKEN: owner });
+      fixture = await launchVerificationServer({ ...process.env, SANREMES_TEST_DESKTOP_OWNER_TOKEN: owner });
     } finally {
       globalThis.fetch = realFetch;
     }
@@ -64,7 +64,7 @@ describe("openmausbot login, then status, bots, stop and threads against the des
   it("signs in only after Allow in the app, then acts as the person; a bot's shell never uses that sign-in", async () => {
     const before = await cli(["bots", "delete", "QA Tester 1", "--url", fixture.info.url, "--yes"]);
     expect(before.code).toBe(4);
-    expect(before.out).toContain("hint: sign in once with `openmausbot login`");
+    expect(before.out).toContain("hint: sign in once with `sanremes login`");
 
     let shown = "";
     const approving = (async () => {
@@ -82,7 +82,7 @@ describe("openmausbot login, then status, bots, stop and threads against the des
     await approving;
     expect(login.code).toBe(0);
     expect(login.err).toContain(shown);
-    expect(login.err).toContain("MausBot is asking you to allow this terminal");
+    expect(login.err).toContain("SanRemes is asking you to allow this terminal");
     const signedIn = JSON.parse(login.out);
     expect(signedIn).toMatchObject({ ok: true, storedIn: "keychain", session: { scopes: ["admin", "client"] } });
     expect(login.out).not.toMatch(/omb_sess_/);
@@ -143,9 +143,9 @@ describe("openmausbot login, then status, bots, stop and threads against the des
   });
 });
 
-describe("openmausbot login against a server started with openmausbot serve", () => {
+describe("sanremes login against a server started with sanremes serve", () => {
   let fixture: VerificationServer;
-  const home = mkdtempSync(join(tmpdir(), "omb-cli-serve-home-"));
+  const home = mkdtempSync(join(tmpdir(), "sanremes-cli-serve-home-"));
   const cli = async (argv: string[]) => {
     const out: string[] = [], err: string[] = [];
     const io: HeadlessIo = { out: (text) => out.push(text), err: (text) => err.push(text), readStdin: async () => "" };

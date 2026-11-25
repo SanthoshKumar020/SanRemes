@@ -78,7 +78,7 @@ describe("createOpenAIChatRuntime stream truncation retry", () => {
   });
 
   it("does not resend a truncation after a tool call ran, so its effect happens once", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "omb-chat-trunc-tool-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-chat-trunc-tool-"));
     const script = join(dir, "fake-mcp.mjs");
     const receipt = join(dir, "receipt.log");
     writeFileSync(script, `#!/usr/bin/env node

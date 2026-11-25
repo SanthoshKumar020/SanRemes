@@ -3,7 +3,7 @@ import { z } from "zod";
 import { DEEPSEEK_VOICES, type DeepSeekVoice } from "../../shared/deepseek-voice.ts";
 import type { Audio, Voice } from "./elevenlabs.ts";
 
-const API = (process.env.OMB_DEEPSEEK_SPEECH_API || "https://api.deepseek.com/v1").replace(/\/+$/, "");
+const API = (process.env.SANREMES_DEEPSEEK_SPEECH_API || "https://api.deepseek.com/v1").replace(/\/+$/, "");
 /** DeepSeek TTS takes at most 10,000 characters; at four UTF-8 bytes each that stays under its 64 KiB body limit. */
 export const TTS_MAX_CHARS = 10_000;
 /** DeepSeek ASR takes at most 8 MiB and 120 seconds of audio. */

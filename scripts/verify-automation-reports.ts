@@ -3,7 +3,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { connect, type Socket } from "node:net";
 import { join } from "node:path";
-import { launchVerificationServer, runControlOmb } from "./control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "./control-sanremes.ts";
 import { fixtureApi, mountPreview, parkUntilSignal, type MountedPreview } from "./testing/preview-fixture.ts";
 
 const RUNS = 5;
@@ -68,7 +68,7 @@ try {
         const current = (await runsOf())[3];
         if (current?.status !== "running" || !existsSync(fixture.fixtureDumpPath)) return null;
         const launch = JSON.parse(readFileSync(fixture.fixtureDumpPath, "utf8"));
-        return launch.mcpConfig?.mcpServers?.agents?.env?.OMB_THREAD_ID === current.threadId ? launch.mcpConfig.mcpServers.ogb.args.at(-1) as string : null;
+        return launch.mcpConfig?.mcpServers?.agents?.env?.SANREMES_THREAD_ID === current.threadId ? launch.mcpConfig.mcpServers.ogb.args.at(-1) as string : null;
       });
       broker = connect(started);
       broker.on("error", () => {});

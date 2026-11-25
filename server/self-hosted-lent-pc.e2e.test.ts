@@ -1,4 +1,4 @@
-// A self-hosted server of one person's own (`openmausbot serve` on a VPS) with a synthetic engine, and the person's Windows
+// A self-hosted server of one person's own (`sanremes serve` on a VPS) with a synthetic engine, and the person's Windows
 // PC lent to it by the desktop app (apps and screen, no folder, no terminal). A conversation on Auto, with no Local VM set
 // up and no other computer chosen: its turn is told plainly that it has their PC and how to reach it (list_shared_computers,
 // then shared_computer), and nothing in the prompt sends it to a Local VM that is not set up. A conversation a bot
@@ -9,7 +9,7 @@ import { createInterface } from "node:readline";
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, expect, it, vi } from "vitest";
-import { launchVerificationServer, type VerificationServer } from "../scripts/control-omb.ts";
+import { launchVerificationServer, type VerificationServer } from "../scripts/control-sanremes.ts";
 
 const PC = { id: randomUUID(), secret: randomBytes(32).toString("hex") };
 let fixture: VerificationServer;
@@ -34,8 +34,8 @@ beforeAll(async () => {
   asOwner.authorization = `Bearer ${owner}`;
   // The desktop app's own-server check: this pairing is the one owner's.
   expect((await api("GET", "/api/auth/session", undefined, asOwner)).body).toMatchObject({ own: true });
-  const environmentId = (await api("GET", "/.well-known/openmausbot/environment")).body.environmentId as string;
-  const headers = { ...asOwner, "x-omb-computer-secret": PC.secret };
+  const environmentId = (await api("GET", "/.well-known/sanremes/environment")).body.environmentId as string;
+  const headers = { ...asOwner, "x-sanremes-computer-secret": PC.secret };
   const connected = await api("POST", "/api/shared-computers/connect", {
     id: PC.id, name: "OFFICE-PC", environmentId, folders: [], terminal: false, computer: true, platform: "win32",
     commandTimeouts: true, longCommands: true, fileEdits: true,

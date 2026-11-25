@@ -21,9 +21,9 @@ describe("Add a Cloud without the desktop's own sign-in", () => {
   it("Sign in, and anything asked on a Cloud, opens the account's own page on the Cloud website instead of a second checkout", () => {
     expect(cloudWebHop({ source: "app_settings", signIn: true }, away)).toEqual({ url: "https://cloud.openmausbot.com/cloud?src=app_settings", via: "cloud_page" });
     expect(cloudWebHop({ source: "app_card" }, { cloudHome: true })).toEqual({ url: "https://cloud.openmausbot.com/cloud?src=app_card", via: "cloud_page" });
-    expect(cloudWebHop({ source: "app_settings" }, { cloudHome: true, teamCloudPage: "https://omb-cloud-staging.fly.dev/cloud" }).url)
-      .toBe("https://omb-cloud-staging.fly.dev/cloud?src=app_settings");
-    expect(cloudWebHop({ source: "app_settings", signIn: true }, { cloudHome: false, teamCloudPage: "https://omb-cloud-staging.fly.dev/cloud" }).url)
+    expect(cloudWebHop({ source: "app_settings" }, { cloudHome: true, teamCloudPage: "https://sanremes-cloud-staging.fly.dev/cloud" }).url)
+      .toBe("https://sanremes-cloud-staging.fly.dev/cloud?src=app_settings");
+    expect(cloudWebHop({ source: "app_settings", signIn: true }, { cloudHome: false, teamCloudPage: "https://sanremes-cloud-staging.fly.dev/cloud" }).url)
       .toBe("https://cloud.openmausbot.com/cloud?src=app_settings");
   });
 

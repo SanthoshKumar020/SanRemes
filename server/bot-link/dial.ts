@@ -17,8 +17,8 @@ import { FILE_PATH, HOLD_MS, LEVEL_HEADER, PROTOCOL_LEVEL, SYNC_PATH, levelOf, s
 const FIRST_RETRY_MS = 1_000;
 const MAX_RETRY_MS = 60_000;
 /** What the Cloud marks a held answer with while it goes to sleep (server/cloud-power.ts). */
-const POWER_HEADER = "x-omb-cloud-power";
-const BACKGROUND_HEADER = "x-omb-background";
+const POWER_HEADER = "x-sanremes-cloud-power";
+const BACKGROUND_HEADER = "x-sanremes-background";
 /** One file may take this long to cross. */
 const FILE_MS = 10 * 60_000;
 

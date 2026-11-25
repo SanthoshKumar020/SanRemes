@@ -6,9 +6,9 @@
 //   POST /api/github/sign-in/sign-out        → GithubSignInStatus
 export const GITHUB_SIGN_IN_PATH = "/api/github/sign-in";
 
-/** Where the sign-in comes from: OpenMausBot's own GitHub CLI sign-in, a pasted token, or the person's own GitHub CLI
- * on this computer (which OpenMausBot reads and never changes). */
-export type GithubSignInSource = "mausbot" | "token" | "cli";
+/** Where the sign-in comes from: SanRemes's own GitHub CLI sign-in, a pasted token, or the person's own GitHub CLI
+ * on this computer (which SanRemes reads and never changes). */
+export type GithubSignInSource = "sanremes" | "token" | "cli";
 
 /** How the last sign-in attempt ended, when it did not sign in. */
 export interface GithubSignInLast {

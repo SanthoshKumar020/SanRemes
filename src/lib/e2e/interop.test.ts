@@ -46,7 +46,7 @@ afterAll(() => {
 
 /** A WebSocket's binary messages as a queue, each wait bounded. */
 function open(url: string) {
-  const socket = new WebSocket(url, "omb-e2e.v1");
+  const socket = new WebSocket(url, "sanremes-e2e.v1");
   socket.binaryType = "arraybuffer";
   const queue: Bytes[] = [];
   const waiting: Array<{ resolve: (message: Bytes) => void; reject: (error: Error) => void }> = [];

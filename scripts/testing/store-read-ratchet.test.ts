@@ -81,7 +81,7 @@ const READS: Record<string, number> = {
   "src/components/LocalVmWorkspace.tsx": 1,
   "src/components/ManageMembersPanel.tsx": 1,
   "src/components/MapComposer.tsx": 1,
-  "src/components/MausBotWelcome.tsx": 3,
+  "src/components/SanRemesWelcome.tsx": 3,
   "src/components/McpServersPanel.tsx": 1,
   "src/components/MemberApps.tsx": 1,
   "src/components/NewBotDialog.tsx": 2,

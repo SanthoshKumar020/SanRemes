@@ -1,5 +1,5 @@
 // GitHub sign-in for the server's own git and GitHub actions: GitHub CLI's device-code login (the person types a code on
-// github.com; nothing is registered by the person or by OpenMausBot), or a pasted fine-grained token, or on This computer
+// github.com; nothing is registered by the person or by SanRemes), or a pasted fine-grained token, or on This computer
 // the person's own GitHub CLI sign-in, which is only ever read.
 //
 // One sign-in per audience: `owner` off a Team Cloud (the server's one), a member's person key on one, each in its own
@@ -131,13 +131,13 @@ export function createGithubSignIn(deps: GithubSignInDeps): GithubSignIn {
     }
   };
   const ownSignedIn = (audience: string) => ownLogin(audience) !== undefined;
-  /** The person's own gh may run OpenMausBot's sign-in only off a Team Cloud and when it takes every flag. */
+  /** The person's own gh may run SanRemes's sign-in only off a Team Cloud and when it takes every flag. */
   const personalForLogin = async (): Promise<string | null> => {
     const own = deps.team ? null : deps.tools.personal();
     return own && versionAtLeast(await deps.tools.version(own), GH_SIGN_IN_FLOOR) ? own : null;
   };
-  /** A gh for OpenMausBot's own sign-in folder: the one that signed it in this run, the person's own, or the pinned copy. */
-  /** A gh for OpenMausBot's own sign-in folder, never a download: only Start installs. The pinned copy is checked again
+  /** A gh for SanRemes's own sign-in folder: the one that signed it in this run, the person's own, or the pinned copy. */
+  /** A gh for SanRemes's own sign-in folder, never a download: only Start installs. The pinned copy is checked again
    * (installStandaloneEngine's reuse path) only when its folder names the pinned version, so a newer pin waits for Start. */
   const ownGh = async (audience: string): Promise<string | null> => of(audience).attempt?.gh ?? (await personalForLogin()) ?? deps.tools.pinnedReady()
     ?? (deps.tools.pinnedOnDisk() ? await deps.tools.install().catch(() => null) : null);
@@ -170,21 +170,21 @@ export function createGithubSignIn(deps: GithubSignInDeps): GithubSignIn {
     return { state: "signed-in", login: login ?? "unknown", source, scopes: account.scopes, ...(orgs ? { orgs } : {}), checkedAt: account.state === "success" ? now() : null };
   }
 
-  /** What GitHub says of OpenMausBot's own gh sign-in. */
+  /** What GitHub says of SanRemes's own gh sign-in. */
   async function checkOwn(audience: string, withOrgs: boolean): Promise<Known> {
     const login = ownLogin(audience) ?? null;
     try {
       const file = await ownGh(audience);
-      if (!file) return { state: "signed-in", login: login ?? "unknown", source: "mausbot", scopes: [], checkedAt: null };
+      if (!file) return { state: "signed-in", login: login ?? "unknown", source: "sanremes", scopes: [], checkedAt: null };
       const env = ownEnv(audience);
       const account = await ghAccount(file, env);
       // The config file is there, so an answer gh could not give is not a refusal: shown as signed in, unchecked.
-      if (account === "signed-out" || account === null) return { state: "signed-in", login: login ?? "unknown", source: "mausbot", scopes: [], checkedAt: null };
+      if (account === "signed-out" || account === null) return { state: "signed-in", login: login ?? "unknown", source: "sanremes", scopes: [], checkedAt: null };
       const orgs = withOrgs && account.state === "success" ? await orgsOf(file, env) : of(audience).known?.state === "signed-in" ? (of(audience).known as { orgs?: string[] }).orgs : undefined;
-      return known("mausbot", account, login, orgs);
+      return known("sanremes", account, login, orgs);
     } catch {
       // gh could not be put in place or run: the sign-in is there, its check is not.
-      return { state: "signed-in", login: login ?? "unknown", source: "mausbot", scopes: [], checkedAt: null };
+      return { state: "signed-in", login: login ?? "unknown", source: "sanremes", scopes: [], checkedAt: null };
     }
   }
 
@@ -192,7 +192,7 @@ export function createGithubSignIn(deps: GithubSignInDeps): GithubSignIn {
     let response: Response;
     try {
       response = await fetchImpl("https://api.github.com/user", {
-        headers: { authorization: `Bearer ${token}`, accept: "application/vnd.github+json", "user-agent": "OpenMausBot", "x-github-api-version": "2022-11-28" },
+        headers: { authorization: `Bearer ${token}`, accept: "application/vnd.github+json", "user-agent": "SanRemes", "x-github-api-version": "2022-11-28" },
         signal: AbortSignal.timeout(20_000),
       });
     } catch {
@@ -266,8 +266,8 @@ export function createGithubSignIn(deps: GithubSignInDeps): GithubSignIn {
     const state = of(audience);
     const ask = options.check === true || state.stale || !state.known;
     if (ownSignedIn(audience)) {
-      if (ask || state.known?.source !== "mausbot") {
-        state.known = await checkOwn(audience, state.known?.source !== "mausbot" || options.check === true);
+      if (ask || state.known?.source !== "sanremes") {
+        state.known = await checkOwn(audience, state.known?.source !== "sanremes" || options.check === true);
         state.stale = false;
       }
       return state.known;
@@ -354,7 +354,7 @@ export function createGithubSignIn(deps: GithubSignInDeps): GithubSignIn {
     const stillOurs = () => state.attempt === attempt && !attempt.cancelled;
     try {
       // Security: the person's own gh keeps its sign-in in the OS credential store, which a gh login touches whatever its
-      // folder (gh-cli.ts). While their own sign-in works, OpenMausBot never starts one of its own.
+      // folder (gh-cli.ts). While their own sign-in works, SanRemes never starts one of its own.
       // Only a positive answer lets it go ahead: no gh of theirs, theirs signed out, or GitHub refusing theirs (401).
       const theirs = deps.team ? null : await personalAccount();
       if (theirs === "unreadable") throw new GithubSignInError(409, "Your own GitHub CLI's sign-in could not be checked, so nothing was changed. Try again.");
@@ -419,7 +419,7 @@ export function createGithubSignIn(deps: GithubSignInDeps): GithubSignIn {
     if (checked === "unreachable") throw new GithubSignInError(502, "GitHub could not check the token just now. Try again in a minute.");
     if (checked.state !== "signed-in") throw new GithubSignInError(400, "GitHub did not accept this token. Check it and paste it again.");
     stopAttempt(audience);
-    // One source at a time: the pasted token replaces OpenMausBot's own gh sign-in.
+    // One source at a time: the pasted token replaces SanRemes's own gh sign-in.
     rmSync(githubFolders(deps.dataDir, audience).root, { recursive: true, force: true });
     deps.vault.setGithubToken(audience, { token, login: checked.login });
     const state = of(audience);

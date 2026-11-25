@@ -56,7 +56,7 @@ export function readDataFormat(dataDir: string, writes: number = DATA_FORMAT.wri
     console.warn(`[data-format] ${file} cannot be read; taking the data as format 1, the only format any version has written.`);
     return null;
   }
-  throw new DataFormatError(`OpenMausBot startup failed: ${file} cannot be read, so this version cannot tell whether it understands the data in ${dataDir}. Nothing was changed. Restore the marker from the same snapshot as the data, or restore the whole data folder from a backup.`);
+  throw new DataFormatError(`SanRemes startup failed: ${file} cannot be read, so this version cannot tell whether it understands the data in ${dataDir}. Nothing was changed. Restore the marker from the same snapshot as the data, or restore the whole data folder from a backup.`);
 }
 
 /** Throws, having changed nothing, when a newer version left the data in a format `reads` does not cover. */
@@ -67,8 +67,8 @@ export function checkDataFormat(dataDir: string, version: string, reads: number 
 
 function newerData(dataDir: string, version: string, marker: DataFormatMarker): DataFormatError {
   return new DataFormatError(
-    `OpenMausBot startup failed: the data in ${dataDir} was written by a newer OpenMausBot (${marker.writtenBy}), in a format this version (${version}) cannot read. Nothing was changed. `
-    + `Install OpenMausBot ${marker.writtenBy} or newer, or put back the copy of the data taken before that update.`,
+    `SanRemes startup failed: the data in ${dataDir} was written by a newer SanRemes (${marker.writtenBy}), in a format this version (${version}) cannot read. Nothing was changed. `
+    + `Install SanRemes ${marker.writtenBy} or newer, or put back the copy of the data taken before that update.`,
   );
 }
 
@@ -93,7 +93,7 @@ export function stampDataFormat(
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
     if (format.writes > 1) {
-      throw new DataFormatError(`OpenMausBot startup failed: could not write data format ${format.writes} to ${file} (${detail}). Fix the marker write error, then restart.`);
+      throw new DataFormatError(`SanRemes startup failed: could not write data format ${format.writes} to ${file} (${detail}). Fix the marker write error, then restart.`);
     }
     console.warn(`[data-format] could not write ${file} (${detail}); starting without it.`);
   }

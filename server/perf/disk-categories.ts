@@ -1,5 +1,5 @@
 // What each path on a Cloud home's volume is, by where the server, its engines and its browser write. The volume is HOME
-// (/data, Dockerfile), and the data folder (OMB_DATA_DIR, /data/.openmausbot) sits inside it; a path is read as segments
+// (/data, Dockerfile), and the data folder (SANREMES_DATA_DIR, /data/.sanremes) sits inside it; a path is read as segments
 // relative to one of the two. Privacy invariant: nothing here returns a name taken from the disk except a bot id (which the
 // report shows only for bots the store knows) and a name from OTHER_NAMES.
 import { TOOL_CACHES, TOOL_CACHE_DIR } from "../bot-box/tool-caches.ts";
@@ -198,7 +198,7 @@ function dataPlacement(segments: readonly string[], directory: boolean): Placeme
     if (second === undefined) return at("engine_state", false);
     // engine-homes/layout.ts HELD_DIR: state from before the split, deleted after HELD_DAYS.
     if (second === ".held") return at("trash");
-    // An audience's own tool cache folder (bot-box/tool-caches.ts, OMB_CACHE_ROOT); the rest of its home is engine state.
+    // An audience's own tool cache folder (bot-box/tool-caches.ts, SANREMES_CACHE_ROOT); the rest of its home is engine state.
     if (third === undefined) return at("engine_state", false);
     if (third === TOOL_CACHE_DIR) return toolCachePlacement(segments.slice(3));
     return at("engine_state");
@@ -219,7 +219,7 @@ const HOME_FOLDERS: Readonly<Record<string, StorageCategory>> = {
   ".copilot": "engine_state", ".cline": "engine_state", ".cursor": "engine_state", ".opencode": "engine_state", ".mmx": "engine_state",
   ".config": "settings", ".ssh": "settings", ".gnupg": "settings",
   // cloud-home-start.ts edgeCertificateStorage: the edge's TLS certificates.
-  ".omb-edge": "settings",
+  ".sanremes-edge": "settings",
   // npm's and pnpm's own cache and store folders: nothing but downloaded packages.
   ".npm": "packages", ".pnpm-store": "packages",
   // cloud-sync-paths.ts syncRoot: the person's synced folders.
@@ -229,7 +229,7 @@ const HOME_FOLDERS: Readonly<Record<string, StorageCategory>> = {
 const HOME_FILES: Readonly<Record<string, StorageCategory>> = {
   ".claude.json": "engine_state", ".claude.json.backup": "engine_state",
   // cloud-home.ts CLOUD_HOME_MARKER and the dotfiles a fresh volume may hold (cloud-home.ts ADOPTABLE).
-  ".omb-cloud-home.json": "settings", ".bashrc": "settings", ".profile": "settings", ".bash_logout": "settings", ".gitconfig": "settings",
+  ".sanremes-cloud-home.json": "settings", ".bashrc": "settings", ".profile": "settings", ".bash_logout": "settings", ".gitconfig": "settings",
   ".npmrc": "settings",
 };
 /** Download caches inside tool folders that also hold what people installed or wrote: only these subfolders are packages. */
@@ -271,7 +271,7 @@ function homePlacement(segments: readonly string[], directory: boolean): Placeme
     if (known) return at(known);
     return OTHER_NAMES.has(first) ? { category: "other", otherName: first, final: true } : at("other");
   }
-  // The tools' cache folder with OMB_CACHE_ROOT on (bot-box/tool-caches.ts TOOL_CACHE_DIR).
+  // The tools' cache folder with SANREMES_CACHE_ROOT on (bot-box/tool-caches.ts TOOL_CACHE_DIR).
   if (first === TOOL_CACHE_DIR) return toolCachePlacement(segments.slice(1));
   if (first === ".cache") return second === undefined ? at("caches", false) : at(HOME_CACHES[second] ?? "other");
   if (first === ".local") {

@@ -55,7 +55,7 @@ export function projectApiKey(cfg: AppConfig): string | null {
   return cfg.composio?.apiKey?.trim() || null;
 }
 
-/** Composio's own hosts, or the origin of an explicit OMB_COMPOSIO_API backend; any other host is refused. */
+/** Composio's own hosts, or the origin of an explicit SANREMES_COMPOSIO_API backend; any other host is refused. */
 export function trustedSessionMcpUrl(value: string): boolean {
   let mcp: URL;
   try {
@@ -65,7 +65,7 @@ export function trustedSessionMcpUrl(value: string): boolean {
   }
   if (mcp.protocol === "https:" && (mcp.hostname === "composio.dev" || mcp.hostname.endsWith(".composio.dev"))) return true;
   if (mcp.protocol !== "https:" && !(mcp.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(mcp.hostname))) return false;
-  const override = process.env.OMB_COMPOSIO_API;
+  const override = process.env.SANREMES_COMPOSIO_API;
   if (!override) return false;
   try {
     return new URL(override).origin === mcp.origin;
@@ -164,14 +164,14 @@ async function createProjectSession(apiKey: string, userId: string, authConfigs:
 /** Pages of connected accounts read when looking for an earlier installation's user, which bounds how long setup waits. */
 const EARLIER_USER_PAGES = 4;
 
-/** The one OpenMausBot Composio user in this project, when it still has a live connection, so a fresh installation (a
+/** The one SanRemes Composio user in this project, when it still has a live connection, so a fresh installation (a
  * reinstall, another computer) gets that installation's apps back; null when there is none, more than one (even with
  * only expired connections, since it can't tell whose is whose), or Composio can't say. */
 async function earlierInstallationUser(apiKey: string): Promise<string | null> {
   const users = new Set<string>();
   let pages = 0;
   const enough = (page: ConnectedAccountResponse[]) => {
-    for (const { user_id } of page) if (user_id?.startsWith("openmausbot_")) users.add(user_id);
+    for (const { user_id } of page) if (user_id?.startsWith("sanremes_")) users.add(user_id);
     pages += 1;
     return users.size > 1 || pages >= EARLIER_USER_PAGES;
   };
@@ -204,7 +204,7 @@ export async function prepareProjectSession(
     if (existing && supportsMultiAccount(existing) && authConfigsReady(existing, authConfigs)) {
       return {
         apiKey: trimmed,
-        userId: existing.config?.user_id ?? current.userId ?? `openmausbot_${randomUUID()}`,
+        userId: existing.config?.user_id ?? current.userId ?? `sanremes_${randomUUID()}`,
         sessionId: existing.session_id,
       };
     }
@@ -213,7 +213,7 @@ export async function prepareProjectSession(
   }
 
   // Security: the earlier user holds another installation's apps, so only a caller that says this server is one person's may look.
-  const userId = priorUserId ?? (options.reuseEarlierUser ? await earlierInstallationUser(trimmed) : null) ?? `openmausbot_${randomUUID()}`;
+  const userId = priorUserId ?? (options.reuseEarlierUser ? await earlierInstallationUser(trimmed) : null) ?? `sanremes_${randomUUID()}`;
   const sessionId = await createProjectSession(trimmed, userId, authConfigs);
   return { apiKey: trimmed, userId, sessionId };
 }

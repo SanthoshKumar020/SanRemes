@@ -2,7 +2,7 @@ import { readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb, type VerificationServer } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb, type VerificationServer } from "../scripts/control-sanremes.ts";
 import { readHandoffs } from "./testing/handoff-rows.ts";
 
 const SETTLED = "Your downstream room requests have settled.";
@@ -51,7 +51,7 @@ describe("routine delegation through the isolated harness", () => {
     await expect.poll(() => Boolean(peerWork(threadId)), { timeout: 15_000 }).toBe(true);
     return peerWork(threadId)!;
   };
-  const token = async (threadId: string) => (await dump(threadId)).mcpConfig.mcpServers.agents.env.OMB_COMMS_TOKEN as string;
+  const token = async (threadId: string) => (await dump(threadId)).mcpConfig.mcpServers.agents.env.SANREMES_COMMS_TOKEN as string;
   const start = async () => {
     const { routine } = await api("POST", "/api/routines", {
       name: "Delegated report", prompt: "Ask the peer for evidence, then report its result.", botId: source.id,
@@ -81,7 +81,7 @@ describe("routine delegation through the isolated harness", () => {
       'import { readFileSync } from "node:fs";',
       'import { join } from "node:path";',
       'const at = process.argv.indexOf("--mcp-config");',
-      'const thread = at < 0 ? "probe" : JSON.parse(readFileSync(process.argv[at + 1], "utf8")).mcpServers?.agents?.env?.OMB_THREAD_ID ?? "probe";',
+      'const thread = at < 0 ? "probe" : JSON.parse(readFileSync(process.argv[at + 1], "utf8")).mcpServers?.agents?.env?.SANREMES_THREAD_ID ?? "probe";',
       // Every bot turn carries the agents server, so each is gated on its own thread's gate file.
       'process.env.FAKE_CLAUDE_MODE = thread === "probe" ? "happy" : "slow";',
       `process.env.FAKE_CLAUDE_SLOW_FINISH_GATE = join(${JSON.stringify(fixture.info.dataDir)}, thread + ".gate");`,

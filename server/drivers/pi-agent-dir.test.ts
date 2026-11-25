@@ -14,12 +14,12 @@ const same = (a: string, b: string) => {
   return x.ino === y.ino && x.dev === y.dev;
 };
 
-describe("MausBot's own Pi agent folder", () => {
+describe("SanRemes's own Pi agent folder", () => {
   let root: string, home: string, dataDir: string, person: string;
   beforeEach(() => {
-    root = mkdtempSync(join(tmpdir(), "omb-pi-agent-dir-"));
+    root = mkdtempSync(join(tmpdir(), "sanremes-pi-agent-dir-"));
     home = join(root, "home");
-    dataDir = join(home, ".openmausbot");
+    dataDir = join(home, ".sanremes");
     person = join(home, ".pi", "agent");
     mkdirSync(join(person, "extensions"), { recursive: true });
     mkdirSync(join(person, "bin"), { recursive: true });
@@ -52,7 +52,7 @@ describe("MausBot's own Pi agent folder", () => {
     expect(ownPiAgentDir(env(), "pi-2", dataDir, false)).not.toBe(own);
   });
 
-  it("points the environment at it, and leaves it alone on a Team Cloud or when the person's folder is MausBot's already", () => {
+  it("points the environment at it, and leaves it alone on a Team Cloud or when the person's folder is SanRemes's already", () => {
     const pointed = withOwnPiAgentDir(env(), "pi-1", dataDir, false);
     expect(piAgentDir(pointed)).toBe(pointed.PI_CODING_AGENT_DIR);
     expect(pointed.PI_CODING_AGENT_DIR!.startsWith(dataDir)).toBe(true);
@@ -71,7 +71,7 @@ describe("MausBot's own Pi agent folder", () => {
     expect(existsSync(join(own, "AGENTS.md"))).toBe(false);
   });
 
-  it("keeps MausBot's local models out of the person's models.json, and picks up the person's later changes", () => {
+  it("keeps SanRemes's local models out of the person's models.json, and picks up the person's later changes", () => {
     const pointed = withOwnPiAgentDir(env(), "pi-1", dataDir, false);
     const own = pointed.PI_CODING_AGENT_DIR!;
     ensurePiInjectModel(encodeInjectId("omlx", "MiniMax-M3-4bit"), pointed);
@@ -102,7 +102,7 @@ describe("MausBot's own Pi agent folder", () => {
     rmSync(join(person, "auth.json"));
     ownPiAgentDir(env(), "pi-1", dataDir, false);
     expect(() => lstatSync(join(own, "auth.json"))).toThrow();
-    // A link MausBot did not make that points elsewhere is replaced too.
+    // A link SanRemes did not make that points elsewhere is replaced too.
     writeFileSync(join(person, "auth.json"), "{}");
     symlinkSync(join(root, "elsewhere.json"), join(own, "auth.json"));
     ownPiAgentDir(env(), "pi-1", dataDir, false);

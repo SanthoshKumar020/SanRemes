@@ -1,9 +1,9 @@
-// A real Team Cloud (OMB_CLOUD_ROLE=team) for the two things one member must never get from another: their browser and
+// A real Team Cloud (SANREMES_CLOUD_ROLE=team) for the two things one member must never get from another: their browser and
 // their phone's view. Each member's private chat with a team bot drives a browser of its own, a group chat its own, and a
 // live view shows the browser of the conversation it is opened from, to whoever may read that conversation. A member's
 // phone pairs with a code the member made, and gets their role and their chats. The engine is the synthetic Claude CLI.
 // The sign-in part needs a real browser (agent-browser and its Chrome, on Linux): it runs where one resolves or
-// OMB_TEAM_BROWSER_E2E=1 asks for it, and says why it is skipped otherwise.
+// SANREMES_TEAM_BROWSER_E2E=1 asks for it, and says why it is skipped otherwise.
 import { randomBytes } from "node:crypto";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -24,13 +24,13 @@ const MEMBER_C = { email: "cleo@acme.test", role: "member" as const };
 // they are on disk (the dump does), and its scripted calls again on every turn.
 const ENGINE = `process.env.FAKE_CLAUDE_DUMP = process.env.FAKE_CLAUDE_FIXTURE_DIR + "/dump.json";
 process.env.FAKE_CLAUDE_TOOL_CALLS_FILE = process.env.FAKE_CLAUDE_FIXTURE_DIR + "/tool-calls.json";`;
-const REAL_BROWSER = process.env.OMB_TEAM_BROWSER_E2E === "1" || (process.platform === "linux" && Boolean(resolveAgentBrowserBinary({ env: process.env })));
-if (!REAL_BROWSER) console.log("skipping the Team Cloud sign-in check: it needs agent-browser and its Chrome on Linux (or OMB_TEAM_BROWSER_E2E=1)");
+const REAL_BROWSER = process.env.SANREMES_TEAM_BROWSER_E2E === "1" || (process.platform === "linux" && Boolean(resolveAgentBrowserBinary({ env: process.env })));
+if (!REAL_BROWSER) console.log("skipping the Team Cloud sign-in check: it needs agent-browser and its Chrome on Linux (or SANREMES_TEAM_BROWSER_E2E=1)");
 
 /** Without a real browser, an agent-browser stand-in that logs each command with the session it is for, so the browser
  * each turn and each view reaches is visible by name. */
 const stub = REAL_BROWSER ? null : (() => {
-  const dir = mkdtempSync(join(tmpdir(), "omb-team-browser-stub-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-team-browser-stub-"));
   const engine = join(dir, "agent-browser"), log = join(dir, "commands.log");
   writeFileSync(engine, ["#!/bin/sh", `printf '%s %s\\n' "$AGENT_BROWSER_SESSION" "$1" >> '${log}'`,
     `if [ "$1" = session ]; then printf '{"success":true,"data":{"sessions":[]}}\\n'; fi`, "exit 0"].join("\n"), { mode: 0o755 });
@@ -44,7 +44,7 @@ let bot: { id: string; mainThreadId: string };
 let adaThread = "", cleoThread = "", roomId = "", roomThread = "";
 
 beforeAll(async () => {
-  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-team-${randomBytes(8).toString("hex")}`, team: { id: "team-acme-1", name: "Acme", engine: ENGINE, ...(stub ? { env: { OMB_AGENT_BROWSER_PATH: stub.engine } } : {}) } });
+  fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-team-${randomBytes(8).toString("hex")}`, team: { id: "team-acme-1", name: "Acme", engine: ENGINE, ...(stub ? { env: { SANREMES_AGENT_BROWSER_PATH: stub.engine } } : {}) } });
   team = fx.team!;
   owner = (await team.pair(OWNER)).token!;
   admin = (await team.pair(ADMIN)).token!;
@@ -202,7 +202,7 @@ it.skipIf(!REAL_BROWSER)("keeps one member's sign-in out of another member's cha
   expect(roomSees, "the group chat's turn saw Ada's private sign-in").not.toContain("omb_member=ada");
   expect(await browserTurn(ada, adaThread, "Are you still signed in?", readCookies), "Ada's own browser kept her sign-in").toContain("omb_member=ada");
   // Each browser has its own profile on disk, and the team's own is not one of them.
-  const kept = JSON.parse(readFileSync(join(team.home, ".openmausbot", "browser", "audiences.json"), "utf8")) as { suffixes: string[] };
+  const kept = JSON.parse(readFileSync(join(team.home, ".sanremes", "browser", "audiences.json"), "utf8")) as { suffixes: string[] };
   expect(kept.suffixes).toEqual(expect.arrayContaining([audienceBrowserSuffix(`room:${roomId}`)]));
   expect(kept.suffixes.filter((suffix) => suffix.startsWith("--member-"))).toHaveLength(2);
   scriptToolCalls(null);

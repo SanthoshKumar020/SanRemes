@@ -110,7 +110,7 @@ async function control(method, urlPath, body, { timeoutMs = 4_000 } = {}) {
   const options = {
     method,
     signal: AbortSignal.timeout(timeoutMs),
-    headers: { "x-openmausbot-control-token": controlToken },
+    headers: { "x-sanremes-control-token": controlToken },
   };
   if (body !== undefined) {
     options.body = JSON.stringify(body);
@@ -216,19 +216,19 @@ async function start({ resourcesPath, harnessPort, mutationToken, hostedUrl = nu
 
   // Never inherit an endpoint from the launch environment: main passes one only after verifying the connector.
   const childEnvironment = { ...process.env };
-  delete childEnvironment.OMB_COMPANION_HOSTED_URL;
-  delete childEnvironment.OMB_COMPANION_INTERNAL_ORIGIN;
-  delete childEnvironment.OMB_PHONE_SECRET_PUBLIC_KEY;
-  delete childEnvironment.OMB_COMPANION_TAILNET_NAME;
-  childEnvironment.OMB_APP_VERSION = app.getVersion();
+  delete childEnvironment.SANREMES_COMPANION_HOSTED_URL;
+  delete childEnvironment.SANREMES_COMPANION_INTERNAL_ORIGIN;
+  delete childEnvironment.SANREMES_PHONE_SECRET_PUBLIC_KEY;
+  delete childEnvironment.SANREMES_COMPANION_TAILNET_NAME;
+  childEnvironment.SANREMES_APP_VERSION = app.getVersion();
   const settings = companionSettings();
   const direct = directRoutesOn(settings);
-  childEnvironment.OMB_COMPANION_ROUTES = Object.keys(direct).filter((route) => direct[route]).join(",");
-  if (direct.tailscale && settings.routes.tailscale.name) childEnvironment.OMB_COMPANION_TAILNET_NAME = settings.routes.tailscale.name;
-  if (hostedUrl) childEnvironment.OMB_COMPANION_HOSTED_URL = hostedUrl;
-  childEnvironment.OMB_COMPANION_INTERNAL_ORIGIN = allocatedOrigin.socketPath;
+  childEnvironment.SANREMES_COMPANION_ROUTES = Object.keys(direct).filter((route) => direct[route]).join(",");
+  if (direct.tailscale && settings.routes.tailscale.name) childEnvironment.SANREMES_COMPANION_TAILNET_NAME = settings.routes.tailscale.name;
+  if (hostedUrl) childEnvironment.SANREMES_COMPANION_HOSTED_URL = hostedUrl;
+  childEnvironment.SANREMES_COMPANION_INTERNAL_ORIGIN = allocatedOrigin.socketPath;
   if (/^[A-Za-z0-9_-]{87}$/.test(String(secretPublicKey ?? ""))) {
-    childEnvironment.OMB_PHONE_SECRET_PUBLIC_KEY = secretPublicKey;
+    childEnvironment.SANREMES_PHONE_SECRET_PUBLIC_KEY = secretPublicKey;
   }
 
   controlToken = randomBytes(32).toString("base64url");
@@ -237,9 +237,9 @@ async function start({ resourcesPath, harnessPort, mutationToken, hostedUrl = nu
     child = utilityProcess.fork(resolved.entry, [], {
       env: {
         ...childEnvironment,
-        OMB_PORT: String(harnessPort),
-        OMB_COMPANION_PORT: String(COMPANION_PORT),
-        OMB_CONTROL_PORT: String(CONTROL_PORT),
+        SANREMES_PORT: String(harnessPort),
+        SANREMES_COMPANION_PORT: String(COMPANION_PORT),
+        SANREMES_CONTROL_PORT: String(CONTROL_PORT),
       },
       execArgv: resolved.execArgv,
       stdio: ["ignore", "pipe", "pipe"],
@@ -252,7 +252,7 @@ async function start({ resourcesPath, harnessPort, mutationToken, hostedUrl = nu
   child.once("spawn", () => {
     // Never expose this capability in argv, environment, logs or the renderer.
     try {
-      child.postMessage({ type: "openmausbot:companion-mutation-token", token: mutationToken, controlToken });
+      child.postMessage({ type: "sanremes:companion-mutation-token", token: mutationToken, controlToken });
       const e2e = e2eHooks.initialMessage();
       if (e2e) child.postMessage(e2e);
     } catch {
@@ -261,11 +261,11 @@ async function start({ resourcesPath, harnessPort, mutationToken, hostedUrl = nu
     }
   });
   child.on("message", (message) => {
-    if (message?.type === "openmausbot:companion-e2e-token-rejected") e2eHooks.tokenRejected();
-    if (message?.type === "openmausbot:companion-provider-key" && Number.isSafeInteger(message.id)) {
+    if (message?.type === "sanremes:companion-e2e-token-rejected") e2eHooks.tokenRejected();
+    if (message?.type === "sanremes:companion-provider-key" && Number.isSafeInteger(message.id)) {
       void providerKeySaver(message.patch).then((reply) => {
         try {
-          child.postMessage({ type: "openmausbot:companion-provider-key-result", id: message.id, status: reply.status, body: reply.body });
+          child.postMessage({ type: "sanremes:companion-provider-key-result", id: message.id, status: reply.status, body: reply.body });
         } catch {
         }
       });

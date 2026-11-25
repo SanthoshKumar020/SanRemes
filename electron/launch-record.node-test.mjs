@@ -82,7 +82,7 @@ test("the splash and the main window are told apart by what they load, and shown
   main.show();
   state.clock = START + 5_000;
   const later = fakeWindow(app);
-  navigate(later, "https://omb-u-1.fly.dev/");
+  navigate(later, "https://sanremes-u-1.fly.dev/");
   later.show();
   assert.deepEqual(record.part().marks, { splashMade: 250, splashShown: 330, windowMade: 850, windowNavigated: 855, windowShown: 990 });
   assert.deepEqual([splash.shows, main.shows, later.shows], [1, 1, 1]);
@@ -97,7 +97,7 @@ test("a window shown before it loads anything is marked once it is known to be t
   const main = fakeWindow(app);
   main.emit("show");
   state.clock = START + 760;
-  navigate(main, "https://omb-u-1.fly.dev/");
+  navigate(main, "https://sanremes-u-1.fly.dev/");
   assert.deepEqual(record.part().marks, { windowMade: 700, windowNavigated: 760, windowShown: 760 });
 });
 

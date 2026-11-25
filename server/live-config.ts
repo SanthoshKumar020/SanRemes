@@ -5,7 +5,7 @@ export const LIVE_KEY_NEEDS_ENDPOINT = "Save the Azure endpoint first: a Live ke
 export const LIVE_KEY_NEEDS_CUSTOM_ENDPOINT = "Save the custom endpoint first: a Live key works only with the endpoint it was saved for.";
 const NOWHERE = "nowhere";
 
-/** Live calls: `key` is a key for Live calls only; with `provider` "openai" (the default) a call without one uses `openai.key`, with "azure" it is the Azure resource's key and is required, with "fish", "gemini" or "elevenlabs" it is not used: Fish Audio calls use the Fish Audio key (`tts.fishKey`), Gemini calls the Gemini key (`tts.geminiKey`) and ElevenLabs calls the ElevenLabs key (`tts.key`). `keyFor` says where `key` may go (`liveKeyTarget`): the server sets it when the key is saved and never takes it from a request; absent, the key is from before Azure was offered, so OpenAI's. `azureEndpoint` is the resource URL and `azureDeployment` the gpt-live-1 deployment name; with "custom", `key` is the key of the OpenAI-compatible server at `customEndpoint` and is required, and `customModel` its model. `fishAgentId` is the Fish Audio agent a "fish" call starts, which the harness sets up on the account of the key whose `fishKeyPrint` is `fishAgentFor`; without `fishAgentFor` (an operator's OMB_FISH_LIVE_AGENT_ID) it is used with any key, and `fishAgentLanguage` is the language the harness last set it to speak (absent: English, as agents were first set up). `elevenlabsAgentId` and `elevenlabsAgentFor` are the same for an "elevenlabs" call's ElevenLabs agent. `voice` is a GPT-Live voice, `geminiVoice` a Gemini Live voice. */
+/** Live calls: `key` is a key for Live calls only; with `provider` "openai" (the default) a call without one uses `openai.key`, with "azure" it is the Azure resource's key and is required, with "fish", "gemini" or "elevenlabs" it is not used: Fish Audio calls use the Fish Audio key (`tts.fishKey`), Gemini calls the Gemini key (`tts.geminiKey`) and ElevenLabs calls the ElevenLabs key (`tts.key`). `keyFor` says where `key` may go (`liveKeyTarget`): the server sets it when the key is saved and never takes it from a request; absent, the key is from before Azure was offered, so OpenAI's. `azureEndpoint` is the resource URL and `azureDeployment` the gpt-live-1 deployment name; with "custom", `key` is the key of the OpenAI-compatible server at `customEndpoint` and is required, and `customModel` its model. `fishAgentId` is the Fish Audio agent a "fish" call starts, which the harness sets up on the account of the key whose `fishKeyPrint` is `fishAgentFor`; without `fishAgentFor` (an operator's SANREMES_FISH_LIVE_AGENT_ID) it is used with any key, and `fishAgentLanguage` is the language the harness last set it to speak (absent: English, as agents were first set up). `elevenlabsAgentId` and `elevenlabsAgentFor` are the same for an "elevenlabs" call's ElevenLabs agent. `voice` is a GPT-Live voice, `geminiVoice` a Gemini Live voice. */
 export const liveConfigSchema = z.object({
   key: z.string().optional(),
   keyFor: z.string().max(300).optional(),
@@ -65,7 +65,7 @@ export function usableLiveKey(live: LiveConfig | undefined): string | undefined 
 
 /** What to save for a change to `live`: a new key is tied to where calls now go, and any other change of where they go
  * forgets the old one. On the desktop the OS store keeps a copy the server cannot delete, which comes back as
- * OMB_OPENAI_LIVE_KEY at the next launch: "nowhere" keeps that copy unusable until a key is saved again. */
+ * SANREMES_OPENAI_LIVE_KEY at the next launch: "nowhere" keeps that copy unusable until a key is saved again. */
 export function liveSavePatch(current: LiveConfig | undefined, patch: LiveConfig): LiveConfig {
   const { keyFor: _fromRequest, ...asked } = patch;
   const target = liveKeyTarget({ ...current, ...asked });
@@ -78,26 +78,26 @@ export function liveSavePatch(current: LiveConfig | undefined, patch: LiveConfig
 
 export function liveConfigWithEnv(live: LiveConfig | undefined, env: NodeJS.ProcessEnv = process.env): LiveConfig {
   const next = { ...live };
-  const envKey = env.OMB_OPENAI_LIVE_KEY;
+  const envKey = env.SANREMES_OPENAI_LIVE_KEY;
   if (envKey !== undefined) {
     // A different key from the environment is not the one `keyFor` was saved for.
     if (next.key?.trim() && next.key.trim() !== envKey.trim()) delete next.keyFor;
     next.key = envKey;
   }
-  const provider = env.OMB_LIVE_PROVIDER?.trim().toLowerCase();
+  const provider = env.SANREMES_LIVE_PROVIDER?.trim().toLowerCase();
   if (provider === "openai" || provider === "azure" || provider === "fish" || provider === "gemini" || provider === "elevenlabs" || provider === "custom") next.provider = provider;
-  if (env.OMB_AZURE_OPENAI_LIVE_ENDPOINT !== undefined) next.azureEndpoint = env.OMB_AZURE_OPENAI_LIVE_ENDPOINT.trim();
-  if (env.OMB_AZURE_OPENAI_LIVE_DEPLOYMENT !== undefined) next.azureDeployment = env.OMB_AZURE_OPENAI_LIVE_DEPLOYMENT.trim();
-  if (env.OMB_CUSTOM_LIVE_ENDPOINT !== undefined) next.customEndpoint = env.OMB_CUSTOM_LIVE_ENDPOINT.trim();
-  if (env.OMB_CUSTOM_LIVE_MODEL !== undefined) next.customModel = env.OMB_CUSTOM_LIVE_MODEL.trim();
-  if (env.OMB_FISH_LIVE_AGENT_ID?.trim()) {
-    next.fishAgentId = env.OMB_FISH_LIVE_AGENT_ID.trim();
+  if (env.SANREMES_AZURE_OPENAI_LIVE_ENDPOINT !== undefined) next.azureEndpoint = env.SANREMES_AZURE_OPENAI_LIVE_ENDPOINT.trim();
+  if (env.SANREMES_AZURE_OPENAI_LIVE_DEPLOYMENT !== undefined) next.azureDeployment = env.SANREMES_AZURE_OPENAI_LIVE_DEPLOYMENT.trim();
+  if (env.SANREMES_CUSTOM_LIVE_ENDPOINT !== undefined) next.customEndpoint = env.SANREMES_CUSTOM_LIVE_ENDPOINT.trim();
+  if (env.SANREMES_CUSTOM_LIVE_MODEL !== undefined) next.customModel = env.SANREMES_CUSTOM_LIVE_MODEL.trim();
+  if (env.SANREMES_FISH_LIVE_AGENT_ID?.trim()) {
+    next.fishAgentId = env.SANREMES_FISH_LIVE_AGENT_ID.trim();
     delete next.fishAgentFor;
     delete next.fishAgentLanguage;
   }
   // Set together in the environment, the key and the Azure (or custom) endpoint are the operator's own pairing. A `keyFor` from the
   // file stands: saves mirror settings into the environment, so they must not be able to pair a forgotten key.
-  const envEndpoint = provider === "azure" ? env.OMB_AZURE_OPENAI_LIVE_ENDPOINT : provider === "custom" ? env.OMB_CUSTOM_LIVE_ENDPOINT : undefined;
+  const envEndpoint = provider === "azure" ? env.SANREMES_AZURE_OPENAI_LIVE_ENDPOINT : provider === "custom" ? env.SANREMES_CUSTOM_LIVE_ENDPOINT : undefined;
   if (envKey?.trim() && envEndpoint?.trim() && next.keyFor === undefined) next.keyFor = liveKeyTarget(next) ?? NOWHERE;
   return next;
 }
@@ -105,11 +105,11 @@ export function liveConfigWithEnv(live: LiveConfig | undefined, env: NodeJS.Proc
 /** The non-secret Live settings a settings patch mirrors into the environment. */
 export function liveSettingEnv(live: LiveConfig | undefined): Array<[value: string | undefined, name: string]> {
   return [
-    [live?.provider, "OMB_LIVE_PROVIDER"],
-    [live?.azureEndpoint, "OMB_AZURE_OPENAI_LIVE_ENDPOINT"],
-    [live?.azureDeployment, "OMB_AZURE_OPENAI_LIVE_DEPLOYMENT"],
-    [live?.customEndpoint, "OMB_CUSTOM_LIVE_ENDPOINT"],
-    [live?.customModel, "OMB_CUSTOM_LIVE_MODEL"],
+    [live?.provider, "SANREMES_LIVE_PROVIDER"],
+    [live?.azureEndpoint, "SANREMES_AZURE_OPENAI_LIVE_ENDPOINT"],
+    [live?.azureDeployment, "SANREMES_AZURE_OPENAI_LIVE_DEPLOYMENT"],
+    [live?.customEndpoint, "SANREMES_CUSTOM_LIVE_ENDPOINT"],
+    [live?.customModel, "SANREMES_CUSTOM_LIVE_MODEL"],
   ];
 }
 

@@ -4,11 +4,11 @@ import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
 import { resolveAgentBrowserBinary } from "../../server/browser-engine.ts";
 import { waitForExit } from "../../server/testing/cleanup.ts";
-import { runControlOmb } from "../control-omb.ts";
-import { UI_TOOLS_DIR } from "./control-omb-ui.ts";
+import { runControlOmb } from "../control-sanremes.ts";
+import { UI_TOOLS_DIR } from "./control-sanremes-ui.ts";
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
-const enabled = process.env.OMB_UI_E2E === "1" || Boolean(resolveAgentBrowserBinary({ dataDir: UI_TOOLS_DIR, env: process.env }));
+const enabled = process.env.SANREMES_UI_E2E === "1" || Boolean(resolveAgentBrowserBinary({ dataDir: UI_TOOLS_DIR, env: process.env }));
 
 describe("dictation in the isolated real browser", () => {
   let child: ChildProcess | undefined;
@@ -18,7 +18,7 @@ describe("dictation in the isolated real browser", () => {
     let output = "";
     let errors = "";
     let info: { ui: string; url: string; botId: string };
-    child = spawn(process.execPath, ["--experimental-strip-types", join(root, "scripts/control-omb.ts"), "ui", "launch", "--entry", "dictation"], {
+    child = spawn(process.execPath, ["--experimental-strip-types", join(root, "scripts/control-sanremes.ts"), "ui", "launch", "--entry", "dictation"], {
       cwd: root, env: process.env, stdio: ["ignore", "pipe", "pipe"],
     });
     child.stdout!.on("data", chunk => { output += String(chunk); });

@@ -1,5 +1,5 @@
 // An added ChatGPT account (`authMode: "chatgpt-plan"`) keeps its sign-in in a folder of its own. On the person's own
-// computer it signs in in their browser, and MausBot holds its tokens. Where that browser cannot reach this server back
+// computer it signs in in their browser, and SanRemes holds its tokens. Where that browser cannot reach this server back
 // (a Cloud, a hosted workspace), Codex's own device-code login writes into the account's own Codex home instead, so
 // several ChatGPT accounts stay signed in side by side and none of them uses another's login. The first Codex account
 // keeps the person's Codex home ($CODEX_HOME or ~/.codex).

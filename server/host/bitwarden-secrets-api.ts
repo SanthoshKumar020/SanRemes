@@ -1,5 +1,5 @@
-// Bitwarden Secrets Manager through its public HTTP API, written for OpenMausBot: no code or package from Bitwarden's
-// SDK or its `bws` tool (both under the Bitwarden SDK License), so OpenMausBot stays Apache-2.0.
+// Bitwarden Secrets Manager through its public HTTP API, written for SanRemes: no code or package from Bitwarden's
+// SDK or its `bws` tool (both under the Bitwarden SDK License), so SanRemes stays Apache-2.0.
 import { createDecipheriv, createHmac, hkdfSync, timingSafeEqual } from "node:crypto";
 
 import { BITWARDEN_SERVERS } from "../../shared/logins.ts";

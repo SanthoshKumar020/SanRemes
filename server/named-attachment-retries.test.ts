@@ -2,9 +2,9 @@ import { existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, expect, it } from "vitest";
 
-process.env.OMB_ATTACHMENTS_MAX_BYTES = "1024";
+process.env.SANREMES_ATTACHMENTS_MAX_BYTES = "1024";
 const { ATTACHMENTS_DIR, FILE_MAX_BYTES, __resetAttachmentAccountingForTests, attachmentStorageUsage, saveNamedAttachment } = await import("./attachments.ts");
-delete process.env.OMB_ATTACHMENTS_MAX_BYTES;
+delete process.env.SANREMES_ATTACHMENTS_MAX_BYTES;
 
 beforeEach(() => {
   rmSync(ATTACHMENTS_DIR, { recursive: true, force: true });

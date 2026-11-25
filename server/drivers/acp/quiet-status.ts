@@ -8,7 +8,7 @@ import { closeSync, existsSync, fstatSync, openSync, readdirSync, readFileSync, 
 import { join } from "node:path";
 
 import { redactSecretsInText } from "../../redact.ts";
-// The usage-limit wait (OMB_ACP_LIMIT_QUIET_MS) lives with the failure words, so reading a failure loads no ACP driver.
+// The usage-limit wait (SANREMES_ACP_LIMIT_QUIET_MS) lives with the failure words, so reading a failure loads no ACP driver.
 import { limitQuietMs, usageLimitWait } from "../engine-errors.ts";
 
 // Prompt silence guard (0 disables). Healthy agents go quiet for minutes: Qwen Code 0.24 sends
@@ -16,7 +16,7 @@ import { limitQuietMs, usageLimitWait } from "../engine-errors.ts";
 // one model request (its SDK waits up to 600 s); a wedged OpenCode turn goes silent forever.
 export const DEFAULT_ACP_PROMPT_IDLE_MS = 15 * 60_000;
 export const promptIdleTimeoutMs = (): number => {
-  const raw = process.env.OPENMAUS_ACP_PROMPT_IDLE_TIMEOUT_MS;
+  const raw = process.env.SANREMES_ACP_PROMPT_IDLE_TIMEOUT_MS;
   if (raw === undefined) return DEFAULT_ACP_PROMPT_IDLE_MS;
   const ms = Number(raw);
   return Number.isFinite(ms) && ms > 0 ? ms : 0;
@@ -24,17 +24,17 @@ export const promptIdleTimeoutMs = (): number => {
 export const formatQuietLimit = (ms: number): string =>
   ms >= 120_000 && ms % 60_000 === 0 ? `${ms / 60_000} min` : `${Math.round(ms / 1000)} s`;
 
-/** Silence before the first "what is it doing" notice (OMB_ACP_QUIET_NOTICE_MS overrides). */
+/** Silence before the first "what is it doing" notice (SANREMES_ACP_QUIET_NOTICE_MS overrides). */
 export const DEFAULT_QUIET_NOTICE_MS = 60_000;
-/** How often a quiet turn or a long tool call is looked at again (OMB_ACP_QUIET_TICK_MS overrides). */
+/** How often a quiet turn or a long tool call is looked at again (SANREMES_ACP_QUIET_TICK_MS overrides). */
 export const DEFAULT_QUIET_TICK_MS = 15_000;
 
 const knob = (name: string, fallback: number): number => {
   const ms = Number(process.env[name]);
   return Number.isFinite(ms) && ms > 0 ? ms : fallback;
 };
-export const quietNoticeMs = (): number => knob("OMB_ACP_QUIET_NOTICE_MS", DEFAULT_QUIET_NOTICE_MS);
-export const quietTickMs = (): number => knob("OMB_ACP_QUIET_TICK_MS", DEFAULT_QUIET_TICK_MS);
+export const quietNoticeMs = (): number => knob("SANREMES_ACP_QUIET_NOTICE_MS", DEFAULT_QUIET_NOTICE_MS);
+export const quietTickMs = (): number => knob("SANREMES_ACP_QUIET_TICK_MS", DEFAULT_QUIET_TICK_MS);
 
 export type LogSignal =
   | { kind: "retry"; status: number | null; delayMs: number | null; attempt: number | null }
@@ -321,9 +321,9 @@ export function sampleProcessTree(pid: number, since?: number): Promise<ProcessS
 export const LIMIT_WORDS = /\b429\b|rate.?limit|too many requests|usage limit|quota|GoUsageLimitError|FreeUsageLimitError|insufficient_quota|credits? (?:exhausted|used up)|out of credits/i;
 
 /** No open request, no CPU and nothing logged, this long: the engine is stuck, and the turn is stopped
- * (OMB_ACP_NO_SIGNS_STOP_MS overrides). */
+ * (SANREMES_ACP_NO_SIGNS_STOP_MS overrides). */
 export const DEFAULT_NO_SIGNS_STOP_MS = 5 * 60_000;
-export const noSignsStopMs = (): number => knob("OMB_ACP_NO_SIGNS_STOP_MS", DEFAULT_NO_SIGNS_STOP_MS);
+export const noSignsStopMs = (): number => knob("SANREMES_ACP_NO_SIGNS_STOP_MS", DEFAULT_NO_SIGNS_STOP_MS);
 
 /** Whether this quiet state is an engine waiting out a usage or rate limit. */
 export function waitingOutLimit(signal: LogSignal | null): boolean {

@@ -34,7 +34,7 @@ afterEach(async () => {
 });
 
 function folder(): string {
-  const directory = mkdtempSync(join(tmpdir(), "omb-antigravity-routes-"));
+  const directory = mkdtempSync(join(tmpdir(), "sanremes-antigravity-routes-"));
   scratch.push(directory);
   return directory;
 }

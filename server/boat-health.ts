@@ -34,7 +34,7 @@ export const DEAD_COMPUTER = {
   /** And at most this many automatic deletes per installation in an hour, whoever's computers they are. */
   installationDeletesPerHour: 1,
   /** The provider's `error` must be seen on two reads at least this far apart before a computer is deleted for it. */
-  deadConfirmMs: process.env.OMB_CLOUD_COMPUTER_DEAD_CONFIRM_MS?.trim() ? Math.max(0, Number(process.env.OMB_CLOUD_COMPUTER_DEAD_CONFIRM_MS) || 0) : 30 * 60_000,
+  deadConfirmMs: process.env.SANREMES_CLOUD_COMPUTER_DEAD_CONFIRM_MS?.trim() ? Math.max(0, Number(process.env.SANREMES_CLOUD_COMPUTER_DEAD_CONFIRM_MS) || 0) : 30 * 60_000,
   /** At most one automatic restart per installation in this long. */
   restartGapMs: 10 * 60_000,
   /** No automatic restart or replacement while a person opened or drove the desktop this recently. */

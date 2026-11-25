@@ -30,7 +30,7 @@ describe("a github.com remote's repository", () => {
 
 describe("the repositories a conversation works in", () => {
   let dir: string;
-  beforeEach(() => { dir = mkdtempSync(join(tmpdir(), "omb-git-repos-")); });
+  beforeEach(() => { dir = mkdtempSync(join(tmpdir(), "sanremes-git-repos-")); });
   afterEach(() => { rmSync(dir, { recursive: true, force: true }); forgetConversationRepos(); });
 
   const clone = (folder: string, url: string) => {

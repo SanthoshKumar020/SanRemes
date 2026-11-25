@@ -5,12 +5,12 @@ import type { GroupDefaultResponder } from "./store.ts";
 
 // Odd so the final bounded turn always falls to the coordinator for the completion decision.
 export const GROUP_GOAL_MAX_TURNS = 13;
-export const GROUP_GOAL_WAIT_MAX_MS = Math.max(1_000, Number(process.env.OMB_GOAL_WAIT_MAX_MS) || 30 * 60_000);
+export const GROUP_GOAL_WAIT_MAX_MS = Math.max(1_000, Number(process.env.SANREMES_GOAL_WAIT_MAX_MS) || 30 * 60_000);
 const GROUP_GOAL_MAX_WAIT_EXHAUSTIONS = 3;
-export const GROUP_GOAL_CONTROL_OPEN = "<openmaus-goal>";
-export const GROUP_GOAL_CONTROL_CLOSE = "</openmaus-goal>";
+export const GROUP_GOAL_CONTROL_OPEN = "<sanremes-goal>";
+export const GROUP_GOAL_CONTROL_CLOSE = "</sanremes-goal>";
 /** A close tag the model sometimes escapes; it ends an envelope exactly like the plain one. */
-const ESCAPED_GOAL_CONTROL_CLOSE = "<\\/openmaus-goal>";
+const ESCAPED_GOAL_CONTROL_CLOSE = "<\\/sanremes-goal>";
 
 export type GroupGoalDecision =
   | { status: "continue"; next: string; instruction: string; detail?: string }
@@ -239,7 +239,7 @@ export function groupGoalWorkerInstructions(args: {
     `Your assignment: ${args.assignment}`,
     `This is team turn ${args.turn} of ${args.maxTurns}.`,
     "Do the assigned work now and put concrete results, evidence, or a clear blocker in your reply.",
-    `Address your result to ${args.coordinatorName}. Do not invent a new orchestration protocol or emit an openmaus-goal control envelope.`,
+    `Address your result to ${args.coordinatorName}. Do not invent a new orchestration protocol or emit an sanremes-goal control envelope.`,
   ].join("\n");
 }
 

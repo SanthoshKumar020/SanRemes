@@ -15,9 +15,9 @@ const audiences: Record<string, Audience> = { "t-bob": "member:p_bob", "t-owner"
 const setup = () => ({ dataDir, serverHome: home, audienceOf: (threadId: string) => audiences[threadId] ?? "team", threads: () => [], log: () => {} });
 
 beforeEach(() => {
-  root = mkdtempSync(join(tmpdir(), "omb-engine-homes-"));
+  root = mkdtempSync(join(tmpdir(), "sanremes-engine-homes-"));
   home = join(root, "home");
-  dataDir = join(home, ".openmausbot");
+  dataDir = join(home, ".sanremes");
   mkdirSync(join(home, ".claude"), { recursive: true });
   writeFileSync(join(home, ".claude", ".credentials.json"), JSON.stringify({ claudeAiOauth: { accessToken: "tok-1" } }));
 });
@@ -99,7 +99,7 @@ describe("engine homes at run time", () => {
 });
 
 posix("a bot's engine spawned on a Team Cloud", () => {
-  const homeOf = (owner: "bot" | "openmausbot", options: { engineHome?: boolean } = {}) => new Promise<string>((resolve, reject) => {
+  const homeOf = (owner: "bot" | "sanremes", options: { engineHome?: boolean } = {}) => new Promise<string>((resolve, reject) => {
     const child = spawnCli("/bin/sh", ["-c", 'printf %s "$HOME"'], { env: { PATH: "/usr/bin:/bin", HOME: home }, stdio: ["ignore", "pipe", "pipe"], ...options }, owner);
     let out = "";
     child.stdout.on("data", (chunk) => { out += chunk; });
@@ -111,8 +111,8 @@ posix("a bot's engine spawned on a Team Cloud", () => {
     engineHomes.start(setup());
     expect(await engineHomes.within("t-bob", () => homeOf("bot"))).toBe(audienceHome(dataDir, "member:p_bob"));
     expect(await engineHomes.within("t-main", () => homeOf("bot"))).toBe(audienceHome(dataDir, "team"));
-    expect(await engineHomes.within("t-bob", () => homeOf("openmausbot"))).toBe(home);
-    expect(await engineHomes.within("t-bob", () => homeOf("openmausbot", { engineHome: true }))).toBe(audienceHome(dataDir, "member:p_bob"));
+    expect(await engineHomes.within("t-bob", () => homeOf("sanremes"))).toBe(home);
+    expect(await engineHomes.within("t-bob", () => homeOf("sanremes", { engineHome: true }))).toBe(audienceHome(dataDir, "member:p_bob"));
     expect(await homeOf("bot")).toBe(home);
     engineHomes.stop();
     expect(await engineHomes.within("t-bob", () => homeOf("bot"))).toBe(home);

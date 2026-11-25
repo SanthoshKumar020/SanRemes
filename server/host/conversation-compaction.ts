@@ -22,7 +22,7 @@ export function foldBackstop(window: number, nativeCompactAt?: number): number {
   return Math.floor(Math.max(limit - 10_000, limit * 0.95));
 }
 
-/** When OpenMausBot's own fold runs before a turn. An engine that compacts its own session keeps that session: the fold
+/** When SanRemes's own fold runs before a turn. An engine that compacts its own session keeps that session: the fold
  * is only the guard for a session its engine left uncompacted. `context.compactAt` set by the person applies to every engine. */
 export function foldDue(input: {
   engineCompacts: boolean; configuredCompactAt?: number; contextTokens?: number; estimatedBytes: number;
@@ -53,7 +53,7 @@ export interface ConversationCompactionDeps {
   context(): { autoCompact?: boolean; compactAt?: number } | undefined;
   directContext(bot: BotRecord, threadId: string, messages: Message[]): ContextMessage[];
   latestCompaction(messages: readonly Message[]): ({ id: string; firstKeptId?: string } & Record<string, unknown>) | undefined;
-  /** Where the engine compacts by itself, in tokens, when OpenMausBot set that point. */
+  /** Where the engine compacts by itself, in tokens, when SanRemes set that point. */
   nativeCompactTokens(instance: CompactionInstance, model: string): number | undefined;
   /** False for an engine whose own compaction is switched off in its environment. */
   engineCompactionOn(instance: CompactionInstance): boolean;

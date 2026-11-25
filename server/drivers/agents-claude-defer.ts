@@ -4,7 +4,7 @@
 // and loads every tool, and with tool search off every tool loads whatever the mark says.
 
 /** The proxy's switch, set by the Claude driver: "1" marks every tool outside claudeAlwaysLoaded deferred. */
-export const DEFER_TOOLS_ENV = "OMB_AGENTS_DEFER_TOOLS";
+export const DEFER_TOOLS_ENV = "SANREMES_AGENTS_DEFER_TOOLS";
 
 /** Sent whole on every Claude request: tools most turns call, or must call without a search first. list_bots stays
  * because a deferred list_bots loses to Claude Code's own ListAgents when the bot inherits this machine's setup. Tools a

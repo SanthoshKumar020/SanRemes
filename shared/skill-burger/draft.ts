@@ -216,7 +216,7 @@ class Drafter {
     return clean.length === 1 && typeof clean[0] === "string" ? clean[0] : clean;
   }
 
-  /** Values the person typed that the command repeats become OMB_ARG_<NAME>, where the shell would expand them: a typed
+  /** Values the person typed that the command repeats become SANREMES_ARG_<NAME>, where the shell would expand them: a typed
    * value (a web address, a site, a file) outside single quotes; a plain word only as a whole argument outside any quotes,
    * never a program's name and never inside code a command carries in quotes. */
   private shell(run: string): string {
@@ -228,7 +228,7 @@ class Drafter {
       const flag = /(?:^|\s)--?([a-z][a-z0-9-]*)[\s=]+["']?$/i.exec(out.slice(0, Math.max(0, out.indexOf(value))))?.[1]?.replace(/-/g, "_");
       const existing = Object.entries(this.args).find(([, arg]) => arg.default === value)?.[0];
       const name = existing ?? argName(typed ? this.typed.find((one) => one.value === value)!.name : flag, this.args);
-      const env = `$OMB_ARG_${name.toUpperCase()}`;
+      const env = `$SANREMES_ARG_${name.toUpperCase()}`;
       let quote: string | null = null;
       let rebuilt = "";
       let atCommand = true;

@@ -25,7 +25,7 @@ const identity = (major: string, brand = "Google Chrome"): ChromeIdentity => ({
 
 /** A Mac whose LaunchServices knows a Google Chrome in a temporary folder, or none. */
 function mac(options: { chrome?: boolean; env?: NodeJS.ProcessEnv } = {}) {
-  const root = mkdtempSync(join(tmpdir(), "omb-launcher-"));
+  const root = mkdtempSync(join(tmpdir(), "sanremes-launcher-"));
   folders.push(root);
   const app = join(root, "Google Chrome.app");
   const chrome = posix.join(app, "Contents/MacOS/Google Chrome");
@@ -37,7 +37,7 @@ function mac(options: { chrome?: boolean; env?: NodeJS.ProcessEnv } = {}) {
   const dataDir = join(root, "data");
   const env = { HOME: root, ...options.env };
   // Only this folder exists for the launcher: the machine running the test may have a Google Chrome of its own.
-  const inside = (path: string) => path.startsWith(root) || path.startsWith(options.env?.OMB_CHROME_PATH ?? "\0");
+  const inside = (path: string) => path.startsWith(root) || path.startsWith(options.env?.SANREMES_CHROME_PATH ?? "\0");
   const real = chromeHost({ dataDir, env, platform: "darwin", arch: "arm64" });
   const host = { ...real, exists: (path: string) => inside(path) && existsSync(path), list: (folder: string) => inside(folder) ? real.list(folder) : [], appForBundleId: () => options.chrome === false ? null : app };
   return { root, app, chrome, dataDir, env, host };
@@ -153,7 +153,7 @@ describe("the Chrome launcher", () => {
   });
 
   it("on a Linux server keeps the download it started when agent-browser's PATH later shows a browser", async () => {
-    const root = mkdtempSync(join(tmpdir(), "omb-launcher-"));
+    const root = mkdtempSync(join(tmpdir(), "sanremes-launcher-"));
     folders.push(root);
     // A drive-free PATH: on Windows a "C:" in the temp folder would be split at ":".
     let enginePath = "/engine/bin";
@@ -205,10 +205,10 @@ describe("the Chrome launcher", () => {
   });
 
   it("keeps the engine's own browser, and says why, when Chrome cannot be prepared at all", async () => {
-    const named = mkdtempSync(join(tmpdir(), "omb-named-"));
+    const named = mkdtempSync(join(tmpdir(), "sanremes-named-"));
     folders.push(named);
     writeFileSync(join(named, "chrome"), "#!/bin/sh\n", { mode: 0o755 });
-    const chrome = launcher(mac({ env: { OMB_CHROME_PATH: join(named, "chrome") } }), {
+    const chrome = launcher(mac({ env: { SANREMES_CHROME_PATH: join(named, "chrome") } }), {
       calibrate: async () => { throw new Error("the browser's user agent is not Chrome's"); },
     });
     const spec = headless(chrome.path);
@@ -247,16 +247,16 @@ describe("the Chrome launcher", () => {
   });
 
   it("keeps what the host needs behind the error a viewer gets, when Chrome cannot start there", async () => {
-    const named = mkdtempSync(join(tmpdir(), "omb-named-"));
+    const named = mkdtempSync(join(tmpdir(), "sanremes-named-"));
     folders.push(named);
     writeFileSync(join(named, "chrome"), "#!/bin/sh\n", { mode: 0o755 });
     const host = new BrowserHostError("container");
-    const chrome = launcher(mac({ env: { OMB_CHROME_PATH: join(named, "chrome") } }), {
+    const chrome = launcher(mac({ env: { SANREMES_CHROME_PATH: join(named, "chrome") } }), {
       calibrate: async () => { throw new ChromeLaunchError(host.message, "Running as root without --no-sandbox is not supported.", host); },
     });
     const failure = await chrome.binary().catch((error: unknown) => error);
     expect(failure).toBeInstanceOf(Error);
-    expect((failure as Error).message).toContain("OMB_BROWSER_SANDBOX=0");
+    expect((failure as Error).message).toContain("SANREMES_BROWSER_SANDBOX=0");
     expect(hostSetupOf(failure)).toBe(host);
   });
 
@@ -305,7 +305,7 @@ describe("the Chrome launcher", () => {
   });
 
   it.skipIf(process.platform === "win32")("counts a launcher check that only ran out of time as running, and still refuses one that fails", async () => {
-    const root = mkdtempSync(join(tmpdir(), "omb-launcher-check-"));
+    const root = mkdtempSync(join(tmpdir(), "sanremes-launcher-check-"));
     folders.push(root);
     const slow = join(root, "slow.sh"), failing = join(root, "failing.sh");
     // A Cloud machine just after a restart: the launcher starts but answers late.
@@ -318,9 +318,9 @@ describe("the Chrome launcher", () => {
   });
 
   it.skipIf(process.platform === "win32")("downloads no second Chrome on the server image: both drivers run the Chrome the image names", async () => {
-    const root = mkdtempSync(join(tmpdir(), "omb-launcher-"));
+    const root = mkdtempSync(join(tmpdir(), "sanremes-launcher-"));
     folders.push(root);
-    const imageChrome = join(root, "opt", "openmausbot-browser", "chrome");
+    const imageChrome = join(root, "opt", "sanremes-browser", "chrome");
     mkdirSync(dirname(imageChrome), { recursive: true });
     writeFileSync(imageChrome, "#!/bin/sh\n", { mode: 0o755 });
     const dataDir = join(root, "data");
@@ -331,26 +331,26 @@ describe("the Chrome launcher", () => {
     const host = { ...real, exists: (path: string) => path.startsWith(root) && existsSync(path), list: (folder: string) => folder.startsWith(root) ? real.list(folder) : [] };
     const install = vi.fn(async () => { throw new Error("no download on the image"); });
     const common = { dataDir, env, platform: "linux" as const, arch: "x64", host, install, calibrate: async () => identity("158", "Not_A Brand"), screen: async () => ({ width: 1440, height: 900 }), sidecars: sidecars(), log: () => {}, checkLauncher: async () => {} };
-    // agent-browser's launcher, and OpenMausBot's own driver (server/browser/engines.ts: no wrapper, a managed engine).
+    // agent-browser's launcher, and SanRemes's own driver (server/browser/engines.ts: no wrapper, a managed engine).
     const agentBrowser = new ChromeLauncher({ ...common, engine: () => ({ managed: true }) });
     const own = new ChromeLauncher({ ...common, engine: () => ({ managed: true }), wrapper: false });
     await agentBrowser.ready(headless(agentBrowser.env().AGENT_BROWSER_EXECUTABLE_PATH!));
     expect(await own.binary()).toMatchObject({ path: imageChrome, source: "named" });
-    expect(agentBrowser.describe()).toMatch(/\(named by OMB_CHROME_PATH or AGENT_BROWSER_EXECUTABLE_PATH\)$/);
+    expect(agentBrowser.describe()).toMatch(/\(named by SANREMES_CHROME_PATH or AGENT_BROWSER_EXECUTABLE_PATH\)$/);
     expect(readFileSync(agentBrowser.path, "utf8")).toContain(imageChrome);
     expect(install).not.toHaveBeenCalled();
     expect(existsSync(join(dataDir, "tools", "chrome"))).toBe(false);
   });
 
-  it("changes nothing on OMB_BROWSER_LEGACY_SHELL=1", async () => {
-    const machine = mac({ env: { OMB_BROWSER_LEGACY_SHELL: "1", OMB_RESOURCES_PATH: "/Applications/OpenMausBot.app/Contents/Resources" } });
+  it("changes nothing on SANREMES_BROWSER_LEGACY_SHELL=1", async () => {
+    const machine = mac({ env: { SANREMES_BROWSER_LEGACY_SHELL: "1", SANREMES_RESOURCES_PATH: "/Applications/SanRemes.app/Contents/Resources" } });
     const calibrate = vi.fn();
     const chrome = launcher(machine, { calibrate });
     expect(chrome.env()).toEqual({});
     await chrome.ready(headless("/bundle/chrome-headless-shell"));
     await chrome.prepare();
     expect(calibrate).not.toHaveBeenCalled();
-    expect(chrome.describe()).toBe("the bundled Chromium headless shell (OMB_BROWSER_LEGACY_SHELL=1)");
+    expect(chrome.describe()).toBe("the bundled Chromium headless shell (SANREMES_BROWSER_LEGACY_SHELL=1)");
     expect(readdirSync(machine.root)).not.toContain("data");
   });
 

@@ -128,7 +128,7 @@ export class CodexConnection {
    * is kept. True when the message was one of those. */
   absorb(message: any): boolean {
     if (message?.id !== undefined && message.method) {
-      this.write({ jsonrpc: "2.0", id: message.id, error: { code: -32601, message: "No OpenMausBot turn is running on this thread." } });
+      this.write({ jsonrpc: "2.0", id: message.id, error: { code: -32601, message: "No SanRemes turn is running on this thread." } });
       return true;
     }
     const total = message?.method === "thread/tokenUsage/updated" && message.params?.threadId === this.nativeThreadId
@@ -257,8 +257,8 @@ export interface CodexLease<Carried> {
   discard(why: string): Promise<void>;
 }
 
-/** `OMB_CODEX_SESSION_KEEP=0` ends every app-server with its turn. */
-const keepEnabled = (): boolean => process.env.OMB_CODEX_SESSION_KEEP !== "0";
+/** `SANREMES_CODEX_SESSION_KEEP=0` ends every app-server with its turn. */
+const keepEnabled = (): boolean => process.env.SANREMES_CODEX_SESSION_KEEP !== "0";
 
 /**
  * One provider account's kept app-servers, one per conversation (per-chat in session-idle.ts): a completed turn leaves

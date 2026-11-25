@@ -130,7 +130,7 @@ describe("engineHint", () => {
 
 describe("what the hints cost", () => {
   it("costs nothing outside the list_models call: no prompt line about engines rides every turn", () => {
-    expect(botPersona({ name: "MausBot", defaultBot: {} })).not.toMatch(/list_models|API key|sign in/u);
+    expect(botPersona({ name: "SanRemes", defaultBot: {} })).not.toMatch(/list_models|API key|sign in/u);
   });
 });
 

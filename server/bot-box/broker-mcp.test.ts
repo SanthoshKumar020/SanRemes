@@ -24,7 +24,7 @@ describe("remote MCP servers through the broker", () => {
   // (detect.ts says "not-linux" anywhere else), so Windows gets "off" below.
   const withBroker = it.skipIf(process.platform === "win32");
   const broker = async (): Promise<BoxBroker> => {
-    dir = mkdtempSync(join(tmpdir(), "omb-bmcp-"));
+    dir = mkdtempSync(join(tmpdir(), "sanremes-bmcp-"));
     credentials = await openCredentialBroker({ socketPath: join(dir, "b.sock") });
     return { port: BOX_BROKER_PORT, mintForThread: credentials.mintForThread, touchThread: credentials.touchThread, revokeThread: credentials.revokeThread, lookup: credentials.lookup };
   };

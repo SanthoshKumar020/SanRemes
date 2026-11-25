@@ -52,8 +52,8 @@ beforeAll(async () => {
     });
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
-  vi.stubEnv("OMB_CLOUD_BOAT_URL", `http://127.0.0.1:${(server.address() as { port: number }).port}/relay/api/box/v1`);
-  vi.stubEnv("OMB_CLOUD_BOAT_TOKEN", "box_omb_synthetic");
+  vi.stubEnv("SANREMES_CLOUD_BOAT_URL", `http://127.0.0.1:${(server.address() as { port: number }).port}/relay/api/box/v1`);
+  vi.stubEnv("SANREMES_CLOUD_BOAT_TOKEN", "box_omb_synthetic");
 });
 afterAll(async () => {
   vi.unstubAllEnvs();
@@ -80,7 +80,7 @@ async function world(watched = false) {
   const { createRunComputerGate } = await import("./host/cloud-computer-run-gate.ts");
   const { RoutineManager } = await import("./routines.ts");
 
-  const dir = mkdtempSync(join(tmpdir(), "omb-unattended-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-unattended-"));
   dirs.push(dir);
   box = { id: BOX_ID, name: await boat.boatNameFor(BOT), state: "idle", health: "ok", hydrated: true, lastSnapshotStatus: "completed" };
   let at = new Date(2026, 10, 14, 8, 0, 0).getTime();

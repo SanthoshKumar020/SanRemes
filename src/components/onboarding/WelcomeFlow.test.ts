@@ -15,7 +15,7 @@ const f = vi.hoisted(() => ({ state: {} as Record<string, unknown>, dispatch: vi
   checks: [] as string[] }));
 vi.mock("@/state/store", () => ({ useStore: () => ({ state: f.state, dispatch: f.dispatch }), api: f.api }));
 vi.mock("@/lib/analytics", () => ({ track: vi.fn(), setEmailGateDone: vi.fn() }));
-vi.mock("@/components/Avatar", () => ({ BotAvatar: () => null, MausAvatar: () => null }));
+vi.mock("@/components/Avatar", () => ({ BotAvatar: () => null, SanRemesAvatar: () => null }));
 vi.mock("@/components/mascot-clock", () => ({ usePrefersReducedMotion: () => true }));
 vi.mock("@/components/EngineSetup", async (original) => {
   const { createElement: h } = await import("react");
@@ -23,7 +23,7 @@ vi.mock("@/components/EngineSetup", async (original) => {
     EngineSetup: ({ instance }: { instance: InstanceInfo }) => h("div", { "data-engine-setup": instance.instanceId }) };
 });
 vi.mock("@/lib/default-bot", async (original) => ({ ...(await original<typeof import("@/lib/default-bot")>()), useViewerEmail: () => null }));
-vi.mock("@/lib/mausbot-landing", () => ({ FLIGHT_MS: 700, landInSidebar: (input: { botId: string; commit: () => void }) => { f.landed(input.botId); input.commit(); } }));
+vi.mock("@/lib/sanremes-landing", () => ({ FLIGHT_MS: 700, landInSidebar: (input: { botId: string; commit: () => void }) => { f.landed(input.botId); input.commit(); } }));
 const { WelcomeFlow } = await import("./WelcomeFlow");
 const { CHIEF_FADE_MS, CHIEF_GUARD_MS } = await import("./ChiefIntro");
 
@@ -39,7 +39,7 @@ const freeOpenCode: InstanceInfo = {
 const notInstalledOpenCode = { ...freeOpenCode, snapshot: { state: "unavailable" }, aiTest: undefined,
   install: { docsUrl: "https://example.test", server: { standalone: { version: "1", downloadBytes: 1 } } } } as InstanceInfo;
 const signIn = (): InstanceInfo => ({ ...claude(false), snapshot: { state: "available", authenticated: false }, authentication: { method: "paste-code" } } as InstanceInfo);
-const maus = { id: "maus", threadId: "t", name: "SanRemes", title: "", description: "", notifications: true, color: "chrome", unread: false,
+const sanremes = { id: "sanremes", threadId: "t", name: "SanRemes", title: "", description: "", notifications: true, color: "chrome", unread: false,
   modelSelection: { instanceId: "claude", model: "m" }, messages: [], defaultBot: {}, chiefOfStaff: true };
 
 let host: HTMLDivElement, root: Root;
@@ -82,7 +82,7 @@ beforeEach(() => {
     if (path.endsWith("/check")) { f.checks.push(path); return { ok: true }; }
     return path === "/api/instances" ? { instances: f.state.instances } : JSON.parse(init?.body ?? "{}");
   });
-  f.state = { instances: [claude(true)], config: { onboarding: EMPTY_ONBOARDING, profile: { name: "" } }, bots: [maus], cloudAdd: null };
+  f.state = { instances: [claude(true)], config: { onboarding: EMPTY_ONBOARDING, profile: { name: "" } }, bots: [sanremes], cloudAdd: null };
   stageIntro(null);
   host = document.createElement("div");
   document.body.append(host);
@@ -113,11 +113,11 @@ describe("a new install's first run", () => {
 
     await tick(CHIEF_GUARD_MS);
     await press("Create Chief of Staff");
-    expect(f.landed).toHaveBeenCalledWith("maus");
-    expect(f.dispatch).toHaveBeenCalledWith({ type: "updateBot", botId: "maus", patch: { welcomed: true } });
+    expect(f.landed).toHaveBeenCalledWith("sanremes");
+    expect(f.dispatch).toHaveBeenCalledWith({ type: "updateBot", botId: "sanremes", patch: { welcomed: true } });
     await tick(CHIEF_FADE_MS);
-    expect(f.onDone).toHaveBeenCalledExactlyOnceWith("maus");
-    expect(introStaged("maus"), "its first messages arrive one at a time").toBe(true);
+    expect(f.onDone).toHaveBeenCalledExactlyOnceWith("sanremes");
+    expect(introStaged("sanremes"), "its first messages arrive one at a time").toBe(true);
     await act(async () => {});
     expect(saved()).toEqual([{ onboarding: expect.objectContaining({ version: WELCOME_VERSION, hintsSeen: [MET_CHIEF_HINT] }) }]);
   });
@@ -147,12 +147,12 @@ describe("the Chief step", () => {
   };
 
   it("is skipped once SanRemes has met the person", async () => {
-    f.state = { ...f.state, bots: [{ ...maus, welcomed: true }] };
+    f.state = { ...f.state, bots: [{ ...sanremes, welcomed: true }] };
     await finishesAtNext();
   });
 
   it("is skipped where another bot is already the Chief", async () => {
-    f.state = { ...f.state, bots: [{ ...maus, chiefOfStaff: false }, { ...maus, id: "research", threadId: "r", name: "Research", defaultBot: undefined, chiefOfStaff: true }] };
+    f.state = { ...f.state, bots: [{ ...sanremes, chiefOfStaff: false }, { ...sanremes, id: "research", threadId: "r", name: "Research", defaultBot: undefined, chiefOfStaff: true }] };
     await finishesAtNext();
   });
 
@@ -325,6 +325,6 @@ describe("other first runs", () => {
     await tick(CHIEF_FADE_MS);
     await act(async () => {});
     expect(saved()[0].onboarding).not.toHaveProperty("hintsSeen");
-    expect(introStaged("maus"), "a replay lands in a chat that may be long under way").toBe(false);
+    expect(introStaged("sanremes"), "a replay lands in a chat that may be long under way").toBe(false);
   });
 });

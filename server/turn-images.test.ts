@@ -25,7 +25,7 @@ describe("turn image admission", () => {
   const temporary: string[] = [];
 
   const store = (suffix = "") => {
-    const root = mkdtempSync(join(tmpdir(), `omb-turn-images${suffix}-`));
+    const root = mkdtempSync(join(tmpdir(), `sanremes-turn-images${suffix}-`));
     temporary.push(root);
     return root;
   };
@@ -312,7 +312,7 @@ describe("native video clips", () => {
     expect((await turnMedia([{ images: [image(MiB)], videos: [clip(10 * MiB)] }], gemini)).videos).toEqual([clip(10 * MiB)]);
   });
 
-  const folder = () => mkdtempSync(join(tmpdir(), "omb-native-clips-"));
+  const folder = () => mkdtempSync(join(tmpdir(), "sanremes-native-clips-"));
   const png = (root: string, name: string, bytes: number) => {
     const data = Buffer.alloc(bytes);
     Buffer.from("89504e470d0a1a0a0000000d49484452", "hex").copy(data);

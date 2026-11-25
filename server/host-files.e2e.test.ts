@@ -54,7 +54,7 @@ async function thisComputer(home: string, files: boolean) {
   const gated = gatedLocalComputer(driver(), gate.control);
   const connection = files ? withHostFiles(gated) : gated;
   const child: ChildProcess = spawn(connection.command, connection.args, {
-    env: { ...process.env, ...connection.env, HOME: home, USERPROFILE: home, OMB_EXTRA_PATH: dirname(process.execPath) },
+    env: { ...process.env, ...connection.env, HOME: home, USERPROFILE: home, SANREMES_EXTRA_PATH: dirname(process.execPath) },
     stdio: ["pipe", "pipe", "pipe"],
   });
   const replies = new Map<number, (value: any) => void>();
@@ -90,7 +90,7 @@ async function thisComputer(home: string, files: boolean) {
 
 describe("file tools on this computer, through its bridge", () => {
   it("lists them beside the screen tools, asks the approval gate, and saves on any full path", async () => {
-    const root = mkdtempSync(join(tmpdir(), "omb-host-files-e2e-"));
+    const root = mkdtempSync(join(tmpdir(), "sanremes-host-files-e2e-"));
     const home = join(root, "home");
     for (const dir of ["OneDrive/Documentos", "Desktop"]) mkdirSync(join(home, dir), { recursive: true });
     mkdirSync(join(root, "outside"));
@@ -158,7 +158,7 @@ describe("file tools on this computer, through its bridge", () => {
   }, 60_000);
 
   it("reach a chat bot as computer tools, and stay in the list the next turn remembers while the driver starts", async () => {
-    const root = mkdtempSync(join(tmpdir(), "omb-host-files-e2e-"));
+    const root = mkdtempSync(join(tmpdir(), "sanremes-host-files-e2e-"));
     const home = join(root, "home");
     mkdirSync(join(home, "Documents"), { recursive: true });
     const gate = await controlServer();
@@ -193,7 +193,7 @@ describe("file tools on this computer, through its bridge", () => {
   }, 60_000);
 
   it("lists no file tools on a bridge that was not given them", async () => {
-    const root = mkdtempSync(join(tmpdir(), "omb-host-files-e2e-"));
+    const root = mkdtempSync(join(tmpdir(), "sanremes-host-files-e2e-"));
     const computer = await thisComputer(root, false);
     try {
       expect((await computer.rpc("tools/list")).tools.map((tool: { name: string }) => tool.name)).toEqual(["screenshot", "read_file"]);

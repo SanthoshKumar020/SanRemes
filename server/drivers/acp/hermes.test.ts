@@ -14,8 +14,8 @@ import {
   HERMES_ACP_MODELS_TIMEOUT_ENV,
   HERMES_ACP_MODELS_DEFAULT_TIMEOUT_MS,
   HERMES_CONFIG_MODEL_ID,
-  HERMES_OPENMAUS_SCREENSHOT_COMPAT,
-  HERMES_OPENMAUS_SCREENSHOT_COMPAT_MODEL,
+  HERMES_SANREMES_SCREENSHOT_COMPAT,
+  HERMES_SANREMES_SCREENSHOT_COMPAT_MODEL,
   HermesAgentDriver,
   bindHermesScreenshotCompat,
   fetchHermesAcpModels,
@@ -27,28 +27,28 @@ import {
 describe("Hermes OpenMaus screenshot compatibility binding", () => {
   it("binds the exact leaf model for an injected local picker model", () => {
     const env = {
-      [HERMES_OPENMAUS_SCREENSHOT_COMPAT]: undefined,
-      [HERMES_OPENMAUS_SCREENSHOT_COMPAT_MODEL]: undefined,
+      [HERMES_SANREMES_SCREENSHOT_COMPAT]: undefined,
+      [HERMES_SANREMES_SCREENSHOT_COMPAT_MODEL]: undefined,
     };
 
     bindHermesScreenshotCompat(env, "omlx::gemma-4-31b-it-bf16");
 
-    expect(env[HERMES_OPENMAUS_SCREENSHOT_COMPAT]).toBe("1");
-    expect(env[HERMES_OPENMAUS_SCREENSHOT_COMPAT_MODEL]).toBe("gemma-4-31b-it-bf16");
+    expect(env[HERMES_SANREMES_SCREENSHOT_COMPAT]).toBe("1");
+    expect(env[HERMES_SANREMES_SCREENSHOT_COMPAT_MODEL]).toBe("gemma-4-31b-it-bf16");
   });
 
   it.each([undefined, "", "anthropic/claude-opus-4.6", "unknown::model"])(
     "clears inherited compatibility for an unbound model %s",
     (model) => {
       const env = {
-        [HERMES_OPENMAUS_SCREENSHOT_COMPAT]: "1",
-        [HERMES_OPENMAUS_SCREENSHOT_COMPAT_MODEL]: "stale/model",
+        [HERMES_SANREMES_SCREENSHOT_COMPAT]: "1",
+        [HERMES_SANREMES_SCREENSHOT_COMPAT_MODEL]: "stale/model",
       };
 
       bindHermesScreenshotCompat(env, model);
 
-      expect(env[HERMES_OPENMAUS_SCREENSHOT_COMPAT]).toBeUndefined();
-      expect(env[HERMES_OPENMAUS_SCREENSHOT_COMPAT_MODEL]).toBeUndefined();
+      expect(env[HERMES_SANREMES_SCREENSHOT_COMPAT]).toBeUndefined();
+      expect(env[HERMES_SANREMES_SCREENSHOT_COMPAT_MODEL]).toBeUndefined();
     },
   );
 });
@@ -60,7 +60,7 @@ describe("hermesConfiguredModel", () => {
   });
 
   const home = (env: string, cfg?: string) => {
-    const root = mkdtempSync(join(tmpdir(), "omb-hermes-"));
+    const root = mkdtempSync(join(tmpdir(), "sanremes-hermes-"));
     dirs.push(root);
     const h = join(root, ".hermes");
     mkdirSync(h, { recursive: true });
@@ -116,14 +116,14 @@ describe("hermesConfiguredModel", () => {
   });
 
   it("returns null when there is no .env and no config.yaml, leaving local-only setups unchanged", () => {
-    const root = mkdtempSync(join(tmpdir(), "omb-hermes-bare-"));
+    const root = mkdtempSync(join(tmpdir(), "sanremes-hermes-bare-"));
     dirs.push(root);
     mkdirSync(join(root, ".hermes"), { recursive: true });
     expect(hermesConfiguredModel({ HERMES_HOME: join(root, ".hermes") })).toBeNull();
   });
 
   it("offers the configured model when only config.yaml exists (Nous Portal OAuth)", () => {
-    const root = mkdtempSync(join(tmpdir(), "omb-hermes-nous-"));
+    const root = mkdtempSync(join(tmpdir(), "sanremes-hermes-nous-"));
     dirs.push(root);
     const h = join(root, ".hermes");
     mkdirSync(h, { recursive: true });
@@ -256,7 +256,7 @@ process.stdin.on("data", (chunk) => {
   ];
 
   function fakeCli(env: Record<string, string>, source = FAKE_CLI_SOURCE, name = "fake-hermes.ts"): { cli: string; env: Record<string, string> } {
-    const home = mkdtempSync(join(tmpdir(), "omb-hermes-probe-"));
+    const home = mkdtempSync(join(tmpdir(), "sanremes-hermes-probe-"));
     dirs.push(home);
     const cli = join(home, name);
     writeFileSync(cli, source, { mode: 0o755 });
@@ -272,7 +272,7 @@ process.stdin.on("data", (chunk) => {
   it("finds the catalog CLI on the supplied PATH, including a Windows npm shim", async () => {
     const { cli, env } = fakeCli({ [HERMES_ACP_MODELS_TIMEOUT_ENV]: "2000" });
     const root = dirname(cli);
-    const command = "omb-hermes-probe";
+    const command = "sanremes-hermes-probe";
     if (process.platform === "win32") {
       writeFileSync(join(root, "probe.js"), FAKE_CLI_SOURCE);
       writeFileSync(join(root, `${command}.cmd`), '@echo off\nnode "%~dp0\\probe.js" %*\n');
@@ -343,7 +343,7 @@ describe("resolveHermesModels when Hermes has no model to list", () => {
 
   // A Hermes home plus a stand-in `hermes` that never answers, so a catalog probe ends at its deadline.
   function setup(dotenv: string, configYaml?: string): { cli: string; missing: string; env: Record<string, string> } {
-    const root = mkdtempSync(join(tmpdir(), "omb-hermes-models-"));
+    const root = mkdtempSync(join(tmpdir(), "sanremes-hermes-models-"));
     dirs.push(root);
     const home = join(root, ".hermes");
     mkdirSync(home, { recursive: true });
@@ -483,7 +483,7 @@ describe("Hermes advertised ACP edit modes", () => {
 
   beforeEach(() => {
     ensureDirs();
-    scratch = mkdtempSync(join(tmpdir(), "omb-hermes-modes-"));
+    scratch = mkdtempSync(join(tmpdir(), "sanremes-hermes-modes-"));
   });
 
   afterEach(async () => {
@@ -505,7 +505,7 @@ describe("Hermes advertised ACP edit modes", () => {
         HOME: scratch,
         USERPROFILE: scratch,
         HERMES_HOME: hermesHome,
-        OPENMAUSBOT_PROBE_LOCAL_INJECT: "0",
+        OPENSANREMES_PROBE_LOCAL_INJECT: "0",
         FAKE_ACP_DUMP: join(scratch, "launch.json"),
         ...environment,
       },

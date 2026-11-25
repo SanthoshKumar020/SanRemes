@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 
 const REJECTIONS = [
   { status: 429, reason: "quota", state: "RESOURCE_EXHAUSTED", message: "Quota exceeded for metric: generate_content_free_tier_requests, limit: 20. Please retry in 11h32m" },
@@ -63,7 +63,7 @@ it.each(REJECTIONS)("a provider HTTP $status ends the turn as failed, with the p
     expect(digest.text).toContain(`turn failed: ${said}`);
     expect(digest.text).not.toContain("synthetic-fixture-key");
     const log = readFileSync(fixture.info.logPath, "utf8");
-    expect(log).toMatch(new RegExp(`\\[omb-turn\\] thread=\\S+ turn=\\S+ failed: ${reason} HTTP ${status}\\n`));
+    expect(log).toMatch(new RegExp(`\\[sanremes-turn\\] thread=\\S+ turn=\\S+ failed: ${reason} HTTP ${status}\\n`));
     expect(log).not.toContain(message);
     expect(log).not.toContain("synthetic-fixture-key");
   } finally {

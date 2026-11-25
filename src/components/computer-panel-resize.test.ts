@@ -81,7 +81,7 @@ afterEach(() => {
 
 describe("the computer panel's resize edge", () => {
   it("widens with the arrow keys, stops at the maximum, and remembers the width", () => {
-    localStorage.setItem("omb-computer-panel-width", String(PANEL_MAX_WIDTH - 40));
+    localStorage.setItem("sanremes-computer-panel-width", String(PANEL_MAX_WIDTH - 40));
     act(() => root.render(createElement(Panel)));
     expect(width).toBe(PANEL_MAX_WIDTH - 40);
     press("ArrowLeft");
@@ -89,30 +89,30 @@ describe("the computer panel's resize edge", () => {
     expect(width).toBe(PANEL_MAX_WIDTH);
     press("ArrowRight");
     expect(width).toBe(PANEL_MAX_WIDTH - 40);
-    expect(localStorage.getItem("omb-computer-panel-width")).toBe(String(PANEL_MAX_WIDTH - 40));
+    expect(localStorage.getItem("sanremes-computer-panel-width")).toBe(String(PANEL_MAX_WIDTH - 40));
   });
 
   it("ignores a stored width below the minimum", () => {
-    localStorage.setItem("omb-computer-panel-width", "100");
+    localStorage.setItem("sanremes-computer-panel-width", "100");
     act(() => root.render(createElement(Panel)));
     expect(width).toBe(400);
   });
 
   it("grows past 960 px on a wide window, as far as the chat keeping its minimum width allows", () => {
     room = 2000;
-    localStorage.setItem("omb-computer-panel-width", "1560");
+    localStorage.setItem("sanremes-computer-panel-width", "1560");
     act(() => root.render(createElement(ChatAndPanel)));
     expect(width).toBe(1560);
     expect(maxWidth).toBe(2000 - CHAT_MIN_WIDTH);
     press("ArrowLeft");
     press("ArrowLeft");
     expect(width).toBe(2000 - CHAT_MIN_WIDTH);
-    expect(localStorage.getItem("omb-computer-panel-width")).toBe(String(2000 - CHAT_MIN_WIDTH));
+    expect(localStorage.getItem("sanremes-computer-panel-width")).toBe(String(2000 - CHAT_MIN_WIDTH));
   });
 
   it("narrows when the window gets smaller and keeps the narrower width after a key press", () => {
     room = 2000;
-    localStorage.setItem("omb-computer-panel-width", "1500");
+    localStorage.setItem("sanremes-computer-panel-width", "1500");
     act(() => root.render(createElement(ChatAndPanel)));
     expect(width).toBe(1500);
     resizeWindow(1000);
@@ -125,7 +125,7 @@ describe("the computer panel's resize edge", () => {
 
   it("returns to the chosen width when the window grows back", () => {
     room = 2000;
-    localStorage.setItem("omb-computer-panel-width", "1500");
+    localStorage.setItem("sanremes-computer-panel-width", "1500");
     act(() => root.render(createElement(ChatAndPanel)));
     resizeWindow(1000);
     expect(width).toBe(1000 - CHAT_MIN_WIDTH);
@@ -135,7 +135,7 @@ describe("the computer panel's resize edge", () => {
 
   it("remembers the chosen width, not the narrowed one, after a press on the edge without moving", () => {
     room = 2000;
-    localStorage.setItem("omb-computer-panel-width", "1500");
+    localStorage.setItem("sanremes-computer-panel-width", "1500");
     act(() => root.render(createElement(ChatAndPanel)));
     resizeWindow(1000);
     const edge = { setPointerCapture() {}, releasePointerCapture() {} };
@@ -143,7 +143,7 @@ describe("the computer panel's resize edge", () => {
     act(() => handlers.onResizeStart(pointer));
     act(() => handlers.onResizeEnd(pointer));
     expect(width).toBe(1000 - CHAT_MIN_WIDTH);
-    expect(localStorage.getItem("omb-computer-panel-width")).toBe("1500");
+    expect(localStorage.getItem("sanremes-computer-panel-width")).toBe("1500");
   });
 
   it("keeps following the window after the chat beside it is replaced by another view", async () => {
@@ -157,7 +157,7 @@ describe("the computer panel's resize edge", () => {
 
   it("clamps a stored width wider than the window instead of covering the chat", () => {
     room = 1200;
-    localStorage.setItem("omb-computer-panel-width", "5000");
+    localStorage.setItem("sanremes-computer-panel-width", "5000");
     act(() => root.render(createElement(ChatAndPanel)));
     expect(width).toBe(1200 - CHAT_MIN_WIDTH);
   });

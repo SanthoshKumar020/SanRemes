@@ -561,7 +561,7 @@ export function AiSignInSettings() {
 
 export function EnginesSettings({ simple = false, more }: { simple?: boolean; more?: { id: string; open: boolean; onToggle: () => void } }) {
   const state = useStoreSelector((s) => ({ instances: s.instances }), sameFields);
-  // Leaving Settings ends the "now uses the copy OpenMausBot installed" lines.
+  // Leaving Settings ends the "now uses the copy SanRemes installed" lines.
   useEffect(() => forgetAppCopySwitches, []);
   const listed = state.instances.filter((i) => i.readOnly || i.cli !== undefined || i.cliDefault !== undefined || i.snapshot.state === "unavailable" || isApiKeyEngine(i) || i.claudeEndpoint !== undefined || i.claudeBedrock !== undefined || i.codexEndpoint !== undefined);
   const { groups, groupOf, rows } = groupedAccounts(listed);

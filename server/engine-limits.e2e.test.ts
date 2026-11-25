@@ -3,11 +3,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it } from "vitest";
 
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { removeTempDir } from "./testing/cleanup.ts";
 
 it("a bot's turn reads its accounts' usage limits through its own capability, and nothing else may", async () => {
-  const folder = mkdtempSync(join(tmpdir(), "omb-engine-limits-"));
+  const folder = mkdtempSync(join(tmpdir(), "sanremes-engine-limits-"));
   const gate = join(folder, "finish");
   const fixture = await launchVerificationServer({ FAKE_CLAUDE_MODE: "slow", FAKE_CLAUDE_SLOW_FINISH_GATE: gate });
   try {
@@ -16,7 +16,7 @@ it("a bot's turn reads its accounts' usage limits through its own capability, an
     await runControlOmb(["send", "--bot", bot.id, "--task", bot.threadId, "--text", "How much Claude is left?", "--url", fixture.info.url]);
     let token = "";
     await expect.poll(() => {
-      try { token = JSON.parse(readFileSync(fixture.fixtureDumpPath, "utf8")).mcpConfig.mcpServers.agents.env.OMB_COMMS_TOKEN; } catch { return false; }
+      try { token = JSON.parse(readFileSync(fixture.fixtureDumpPath, "utf8")).mcpConfig.mcpServers.agents.env.SANREMES_COMMS_TOKEN; } catch { return false; }
       return Boolean(token);
     }, { timeout: 15_000 }).toBe(true);
 

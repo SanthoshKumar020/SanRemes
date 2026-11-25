@@ -3,11 +3,11 @@ import { Fragment, memo } from "react";
 import { BotAvatar } from "./Avatar";
 import { cn } from "@/lib/cn";
 import { sameDrawnBots } from "@/lib/drawn-bots";
-import { MAUS_COLOR_NAMES, normalizeState, type MausColor } from "@/lib/mascot";
+import { MAUS_COLOR_NAMES, normalizeState, type SanRemesColor } from "@/lib/mascot";
 import type { RoomAddressee } from "@/lib/room-addressees";
 import type { Bot } from "@/state/store";
 
-function isPaletteColor(color: string | undefined): color is MausColor {
+function isPaletteColor(color: string | undefined): color is SanRemesColor {
   return (MAUS_COLOR_NAMES as readonly string[]).includes(color ?? "");
 }
 

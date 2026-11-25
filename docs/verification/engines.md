@@ -2,7 +2,7 @@
 
 ## Sub-features
 
-- Confirm the endpoint identifies itself as OpenMausBot.
+- Confirm the endpoint identifies itself as SanRemes.
 - List configured provider instances without exposing executable paths.
 - Distinguish available and unavailable engines.
 - Add named Claude accounts and select them independently for bots.
@@ -14,11 +14,11 @@ Open a bot's model picker or Settings → Engines.
 ## Driving it
 
 ```sh
-pnpm control:omb doctor --url http://127.0.0.1:PORT
-pnpm control:omb models --url http://127.0.0.1:PORT
+pnpm control:sanremes doctor --url http://127.0.0.1:PORT
+pnpm control:sanremes models --url http://127.0.0.1:PORT
 ```
 
-`doctor.ok` is true only when the endpoint is OpenMausBot and at least one
+`doctor.ok` is true only when the endpoint is SanRemes and at least one
 engine is available. The isolated fixture should expose `claude`.
 
 ## Named Claude accounts
@@ -51,7 +51,7 @@ prove real OAuth login or native Windows execution.
 
 ## OMP (Oh My Pi)
 
-Install with `npm install -g @oh-my-pi/pi-coding-agent`, then run `omp login` or configure a provider in `~/.omp/agent/models.yml`. OpenMausBot launches `omp acp`, discovers its advertised models and per-model thinking choices, and resumes each thread's native OMP session. OMP remains responsible for its own provider credentials and approvals; OpenMausBot answers ACP permission requests through the normal approval cards.
+Install with `npm install -g @oh-my-pi/pi-coding-agent`, then run `omp login` or configure a provider in `~/.omp/agent/models.yml`. SanRemes launches `omp acp`, discovers its advertised models and per-model thinking choices, and resumes each thread's native OMP session. OMP remains responsible for its own provider credentials and approvals; SanRemes answers ACP permission requests through the normal approval cards.
 
 ```sh
 pnpm exec vitest run server/drivers/acp/omp.test.ts server/drivers/acp/custom-model-catalog.test.ts server/runtime/capabilities.test.ts server/drivers/tool-scope-coverage.test.ts server/agents-bridge-switch.test.ts server/engine-updates.test.ts server/built-in-instances.test.ts src/lib/analytics-allowlist.test.ts server/engine-memory.test.ts
@@ -63,7 +63,7 @@ The following is a one-time author qualification against OMP 18.13.1, not a chec
 
 ## Mistral Vibe
 
-Install `vibe-acp` from `mistral.ai/vibe/install.sh` (the vendor's `mistral-vibe` package through uv), from [github.com/mistralai/mistral-vibe/releases](https://github.com/mistralai/mistral-vibe/releases), or through the app's install pin (`mistral-vibe-release.ts`), then either run a first `vibe` session once so the browser sign-in saves `$VIBE_HOME/whoami_cache.json`, or let the workspace Mistral key from Settings → Connections reach the CLI as `MISTRAL_API_KEY`. OpenMausBot launches `vibe-acp` (ACP by default, no extra arguments), picks the `browser-auth` method when the sign-in gate fires — the CLI opens the browser itself and the authenticate request blocks until the person finishes — and selects models through session/new's `model` config option. Model refresh runs in a temporary working directory and never sends a prompt, so it leaves no record in the person's Vibe history, and threads resume their native Vibe sessions.
+Install `vibe-acp` from `mistral.ai/vibe/install.sh` (the vendor's `mistral-vibe` package through uv), from [github.com/mistralai/mistral-vibe/releases](https://github.com/mistralai/mistral-vibe/releases), or through the app's install pin (`mistral-vibe-release.ts`), then either run a first `vibe` session once so the browser sign-in saves `$VIBE_HOME/whoami_cache.json`, or let the workspace Mistral key from Settings → Connections reach the CLI as `MISTRAL_API_KEY`. SanRemes launches `vibe-acp` (ACP by default, no extra arguments), picks the `browser-auth` method when the sign-in gate fires — the CLI opens the browser itself and the authenticate request blocks until the person finishes — and selects models through session/new's `model` config option. Model refresh runs in a temporary working directory and never sends a prompt, so it leaves no record in the person's Vibe history, and threads resume their native Vibe sessions.
 
 ```sh
 pnpm exec vitest run server/drivers/acp/mistral-vibe.test.ts server/drivers/acp/custom-model-catalog.test.ts server/runtime/capabilities.test.ts server/drivers/tool-scope-coverage.test.ts server/built-in-instances.test.ts src/lib/analytics-allowlist.test.ts server/engine-memory.test.ts server/config.test.ts
@@ -75,7 +75,7 @@ The following is a one-time author qualification against vibe-acp 3.1.1 on macOS
 
 ## Cursor: a failed model call sent as the reply
 
-cursor-agent 2026.10.22 (`cursor-release.ts`) catches a failed model call inside session/prompt, sends `\n\nError: ${String(error)}` as one message chunk, may then show a `Watching: …` tool call for a backgrounded shell, and answers end_turn. OpenMausBot holds that chunk out of the reply and the live stream, and fails the turn with Cursor's own wording, so a routine run is retried as a temporary AI error instead of being recorded as completed.
+cursor-agent 2026.10.22 (`cursor-release.ts`) catches a failed model call inside session/prompt, sends `\n\nError: ${String(error)}` as one message chunk, may then show a `Watching: …` tool call for a backgrounded shell, and answers end_turn. SanRemes holds that chunk out of the reply and the live stream, and fails the turn with Cursor's own wording, so a routine run is retried as a temporary AI error instead of being recorded as completed.
 
 ```sh
 pnpm exec vitest run server/cursor-reply-failure.e2e.test.ts server/drivers/acp/cursor.test.ts
@@ -168,7 +168,7 @@ with `muse login`. It spends that account's Muse usage, so it runs only when
 asked:
 
 ```sh
-OMB_LIVE_MUSE=1 pnpm exec vitest run server/drivers/muse-code.live.test.ts
+SANREMES_LIVE_MUSE=1 pnpm exec vitest run server/drivers/muse-code.live.test.ts
 ```
 
 It lists the account's models (Muse Wonder 1.0), answers on Muse Wonder, runs

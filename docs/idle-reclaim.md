@@ -27,7 +27,7 @@ The problem was measured on a real customer's Cloud (sizes and types only):
 4. A conversation folder's own pnpm store goes with its node_modules, never apart from them.
 5. It goes through #7136's checked mover: one rename into `.removing` with a device and inode check, paced removal, and a pause during backup, restore and the move freeze.
 6. The bot's next turn in that conversation carries one line: what went, and to reinstall from the lockfile. Nothing is shown to the person.
-7. The switch is `OMB_IDLE_RECLAIM`, default off. `report` changes nothing and logs what a pass would shed. `remove` sheds. It runs on Cloud homes only.
+7. The switch is `SANREMES_IDLE_RECLAIM`, default off. `report` changes nothing and logs what a pass would shed. `remove` sheds. It runs on Cloud homes only.
 8. #7068, already in train C3, should not ship as it is (see "#7068").
 9. On the measured Cloud this frees at most about 6–9 GB and about half a million files (estimate below). It cannot reach 60% there, because the 31 GB bot folder is out of its scope.
 10. Next steps: turn it on in `report` on the measured Cloud, then `remove`. Show "freed automatically" in Storage. Then decide the bot's own folder (owner).
@@ -184,7 +184,7 @@ Two conversations took 21.5 MB on one mount and 33.1 MB in the box layout (`du`,
 
 
 ## 5. Plan (small steps)
-1. **This PR.** `OMB_IDLE_RECLAIM=report` on the measured Cloud for a day. Read the log line "would shed N install folder(s) … GB".
+1. **This PR.** `SANREMES_IDLE_RECLAIM=report` on the measured Cloud for a day. Read the log line "would shed N install folder(s) … GB".
 2. Set `remove` on that Cloud. Check that the volume drops, and that a woken conversation's bot reinstalls.
 3. Wire `idleReclaimSummary` into the storage report, so the Storage view says "freed automatically: N GB".
 4. Default `remove` on every Cloud home (an image release).

@@ -135,7 +135,7 @@ describe("publish-to-netlify helper: what may be uploaded", () => {
     for (const path of ["index.html", "assets/app.js", "img/logo.png", "_redirects", "_headers", ".well-known/security.txt", "docs/environment.html", "env.js", "keyboard.js", "data/monkey.json"]) {
       expect(helper.publishable(path), path).toBe(true);
     }
-    for (const path of [".env", ".env.production", "app/.env.local", "prod.env", "env", "env.local", ".openmausbot-secrets/t1/card", ".git/config", ".netlify-site.json", ".netlify/state.json",
+    for (const path of [".env", ".env.production", "app/.env.local", "prod.env", "env", "env.local", ".sanremes-secrets/t1/card", ".git/config", ".netlify-site.json", ".netlify/state.json",
       ".DS_Store", "node_modules/x/index.js", "site/node_modules/x.js", "server.pem", "tls/private.key", "cert.p12", "id_rsa", "id_ed25519.pub", "credentials.json", "secrets.yaml",
       "service-account.prod.json", "what?.html", "a#b.html", "__MACOSX/x", "Thumbs.db", ""]) {
       expect(helper.publishable(path), path).toBe(false);
@@ -147,12 +147,12 @@ describe("publish-to-netlify helper: what may be uploaded", () => {
     try {
       const site = join(root, "site");
       mkdirSync(join(site, "assets"), { recursive: true });
-      mkdirSync(join(site, ".openmausbot-secrets", "t1"), { recursive: true });
+      mkdirSync(join(site, ".sanremes-secrets", "t1"), { recursive: true });
       writeFileSync(join(site, "index.html"), "<h1>hi</h1>");
       writeFileSync(join(site, "assets", "a b.css"), "body{}");
       writeFileSync(join(site, "assets", "copy.css"), "body{}");
       writeFileSync(join(site, ".env"), "KEY=1");
-      writeFileSync(join(site, ".openmausbot-secrets", "t1", "card"), "nfp_secret");
+      writeFileSync(join(site, ".sanremes-secrets", "t1", "card"), "nfp_secret");
       writeFileSync(join(root, "outside.txt"), "private");
       // Windows makes a file link only with a privilege CI lacks; a folder junction needs none.
       const fileLinks = process.platform !== "win32";
@@ -161,7 +161,7 @@ describe("publish-to-netlify helper: what may be uploaded", () => {
 
       const { files, skipped } = helper.collectFiles(site);
       expect(files.map((file) => file.path)).toEqual(["assets/a b.css", "assets/copy.css", "index.html"]);
-      expect(skipped.sort()).toEqual([".env", ".openmausbot-secrets", ...(fileLinks ? ["linked.txt"] : []), "up"]);
+      expect(skipped.sort()).toEqual([".env", ".sanremes-secrets", ...(fileLinks ? ["linked.txt"] : []), "up"]);
       const { digest, bySha } = helper.buildDigest(files);
       expect(digest).toEqual({ "/assets/a b.css": sha1("body{}"), "/assets/copy.css": sha1("body{}"), "/index.html": sha1("<h1>hi</h1>") });
       expect(bySha.get(sha1("body{}"))?.path).toBe("assets/a b.css");
@@ -173,9 +173,9 @@ describe("publish-to-netlify helper: what may be uploaded", () => {
 
   it("sends the token to Netlify or a loopback stand-in only", () => {
     expect(helper.apiBase({})).toBe("https://api.netlify.com/api/v1");
-    expect(helper.apiBase({ OMB_NETLIFY_API_URL: "http://127.0.0.1:4010/api/v1" })).toBe("http://127.0.0.1:4010/api/v1");
+    expect(helper.apiBase({ SANREMES_NETLIFY_API_URL: "http://127.0.0.1:4010/api/v1" })).toBe("http://127.0.0.1:4010/api/v1");
     for (const elsewhere of ["https://evil.example/api/v1", "http://127.0.0.1.evil.example:80/", "http://localhost:4010", "http://10.0.0.5:4010", "http://127.0.0.1:4010@evil.example/"]) {
-      expect(helper.apiBase({ OMB_NETLIFY_API_URL: elsewhere }), elsewhere).toBe("https://api.netlify.com/api/v1");
+      expect(helper.apiBase({ SANREMES_NETLIFY_API_URL: elsewhere }), elsewhere).toBe("https://api.netlify.com/api/v1");
     }
   });
 
@@ -229,7 +229,7 @@ describe("publish-to-netlify helper, end to end against a stand-in on loopback",
   let tokenFile: string;
 
   const run = (args: string[], env: Record<string, string> = {}, cwd = project) => new Promise<{ code: number; stdout: string; stderr: string; json: Record<string, unknown> }>((done) => {
-    execFile(process.execPath, [HELPER, ...args], { cwd, env: { PATH: process.env.PATH ?? "", HOME: home, ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}), OMB_NETLIFY_API_URL: fake.url, ...env } }, (error, stdout, stderr) => {
+    execFile(process.execPath, [HELPER, ...args], { cwd, env: { PATH: process.env.PATH ?? "", HOME: home, ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}), SANREMES_NETLIFY_API_URL: fake.url, ...env } }, (error, stdout, stderr) => {
       done({ code: error ? Number(error.code) : 0, stdout, stderr, json: JSON.parse(stdout.trim() || "{}") as Record<string, unknown> });
     });
   });
@@ -242,8 +242,8 @@ describe("publish-to-netlify helper, end to end against a stand-in on loopback",
     home = mkdtempSync(join(tmpdir(), "netlify-skill-home-"));
     project = join(home, "workspace", "bakery");
     mkdirSync(join(project, "dist", "assets"), { recursive: true });
-    mkdirSync(join(project, ".openmausbot-secrets", "thread1"), { recursive: true, mode: 0o700 });
-    tokenFile = join(project, ".openmausbot-secrets", "thread1", "card1");
+    mkdirSync(join(project, ".sanremes-secrets", "thread1"), { recursive: true, mode: 0o700 });
+    tokenFile = join(project, ".sanremes-secrets", "thread1", "card1");
     writeFileSync(tokenFile, `${TOKEN}\n`, { mode: 0o600 });
     writeFileSync(join(project, "dist", "index.html"), "<h1>Bakery</h1>");
     writeFileSync(join(project, "dist", "assets", "app.js"), "console.log('v1')");
@@ -320,7 +320,7 @@ describe("publish-to-netlify helper, end to end against a stand-in on loopback",
   });
 
   it("says plainly what Netlify answered, without the token", async () => {
-    const wrong = join(project, ".openmausbot-secrets", "thread1", "card2");
+    const wrong = join(project, ".sanremes-secrets", "thread1", "card2");
     writeFileSync(wrong, "nfp_RevokedTokenNeverReal", { mode: 0o600 });
     const denied = await run(["--dir", "dist", "--token-file", wrong]);
     expect(denied).toMatchObject({ code: 1, json: { ok: false, error: "Starting the deploy: Netlify answered 401: Access Denied" } });
@@ -392,7 +392,7 @@ describe("publish-to-netlify helper, end to end against a stand-in on loopback",
     /** In process, with short waits: a private link is only called private after a few seconds of 401s. */
     const publishIn = (folder: string, extra: string[], waits: { waitMs?: number } = {}) => {
       mkdirSync(join(home, "workspace", folder), { recursive: true });
-      return helper.publish([...extra, "--token-file", tokenFile, "--project", join(home, "workspace", folder)], { OMB_NETLIFY_API_URL: guarded.url },
+      return helper.publish([...extra, "--token-file", tokenFile, "--project", join(home, "workspace", folder)], { SANREMES_NETLIFY_API_URL: guarded.url },
         { pollMs: 5, waitMs: 2000, linkWaitMs: 2000, privateAfterMs: 50, ...waits });
     };
     let dist: string[];
@@ -406,7 +406,7 @@ describe("publish-to-netlify helper, end to end against a stand-in on loopback",
 
     it("makes a new site public once its deploy is ready, and again on every publish", async () => {
       mkdirSync(join(home, "workspace", "guarded"), { recursive: true });
-      const first = await run([...dist, "--token-file", tokenFile, "--project", join(home, "workspace", "guarded")], { OMB_NETLIFY_API_URL: guarded.url });
+      const first = await run([...dist, "--token-file", tokenFile, "--project", join(home, "workspace", "guarded")], { SANREMES_NETLIFY_API_URL: guarded.url });
       expect(first).toMatchObject({ code: 0, json: { ok: true, created: true, state: "ready", live: true, access: "public", liveStatus: 200 } });
       expect(first.json).not.toHaveProperty("message");
       const site = patchOf(first.json.siteId);
@@ -472,7 +472,7 @@ describe("publish-to-netlify helper, end to end against a stand-in on loopback",
       expect(guarded.requests.filter((request) => request === `POST /api/v1/sites/${String(kept.siteId)}/deploys`)).toHaveLength(3);
 
       await expect(publishIn("kept-private", ["--make-public", "--keep-private"])).rejects.toThrow(/--make-public and --keep-private ask for opposite things/);
-      const nothing = await run(["--make-public", "--token-file", tokenFile, "--project", join(home, "workspace")], { OMB_NETLIFY_API_URL: guarded.url });
+      const nothing = await run(["--make-public", "--token-file", tokenFile, "--project", join(home, "workspace")], { SANREMES_NETLIFY_API_URL: guarded.url });
       expect(String(nothing.json.error)).toMatch(/\.netlify-site\.json is missing; publish the site first/);
     });
 
@@ -556,7 +556,7 @@ describe("publish-to-netlify helper, end to end against a stand-in on loopback",
       const { folder, argv } = startIn("slow");
       fake.processingPolls = 6;
       try {
-        const result = await helper.publish([...argv, "--title", "Slow  site\nfor a bakery", "--bot-name", "Mira"], { OMB_NETLIFY_API_URL: fake.url, OMB_BOT_ID: "bot_1a2b" }, { ...quick, now: () => new Date("2026-11-11T20:44:30.000Z") });
+        const result = await helper.publish([...argv, "--title", "Slow  site\nfor a bakery", "--bot-name", "Mira"], { SANREMES_NETLIFY_API_URL: fake.url, SANREMES_BOT_ID: "bot_1a2b" }, { ...quick, now: () => new Date("2026-11-11T20:44:30.000Z") });
         expect(result).toMatchObject({ ok: true, created: true, state: "ready", live: true, access: "public", liveStatus: 200, uploaded: 1, alreadyOnNetlify: 0 });
         expect(result).not.toHaveProperty("pending");
         expect(fake.requests.filter((request) => request === `GET /api/v1/sites/${String(result.siteId)}/deploys/${String(result.deployId)}`)).toHaveLength(6);
@@ -572,7 +572,7 @@ describe("publish-to-netlify helper, end to end against a stand-in on loopback",
       fake.processingPolls = 1_000_000;
       let pending: Record<string, unknown>;
       try {
-        pending = await helper.publish(argv, { OMB_NETLIFY_API_URL: fake.url }, quick);
+        pending = await helper.publish(argv, { SANREMES_NETLIFY_API_URL: fake.url }, quick);
       } finally {
         fake.processingPolls = 0;
       }
@@ -583,18 +583,18 @@ describe("publish-to-netlify helper, end to end against a stand-in on loopback",
       expect(readRecord(folder)).toMatchObject({ deployId: pending.deployId, deployState: "processing" });
       expect(readRecord(folder)).not.toHaveProperty("publishedAt");
 
-      const still = await helper.publish(["--check", "--token-file", tokenFile, "--project", folder], { OMB_NETLIFY_API_URL: fake.url }, quick);
+      const still = await helper.publish(["--check", "--token-file", tokenFile, "--project", folder], { SANREMES_NETLIFY_API_URL: fake.url }, quick);
       expect(still).toMatchObject({ ok: true, pending: true, state: "processing", deployId: pending.deployId });
 
       fake.deploys.get(String(pending.deployId))!.pollsLeft = 1;
       const deploysBefore = fake.deploys.size;
-      const done = await helper.publish(["--check", "--token-file", tokenFile, "--project", folder], { OMB_NETLIFY_API_URL: fake.url }, { ...quick, now: () => new Date("2026-11-11T21:00:00.000Z") });
+      const done = await helper.publish(["--check", "--token-file", tokenFile, "--project", folder], { SANREMES_NETLIFY_API_URL: fake.url }, { ...quick, now: () => new Date("2026-11-11T21:00:00.000Z") });
       expect(done).toMatchObject({ ok: true, state: "ready", live: true, access: "public", deployId: pending.deployId, url: pending.url });
       expect(done).not.toHaveProperty("pending");
       expect(fake.deploys.size).toBe(deploysBefore);
       expect(readRecord(folder)).toMatchObject({ deployState: "ready", publishedAt: "2026-11-11T21:00:00.000Z", access: "public" });
 
-      const again = await helper.publish(["--check", "--token-file", tokenFile, "--project", folder], { OMB_NETLIFY_API_URL: fake.url }, quick);
+      const again = await helper.publish(["--check", "--token-file", tokenFile, "--project", folder], { SANREMES_NETLIFY_API_URL: fake.url }, quick);
       expect(again).toMatchObject({ state: "ready", live: true });
       expect(readRecord(folder).publishedAt).toBe("2026-11-11T21:00:00.000Z");
     });
@@ -603,12 +603,12 @@ describe("publish-to-netlify helper, end to end against a stand-in on loopback",
       const { folder, argv } = startIn("counted");
       writeFileSync(join(folder, "out", "app.js"), "console.log('v2')");
       writeFileSync(join(folder, "out", "style.css"), "h1{color:teal}");
-      const first = await helper.publish(argv, { OMB_NETLIFY_API_URL: fake.url }, quick);
+      const first = await helper.publish(argv, { SANREMES_NETLIFY_API_URL: fake.url }, quick);
       expect(first).toMatchObject({ state: "ready", live: true, access: "public", files: 3, uploaded: 2, alreadyOnNetlify: 1 });
       const before = readRecord(folder);
 
       fake.rootContentType = "text/plain";
-      const plain = await helper.publish(argv, { OMB_NETLIFY_API_URL: fake.url }, quick);
+      const plain = await helper.publish(argv, { SANREMES_NETLIFY_API_URL: fake.url }, quick);
       fake.rootContentType = "text/html; charset=UTF-8";
       expect(plain).toMatchObject({ state: "ready", live: false, access: "public", uploaded: 0, alreadyOnNetlify: 3 });
       expect(readRecord(folder)).toMatchObject({ siteId: before.siteId, url: before.url, title: before.title, createdAt: before.createdAt });
@@ -651,7 +651,7 @@ describe("publish-to-netlify helper, end to end against a stand-in on loopback",
 
     it("keeps the site and its record when Netlify refuses the token, and deletes nothing else", async () => {
       const { folder, siteId } = await publishIn("kept");
-      const wrong = join(project, ".openmausbot-secrets", "thread1", "card3");
+      const wrong = join(project, ".sanremes-secrets", "thread1", "card3");
       writeFileSync(wrong, "nfp_RevokedTokenNeverReal", { mode: 0o600 });
       const refused = await run(["--delete", "--token-file", wrong], {}, folder);
       rmSync(wrong);

@@ -1,6 +1,6 @@
 // A Team Cloud with its own Composio project key: each person's own apps go to that project as their own Composio user,
 // and nothing reaches the managed connected-apps service. The real Composio client code (server/composio.ts) runs against
-// a loopback project (OMB_COMPOSIO_API) beside a loopback service that records whatever reaches it.
+// a loopback project (SANREMES_COMPOSIO_API) beside a loopback service that records whatever reaches it.
 import { mkdtempSync, readFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -58,7 +58,7 @@ beforeEach(() => {
   fetched = [];
   service.requests.length = 0;
   project.requests.length = 0; project.toolCalls.length = 0; project.links.length = 0; project.accounts.length = 0; project.down = false;
-  vi.stubEnv("OMB_COMPOSIO_API", project.api);
+  vi.stubEnv("SANREMES_COMPOSIO_API", project.api);
   vi.stubGlobal("fetch", (input: Parameters<typeof fetch>[0], init?: RequestInit) => {
     fetched.push(input instanceof Request ? input.url : String(input));
     return realFetch(input, init);
@@ -74,8 +74,8 @@ afterEach(() => {
 });
 
 function setup(options: { key?: string | null; dataDir?: string; requester?: Record<string, string>; refuse?: string } = {}) {
-  const dataDir = options.dataDir ?? mkdtempSync(join(tmpdir(), "omb-team-own-key-"));
-  const cfg = { composio: options.key === null ? {} : { apiKey: options.key ?? KEY, userId: "openmausbot_team" } } as AppConfig;
+  const dataDir = options.dataDir ?? mkdtempSync(join(tmpdir(), "sanremes-team-own-key-"));
+  const cfg = { composio: options.key === null ? {} : { apiKey: options.key ?? KEY, userId: "sanremes_team" } } as AppConfig;
   const requester: Record<string, string> = { "ada-chat": ADA, "cleo-chat": CLEO, "room-chat": ADA, "main-chat": ADA, ...options.requester };
   const host = createTeamConnectionsHost({
     team: TEAM, dataDir, cfg: () => cfg, adminOrigin: "https://cloud.example.test", harnessUrl: "http://127.0.0.1:1",
@@ -141,7 +141,7 @@ describe("each person's own apps with the team's own Composio key", () => {
     expect(project.links).toEqual([{ user: ADA_USER, toolkit: "gmail" }]);
     const adaAccount = project.connect(ADA_USER, "gmail");
     const cleoAccount = await connect(EMAILS.cleo, CLEO_USER);
-    const teamAccount = project.connect("openmausbot_team", "slack");
+    const teamAccount = project.connect("sanremes_team", "slack");
 
     expect(await myGmail(EMAILS.ada)).toMatchObject({ connected: true, accounts: [{ id: adaAccount, status: "ACTIVE" }] });
     expect(await myGmail(EMAILS.cleo)).toMatchObject({ connected: true, accounts: [{ id: cleoAccount, status: "ACTIVE" }] });
@@ -155,7 +155,7 @@ describe("each person's own apps with the team's own Composio key", () => {
     expect(team).toContain(teamAccount);
     expect(team).not.toContain(adaAccount);
     expect(Object.keys(await composio.connectedServices(cfg))).toEqual(["slack"]);
-    expect(cfg.composio?.userId, "the team's saved Composio user is never a member's").toBe("openmausbot_team");
+    expect(cfg.composio?.userId, "the team's saved Composio user is never a member's").toBe("sanremes_team");
 
     expect(await as(EMAILS.ada, "DELETE", "/api/team/my-connections/apps/gmail")).toEqual({ status: 200, body: { ok: true } });
     expect(project.accounts.map((account) => account.id).sort()).toEqual([cleoAccount, teamAccount].sort());
@@ -200,9 +200,9 @@ describe("each person's own apps with the team's own Composio key", () => {
   it("uses a member's Session only while it is their own Composio user's", async () => {
     const first = setup();
     const adaAccount = await first.connect(EMAILS.ada, ADA_USER);
-    const teamAccount = project.connect("openmausbot_team", "gmail");
+    const teamAccount = project.connect("sanremes_team", "gmail");
     await composio.relayMcp(first.cfg, GMAIL_CALL);
-    const teamSession = [...project.sessions].find(([, user]) => user === "openmausbot_team")![0];
+    const teamSession = [...project.sessions].find(([, user]) => user === "sanremes_team")![0];
     const file = first.stored();
     file.people[ADA]!.sessionId = teamSession;
     (first.host.people as unknown as { write(name: string, value: unknown): void }).write("project-apps.json", file);
@@ -282,7 +282,7 @@ describe("a team that changes where its apps connect", () => {
   });
 
   it("works with the service switched off and a key, and says an admin must add a key without one", async () => {
-    vi.stubEnv("OMB_COMPOSIO_BROKER", "off");
+    vi.stubEnv("SANREMES_COMPOSIO_BROKER", "off");
     const keyed = setup();
     await keyed.connect(EMAILS.ada, ADA_USER);
     expect(await keyed.myGmail(EMAILS.ada)).toMatchObject({ connected: true });

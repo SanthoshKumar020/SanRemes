@@ -6,7 +6,7 @@ import { afterAll, describe, expect, it } from "vitest";
 
 import { createDataEngine } from "./engine.ts";
 
-const root = mkdtempSync(join(tmpdir(), "omb-histogram-columns-"));
+const root = mkdtempSync(join(tmpdir(), "sanremes-histogram-columns-"));
 const engine = createDataEngine({ botFolder: (id) => join(root, id), dataDir: join(root, "data") });
 const connection = "bot" as const;
 

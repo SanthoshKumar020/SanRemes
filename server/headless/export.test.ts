@@ -1,4 +1,4 @@
-import "../testing/scrub-ambient-omb-env.ts";
+import "../testing/scrub-ambient-sanremes-env.ts";
 
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
@@ -16,7 +16,7 @@ import type { HeadlessIo } from "./output.ts";
 import { safeName } from "./export.ts";
 import { runHeadless } from "./main.ts";
 
-const dir = mkdtempSync(join(tmpdir(), "omb-export-"));
+const dir = mkdtempSync(join(tmpdir(), "sanremes-export-"));
 let server: Server;
 let origin: string;
 
@@ -75,7 +75,7 @@ function answer(req: IncomingMessage, res: ServerResponse, raw: string) {
       return res.end(text);
     }
     if (report && body.listFolder) {
-      return send(200, { name: "report", entries: Object.entries(report).map(([name, text]) => ({ name, bytes: Buffer.byteLength(text) })), truncated: false }, { "x-openmausbot-folder": "1" });
+      return send(200, { name: "report", entries: Object.entries(report).map(([name, text]) => ({ name, bytes: Buffer.byteLength(text) })), truncated: false }, { "x-sanremes-folder": "1" });
     }
     if (body.path === "old.md") {
       res.writeHead(200, { "content-type": "text/markdown", "content-length": "3" });
@@ -100,7 +100,7 @@ function answer(req: IncomingMessage, res: ServerResponse, raw: string) {
       return res.end(body.entry);
     }
     if (body.path === "shots/" && body.listFolder) {
-      return send(200, { name: "shots", entries: [{ name: "a.png", bytes: 5 }, { name: "b.png", bytes: 5 }], truncated: false }, { "x-openmausbot-folder": "1" });
+      return send(200, { name: "shots", entries: [{ name: "a.png", bytes: 5 }, { name: "b.png", bytes: 5 }], truncated: false }, { "x-sanremes-folder": "1" });
     }
     return send(403, { error: "that bot message does not link to this file" });
   }
@@ -125,7 +125,7 @@ const run = async (argv: string[]) => {
   const out: string[] = [];
   const err: string[] = [];
   const io: HeadlessIo = { out: (text) => out.push(text), err: (text) => err.push(text), readStdin: async () => "" };
-  const code = await runHeadless(argv, { io, env: { OPENMAUSBOT_URL: origin } });
+  const code = await runHeadless(argv, { io, env: { OPENSANREMES_URL: origin } });
   return { code, result: out.length ? JSON.parse(out.join("\n")) : undefined, err };
 };
 

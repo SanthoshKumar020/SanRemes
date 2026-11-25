@@ -44,7 +44,7 @@ describe("reviewed Windows browser dependency build", () => {
   });
 
   it("requires an explicit absolute output without accepting extra options", () => {
-    const output = join(tmpdir(), "omb-vendor-output");
+    const output = join(tmpdir(), "sanremes-vendor-output");
     expect(parseVendorBuildArgs(["--output", output])).toBe(output);
     for (const args of [[], ["--output", "relative"], ["--output", output, "--skip-verify"], ["--source", output]]) {
       expect(() => parseVendorBuildArgs(args)).toThrow(/Usage/);

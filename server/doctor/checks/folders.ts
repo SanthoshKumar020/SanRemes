@@ -16,7 +16,7 @@ export function foldersCheck(): DoctorCheck {
       let data;
       try { data = statSync(ctx.dataDir); } catch {
         return { status: "problem", summary: `There is no data folder at ${ctx.dataDir}.`,
-          instruction: "Check the path (--data-dir, or OMB_DATA_DIR). A server starting there makes a new, empty one." };
+          instruction: "Check the path (--data-dir, or SANREMES_DATA_DIR). A server starting there makes a new, empty one." };
       }
       if (!data.isDirectory()) return { status: "problem", summary: `${ctx.dataDir} is a file, not a folder.`, instruction: "Move that file away, or point the server at its data folder." };
       try { accessSync(ctx.dataDir, constants.W_OK); } catch {

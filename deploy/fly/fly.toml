@@ -13,16 +13,16 @@ kill_timeout = "30s"
 [build]
   image = "{{IMAGE}}"
 
-# Not secret. The Admin (openmaus-cloud) sets these on the machine and
+# Not secret. The Admin (sanremes-cloud) sets these on the machine and
 # applies two Fly secrets, never in this file:
-#   OMB_CLOUD_ADMIN_URL         the Cloud origin, e.g. https://cloud.openmausbot.com
-#   OMB_CLOUD_BOOTSTRAP_SECRET  the key the Admin signs pairing requests with
+#   SANREMES_CLOUD_ADMIN_URL         the Cloud origin, e.g. https://cloud.openmausbot.com
+#   SANREMES_CLOUD_BOOTSTRAP_SECRET  the key the Admin signs pairing requests with
 # Cloud Pro includes no AI: there is no model gateway to configure. The person
 # signs in on the machine with their own Claude or ChatGPT account, or an API key.
 [env]
-  OMB_CLOUD_ROLE = "home"
-  OMB_CLOUD_MACHINE_ID = "{{MACHINE_ID}}"
-  OMB_PUBLIC_URL = "https://{{FLY_APP}}.fly.dev"
+  SANREMES_CLOUD_ROLE = "home"
+  SANREMES_CLOUD_MACHINE_ID = "{{MACHINE_ID}}"
+  SANREMES_PUBLIC_URL = "https://{{FLY_APP}}.fly.dev"
 
 [[mounts]]
   source = "omb_home"

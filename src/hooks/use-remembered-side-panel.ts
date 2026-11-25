@@ -4,7 +4,7 @@ import type { Action, AppState } from "@/state/store";
 /** Per device: the right-side panel (the bot's screen or the bot info panel) last left open in the chat view. */
 export type RememberedSidePanel = "computer" | "inspector";
 
-export const SIDE_PANEL_OPEN_KEY = "omb-side-panel-open";
+export const SIDE_PANEL_OPEN_KEY = "sanremes-side-panel-open";
 
 export function rememberedSidePanel(): RememberedSidePanel | null {
   try {

@@ -20,11 +20,11 @@ import { TOOL_UNITS, expectedRoots } from "./units.ts";
 
 const dirs: string[] = [];
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
-const scratch = (prefix = "omb-cache-sweep-") => { const dir = mkdtempSync(join(tmpdir(), prefix)); dirs.push(dir); return dir; };
+const scratch = (prefix = "sanremes-cache-sweep-") => { const dir = mkdtempSync(join(tmpdir(), prefix)); dirs.push(dir); return dir; };
 
 function fixture() {
   const root = scratch();
-  const home = join(root, "home"), dataDir = join(home, ".openmausbot");
+  const home = join(root, "home"), dataDir = join(home, ".sanremes");
   mkdirSync(dataDir, { recursive: true });
   const tools = toolCacheRoot(home);
   mkdirSync(join(tools, "pip"), { recursive: true });
@@ -33,7 +33,7 @@ function fixture() {
   return { root, home, dataDir, tools };
 }
 
-const ON = { OMB_CLOUD_ROLE: "home", OMB_CACHE_SWEEP: "on" };
+const ON = { SANREMES_CLOUD_ROLE: "home", SANREMES_CACHE_SWEEP: "on" };
 
 function sweeper(f: ReturnType<typeof fixture>, overrides: Partial<CacheSweeperDeps> = {}) {
   const lines: string[] = [];
@@ -58,10 +58,10 @@ describe("limits", () => {
 
   it("the switch is on only on a Cloud home that sets it", () => {
     expect(cacheSweepOn({})).toBe(false);
-    expect(cacheSweepOn({ OMB_CACHE_SWEEP: "on" })).toBe(false);
-    expect(cacheSweepOn({ OMB_CLOUD_ROLE: "home" })).toBe(false);
+    expect(cacheSweepOn({ SANREMES_CACHE_SWEEP: "on" })).toBe(false);
+    expect(cacheSweepOn({ SANREMES_CLOUD_ROLE: "home" })).toBe(false);
     expect(cacheSweepOn(ON)).toBe(true);
-    expect(cacheSweepOn({ OMB_CLOUD_ROLE: "team", OMB_CACHE_SWEEP: "1" })).toBe(true);
+    expect(cacheSweepOn({ SANREMES_CLOUD_ROLE: "team", SANREMES_CACHE_SWEEP: "1" })).toBe(true);
   });
 });
 
@@ -74,7 +74,7 @@ describe("what may ever be removed", () => {
   });
 
   it("the tools' roots only while their folders are in use (the switch and a live box); the app's own always", () => {
-    const input = { home: "/data", dataDir: "/data/.openmausbot", audienceHomes: ["/data/.openmausbot/engine-homes/member-a"] };
+    const input = { home: "/data", dataDir: "/data/.sanremes", audienceHomes: ["/data/.sanremes/engine-homes/member-a"] };
     expect(expectedRoots({ ...input, tools: false }).map((root) => root.group)).toEqual(["app"]);
     expect(expectedRoots({ ...input, tools: true }).filter((root) => root.group === "tools")).toHaveLength(2);
   });
@@ -103,7 +103,7 @@ describe("switch off: nothing at all", () => {
     writeFileSync(join(f.dataDir, CACHE_SWEEP_STATE), JSON.stringify({ cleared: { count: 7 } }));
     const reads: string[] = [];
     const readText = async (path: string) => { reads.push(path); return readFileSync(path, "utf8"); };
-    const off = sweeper(f, { env: { OMB_CLOUD_ROLE: "home" }, readText });
+    const off = sweeper(f, { env: { SANREMES_CLOUD_ROLE: "home" }, readText });
     off.made.start(() => false);
     await new Promise((done) => setImmediate(done));
     expect(reads).toEqual([]);
@@ -155,7 +155,7 @@ describe("the state file", () => {
 describe("which roots a live process uses (/proc)", () => {
   /** A folder shaped like /proc: one process per entry, with its links, maps and environment. */
   function proc(processes: Record<string, { parent?: number; cwd?: string; exe?: string; fds?: string[]; maps?: string; environ?: Record<string, string> }>) {
-    const dir = scratch("omb-proc-");
+    const dir = scratch("sanremes-proc-");
     for (const [pid, info] of Object.entries(processes)) {
       const at = join(dir, pid);
       mkdirSync(join(at, "fd"), { recursive: true });
@@ -170,7 +170,7 @@ describe("which roots a live process uses (/proc)", () => {
     }
     return dir;
   }
-  const personal = "/data/cache", member = "/data/.openmausbot/engine-homes/member-a/cache";
+  const personal = "/data/cache", member = "/data/.sanremes/engine-homes/member-a/cache";
 
   it.skipIf(process.platform === "win32")("a process whose working folder, program, open file, mapped file or environment names a path in a root uses it", async () => {
     const cases: Array<[string, Parameters<typeof proc>[0][string]]> = [
@@ -217,7 +217,7 @@ describe("the admin API", () => {
 
   it("is not there with the switch off, or off a Cloud home: the routes pass, as if absent", async () => {
     const f = fixture();
-    for (const env of [{}, { OMB_CLOUD_ROLE: "home" }, { OMB_CACHE_SWEEP: "on" }]) {
+    for (const env of [{}, { SANREMES_CLOUD_ROLE: "home" }, { SANREMES_CACHE_SWEEP: "on" }]) {
       const made = sweeper(f, { env }).made;
       expect(await call(made, "GET", CACHES_PATH)).toBe("pass");
       expect(await call(made, "POST", CACHES_CLEAR_PATH, { dryRun: false })).toBe("pass");

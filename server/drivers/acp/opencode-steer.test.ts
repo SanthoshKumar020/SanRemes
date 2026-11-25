@@ -19,7 +19,7 @@ let recorder: EventRecorder | undefined;
 
 beforeEach(() => {
   ensureDirs();
-  scratch = mkdtempSync(join(tmpdir(), "omb-opencode-steer-"));
+  scratch = mkdtempSync(join(tmpdir(), "sanremes-opencode-steer-"));
 });
 
 afterEach(async () => {
@@ -41,7 +41,7 @@ const start = async (driver: AnyProviderDriver, mode: string, extra: Record<stri
       HOME: scratch,
       USERPROFILE: scratch,
       XDG_DATA_HOME: join(scratch, "data"),
-      OPENMAUSBOT_PROBE_LOCAL_INJECT: "0",
+      OPENSANREMES_PROBE_LOCAL_INJECT: "0",
       FAKE_ACP_MODELS: "opencode/big-pickle",
       FAKE_ACP_MODE: mode,
       FAKE_ACP_GATE_FILE: gate(),

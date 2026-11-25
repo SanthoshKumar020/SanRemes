@@ -1,7 +1,7 @@
 // Two real servers for Send to My Cloud: this computer's, started as the desktop app starts it (its private
 // utility-process port emulated over Node's IPC, the owner's capability delivered through it), and the person's Cloud
 // home, paired the way the Admin pairs it. Main's own wiring (electron/one-home-main.mjs, which installs
-// cloud-send-main.mjs) sits between them with a fake ipcMain and a fake MausBot Cloud sign-in. Either server can be
+// cloud-send-main.mjs) sits between them with a fake ipcMain and a fake SanRemes Cloud sign-in. Either server can be
 // killed and started again on its own data, as an app that quits or crashes is. Disposable homes, a synthetic Claude CLI
 // and a fake 1Password SDK; no network.
 import { randomBytes } from "node:crypto";
@@ -24,7 +24,7 @@ import type { FakeBwAccount } from "../../server/testing/fake-bw.ts";
 import { freePortBlock } from "../../server/testing/ports.ts";
 
 const SERVER_DIR = fileURLToPath(new URL("../../server/", import.meta.url));
-export const CLOUD_HOST = "omb-t-5e6d7c8b9a0f.fly.dev";
+export const CLOUD_HOST = "sanremes-t-5e6d7c8b9a0f.fly.dev";
 const CLOUD_MACHINE_ID = "7c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f";
 const EDGE = { host: CLOUD_HOST, "x-forwarded-for": "203.0.113.9", "x-forwarded-proto": "https", origin: `https://${CLOUD_HOST}` };
 const parse = (text: string) => { try { return JSON.parse(text); } catch { return null; } };
@@ -72,7 +72,7 @@ export interface CloudSendFixture {
   handoff(what: ConnectionAsk): Promise<any>;
   /** The one-time move (one-home.mjs), as main runs it in the app that is open now. */
   oneHome: { kick(): Promise<void>; view(): OneHomeView | null; away(): boolean };
-  /** The MausBot Cloud sign-in main reads: the Admin's word on this account's Cloud, its export of a held one, the Admin
+  /** The SanRemes Cloud sign-in main reads: the Admin's word on this account's Cloud, its export of a held one, the Admin
    * taking a computer's word that its move is done (when a test sets it), and the Admin's team pairing for one of the
    * account's teams (`state.teams`). */
   account: CloudSendAccount;
@@ -97,8 +97,8 @@ export interface CloudSendFixture {
   /** The Team Cloud started with `team` (docs/team-cloud.md), paired the way the Admin pairs it: a signed body with
    * the member claim, redeemed at /api/auth/pair. Null without `team`. */
   team: CloudTeamFixture | null;
-  /** Another computer of the same person, with its own server, app and MausBot Cloud sign-in, that can move to the same
-   * My Cloud. `label`: its name (OMB_ENVIRONMENT_LABEL). */
+  /** Another computer of the same person, with its own server, app and SanRemes Cloud sign-in, that can move to the same
+   * My Cloud. `label`: its name (SANREMES_ENVIRONMENT_LABEL). */
   addDesk(options: { label: string }): Promise<CloudSendDesk>;
   close(): Promise<void>;
 }
@@ -175,7 +175,7 @@ const ITEMS = ${JSON.stringify(items)};
 exports.createClient = async ({ auth }) => {
   if (auth !== ${JSON.stringify(token)}) throw new Error("error authenticating: invalid service account token");
   return {
-    vaults: { list: async () => [{ id: "v1", title: "Shared with OpenMausBot" }] },
+    vaults: { list: async () => [{ id: "v1", title: "Shared with SanRemes" }] },
     items: {
       list: async () => ITEMS.map(({ id, title, category }) => ({ id, title, category, websites: [] })),
       getAll: async (vaultId, ids) => ({ individualResponses: ITEMS.filter((item) => ids.includes(item.id)).map(({ id, fields }) => ({ content: { id, fields } })) }),
@@ -196,9 +196,9 @@ export async function launchCloudSendFixture({ onePasswordToken, cloudOnePasswor
   onePasswordToken: string; cloudOnePasswordToken?: string; toolCalls?: number;
   /** A fake Bitwarden tool already in each server's data folder, holding this one account (no download, no network). */
   bitwarden?: FakeBwAccount;
-  /** What every server's fake 1Password vault ("Shared with OpenMausBot") holds; empty by default. */
+  /** What every server's fake 1Password vault ("Shared with SanRemes") holds; empty by default. */
   onePasswordItems?: readonly FakeOnePasswordItem[];
-  /** A Team Cloud too (OMB_CLOUD_ROLE=team), with its own environment and synthetic Claude CLI lines. */
+  /** A Team Cloud too (SANREMES_CLOUD_ROLE=team), with its own environment and synthetic Claude CLI lines. */
   team?: { id: string; name: string; env?: NodeJS.ProcessEnv; engine?: string; noAi?: boolean;
     /** Scopes of this checkout's node_modules (`@duckdb`) linked into the Team Cloud's native tree before it starts: the
      * server can load DuckDB at its first config broadcast, and a failed load stays failed for the server's life. */
@@ -215,7 +215,7 @@ export async function launchCloudSendFixture({ onePasswordToken, cloudOnePasswor
   /** False: My Cloud's own Claude is signed out, as on a new Cloud. */
   cloudSignedIn?: boolean;
 }): Promise<CloudSendFixture> {
-  const root = mkdtempSync(join(tmpdir(), "omb-cloud-send-"));
+  const root = mkdtempSync(join(tmpdir(), "sanremes-cloud-send-"));
   const secret = randomBytes(32).toString("base64url");
   const ownerCapability = randomBytes(32).toString("base64url");
   const answers: string[] = [];
@@ -226,7 +226,7 @@ export async function launchCloudSendFixture({ onePasswordToken, cloudOnePasswor
 
   async function start(name: string, own: NodeJS.ProcessEnv, port: number, extra: string[] = [], ipc = false, acceptedToken = onePasswordToken, calls = 0, engine = "", signedIn = true): Promise<ChildProcess> {
     const home = join(root, name);
-    const dataDir = join(home, ".openmausbot");
+    const dataDir = join(home, ".sanremes");
     mkdirSync(dataDir, { recursive: true });
     if (bitwarden) installFakeBw(dataDir, bitwarden);
     const cli = join(home, "fixture-claude.mjs");
@@ -246,8 +246,8 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
     const offline = `data:text/javascript,${encodeURIComponent('const real = globalThis.fetch; const admin = process.env.FIXTURE_ADMIN_STAND_IN; globalThis.fetch = async (url, init) => admin && String(url).startsWith("https://cloud.example.test/") ? real(admin + String(url).slice(26), init) : String(url).startsWith("http://127.0.0.1:") ? real(url, init) : new Response("offline fixture", { status: 503 });')}`;
     const child = spawn(process.execPath, ["--import", offline, ...extra, join(SERVER_DIR, "index.ts")], {
       cwd: join(SERVER_DIR, ".."),
-      env: { PATH: process.env.PATH, ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}), HOME: home, USERPROFILE: home, OMB_DATA_DIR: dataDir,
-        OMB_PORT: String(port), OMB_WEBHOOK_PORT: String(port + 1), OMB_DUCKDB_DIR: fakeOnePassword(join(home, "native"), acceptedToken, onePasswordItems), ...env, ...own },
+      env: { PATH: process.env.PATH, ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}), HOME: home, USERPROFILE: home, SANREMES_DATA_DIR: dataDir,
+        SANREMES_PORT: String(port), SANREMES_WEBHOOK_PORT: String(port + 1), SANREMES_DUCKDB_DIR: fakeOnePassword(join(home, "native"), acceptedToken, onePasswordItems), ...env, ...own },
       stdio: ["ignore", "pipe", "pipe", ...(ipc ? ["ipc" as const] : [])],
     });
     children.add(child);
@@ -276,36 +276,36 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
   const desktopBase = `http://127.0.0.1:${desktopPort}`;
   const desktopInstallation = broker ? await broker.install() : null;
   const startDesktop = async (dataDir?: string) => {
-    const child = await start("desktop", { OMB_DESKTOP_PARENT: "1", ...(dataDir ? { OMB_DATA_DIR: dataDir } : {}),
-      ...(broker && desktopInstallation ? { OMB_COMPOSIO_BROKER_URL: broker.url, OMB_COMPOSIO_BROKER_TOKEN: desktopInstallation.token } : {}) }, desktopPort, ["--import", parentPort], true, onePasswordToken, toolCalls, desktopEngine);
-    child.send({ type: "openmausbot:desktop-mutation-token", token: ownerCapability });
+    const child = await start("desktop", { SANREMES_DESKTOP_PARENT: "1", ...(dataDir ? { SANREMES_DATA_DIR: dataDir } : {}),
+      ...(broker && desktopInstallation ? { SANREMES_COMPOSIO_BROKER_URL: broker.url, SANREMES_COMPOSIO_BROKER_TOKEN: desktopInstallation.token } : {}) }, desktopPort, ["--import", parentPort], true, onePasswordToken, toolCalls, desktopEngine);
+    child.send({ type: "sanremes:desktop-mutation-token", token: ownerCapability });
     return child;
   };
   let desktop = await startDesktop();
   const cloudPort = await freePortBlock([0, 1]);
   const cloudBase = `http://127.0.0.1:${cloudPort}`;
-  const startCloud = (more: NodeJS.ProcessEnv = {}) => start("cloud", { OMB_CLOUD_ROLE: "home", OMB_CLOUD_MACHINE_ID: CLOUD_MACHINE_ID, OMB_CLOUD_ADMIN_URL: "https://cloud.example.test",
-    OMB_CLOUD_BOOTSTRAP_SECRET: secret, OMB_PUBLIC_URL: `https://${CLOUD_HOST}`, ...(broker ? { OMB_COMPOSIO_BROKER_URL: broker.url } : {}), ...cloudEnv, ...more }, cloudPort, [], false, cloudOnePasswordToken, 0, cloudEngine, cloudSignedIn);
+  const startCloud = (more: NodeJS.ProcessEnv = {}) => start("cloud", { SANREMES_CLOUD_ROLE: "home", SANREMES_CLOUD_MACHINE_ID: CLOUD_MACHINE_ID, SANREMES_CLOUD_ADMIN_URL: "https://cloud.example.test",
+    SANREMES_CLOUD_BOOTSTRAP_SECRET: secret, SANREMES_PUBLIC_URL: `https://${CLOUD_HOST}`, ...(broker ? { SANREMES_COMPOSIO_BROKER_URL: broker.url } : {}), ...cloudEnv, ...more }, cloudPort, [], false, cloudOnePasswordToken, 0, cloudEngine, cloudSignedIn);
   let cloud = await startCloud();
 
   const mintCode = async (label: string) => {
     const body = JSON.stringify({ label, ttlSeconds: 300 });
     const timestamp = String(Math.floor(Date.now() / 1000)), nonce = randomBytes(16).toString("base64url");
     const response = await fetch(`${cloudBase}/api/cloud/pairing`, { method: "POST", headers: { ...EDGE, "content-type": "application/json",
-      "x-omb-cloud-timestamp": timestamp, "x-omb-cloud-nonce": nonce, "x-omb-cloud-signature": `v1=${cloudPairingSignature(secret, timestamp, nonce, body)}` }, body });
+      "x-sanremes-cloud-timestamp": timestamp, "x-sanremes-cloud-nonce": nonce, "x-sanremes-cloud-signature": `v1=${cloudPairingSignature(secret, timestamp, nonce, body)}` }, body });
     // A Cloud that turns the request away says why, instead of handing main a code that is not there.
     if (!response.ok) throw new Error(`My Cloud gave no one-time code: HTTP ${response.status} ${await response.text()}`);
     return ((await response.json()) as { code: string }).code;
   };
   const pairOwner = async () => {
-    const paired = await fetch(`${cloudBase}/api/auth/pair`, { method: "POST", headers: { ...EDGE, "content-type": "application/json" }, body: JSON.stringify({ code: await mintCode("OpenMausBot app (Cloud)") }) });
+    const paired = await fetch(`${cloudBase}/api/auth/pair`, { method: "POST", headers: { ...EDGE, "content-type": "application/json" }, body: JSON.stringify({ code: await mintCode("SanRemes app (Cloud)") }) });
     return ((await paired.json()) as { token: string }).token;
   };
   let owner = await pairOwner();
   const signedRequest = async (base: string, method: string, path: string, body: string) => {
     const timestamp = String(Math.floor(Date.now() / 1000)), nonce = randomBytes(16).toString("base64url");
     const init: RequestInit = { method, headers: { ...EDGE, ...(body ? { "content-type": "application/json" } : {}),
-      "x-omb-cloud-timestamp": timestamp, "x-omb-cloud-nonce": nonce, "x-omb-cloud-signature": `v1=${cloudRequestSignature(secret, timestamp, nonce, method, path, body)}` } };
+      "x-sanremes-cloud-timestamp": timestamp, "x-sanremes-cloud-nonce": nonce, "x-sanremes-cloud-signature": `v1=${cloudRequestSignature(secret, timestamp, nonce, method, path, body)}` } };
     if (body) init.body = body;
     const response = await remember(await fetch(`${base}${path}`, init));
     return { status: response.status, body: parse(await response.text()) };
@@ -321,16 +321,16 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
     const stopOverIpc = process.platform === "win32";
     const stopOnMessage = `data:text/javascript,${encodeURIComponent('process.on("message", (message) => { if (message === "stop") process.emit("SIGTERM"); }); process.channel?.unref();')}`;
     if (team.noAi) {
-      mkdirSync(join(root, "team", ".openmausbot"), { recursive: true });
-      writeFileSync(join(root, "team", ".openmausbot", "config.json"), JSON.stringify({ instances: Object.fromEntries(["claude", "codex", "cursor", "githubCopilot", "openaiCompat", "qwen", "hermes", "pi", "grok"].map((id) => [id, { driver: "not-a-real-driver" }])) }));
+      mkdirSync(join(root, "team", ".sanremes"), { recursive: true });
+      writeFileSync(join(root, "team", ".sanremes", "config.json"), JSON.stringify({ instances: Object.fromEntries(["claude", "codex", "cursor", "githubCopilot", "openaiCompat", "qwen", "hermes", "pi", "grok"].map((id) => [id, { driver: "not-a-real-driver" }])) }));
     }
     for (const scope of team.native ?? []) {
       mkdirSync(join(root, "team", "native", "node_modules"), { recursive: true });
       symlinkSync(join(SERVER_DIR, "..", "node_modules", scope), join(root, "team", "native", "node_modules", scope), "junction");
     }
-    const startTeam = (more: NodeJS.ProcessEnv = {}) => start("team", { OMB_CLOUD_ROLE: "team", OMB_CLOUD_TEAM_ID: team.id, OMB_CLOUD_TEAM_NAME: team.name,
-      OMB_CLOUD_MACHINE_ID: TEAM_MACHINE_ID, OMB_CLOUD_ADMIN_URL: "https://cloud.example.test", OMB_CLOUD_BOOTSTRAP_SECRET: secret,
-      OMB_PUBLIC_URL: `https://${CLOUD_HOST}`, OMB_TEST_INTERNAL_CAPABILITY_KEY: CAPABILITY_KEY, ...(broker ? { OMB_COMPOSIO_BROKER_URL: broker.url } : {}), ...team.env, ...more },
+    const startTeam = (more: NodeJS.ProcessEnv = {}) => start("team", { SANREMES_CLOUD_ROLE: "team", SANREMES_CLOUD_TEAM_ID: team.id, SANREMES_CLOUD_TEAM_NAME: team.name,
+      SANREMES_CLOUD_MACHINE_ID: TEAM_MACHINE_ID, SANREMES_CLOUD_ADMIN_URL: "https://cloud.example.test", SANREMES_CLOUD_BOOTSTRAP_SECRET: secret,
+      SANREMES_PUBLIC_URL: `https://${CLOUD_HOST}`, SANREMES_TEST_INTERNAL_CAPABILITY_KEY: CAPABILITY_KEY, ...(broker ? { SANREMES_COMPOSIO_BROKER_URL: broker.url } : {}), ...team.env, ...more },
       teamPort, stopOverIpc ? ["--import", stopOnMessage] : [], stopOverIpc, onePasswordToken, 0, team.engine ?? "", true);
     let teamServer = await startTeam();
     const teamFetch = (path: string, init: RequestInit) => fetch(`${teamBase}${path}`, init).catch(async (error: unknown) => {
@@ -357,19 +357,19 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
     teamFixture = {
       base: teamBase, home: join(root, "team"), id: team.id, name: team.name, secret, machineId: TEAM_MACHINE_ID,
       async grant(member) {
-        const body = JSON.stringify({ label: "OpenMausBot app (Team Cloud)", ttlSeconds: 300, team: { id: team.id, name: team.name }, member });
+        const body = JSON.stringify({ label: "SanRemes app (Team Cloud)", ttlSeconds: 300, team: { id: team.id, name: team.name }, member });
         const timestamp = String(Math.floor(Date.now() / 1000)), nonce = randomBytes(16).toString("base64url");
         const minted = await fetch(`${teamBase}/api/cloud/pairing`, { method: "POST", headers: { ...EDGE, "content-type": "application/json",
-          "x-omb-cloud-timestamp": timestamp, "x-omb-cloud-nonce": nonce, "x-omb-cloud-signature": `v1=${cloudPairingSignature(secret, timestamp, nonce, body)}` }, body });
+          "x-sanremes-cloud-timestamp": timestamp, "x-sanremes-cloud-nonce": nonce, "x-sanremes-cloud-signature": `v1=${cloudPairingSignature(secret, timestamp, nonce, body)}` }, body });
         if (minted.status !== 200) throw Object.assign(new Error(`team pairing ${minted.status}`), { status: minted.status });
         return { origin: teamBase, code: ((await minted.json()) as { code: string }).code, expiresAt: Date.now() + 300_000 };
       },
       async pair(member, options = {}) {
         const claims = options.body ?? { team: { id: team.id, name: team.name }, ...(member ? { member } : {}) };
-        const body = JSON.stringify({ label: options.label ?? "OpenMausBot app (Team Cloud)", ttlSeconds: 300, ...claims });
+        const body = JSON.stringify({ label: options.label ?? "SanRemes app (Team Cloud)", ttlSeconds: 300, ...claims });
         const timestamp = String(Math.floor(Date.now() / 1000)), nonce = randomBytes(16).toString("base64url");
         const minted = await remember(await teamFetch("/api/cloud/pairing", { method: "POST", headers: { ...EDGE, "content-type": "application/json",
-          "x-omb-cloud-timestamp": timestamp, "x-omb-cloud-nonce": nonce, "x-omb-cloud-signature": `v1=${cloudPairingSignature(options.secret ?? secret, timestamp, nonce, body)}` }, body }));
+          "x-sanremes-cloud-timestamp": timestamp, "x-sanremes-cloud-nonce": nonce, "x-sanremes-cloud-signature": `v1=${cloudPairingSignature(options.secret ?? secret, timestamp, nonce, body)}` }, body }));
         const grant = parse(await minted.text());
         if (minted.status !== 200) return { status: minted.status, body: grant, token: null };
         const paired = await remember(await teamFetch("/api/auth/pair", { method: "POST", headers: { ...EDGE, "content-type": "application/json" }, body: JSON.stringify({ code: grant.code }) }));
@@ -385,7 +385,7 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
       signed: (method, path, body) => signedRequest(teamBase, method, path, body === undefined ? "" : JSON.stringify(body)),
       async capability(botId, threadId, kind) {
         // A loopback caller with the private key, as the harness mints one: never through the edge.
-        const minted = await fetch(`${teamBase}/api/testing/internal-capability`, { method: "POST", headers: { "content-type": "application/json", "x-openmausbot-test-capability": CAPABILITY_KEY }, body: JSON.stringify({ botId, threadId, ...(kind ? { kind } : {}) }) });
+        const minted = await fetch(`${teamBase}/api/testing/internal-capability`, { method: "POST", headers: { "content-type": "application/json", "x-sanremes-test-capability": CAPABILITY_KEY }, body: JSON.stringify({ botId, threadId, ...(kind ? { kind } : {}) }) });
         const answer = parse(await minted.text());
         if (minted.status !== 200 && minted.status !== 201) throw new Error(`no test capability: ${minted.status} ${JSON.stringify(answer)}`);
         return answer.token as string;
@@ -402,7 +402,7 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
 
   const local = async (method: string, path: string, body?: unknown) => {
     const response = await remember(await fetch(`${desktopBase}${path}`, { method, headers: {
-      "x-openmausbot-desktop-owner": ownerCapability, ...(body === undefined ? {} : { "content-type": "application/json" }) },
+      "x-sanremes-desktop-owner": ownerCapability, ...(body === undefined ? {} : { "content-type": "application/json" }) },
     body: body === undefined ? undefined : JSON.stringify(body) }));
     return { status: response.status, body: parse(await response.text()) };
   };
@@ -436,7 +436,7 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
     if (String(url).endsWith("/api/auth/pair") && typeof init.body === "string") {
       const { label } = JSON.parse(init.body) as { label: string };
       labels.push(label);
-      sessions.push({ label, background: (init.headers as Record<string, string>)["x-omb-background"] === "1" });
+      sessions.push({ label, background: (init.headers as Record<string, string>)["x-sanremes-background"] === "1" });
     }
     return remember(await fetch(url, { ...init, headers: { ...init.headers as Record<string, string>, ...EDGE, ...(bearer ? { authorization: `Bearer ${bearer}` } : {}) } }));
   };
@@ -444,8 +444,8 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
     ipcMain: { handle: (channel, handler) => { handlers.set(channel, handler); } },
     cloudPage: (event) => (event as { page?: "local" | "cloud" })?.page ?? null,
     server: () => port,
-    localRequest: async (route, init = {}) => remember(await fetch(`${desktopBase}${route}`, { ...init, headers: { ...init.headers as Record<string, string>, "x-openmausbot-desktop-owner": ownerCapability } })),
-    home: () => ({ origin: cloudBase, grant: async () => ({ origin: cloudBase, code: await mintCode("OpenMausBot app (Cloud)") }) }),
+    localRequest: async (route, init = {}) => remember(await fetch(`${desktopBase}${route}`, { ...init, headers: { ...init.headers as Record<string, string>, "x-sanremes-desktop-owner": ownerCapability } })),
+    home: () => ({ origin: cloudBase, grant: async () => ({ origin: cloudBase, code: await mintCode("SanRemes app (Cloud)") }) }),
     cookieFetch: throughEdge(owner) as typeof fetch,
     reconnect: async () => false,
     power: { asleep: () => false },
@@ -456,7 +456,7 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
     engineWaitMs: 2_000,
     patience: { stallMs: 0, waits: [0], blips: [] },
     ...(space ? { space } : {}),
-    account: () => ({ state: () => account.state, pairHome: async () => ({ origin: cloudBase, code: await mintCode("OpenMausBot app (Cloud)"), expiresAt: Date.now() + 300_000 }), exportHome: (options) => account.exportHome(options),
+    account: () => ({ state: () => account.state, pairHome: async () => ({ origin: cloudBase, code: await mintCode("SanRemes app (Cloud)"), expiresAt: Date.now() + 300_000 }), exportHome: (options) => account.exportHome(options),
       reportMove: async (options) => (account.reportMove ? account.reportMove(options) : false), reportKept: async (options) => (account.reportKept ? account.reportKept(options) : false),
       pairTeam: (teamId: string) => account.pairTeam(teamId) }),
     teamJournal: {
@@ -481,12 +481,12 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
   let main = wire();
   const asks = createLoginHandoffClient();
   const older = () => createCloudSend({
-    local: async (route, init) => remember(await fetch(`${desktopBase}${route}`, { method: init?.method ?? "GET", headers: { "x-openmausbot-desktop-owner": ownerCapability } })),
+    local: async (route, init) => remember(await fetch(`${desktopBase}${route}`, { method: init?.method ?? "GET", headers: { "x-sanremes-desktop-owner": ownerCapability } })),
     cloud: {
       origin: () => cloudBase,
       asleep: () => false,
       read: (route) => throughEdge(owner)(`${cloudBase}${route}`, { headers: { accept: "application/json", ...BACKGROUND_HEADERS } }),
-      open: () => openOwnerSession({ origin: cloudBase, grant: async () => ({ origin: cloudBase, code: await mintCode("OpenMausBot app (Cloud)") }) }, throughEdge(null) as typeof fetch),
+      open: () => openOwnerSession({ origin: cloudBase, grant: async () => ({ origin: cloudBase, code: await mintCode("SanRemes app (Cloud)") }) }, throughEdge(null) as typeof fetch),
     },
     handoff: (what) => asks.request(port, what as ConnectionAsk),
     store: {
@@ -500,13 +500,13 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
     const name = `desktop-${desks.length + 2}`, deskPort = await freePortBlock([0, 1]), base = `http://127.0.0.1:${deskPort}`;
     const capability = randomBytes(32).toString("base64url");
     const startIt = async () => {
-      const child = await start(name, { OMB_DESKTOP_PARENT: "1", OMB_ENVIRONMENT_LABEL: label }, deskPort, ["--import", parentPort], true, onePasswordToken, toolCalls, desktopEngine);
-      child.send({ type: "openmausbot:desktop-mutation-token", token: capability });
+      const child = await start(name, { SANREMES_DESKTOP_PARENT: "1", SANREMES_ENVIRONMENT_LABEL: label }, deskPort, ["--import", parentPort], true, onePasswordToken, toolCalls, desktopEngine);
+      child.send({ type: "sanremes:desktop-mutation-token", token: capability });
       return child;
     };
     let child = await startIt();
     const deskLocal: CloudSendDesk["local"] = async (method, path, body) => {
-      const response = await remember(await fetch(`${base}${path}`, { method, headers: { "x-openmausbot-desktop-owner": capability, ...(body === undefined ? {} : { "content-type": "application/json" }) },
+      const response = await remember(await fetch(`${base}${path}`, { method, headers: { "x-sanremes-desktop-owner": capability, ...(body === undefined ? {} : { "content-type": "application/json" }) },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }) }));
       return { status: response.status, body: parse(await response.text()) };
     };
@@ -523,8 +523,8 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
       ipcMain: { handle: () => {} },
       cloudPage: (event) => (event as { page?: "local" | "cloud" })?.page ?? null,
       server: () => ipc,
-      localRequest: async (route, init = {}) => remember(await fetch(`${base}${route}`, { ...init, headers: { ...init.headers as Record<string, string>, "x-openmausbot-desktop-owner": capability } })),
-      home: () => ({ origin: cloudBase, grant: async () => ({ origin: cloudBase, code: await mintCode("OpenMausBot app (Cloud)") }) }),
+      localRequest: async (route, init = {}) => remember(await fetch(`${base}${route}`, { ...init, headers: { ...init.headers as Record<string, string>, "x-sanremes-desktop-owner": capability } })),
+      home: () => ({ origin: cloudBase, grant: async () => ({ origin: cloudBase, code: await mintCode("SanRemes app (Cloud)") }) }),
       cookieFetch: throughOwner,
       reconnect: async () => false,
       power: { asleep: () => false },
@@ -534,7 +534,7 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
       fetch: throughEdge(null) as typeof fetch,
       engineWaitMs: 2_000,
       patience: { stallMs: 0, waits: [0], blips: [] },
-      account: () => ({ state: () => deskAccount.state, pairHome: async () => ({ origin: cloudBase, code: await mintCode("OpenMausBot app (Cloud)"), expiresAt: Date.now() + 300_000 }), exportHome: (options) => deskAccount.exportHome(options),
+      account: () => ({ state: () => deskAccount.state, pairHome: async () => ({ origin: cloudBase, code: await mintCode("SanRemes app (Cloud)"), expiresAt: Date.now() + 300_000 }), exportHome: (options) => deskAccount.exportHome(options),
         reportMove: async (options) => (deskAccount.reportMove ? deskAccount.reportMove(options) : false), reportKept: async (options) => (deskAccount.reportKept ? deskAccount.reportKept(options) : false),
         pairTeam: (teamId: string) => deskAccount.pairTeam(teamId) }),
       teamJournal: {
@@ -560,7 +560,7 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
     listenIt();
     desks.push({ close: () => deskMain.close() });
     return {
-      base, dataDir: join(root, name, ".openmausbot"), local: deskLocal, account: deskAccount, journalFile, spies,
+      base, dataDir: join(root, name, ".sanremes"), local: deskLocal, account: deskAccount, journalFile, spies,
       oneHome: { kick: () => deskMain.kick(), view: () => deskMain.view(), away: () => deskMain.away() },
       async relaunch({ kill = true } = {}) {
         deskMain.close();
@@ -590,7 +590,7 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
     get intercept() { return fixture.intercept; },
     set intercept(hook) { fixture.intercept = hook; },
     oneHome: { kick: () => main.kick(), view: () => main.view(), away: () => main.away() },
-    desktopDataDir: join(root, "desktop", ".openmausbot"),
+    desktopDataDir: join(root, "desktop", ".sanremes"),
     async relaunch({ kill = true, cloud: cloudMore, dataDir } = {}) {
       main.close();
       await waitForExit(desktop, { signal: kill ? "SIGKILL" : "SIGTERM" });
@@ -606,7 +606,7 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
     },
     handoff: (what) => asks.request(port, what as ConnectionAsk),
     async picture(bytes) {
-      const response = await fetch(`${desktopBase}/api/attachments`, { method: "POST", headers: { "x-openmausbot-desktop-owner": ownerCapability, "content-type": "image/png" }, body: bytes });
+      const response = await fetch(`${desktopBase}/api/attachments`, { method: "POST", headers: { "x-sanremes-desktop-owner": ownerCapability, "content-type": "image/png" }, body: bytes });
       return `/api/attachments/${((await response.json()) as { path: string }).path.split(/[\\/]/).pop()}`;
     },
     call: <T>(channel: string, page: "local" | "cloud", ...args: unknown[]) => Promise.resolve(handlers.get(channel)!({ page }, ...args)) as Promise<T>,

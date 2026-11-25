@@ -1,7 +1,7 @@
 #!/bin/sh
-# The Update server button's host side, for a Docker Compose install (the installer's /opt/openmausbot, or the deploy/
+# The Update server button's host side, for a Docker Compose install (the installer's /opt/sanremes, or the deploy/
 # folder of a git checkout). A server in a container cannot replace its own image, so it only leaves a file in a folder
-# it was given; systemd sees the file (openmausbot-update.path) and runs this, as root, outside every container. This
+# it was given; systemd sees the file (sanremes-update.path) and runs this, as root, outside every container. This
 # runs root's own copy of update.sh on the install, and writes how that ended where the server reads it.
 #
 #   sudo ./update-runner.sh --install     adds the button to this install, or refreshes it (run it again after git pull)
@@ -10,7 +10,7 @@
 # SECURITY: anything that runs as the server's user can leave the request, a bot included where the bots' sandbox is
 # off, so the requester is treated as hostile. The request is a file that exists, and nothing else: this script never
 # reads it, follows it or passes on anything from it. What any request can cause, at most once per stable image:
-#   - root's copy of update.sh, run with OMB_UPDATE_BY_RUNNER=1: the stable version, only when it is not older than the
+#   - root's copy of update.sh, run with SANREMES_UPDATE_BY_RUNNER=1: the stable version, only when it is not older than the
 #     running image's own label (never what the server says it runs), a copy of the data first, and the old version
 #     back when the new one is not healthy;
 #   - after a rollback, never that same stable image again on this server until a person runs update.sh or another
@@ -26,19 +26,19 @@ set -u
 # Every file and folder this makes has its mode set by the write; nothing is left to the caller's umask.
 umask 022
 
-SBIN_DIR=${OMB_SBIN_DIR:-/usr/local/sbin}
-SYSTEMD_DIR=${OMB_SYSTEMD_DIR:-/etc/systemd/system}
-STATE=${OMB_UPDATE_STATE_DIR:-/var/lib/openmausbot-update}
-POLICY=${OMB_UPDATE_POLICY:-/etc/mausbot/policy.json}
-GAP_S=${OMB_RUNNER_GAP_S:-240}
-QUIET_S=${OMB_RUNNER_QUIET_S:-30}
-IDLE_S=${OMB_RUNNER_IDLE_S:-300}
-UNIT=openmausbot-update
-RUNNER=openmausbot-update-runner
-INSTALLER_MARK="# Written by MausBot's installer (deploy/install.sh)"
+SBIN_DIR=${SANREMES_SBIN_DIR:-/usr/local/sbin}
+SYSTEMD_DIR=${SANREMES_SYSTEMD_DIR:-/etc/systemd/system}
+STATE=${SANREMES_UPDATE_STATE_DIR:-/var/lib/sanremes-update}
+POLICY=${SANREMES_UPDATE_POLICY:-/etc/sanremes/policy.json}
+GAP_S=${SANREMES_RUNNER_GAP_S:-240}
+QUIET_S=${SANREMES_RUNNER_QUIET_S:-30}
+IDLE_S=${SANREMES_RUNNER_IDLE_S:-300}
+UNIT=sanremes-update
+RUNNER=sanremes-update-runner
+INSTALLER_MARK="# Written by SanRemes's installer (deploy/install.sh)"
 OVERRIDE_MARK="# Written by update-runner.sh --install"
 # Where the server's container finds the two folders (SERVER_UPDATE_DIR in server/server-update.ts).
-IN_CONTAINER=/run/omb-update
+IN_CONTAINER=/run/sanremes-update
 REQUESTS="$STATE/request"
 STATUS="$STATE/status"
 UPDATER="$STATE/update.sh"
@@ -53,7 +53,7 @@ fail() {
   exit 1
 }
 
-DIR=${OMB_INSTALL_DIR:-}
+DIR=${SANREMES_INSTALL_DIR:-}
 MODE=run
 USER_IDS=""
 RESTART=yes
@@ -73,11 +73,11 @@ while [ $# -gt 0 ]; do
 done
 if [ -z "$DIR" ]; then
   DIR=$(cd "$(dirname "$0")" && pwd)
-  if [ ! -f "$DIR/compose.yaml" ] && [ ! -f "$DIR/docker-compose.yml" ] && [ -f /opt/openmausbot/compose.yaml ]; then DIR=/opt/openmausbot; fi
+  if [ ! -f "$DIR/compose.yaml" ] && [ ! -f "$DIR/docker-compose.yml" ] && [ -f /opt/sanremes/compose.yaml ]; then DIR=/opt/sanremes; fi
 fi
 case "$DIR" in
   /*) ;;
-  *) fail "--dir needs a full path, like /opt/openmausbot." ;;
+  *) fail "--dir needs a full path, like /opt/sanremes." ;;
 esac
 case "$DIR" in
   *[!A-Za-z0-9/._-]*) fail "The install's folder may hold only letters, digits, / . _ and -." ;;
@@ -103,7 +103,7 @@ state_value() { sed -n "s/^$2=//p" "$STATE/$1" 2>/dev/null | head -n 1; }
 number() { case "$1" in '' | *[!0-9]*) echo 0 ;; *) echo "$1" ;; esac; }
 held() { grep -Eq '"updates"[[:space:]]*:[[:space:]]*"hold"' "$POLICY" 2>/dev/null; }
 held_word() { if held; then echo yes; else echo no; fi; }
-server_container() { (cd "$DIR" && docker compose ps -aq omb) 2>/dev/null | head -n 1; }
+server_container() { (cd "$DIR" && docker compose ps -aq sanremes) 2>/dev/null | head -n 1; }
 # The server's container, and when it started: unchanged across a run, the run stopped nothing. A server that restarts by
 # itself during a run makes that run count as one that did.
 server_mark() {
@@ -223,7 +223,7 @@ run_requested() {
   if [ "$(released)" != yes ]; then done_with unreleased; return; fi
   if [ ! -f "$UPDATER" ] || [ ! -f "$DIR/update.sh" ] || [ -L "$DIR/update.sh" ]; then done_with no-updater; return; fi
   if ! same_updater; then done_with stale; return; fi
-  ask_target() { OMB_UPDATE_BY_RUNNER=1 bash "$UPDATER" --dir "$DIR" --print-target </dev/null 2>/dev/null; }
+  ask_target() { SANREMES_UPDATE_BY_RUNNER=1 bash "$UPDATER" --dir "$DIR" --print-target </dev/null 2>/dev/null; }
   target=""
   # Nothing to do a moment ago, on the same image: the same answer, without asking GitHub or the registry again; when the
   # server knows of a newer version, only GitHub is asked whether the stable image is still the same.
@@ -242,7 +242,7 @@ run_requested() {
   write_status last "run=$run" state=running "at=$now" "ran=$ran" "version=$version"
   before=$(server_mark)
   code=0
-  OMB_UPDATE_BY_RUNNER=1 bash "$UPDATER" --dir "$DIR" </dev/null || code=$?
+  SANREMES_UPDATE_BY_RUNNER=1 bash "$UPDATER" --dir "$DIR" </dev/null || code=$?
   if [ -z "$before" ] || [ "$before" != "$(server_mark)" ]; then ran=$now; fi
   rm -f "$IDLE"
   if [ "$code" = 0 ] && [ "$ran" != "$now" ]; then printf '%s\n' "image=$image" "at=$now" "target=${target% *}" "version=$version" | place "$IDLE" 600; fi
@@ -270,7 +270,7 @@ check_override() {
   file=$(override_file)
   [ ! -L "$file" ] || fail "$file is a link, so it was left alone."
   if [ -f "$file" ] && ! grep -qF "$OVERRIDE_MARK" "$file"; then
-    fail "$file is yours, so it was left alone. Add this to its omb service, then run this again:
+    fail "$file is yours, so it was left alone. Add this to its sanremes service, then run this again:
     volumes:
       - $REQUESTS:$IN_CONTAINER/request
       - $STATUS:$IN_CONTAINER/status:ro"
@@ -285,7 +285,7 @@ write_override() {
 $OVERRIDE_MARK: the Update server button's two folders, the request one the server writes to and the status one
 # it reads. update-runner.sh --remove takes this file away.
 services:
-  omb:
+  sanremes:
     volumes:
       - $REQUESTS:$IN_CONTAINER/request
       - $STATUS:$IN_CONTAINER/status:ro
@@ -294,7 +294,7 @@ OVERRIDE
 
 # The user and group that own the server's /data on the host, as numbers: the container runs as them.
 data_owner() {
-  cid=$( (cd "$DIR" && docker compose ps -aq omb) 2>/dev/null | head -n 1)
+  cid=$( (cd "$DIR" && docker compose ps -aq sanremes) 2>/dev/null | head -n 1)
   [ -n "$cid" ] || return 0
   source=$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/data"}}{{.Source}}{{end}}{{end}}' "$cid" 2>/dev/null)
   [ -n "$source" ] || return 0
@@ -339,13 +339,13 @@ install_button() {
   place "$SBIN_DIR/$RUNNER" 755 <"$0"
   # Root's own settings at the time of the install, never anything the server writes.
   extra=""
-  for name in OMB_STABLE_URL OMB_NEWEST_URL OMB_UPDATE_WAIT_S OMB_RUNNER_GAP_S OMB_RUNNER_QUIET_S OMB_RUNNER_IDLE_S; do
+  for name in SANREMES_STABLE_URL SANREMES_NEWEST_URL SANREMES_UPDATE_WAIT_S SANREMES_RUNNER_GAP_S SANREMES_RUNNER_QUIET_S SANREMES_RUNNER_IDLE_S; do
     value=$(printenv "$name" || true)
     case "$value" in '' | *[!A-Za-z0-9:/._-]*) ;; *) extra="$extra $name=$value" ;; esac
   done
   place "$SYSTEMD_DIR/$UNIT.path" 644 <<UNIT
 [Unit]
-Description=Runs MausBot's update.sh when the server asks (Settings, Update server)
+Description=Runs SanRemes's update.sh when the server asks (Settings, Update server)
 
 [Path]
 PathExists=$REQUESTS/request
@@ -357,11 +357,11 @@ WantedBy=multi-user.target
 UNIT
   place "$SYSTEMD_DIR/$UNIT.service" 644 <<UNIT
 [Unit]
-Description=MausBot's update.sh for $DIR, asked for from the app
+Description=SanRemes's update.sh for $DIR, asked for from the app
 
 [Service]
 Type=oneshot
-Environment=HOME=/root OMB_INSTALL_DIR=$DIR$extra
+Environment=HOME=/root SANREMES_INSTALL_DIR=$DIR$extra
 ExecStart=$SBIN_DIR/$RUNNER
 TimeoutStartSec=4h
 UNIT

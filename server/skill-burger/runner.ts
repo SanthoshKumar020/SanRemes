@@ -156,9 +156,9 @@ export function runArgs(workflow: Workflow, given: Record<string, unknown> = {})
   return out;
 }
 
-/** OMB_ARG_<NAME> for each arg, so a command reads its inputs without any text being spliced into it. */
+/** SANREMES_ARG_<NAME> for each arg, so a command reads its inputs without any text being spliced into it. */
 export function argEnv(args: Record<string, unknown>): Record<string, string> {
-  return Object.fromEntries(Object.entries(args).map(([name, value]) => [`OMB_ARG_${name.toUpperCase()}`, asText(value)]));
+  return Object.fromEntries(Object.entries(args).map(([name, value]) => [`SANREMES_ARG_${name.toUpperCase()}`, asText(value)]));
 }
 
 const clip = (text: string, max: number) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);

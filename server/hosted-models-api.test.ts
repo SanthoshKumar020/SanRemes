@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { launchVerificationServer, runControlOmb, verificationServerEnvironment, type VerificationServer } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb, verificationServerEnvironment, type VerificationServer } from "../scripts/control-sanremes.ts";
 import { removeTempDir, waitForExit } from "./testing/cleanup.ts";
 import { readRegistry, writeRegistry } from "./testing/registry.ts";
 
@@ -67,14 +67,14 @@ async function restart(grants: Grants) {
     env: {
       ...verificationServerEnvironment({}, owned.info.dataDir, Number(new URL(owned.info.url).port)),
       FAKE_CLAUDE_TEXT_DUMP: join(owned.info.dataDir, "fake-claude-helper-dump.json"),
-      OMB_ENTERPRISE_DIR: layer, OMB_LICENSE_KEY: "fixture-only",
-      OMB_ADMIN_URL: "https://admin.example.test", OMB_ADMIN_WORKSPACE: "fixture",
-      OMB_PUBLIC_URL: "https://fixture.example.test", OMB_ADMIN_MEMBERSHIP: "portal",
+      SANREMES_ENTERPRISE_DIR: layer, SANREMES_LICENSE_KEY: "fixture-only",
+      SANREMES_ADMIN_URL: "https://admin.example.test", SANREMES_ADMIN_WORKSPACE: "fixture",
+      SANREMES_PUBLIC_URL: "https://fixture.example.test", SANREMES_ADMIN_MEMBERSHIP: "portal",
       // This fixture drives the model policy over loopback; the hosted default (service trust) has its own test.
-      OMB_LOOPBACK_TRUST: "owner",
-      OMB_HOSTED_MODELS: JSON.stringify(grants), OMB_HOSTED_MODEL_TOKEN: TOKEN,
-      OMB_HOSTED_CLAUDE_CLI: join(ROOT, "server/testing/fake-claude-cli.ts"),
-      OMB_HOSTED_CODEX_CLI: join(ROOT, "server/testing/fake-codex-app-server.ts"),
+      SANREMES_LOOPBACK_TRUST: "owner",
+      SANREMES_HOSTED_MODELS: JSON.stringify(grants), SANREMES_HOSTED_MODEL_TOKEN: TOKEN,
+      SANREMES_HOSTED_CLAUDE_CLI: join(ROOT, "server/testing/fake-claude-cli.ts"),
+      SANREMES_HOSTED_CODEX_CLI: join(ROOT, "server/testing/fake-codex-app-server.ts"),
     },
     stdio: ["ignore", log, log],
   });
@@ -112,7 +112,7 @@ async function expectCatalog(grants: Grants) {
 }
 
 beforeAll(async () => {
-  layer = mkdtempSync(join(tmpdir(), "omb-hosted-model-layer-"));
+  layer = mkdtempSync(join(tmpdir(), "sanremes-hosted-model-layer-"));
   mkdirSync(join(layer, "server"));
   writeFileSync(join(layer, "server/index.ts"), `
     import { createWorkspaceAccess as create } from ${JSON.stringify(pathToFileURL(join(ROOT, "enterprise/server/workspace-access.ts")).href)};
@@ -137,8 +137,8 @@ beforeAll(async () => {
     expect((await api("POST", `/api/bots/${primary.id}/tasks`, { title })).status).toBe(201);
   }
   await create("Valid choice", { instanceId: "codex", model: INITIAL.openai[1], effort: "high" });
-  await create("Legacy OpenAI", { instanceId: "codex", model: `omb-managed-openai::${INITIAL.openai[1]}` });
-  await create("Legacy OpenRouter", { instanceId: "opencode", model: `omb-managed-openrouter/${INITIAL.openrouter[1]}` });
+  await create("Legacy OpenAI", { instanceId: "codex", model: `sanremes-managed-openai::${INITIAL.openai[1]}` });
+  await create("Legacy OpenRouter", { instanceId: "opencode", model: `sanremes-managed-openrouter/${INITIAL.openrouter[1]}` });
   for (const [name, metadata] of [["Raw OpenRouter variant", { variant: "high" }], ["Raw OpenRouter effort", { effort: "high" }]] as const) {
     const bot = await create(name, { instanceId: "opencode", model: INITIAL.openrouter[1], ...metadata });
     openRouterHistory[name] = (await api("GET", `/api/threads/${bot.threadId}/messages?limit=50`)).body;
@@ -160,7 +160,7 @@ beforeAll(async () => {
   stale.tasks.find((task) => task.threadId === primary.threadId)!.modelSelection = { instanceId: "claude", model: INITIAL.anthropic[1] };
   stale.tasks.find((task) => task.title === "Revoked OpenAI task")!.modelSelection = { instanceId: "codex", model: "gpt-retired" };
   stale.tasks.find((task) => task.title === "Keep valid selection")!.modelSelection = { instanceId: "codex", model: INITIAL.openai[1], effort: "high" };
-  stale.tasks.find((task) => task.title === "Legacy OpenRouter task")!.modelSelection = { instanceId: "opencode", model: `omb-managed-openrouter/${INITIAL.openrouter[1]}` };
+  stale.tasks.find((task) => task.title === "Legacy OpenRouter task")!.modelSelection = { instanceId: "opencode", model: `sanremes-managed-openrouter/${INITIAL.openrouter[1]}` };
   stale.tasks.find((task) => task.title === "Raw OpenRouter variant task")!.modelSelection = { instanceId: "opencode", model: INITIAL.openrouter[1], variant: "high" };
   stale.tasks.find((task) => task.title === "Raw OpenRouter effort task")!.modelSelection = { instanceId: "opencode", model: INITIAL.openrouter[1], effort: "high" };
   beforeTasks = structuredClone(stale.tasks);
@@ -192,7 +192,7 @@ describe("hosted model policy in the full runtime", () => {
     await expectCatalog(INITIAL);
     const health = await api("GET", "/api/health/hosted");
     expect(health.status).toBe(200);
-    expect(health.headers.get("x-omb-hosted-model-policy")).toBe("1");
+    expect(health.headers.get("x-sanremes-hosted-model-policy")).toBe("1");
     const current = await bots();
     const stale = current.find((bot) => bot.id === primary.id)!;
     expect(stale.modelSelection).toEqual({ instanceId: "claude", model: INITIAL.anthropic[0] });

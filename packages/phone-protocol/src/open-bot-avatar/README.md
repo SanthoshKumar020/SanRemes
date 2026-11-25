@@ -12,7 +12,7 @@ Vendored sources of [Open Bot Avatar](https://github.com/DominikScholz/open-bot-
 
 ## Our changes
 
-`render.ts` and `dom/paint.ts` carry our only code changes, each marked `MausBot:`:
+`render.ts` and `dom/paint.ts` carry our only code changes, each marked `SanRemes:`:
 
 - A smile under the eyes (`mouthMark`), drawn with the eyes in the canvas and SVG renderers. The CSS-3D
   `renderAvatarScene` path has no mouth; `mountAvatar` only falls back to it where canvas is missing

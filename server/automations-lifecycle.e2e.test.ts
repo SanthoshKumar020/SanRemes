@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, it } from "vitest";
 
-import { runControlOmb } from "../scripts/control-omb.ts";
+import { runControlOmb } from "../scripts/control-sanremes.ts";
 import { launchRestartableServer } from "./testing/restartable-server.ts";
 
 // Automations on a real server, through the calls the Automations page makes: switched off and back on, both kinds work

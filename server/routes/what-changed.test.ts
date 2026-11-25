@@ -12,7 +12,7 @@ import { __forgetLastComparisonForTests, compareInWorker } from "../text-changes
 import { PASS } from "./table.ts";
 import { conversationFileNames, createWhatChangedRoutes, WHAT_CHANGED_MESSAGES, WHAT_CHANGED_PATH, type WhatChangedDeps } from "./what-changed.ts";
 
-const home = mkdtempSync(join(tmpdir(), "omb-what-changed-"));
+const home = mkdtempSync(join(tmpdir(), "sanremes-what-changed-"));
 afterAll(() => rmSync(home, { recursive: true, force: true }));
 const dataDir = join(home, "data"), store = join(dataDir, "attachments"), work = join(home, "work");
 mkdirSync(store, { recursive: true });

@@ -5,7 +5,7 @@ import { activeLocale } from "./i18n";
 import { isMacPlatform } from "./keyboard-shortcuts";
 import { windowPrefChanged } from "./window-pref-changes";
 
-export const SEND_KEY_KEY = "omb-send-key";
+export const SEND_KEY_KEY = "sanremes-send-key";
 
 export { SEND_KEYS };
 export type SendKey = (typeof SEND_KEYS)[number];

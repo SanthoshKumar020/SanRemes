@@ -76,7 +76,7 @@ describe("which card is due", () => {
     const cards = [make("sponsor-one", { kind: "sponsor" }), make("product")];
     expect(pick(cards)).toBe("sponsor-one");
     expect(pick(cards, { sponsors: false })).toBe("product");
-    storage.set("omb.announcement.sponsor-day", new Date(NOW - 3 * DAY).toISOString().slice(0, 10));
+    storage.set("sanremes.announcement.sponsor-day", new Date(NOW - 3 * DAY).toISOString().slice(0, 10));
     expect(pick(cards), "a sponsor's card three days ago").toBe("product");
     storage.clear();
     expect(pick(cards, { seen: seen({ desktop: [sponsorDayKey("2026-11-29")] }) })).toBe("product");

@@ -10,7 +10,7 @@ import { rescueInstalledApps } from "./local-vm-profiles.ts";
 
 let root: string, copied: string, durable: string, target: LocalVmTarget;
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), "omb-app-compare-"));
+  root = await mkdtemp(join(tmpdir(), "sanremes-app-compare-"));
   copied = join(root, "old-apps");
   const workspaceDir = join(root, "workspace");
   durable = join(workspaceDir, ".desktop-apps", "local");

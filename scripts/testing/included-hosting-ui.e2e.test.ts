@@ -1,9 +1,9 @@
 // Apps on the hosting the Cloud plan includes, on the Published apps page of the real renderer against a launched
 // server. A loopback stand-in is the Admin's relay and serves what is published; a second one is Netlify, for a site on
 // the person's own account beside them. The bot publishes folders of its own through its tool's route; the page shows
-// the plan's count, each card's source, the preview beside the chat, an app MausBot took down, and Delete through the
+// the plan's count, each card's source, the preview beside the chat, an app SanRemes took down, and Delete through the
 // relay. Nothing here reaches the real Admin or Netlify. Needs the pinned agent-browser binary: runs when one resolves
-// (tools directory, OMB_AGENT_BROWSER_PATH or PATH) or OMB_UI_E2E=1 asks for the verified download; otherwise skipped.
+// (tools directory, SANREMES_AGENT_BROWSER_PATH or PATH) or SANREMES_UI_E2E=1 asks for the verified download; otherwise skipped.
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -18,21 +18,21 @@ import { startFakeAppHosting } from "../../server/testing/fake-app-hosting.ts";
 import { startFakeNetlify } from "../../server/testing/fake-netlify.ts";
 // @ts-expect-error the skill's helper is plain JavaScript with no types
 import { publish } from "../../skills/publish-to-netlify/deploy.mjs";
-import { runControlOmb } from "../control-omb.ts";
-import { agentBrowser, sessionEnv, UI_TOOLS_DIR, type UiHandle } from "./control-omb-ui.ts";
+import { runControlOmb } from "../control-sanremes.ts";
+import { agentBrowser, sessionEnv, UI_TOOLS_DIR, type UiHandle } from "./control-sanremes-ui.ts";
 import { fixtureApi } from "./preview-fixture.ts";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
-const forced = process.env.OMB_UI_E2E === "1";
+const forced = process.env.SANREMES_UI_E2E === "1";
 const enabled = forced || Boolean(resolveAgentBrowserBinary({ dataDir: UI_TOOLS_DIR, env: process.env }));
-if (!enabled) console.log("skipping included hosting ui e2e: no agent-browser binary resolves; set OMB_UI_E2E=1 to install the pinned release");
+if (!enabled) console.log("skipping included hosting ui e2e: no agent-browser binary resolves; set SANREMES_UI_E2E=1 to install the pinned release");
 const LAUNCH_TIMEOUT_MS = forced ? 600_000 : 180_000;
 const HOSTING_TOKEN = "omb_host_included_hosting_ui_token_0123456789abcdef";
 const NETLIFY_TOKEN = "nfp_included_hosting_ui_token_0123456789abcdef";
 const CAPABILITY_KEY = "included-hosting-ui-capability-key";
 
-const evidenceDir = process.env.OMB_UI_EVIDENCE_DIR ? resolve(ROOT, process.env.OMB_UI_EVIDENCE_DIR) : mkdtempSync(join(tmpdir(), "omb-ui-evidence-"));
-afterAll(async () => { if (!process.env.OMB_UI_EVIDENCE_DIR) await removeTempDir(evidenceDir); });
+const evidenceDir = process.env.SANREMES_UI_EVIDENCE_DIR ? resolve(ROOT, process.env.SANREMES_UI_EVIDENCE_DIR) : mkdtempSync(join(tmpdir(), "sanremes-ui-evidence-"));
+afterAll(async () => { if (!process.env.SANREMES_UI_EVIDENCE_DIR) await removeTempDir(evidenceDir); });
 
 const SITE = (name: string, color: string) => `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${name}</title><style>
 body{margin:0;font:16px/1.5 system-ui,sans-serif;background:${color};color:#1c1917}
@@ -40,7 +40,7 @@ header{padding:28px 32px;font-size:30px;font-weight:700}main{padding:0 32px}
 </style></head><body><header>${name}</header><main><p>Order before noon for same-day pickup.</p></main></body></html>`;
 
 async function launch(env: NodeJS.ProcessEnv): Promise<{ child: ReturnType<typeof spawn>; info: { ui: string; url: string; botId: string; dataDir: string; logPath: string } }> {
-  const child = spawn(process.execPath, ["--experimental-strip-types", join(ROOT, "scripts", "control-omb.ts"), "ui", "launch"], {
+  const child = spawn(process.execPath, ["--experimental-strip-types", join(ROOT, "scripts", "control-sanremes.ts"), "ui", "launch"], {
     cwd: ROOT, env, stdio: ["ignore", "pipe", "pipe"], detached: process.platform !== "win32",
   });
   let stdout = "", stderr = "";
@@ -69,12 +69,12 @@ async function until<T>(probe: () => Promise<T> | T, what: string, timeoutMs = 3
 }
 
 (enabled ? it : it.skip)("shows the plan's included apps with their count and source, previews one, marks a taken-down one and deletes through the relay", async () => {
-  const scratch = mkdtempSync(join(tmpdir(), "omb-included-hosting-"));
+  const scratch = mkdtempSync(join(tmpdir(), "sanremes-included-hosting-"));
   const tokenFile = join(scratch, "netlify-token");
   writeFileSync(tokenFile, NETLIFY_TOKEN);
   const hosting = await startFakeAppHosting(HOSTING_TOKEN, { apps: 3 }), netlify = await startFakeNetlify(NETLIFY_TOKEN);
-  const { child, info } = await launch({ ...process.env, OMB_CLOUD_HOSTING_URL: hosting.url, OMB_CLOUD_HOSTING_TOKEN: HOSTING_TOKEN, OMB_NETLIFY_API_URL: netlify.url,
-    OMB_TEST_INTERNAL_CAPABILITY_KEY: CAPABILITY_KEY });
+  const { child, info } = await launch({ ...process.env, SANREMES_CLOUD_HOSTING_URL: hosting.url, SANREMES_CLOUD_HOSTING_TOKEN: HOSTING_TOKEN, SANREMES_NETLIFY_API_URL: netlify.url,
+    SANREMES_TEST_INTERNAL_CAPABILITY_KEY: CAPABILITY_KEY });
   try {
     const api = fixtureApi(info.url, { headers: { origin: info.url } });
     const ui = (verb: string, ...args: string[]) => runControlOmb(["ui", verb, "--ui", info.ui, ...args]) as Promise<Record<string, any>>;
@@ -94,7 +94,7 @@ async function until<T>(probe: () => Promise<T> | T, what: string, timeoutMs = 3
     const buttons = (card: string) => evaluate(`[...document.querySelectorAll('${card} button')].map((one) => one.getAttribute("aria-label") ?? one.textContent.trim())`) as Promise<string[]>;
     mkdirSync(evidenceDir, { recursive: true });
     await viewport(1280, 860);
-    await evaluate(`localStorage.setItem("omb-advanced-mode", "1"); window.dispatchEvent(new StorageEvent("storage", { key: "omb-advanced-mode" })); true`);
+    await evaluate(`localStorage.setItem("sanremes-advanced-mode", "1"); window.dispatchEvent(new StorageEvent("storage", { key: "sanremes-advanced-mode" })); true`);
     await until(() => evaluate(`Boolean(document.querySelector('[data-sidebar-nav="published-apps"]'))`), "the Tools section's Published apps entry");
 
     // Nothing published yet: the page already says what the plan includes.
@@ -106,7 +106,7 @@ async function until<T>(probe: () => Promise<T> | T, what: string, timeoutMs = 3
     // The bot publishes two folders of its own through its tool's route: the server reads them and asks the relay.
     const bot = ((await api("GET", "/api/bots")).bots as Array<{ id: string; threadId: string }>).find((one) => one.id === info.botId)!;
     const { token: capability } = await fetch(`${info.url}/api/testing/internal-capability`, { method: "POST",
-      headers: { "content-type": "application/json", "x-openmausbot-test-capability": CAPABILITY_KEY }, body: JSON.stringify({ botId: bot.id, threadId: bot.threadId }) }).then((answer) => answer.json()) as { token: string };
+      headers: { "content-type": "application/json", "x-sanremes-test-capability": CAPABILITY_KEY }, body: JSON.stringify({ botId: bot.id, threadId: bot.threadId }) }).then((answer) => answer.json()) as { token: string };
     const workspace = join(info.dataDir, "workspaces", info.botId);
     const tool = async (input: Record<string, unknown>) => {
       const answer = await fetch(`${info.url}/api/internal/apps/publish`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${capability}` }, body: JSON.stringify(input) });
@@ -129,7 +129,7 @@ async function until<T>(probe: () => Promise<T> | T, what: string, timeoutMs = 3
 
     // One more site on the person's own Netlify account, published with the skill's helper.
     const rota = await publish(["--dir", join(workspace, "rota", "dist"), "--project", join(workspace, "rota"), "--token-file", tokenFile, "--title", "Staff rota", "--bot-name", "Pepper"],
-      { OMB_NETLIFY_API_URL: netlify.url, OMB_BOT_ID: info.botId }, { pollMs: 50, privateAfterMs: 200 });
+      { SANREMES_NETLIFY_API_URL: netlify.url, SANREMES_BOT_ID: info.botId }, { pollMs: 50, privateAfterMs: 200 });
     expect(rota, JSON.stringify(rota)).toMatchObject({ ok: true, state: "ready" });
 
     const listed = await until(async () => { const list = await api("GET", "/api/published-apps"); return list.apps.length === 3 ? list : null; }, "the three apps to be listed");
@@ -160,7 +160,7 @@ async function until<T>(probe: () => Promise<T> | T, what: string, timeoutMs = 3
     await shot("preview-desktop");
     await press('aside[data-app-preview] button[aria-label="Close preview"]');
 
-    // MausBot takes one down: it stays on the page, marked, with nothing to open, and still counts until it is deleted.
+    // SanRemes takes one down: it stays on the page, marked, with nothing to open, and still counts until it is deleted.
     hosting.takeDown(saleKey);
     await new Promise((done) => setTimeout(done, 2_100));
     await openPage();

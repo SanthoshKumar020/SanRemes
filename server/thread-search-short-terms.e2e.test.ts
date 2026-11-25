@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { expect, it } from "vitest";
 
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 
 it("filters thread titles and notes by short identifying terms through the real search route", async () => {
   const key = randomUUID();
-  const fixture = await launchVerificationServer({ ...process.env, OMB_TEST_INTERNAL_CAPABILITY_KEY: key });
+  const fixture = await launchVerificationServer({ ...process.env, SANREMES_TEST_INTERNAL_CAPABILITY_KEY: key });
   const api = async (path: string, method = "GET", body?: unknown, headers: Record<string, string> = {}) => {
     const response = await fetch(fixture.info.url + path, {
       method, headers: { "content-type": "application/json", origin: fixture.info.url, ...headers },
@@ -26,7 +26,7 @@ it("filters thread titles and notes by short identifying terms through the real 
     await api(`/api/bots/${bot.id}/memory/thread/${ids[1]}`, "PUT", { text: "Agreed clause 8" });
     const { token } = await api("/api/testing/internal-capability", "POST", {
       botId: bot.id, threadId: bot.activeTaskId, kind: "agents",
-    }, { "x-openmausbot-test-capability": key });
+    }, { "x-sanremes-test-capability": key });
     const search = (query: string) => api(`/api/internal/session-search?${new URLSearchParams({
       fromBotId: bot.id, fromThreadId: bot.activeTaskId, scope: "threads", q: query,
     })}`, "GET", undefined, { authorization: `Bearer ${token}` });

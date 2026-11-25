@@ -222,7 +222,7 @@ export function paintCanvas(surface: CanvasSurface, frame: AvatarFrame, size: nu
         ctx.drawImage(coat.canvas, coat.x, coat.y, coat.size, coat.size, coat.cx - radius, coat.cy - radius, 2 * radius, 2 * radius);
       }
     } else if (shape.kind === 'eye') {
-      // MausBot: the coat seats only the two eyes; our mouth stays a flat mark on top of it.
+      // SanRemes: the coat seats only the two eyes; our mouth stays a flat mark on top of it.
       if (coat && shape.key !== 'mouth') continue;
       ctx.fillStyle = ink;
       paintEye(ctx, shape.mark);

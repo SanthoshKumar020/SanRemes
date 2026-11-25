@@ -1,18 +1,18 @@
 // @everyone on the Team map, in a real page on the fake engine: the line goes to the Chief alone, a stop goes to every bot as
-// its own words, and with no Chief it goes to every bot as before. Screenshots go to OMB_EVERYONE_SHOTS when it is set.
+// its own words, and with no Chief it goes to every bot as before. Screenshots go to SANREMES_EVERYONE_SHOTS when it is set.
 import { spawn, type ChildProcess } from "node:child_process";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
 import { resolveAgentBrowserBinary } from "../../server/browser-engine.ts";
 import { waitForExit } from "../../server/testing/cleanup.ts";
-import { runControlOmb } from "../control-omb.ts";
-import { ENABLE_ADVANCED_UI, UI_TOOLS_DIR } from "./control-omb-ui.ts";
+import { runControlOmb } from "../control-sanremes.ts";
+import { ENABLE_ADVANCED_UI, UI_TOOLS_DIR } from "./control-sanremes-ui.ts";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const binary = resolveAgentBrowserBinary({ dataDir: UI_TOOLS_DIR, env: process.env });
-const enabled = Boolean(binary) || process.env.OMB_UI_E2E === "1";
-if (!enabled) console.log("skipping Team map @everyone UI: set OMB_UI_E2E=1 to install the pinned browser");
+const enabled = Boolean(binary) || process.env.SANREMES_UI_E2E === "1";
+if (!enabled) console.log("skipping Team map @everyone UI: set SANREMES_UI_E2E=1 to install the pinned browser");
 
 type Bot = { id: string; name: string; threadId: string; chiefOfStaff?: boolean; hidden?: boolean };
 
@@ -21,7 +21,7 @@ type Bot = { id: string; name: string; threadId: string; chiefOfStaff?: boolean;
   try {
     let stdout = "", stderr = "";
     let info: { ui: string; url: string };
-    child = spawn(process.execPath, ["--experimental-strip-types", join(ROOT, "scripts/control-omb.ts"), "ui", "launch"], {
+    child = spawn(process.execPath, ["--experimental-strip-types", join(ROOT, "scripts/control-sanremes.ts"), "ui", "launch"], {
       cwd: ROOT, env: process.env, stdio: ["ignore", "pipe", "pipe"],
     });
     child.stdout!.on("data", chunk => { stdout += String(chunk); });
@@ -41,7 +41,7 @@ type Bot = { id: string; name: string; threadId: string; chiefOfStaff?: boolean;
     const bots = async () => ((await call("GET", "/api/bots?messages=0")).bots as Bot[]).filter((bot) => !bot.hidden);
     const linesTo = async (bot: Bot) => ((await call("GET", `/api/threads/${bot.threadId}/messages`)).messages as Array<{ role: string; text?: string }>)
       .filter((message) => message.role === "user").map((message) => message.text ?? "");
-    const shot = async (name: string) => { if (process.env.OMB_EVERYONE_SHOTS) await ui("screenshot", "--out", join(process.env.OMB_EVERYONE_SHOTS, `${name}.png`)); };
+    const shot = async (name: string) => { if (process.env.SANREMES_EVERYONE_SHOTS) await ui("screenshot", "--out", join(process.env.SANREMES_EVERYONE_SHOTS, `${name}.png`)); };
     const press = (label: string) => evaluate(`(() => { const target = [...document.querySelectorAll('button, a, [role=menuitem]')].find(button => button.getAttribute('aria-label') === ${JSON.stringify(label)} || button.textContent.trim() === ${JSON.stringify(label)}); target?.click(); return Boolean(target); })()`);
     const pageText = () => evaluate("document.body.innerText") as Promise<string>;
 

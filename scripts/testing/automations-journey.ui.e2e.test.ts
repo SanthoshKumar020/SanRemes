@@ -1,6 +1,6 @@
 // Automations as a person uses them, end to end in the real app: the real server and its webhook receiver in a
 // temporary home, a scripted engine that obeys tool calls, the real renderer in headless Chrome. Every step leaves a
-// screenshot. Run with OMB_UI_E2E=1; OMB_AUTOMATIONS_JOURNEY_SHOTS=DIR keeps the screenshots there.
+// screenshot. Run with SANREMES_UI_E2E=1; SANREMES_AUTOMATIONS_JOURNEY_SHOTS=DIR keeps the screenshots there.
 import { type ChildProcess } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { createWriteStream, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
@@ -14,14 +14,14 @@ import { cloudHomeConfiguration, cloudPairingSignature } from "../../server/clou
 import { removeTempDir, waitForExit } from "../../server/testing/cleanup.ts";
 import { freePortBlock } from "../../server/testing/ports.ts";
 import { launchRestartableServer, type RestartableServer } from "../../server/testing/restartable-server.ts";
-import { runControlOmb } from "../control-omb.ts";
-import { agentBrowser, ensureUiBrowser, sessionEnv, type UiHandle } from "./control-omb-ui.ts";
+import { runControlOmb } from "../control-sanremes.ts";
+import { agentBrowser, ensureUiBrowser, sessionEnv, type UiHandle } from "./control-sanremes-ui.ts";
 import { mountPreview } from "./preview-fixture.ts";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
-const SHOTS = process.env.OMB_AUTOMATIONS_JOURNEY_SHOTS || join(ROOT, ".omb-scratch", "automations-journey");
+const SHOTS = process.env.SANREMES_AUTOMATIONS_JOURNEY_SHOTS || join(ROOT, ".sanremes-scratch", "automations-journey");
 const SHORT_TMP = process.platform === "win32" ? tmpdir() : "/tmp";
-const enabled = process.env.OMB_UI_E2E === "1";
+const enabled = process.env.SANREMES_UI_E2E === "1";
 
 const SCHEDULE = "Every day at 9 AM, Scout sends you a summary of your inbox";
 const EDITED = "Every day at 10:30 AM, Scout sends you a summary of your inbox and your calendar";
@@ -99,7 +99,7 @@ async function openApp(server: { url: string; port: number; dataDir: string; log
   mkdirSync(options.shots, { recursive: true });
   const tools = await ensureUiBrowser(process.env);
   const preview = await mountPreview({ info: { url: server.url } }, { entry: "/scripts/testing/threads-preview.tsx", route: "/__threads.html", title: "Automations journey", logLevel: "warn", proxyHeaders: options.proxyHeaders });
-  const handle: UiHandle = { url: server.url, previewUrl: preview.previewUrl, session: `omb-journey-${server.port}`, binary: tools.binary, home: server.dataDir, botId: Object.values(options.bots)[0]!, logPath: server.logPath, chrome: tools.chrome };
+  const handle: UiHandle = { url: server.url, previewUrl: preview.previewUrl, session: `sanremes-journey-${server.port}`, binary: tools.binary, home: server.dataDir, botId: Object.values(options.bots)[0]!, logPath: server.logPath, chrome: tools.chrome };
   const browserEnv = sessionEnv(handle);
   const browser = (...args: string[]) => agentBrowser(tools.binary, browserEnv, args, 120_000);
   await browser("set", "viewport", "1280", "800");
@@ -395,7 +395,7 @@ async function openApp(server: { url: string; port: number; dataDir: string; log
 
     // 10. Advanced mode, then a narrow window: nothing overflows, the panel and the calendar still work.
     await noOverflow("the list in Simple mode");
-    await evaluate(`localStorage.setItem("omb-advanced-mode", "1"); true`);
+    await evaluate(`localStorage.setItem("sanremes-advanced-mode", "1"); true`);
     await reload();
     await openAutomations();
     await expect.poll(() => rowStatus(EDITED)).toBe("working");
@@ -421,7 +421,7 @@ async function openApp(server: { url: string; port: number; dataDir: string; log
     expect(await evaluate(`[...document.querySelectorAll("[aria-pressed=true]")].map((button) => button.textContent.trim())`)).toContain("Day");
     await screenshot("narrow-calendar");
     await click("List");
-    await evaluate(`localStorage.setItem("omb-advanced-mode", "0"); true`);
+    await evaluate(`localStorage.setItem("sanremes-advanced-mode", "0"); true`);
     await reload();
     await openChat("Scout", MAIN);
     await evaluate(`${card(FORM)}.scrollIntoView({ block: "center" }); true`);
@@ -441,14 +441,14 @@ async function openApp(server: { url: string; port: number; dataDir: string; log
   }
 }, 900_000);
 
-const CLOUD_HOST = "omb-t-journey0123456.fly.dev";
+const CLOUD_HOST = "sanremes-t-journey0123456.fly.dev";
 const OUTSIDE_WHY = "A webhook's run made or changed this routine, so it runs without full access. Open it and save it once to run it with full access.";
 
 /** A Cloud home as its image starts it (cloud-home-start's own environment and secrets pipe), with a fake public origin,
  * no network beyond loopback, the scripted engine, and the owner's paired device. */
 async function launchCloudHome() {
-  const home = mkdtempSync(join(SHORT_TMP, "omb-cloud-journey-"));
-  const dataDir = join(home, ".openmausbot");
+  const home = mkdtempSync(join(SHORT_TMP, "sanremes-cloud-journey-"));
+  const dataDir = join(home, ".sanremes");
   mkdirSync(join(home, "tmp"), { recursive: true });
   mkdirSync(dataDir, { recursive: true });
   const planPath = join(home, "room-plan.json");
@@ -467,13 +467,13 @@ await import(${JSON.stringify(pathToFileURL(join(ROOT, "server", "testing", "fak
   const port = await freePortBlock([0, 1]);
   const secret = randomBytes(32).toString("base64url");
   const offered: NodeJS.ProcessEnv = {
-    OMB_CLOUD_ROLE: "home", OMB_CLOUD_MACHINE_ID: "7a1c2e4f-9b3d-4c6e-8a7f-1d5e8c2b0a94", OMB_CLOUD_ADMIN_URL: "https://cloud.example.test",
-    OMB_PUBLIC_URL: `https://${CLOUD_HOST}`, OMB_CLOUD_BOOTSTRAP_SECRET: secret, OMB_DATA_DIR: dataDir, PATH: dirname(process.execPath),
+    SANREMES_CLOUD_ROLE: "home", SANREMES_CLOUD_MACHINE_ID: "7a1c2e4f-9b3d-4c6e-8a7f-1d5e8c2b0a94", SANREMES_CLOUD_ADMIN_URL: "https://cloud.example.test",
+    SANREMES_PUBLIC_URL: `https://${CLOUD_HOST}`, SANREMES_CLOUD_BOOTSTRAP_SECRET: secret, SANREMES_DATA_DIR: dataDir, PATH: dirname(process.execPath),
   };
   const { server: serverEnv, secrets } = cloudHomeChildEnvironments(cloudHomeConfiguration(offered)!, offered, home);
-  const env = { ...serverEnv, OMB_PORT: String(port), OMB_WEBHOOK_PORT: String(port + 1), OMB_TEST_SEALED_PATH: "1", TMPDIR: join(home, "tmp") };
+  const env = { ...serverEnv, SANREMES_PORT: String(port), SANREMES_WEBHOOK_PORT: String(port + 1), SANREMES_TEST_SEALED_PATH: "1", TMPDIR: join(home, "tmp") };
   const offline = `data:text/javascript,${encodeURIComponent('const real = globalThis.fetch; globalThis.fetch = async (url, init) => String(url).startsWith("http://127.0.0.1:") ? real(url, init) : new Response("offline fixture", { status: 503 });')}`;
-  const evidenceDir = join(tmpdir(), "openmausbot-verification-evidence");
+  const evidenceDir = join(tmpdir(), "sanremes-verification-evidence");
   mkdirSync(evidenceDir, { recursive: true });
   const logPath = join(evidenceDir, `cloud-journey-${Date.now()}-${process.pid}.log`);
   const log = createWriteStream(logPath);
@@ -489,10 +489,10 @@ await import(${JSON.stringify(pathToFileURL(join(ROOT, "server", "testing", "fak
     await new Promise((resolve) => setTimeout(resolve, 150));
   }
   const edge = { host: CLOUD_HOST, "x-forwarded-for": "203.0.113.9", "x-forwarded-proto": "https" };
-  const body = JSON.stringify({ label: "OpenMausBot app (Cloud)", ttlSeconds: 300 });
+  const body = JSON.stringify({ label: "SanRemes app (Cloud)", ttlSeconds: 300 });
   const timestamp = String(Math.floor(Date.now() / 1000)), nonce = randomBytes(16).toString("base64url");
   const granted = await (await fetch(`${url}/api/cloud/pairing`, { method: "POST", headers: { ...edge, "content-type": "application/json",
-    "x-omb-cloud-timestamp": timestamp, "x-omb-cloud-nonce": nonce, "x-omb-cloud-signature": `v1=${cloudPairingSignature(secret, timestamp, nonce, body)}` }, body })).json() as { code: string };
+    "x-sanremes-cloud-timestamp": timestamp, "x-sanremes-cloud-nonce": nonce, "x-sanremes-cloud-signature": `v1=${cloudPairingSignature(secret, timestamp, nonce, body)}` }, body })).json() as { code: string };
   const paired = await (await fetch(`${url}/api/auth/pair`, { method: "POST", headers: { ...edge, origin: `https://${CLOUD_HOST}`, "content-type": "application/json" }, body: JSON.stringify({ code: granted.code }) })).json() as { token: string };
   const owner = { ...edge, origin: `https://${CLOUD_HOST}`, authorization: `Bearer ${paired.token}` };
   return {
@@ -555,7 +555,7 @@ await import(${JSON.stringify(pathToFileURL(join(ROOT, "server", "testing", "fak
     await expect.poll(() => rowText(FORM), { timeout: 30_000 }).toMatch(/Working · last ran today/);
     await evaluate(`${"[...document.querySelectorAll('[data-automation]')]"}.find((item) => item.innerText.includes(${JSON.stringify(FORM)})).querySelector("button").click(); true`);
     await expect.poll(panel).toContain("Copy address");
-    expect(await panel()).not.toContain("Keep OpenMausBot open");
+    expect(await panel()).not.toContain("Keep SanRemes open");
     await evaluate(`document.querySelector('aside[aria-label="Automation"] details summary').click(); true`);
     await expect.poll(() => evaluate(`[...document.querySelectorAll('aside[aria-label="Automation"] [data-call]')].map((item) => item.innerText.replace(/\\n/g, " "))`))
       .toEqual([expect.stringMatching(/✗ Wrong secret$/), expect.stringMatching(/✓ Received$/)]);

@@ -8,7 +8,7 @@ import { buildOTPEmail, sendOTPEmail } from "../src/email";
 import worker from "../src/index";
 import { sha256 } from "../src/installations";
 
-const BASE_URL = "https://auth.openmausbot.test";
+const BASE_URL = "https://auth.sanremes.test";
 
 interface CallOptions {
   method?: string;
@@ -233,7 +233,7 @@ describe("control-plane migrations and health", () => {
           (installation_id, hostname, tunnel_name, tunnel_id, dns_record_id, status,
            last_reconciled_at, created_at, updated_at)
          VALUES ('before-0007', ?, ?, '10000000-0000-4000-8000-000000000001', 'dns-1', 'ready', 5, 1, 5)`,
-      ).bind(`c-${"a".repeat(32)}.openmausbot.com`, `omb-c-${"a".repeat(32)}`),
+      ).bind(`c-${"a".repeat(32)}.openmausbot.com`, `sanremes-c-${"a".repeat(32)}`),
       db.prepare(
         `UPDATE managed_endpoint_capacity
             SET scan_page = 7, tunnel_count = 1000, dns_record_count = 990, reclaim_pending = 3,
@@ -256,14 +256,14 @@ describe("control-plane migrations and health", () => {
     await db.prepare(
       `INSERT INTO installation_endpoints (installation_id, hostname, tunnel_name, status, created_at, updated_at)
        VALUES ('older-worker', ?, ?, 'pending', 1, 1)`,
-    ).bind(`c-${"b".repeat(32)}.openmausbot.com`, `omb-c-${"b".repeat(32)}`).run();
+    ).bind(`c-${"b".repeat(32)}.openmausbot.com`, `sanremes-c-${"b".repeat(32)}`).run();
     expect(await db.prepare(
       "SELECT provider_account FROM installation_endpoints WHERE installation_id = 'older-worker'",
     ).first()).toEqual({ provider_account: env.CLOUDFLARE_ACCOUNT_ID });
     await expect(db.prepare(
       `INSERT INTO installation_endpoints
         (installation_id, provider_account, hostname, tunnel_name, status, created_at, updated_at)
-       VALUES ('bad-account', 'short', 'c-x.example', 'omb-c-x', 'pending', 1, 1)`,
+       VALUES ('bad-account', 'short', 'c-x.example', 'sanremes-c-x', 'pending', 1, 1)`,
     ).run()).rejects.toThrow(/CHECK/);
     expect(await db.prepare("SELECT * FROM managed_endpoint_account_capacity").all().then((rows) => rows.results))
       .toEqual([{
@@ -285,7 +285,7 @@ describe("control-plane migrations and health", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
       ok: true,
-      service: "openmausbot-control-plane",
+      service: "sanremes-control-plane",
       capacity: {
         status: "unknown",
         checkedAt: null,
@@ -346,11 +346,11 @@ describe("control-plane migrations and health", () => {
   it("validates capacity tuning variables and keeps safe defaults when they are absent", () => {
     const base = { ...env } as Record<string, unknown>;
     for (const name of [
-      "OMB_TUNNEL_LIMIT",
-      "OMB_DNS_RECORD_LIMIT",
-      "OMB_TUNNEL_RECLAIM",
-      "OMB_TUNNEL_OFFLINE_RECLAIM_DAYS",
-      "OMB_CLEANUP_SWEEP_LIMIT",
+      "SANREMES_TUNNEL_LIMIT",
+      "SANREMES_DNS_RECORD_LIMIT",
+      "SANREMES_TUNNEL_RECLAIM",
+      "SANREMES_TUNNEL_OFFLINE_RECLAIM_DAYS",
+      "SANREMES_CLEANUP_SWEEP_LIMIT",
     ]) {
       Reflect.deleteProperty(base, name);
     }
@@ -364,27 +364,27 @@ describe("control-plane migrations and health", () => {
     });
     const withVars = (vars: Record<string, string>) => ({ ...base, ...vars }) as unknown as Env;
     expect(readConfig(withVars({
-      OMB_TUNNEL_LIMIT: "2500",
-      OMB_TUNNEL_RECLAIM: "observe",
-      OMB_TUNNEL_OFFLINE_RECLAIM_DAYS: "30",
-      OMB_CLEANUP_SWEEP_LIMIT: "4",
+      SANREMES_TUNNEL_LIMIT: "2500",
+      SANREMES_TUNNEL_RECLAIM: "observe",
+      SANREMES_TUNNEL_OFFLINE_RECLAIM_DAYS: "30",
+      SANREMES_CLEANUP_SWEEP_LIMIT: "4",
     })).capacity).toMatchObject({
       cleanupSweepLimit: 4,
       offlineReclaimMs: 30 * 24 * 60 * 60 * 1_000,
       reclaimMode: "observe",
       tunnelLimit: 2500,
     });
-    expect(readConfig(withVars({ OMB_TUNNEL_OFFLINE_RECLAIM_DAYS: "0" })).capacity.offlineReclaimMs).toBe(21 * 24 * 60 * 60 * 1_000);
-    expect(readConfig(withVars({ OMB_TUNNEL_OFFLINE_RECLAIM_DAYS: "1" })).capacity.offlineReclaimMs).toBe(24 * 60 * 60 * 1_000);
-    expect(readConfig(withVars({ OMB_TUNNEL_RECLAIM_PREVIEW_DAYS: "1" })).capacity.reclaimPreviewMs).toBe(24 * 60 * 60 * 1_000);
+    expect(readConfig(withVars({ SANREMES_TUNNEL_OFFLINE_RECLAIM_DAYS: "0" })).capacity.offlineReclaimMs).toBe(21 * 24 * 60 * 60 * 1_000);
+    expect(readConfig(withVars({ SANREMES_TUNNEL_OFFLINE_RECLAIM_DAYS: "1" })).capacity.offlineReclaimMs).toBe(24 * 60 * 60 * 1_000);
+    expect(readConfig(withVars({ SANREMES_TUNNEL_RECLAIM_PREVIEW_DAYS: "1" })).capacity.reclaimPreviewMs).toBe(24 * 60 * 60 * 1_000);
     for (const invalid of ["", "0", "366", "soon"]) {
-      expect(readConfig(withVars({ OMB_TUNNEL_RECLAIM_PREVIEW_DAYS: invalid })).capacity.reclaimPreviewMs).toBeNull();
+      expect(readConfig(withVars({ SANREMES_TUNNEL_RECLAIM_PREVIEW_DAYS: invalid })).capacity.reclaimPreviewMs).toBeNull();
     }
-    expect(readConfig(withVars({ OMB_TUNNEL_OFFLINE_RECLAIM_DAYS: "3" })).capacity.offlineReclaimMs).toBe(3 * 24 * 60 * 60 * 1_000);
-    expect(readConfig(withVars({ OMB_CLEANUP_SWEEP_LIMIT: "51" })).capacity.cleanupSweepLimit).toBe(20);
-    expect(readConfig(withVars({ OMB_TUNNEL_LIMIT: "1e3" })).capacity.tunnelLimit).toBe(1000);
-    expect(readConfig(withVars({ OMB_TUNNEL_RECLAIM: "yes" })).capacity.reclaimMode).toBe("observe");
-    expect(readConfig(withVars({ OMB_TUNNEL_RECLAIM: "on" })).capacity.reclaimMode).toBe("on");
+    expect(readConfig(withVars({ SANREMES_TUNNEL_OFFLINE_RECLAIM_DAYS: "3" })).capacity.offlineReclaimMs).toBe(3 * 24 * 60 * 60 * 1_000);
+    expect(readConfig(withVars({ SANREMES_CLEANUP_SWEEP_LIMIT: "51" })).capacity.cleanupSweepLimit).toBe(20);
+    expect(readConfig(withVars({ SANREMES_TUNNEL_LIMIT: "1e3" })).capacity.tunnelLimit).toBe(1000);
+    expect(readConfig(withVars({ SANREMES_TUNNEL_RECLAIM: "yes" })).capacity.reclaimMode).toBe("observe");
+    expect(readConfig(withVars({ SANREMES_TUNNEL_RECLAIM: "on" })).capacity.reclaimMode).toBe("on");
   });
 
   it("reports an unhealthy deployment without exposing invalid configuration", async () => {
@@ -399,13 +399,13 @@ describe("control-plane migrations and health", () => {
       COMPANION_HOST_SUFFIX: env.COMPANION_HOST_SUFFIX,
       CLOUDFLARE_API_TOKEN: env.CLOUDFLARE_API_TOKEN,
       CLOUDFLARE_ENDPOINT_ACCOUNTS: env.CLOUDFLARE_ENDPOINT_ACCOUNTS,
-      CLOUDFLARE_API_TOKEN_MAUSBOT_SI: env.CLOUDFLARE_API_TOKEN_MAUSBOT_SI,
-      OMB_TUNNEL_LIMIT: env.OMB_TUNNEL_LIMIT,
-      OMB_DNS_RECORD_LIMIT: env.OMB_DNS_RECORD_LIMIT,
-      OMB_TUNNEL_RECLAIM: env.OMB_TUNNEL_RECLAIM,
-      OMB_TUNNEL_OFFLINE_RECLAIM_DAYS: env.OMB_TUNNEL_OFFLINE_RECLAIM_DAYS,
-      OMB_CLEANUP_SWEEP_LIMIT: env.OMB_CLEANUP_SWEEP_LIMIT,
-      OMB_TUNNEL_RECLAIM_PREVIEW_DAYS: env.OMB_TUNNEL_RECLAIM_PREVIEW_DAYS,
+      CLOUDFLARE_API_TOKEN_SANREMES_SI: env.CLOUDFLARE_API_TOKEN_SANREMES_SI,
+      SANREMES_TUNNEL_LIMIT: env.SANREMES_TUNNEL_LIMIT,
+      SANREMES_DNS_RECORD_LIMIT: env.SANREMES_DNS_RECORD_LIMIT,
+      SANREMES_TUNNEL_RECLAIM: env.SANREMES_TUNNEL_RECLAIM,
+      SANREMES_TUNNEL_OFFLINE_RECLAIM_DAYS: env.SANREMES_TUNNEL_OFFLINE_RECLAIM_DAYS,
+      SANREMES_CLEANUP_SWEEP_LIMIT: env.SANREMES_CLEANUP_SWEEP_LIMIT,
+      SANREMES_TUNNEL_RECLAIM_PREVIEW_DAYS: env.SANREMES_TUNNEL_RECLAIM_PREVIEW_DAYS,
       RELAY_TUNNEL_RELEASE_PERCENT: env.RELAY_TUNNEL_RELEASE_PERCENT,
       RELAY_TUNNEL_RELEASE_DAYS: env.RELAY_TUNNEL_RELEASE_DAYS,
       TUNNEL_LEGACY_PHONE_CUTOFF_PERCENT: env.TUNNEL_LEGACY_PHONE_CUTOFF_PERCENT,
@@ -1013,20 +1013,20 @@ describe("HTTP boundary hardening", () => {
     blocked.headers.forEach((value, name) => { serializedHeaders += `${name}: ${value}\n`; });
     expect(serializedHeaders).not.toContain("*");
 
-    const allowed = await call("/v1/me", { origin: "https://app.openmausbot.test" });
+    const allowed = await call("/v1/me", { origin: "https://app.sanremes.test" });
     expect(allowed.status).toBe(401);
-    expect(allowed.headers.get("access-control-allow-origin")).toBe("https://app.openmausbot.test");
+    expect(allowed.headers.get("access-control-allow-origin")).toBe("https://app.sanremes.test");
     expect(allowed.headers.get("cache-control")).toBe("no-store");
 
     const deniedPreflight = await call("/v1/installations", {
       method: "OPTIONS",
-      origin: "https://app.openmausbot.test",
+      origin: "https://app.sanremes.test",
       headers: {
         "access-control-request-method": "POST",
         "access-control-request-headers": "authorization, x-unexpected",
       },
     });
     expect(deniedPreflight.status).toBe(403);
-    expect(deniedPreflight.headers.get("access-control-allow-origin")).toBe("https://app.openmausbot.test");
+    expect(deniedPreflight.headers.get("access-control-allow-origin")).toBe("https://app.sanremes.test");
   });
 });

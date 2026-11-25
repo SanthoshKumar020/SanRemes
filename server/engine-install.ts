@@ -46,7 +46,7 @@ export function npmCopyVersion(pkg: string, baseDir = DATA_DIR): string | null {
 }
 
 /** Called once at boot: engines npm installed here win over any other copy on PATH, except a Cloud image's own copies
- * with OMB_IMAGE_ENGINES=1 (image-engines.ts). A standalone build the app installed goes last instead, so a copy the
+ * with SANREMES_IMAGE_ENGINES=1 (image-engines.ts). A standalone build the app installed goes last instead, so a copy the
  * person installs themselves takes over. */
 export function registerEnginesBinDir(baseDir = DATA_DIR, releases: readonly StandaloneRelease[] = STANDALONE_RELEASES): void {
   registerPathDir(enginesBinDir(baseDir));
@@ -236,7 +236,7 @@ export function runNpm(args: string[], env: NodeJS.ProcessEnv, cwd: string, time
     try {
       child = spawnCli("npm", args, { env, cwd, stdio: ["pipe", "pipe", "pipe"] });
     } catch {
-      rejectRun(new Error("npm could not start on this server. Install Node.js with npm for the user running OpenMausBot, then try again."));
+      rejectRun(new Error("npm could not start on this server. Install Node.js with npm for the user running SanRemes, then try again."));
       return;
     }
     child.stdin.end();
@@ -260,8 +260,8 @@ export function runNpm(args: string[], env: NodeJS.ProcessEnv, cwd: string, time
       if (timedOut) return;
       clearTimeout(timer);
       rejectRun(new Error(error.code === "ENOENT"
-        ? "npm is not installed on this server. Install Node.js with npm for the user running OpenMausBot, then try again."
-        : "npm could not start on this server. Check that Node.js is installed for the user running OpenMausBot."));
+        ? "npm is not installed on this server. Install Node.js with npm for the user running SanRemes, then try again."
+        : "npm could not start on this server. Check that Node.js is installed for the user running SanRemes."));
     });
     child.once("close", (code) => {
       clearTimeout(timer);

@@ -1,4 +1,4 @@
-// Slack for Clouds, the Cloud's side (docs/team-slack.md). One MausBot Slack app is installed per company or person;
+// Slack for Clouds, the Cloud's side (docs/team-slack.md). One SanRemes Slack app is installed per company or person;
 // Slack's events arrive at the Admin, which hands each message to the Cloud with a session it opened for the member who
 // wrote it (on a personal Cloud, for its owner), so here the message is that person's own request. This module holds
 // the contract's wire shapes, the record of the messages taken (the idempotency key and what the Admin has been told)
@@ -12,7 +12,7 @@ import { z } from "zod";
 
 import { writeFileAtomic } from "./atomic.ts";
 
-/** On the Admin; must match openmaus-cloud's TEAM_SLACK_REPORT_PATH. */
+/** On the Admin; must match sanremes-cloud's TEAM_SLACK_REPORT_PATH. */
 export const TEAM_SLACK_REPORT_PATH = "/api/cloud/machines/slack";
 export const TEAM_SLACK_FILE = "team-slack-messages.json";
 /** The Admin's own limit on a final answer. */
@@ -21,10 +21,10 @@ export const TEAM_SLACK_RUNNING_EVERY_MS = 10 * 60_000;
 const MAX_MESSAGES = 2_000, KEEP_FINISHED_MS = 7 * 24 * 3_600_000, KEEP_ANY_MS = 30 * 24 * 3_600_000;
 const FETCH_TIMEOUT_MS = 15_000, ANSWER_MAX_BYTES = 16 * 1024;
 
-/** Must match openmaus-cloud's teamSlackSignature: a context of its own, so no other signed request reads as a report. */
+/** Must match sanremes-cloud's teamSlackSignature: a context of its own, so no other signed request reads as a report. */
 export function teamSlackSignature(secret: string, machineId: string, timestamp: string, nonce: string, body: string): string {
   const bodyHash = createHash("sha256").update(body).digest("base64url");
-  return createHmac("sha256", secret).update(`omb-team-slack-v1\n${machineId}\n${timestamp}\n${nonce}\n${bodyHash}`).digest("base64url");
+  return createHmac("sha256", secret).update(`sanremes-team-slack-v1\n${machineId}\n${timestamp}\n${nonce}\n${bodyHash}`).digest("base64url");
 }
 
 const slackId = z.string().regex(/^[A-Z0-9]{1,32}$/), slackTs = z.string().regex(/^\d{1,12}\.\d{1,9}$/);
@@ -161,8 +161,8 @@ export function createTeamSlackReporter(options: { machineId: string; adminOrigi
     let response: Response;
     try {
       response = await fetcher(`${options.adminOrigin}${TEAM_SLACK_REPORT_PATH}`, { method: "POST", redirect: "error", cache: "no-store", body, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), headers: {
-        accept: "application/json", "content-type": "application/json", "x-omb-cloud-machine": options.machineId, "x-omb-cloud-timestamp": timestamp, "x-omb-cloud-nonce": nonce,
-        "x-omb-cloud-signature": `v1=${teamSlackSignature(options.secret, options.machineId, timestamp, nonce, body)}`,
+        accept: "application/json", "content-type": "application/json", "x-sanremes-cloud-machine": options.machineId, "x-sanremes-cloud-timestamp": timestamp, "x-sanremes-cloud-nonce": nonce,
+        "x-sanremes-cloud-signature": `v1=${teamSlackSignature(options.secret, options.machineId, timestamp, nonce, body)}`,
       } });
     } catch (error) {
       log(`the Admin can't be reached for a Slack report (${error instanceof Error ? error.name : "error"})`);

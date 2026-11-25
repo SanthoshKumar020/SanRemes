@@ -20,7 +20,7 @@ afterEach(() => {
 
 /** A cloud bot's routine whose computer answers each wake from `wakes`, in order: a reason it did not start, or null. */
 function harness(wakes: Array<string | null | "hang">, everyMinutes = 60, schedule?: RoutineScheduleInput) {
-  const dir = mkdtempSync(join(tmpdir(), "omb-wake-retry-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-wake-retry-"));
   dirs.push(dir);
   const world = { at: START, started: [] as string[], prepared: [] as string[] };
   let tasks = 0;

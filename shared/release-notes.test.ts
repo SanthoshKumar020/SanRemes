@@ -12,7 +12,7 @@ const NOTES = `## What's new in 0.1.175
 
 ### Bots and AIs
 - **Pi bots no longer read your own \`~/.pi\` instructions.** They share only your login.
-- Faster settings saves (#6801) by @someone in https://github.com/milind-soni/OpenMausBot/pull/6801
+- Faster settings saves (#6801) by @someone in https://github.com/SanthoshKumar020/SanRemes/pull/6801
 - Thanks to @someone and @other for the fixes.
 
 ### Fixes
@@ -23,7 +23,7 @@ const NOTES = `## What's new in 0.1.175
 
 
 
-**npm:** \`npx openmausbot@0.1.175\` · https://www.npmjs.com/package/openmausbot/v/0.1.175
+**npm:** \`npx sanremes@0.1.175\` · https://www.npmjs.com/package/sanremes/v/0.1.175
 `;
 
 const entry = (sections: ReleaseEntry["sections"], version = "0.1.175"): ReleaseEntry => ({ version, date: "2026-11-21T05:17:00Z", sections });

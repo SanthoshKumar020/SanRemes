@@ -36,8 +36,8 @@ const firstTurn = (extra: Partial<SendTurnInput> = {}): SendTurnInput => ({
   threadId: FIRST, botId: "bot", text: "the first message", model: "claude-sonnet-5", approvalMode: "full", cwd: `/work/bot/${FIRST}`,
   resumeCursor: "session-1", systemStable: "You are Testy.", systemVolatile: "Busy: no", system: "You are Testy.\n\nBusy: no",
   integrations: {
-    agents: { command: "node", args: ["agents.js"], env: { OMB_THREAD_ID: FIRST, OMB_COMMS_TOKEN: "a".repeat(48) } },
-    data: { command: "node", args: ["proxy.js", "data"], env: { OMB_MCP_TOKEN_DATA: "d".repeat(48) } },
+    agents: { command: "node", args: ["agents.js"], env: { SANREMES_THREAD_ID: FIRST, SANREMES_COMMS_TOKEN: "a".repeat(48) } },
+    data: { command: "node", args: ["proxy.js", "data"], env: { SANREMES_MCP_TOKEN_DATA: "d".repeat(48) } },
   },
   ...extra,
 });
@@ -57,8 +57,8 @@ describe("starting a new conversation's engine from the bot's last launch", () =
     expect(launch.resumeCursor).toBeUndefined();
     const bearers = credentials.get(NEXT)!;
     expect(bearers.get("bot agents")!.grants).toBe(grantsOf(NEXT, "agents", "full"));
-    expect(launch.integrations!.agents!.env).toEqual({ OMB_THREAD_ID: NEXT, OMB_COMMS_TOKEN: bearers.get("bot agents")!.token });
-    expect(launch.integrations!.data!.env).toEqual({ OMB_MCP_TOKEN_DATA: bearers.get("bot data")!.token });
+    expect(launch.integrations!.agents!.env).toEqual({ SANREMES_THREAD_ID: NEXT, SANREMES_COMMS_TOKEN: bearers.get("bot agents")!.token });
+    expect(launch.integrations!.data!.env).toEqual({ SANREMES_MCP_TOKEN_DATA: bearers.get("bot data")!.token });
     expect(new Set([bearers.get("bot agents")!.token, bearers.get("bot data")!.token, "a".repeat(48), "d".repeat(48)]).size).toBe(4);
     expect(JSON.stringify(launch)).not.toContain(FIRST);
     expect(credentials.get(FIRST)!.get("bot agents")!.token).toBe("a".repeat(48));
@@ -69,7 +69,7 @@ describe("starting a new conversation's engine from the bot's last launch", () =
     credentials.set(NEXT, new Map([["bot agents", { grants: grantsOf(NEXT, "agents", "full"), token: "n".repeat(48) }]]));
     prestart.note("claude", firstTurn(), true);
     prestart.threadMade("bot", NEXT);
-    expect(started[0]!.integrations!.agents!.env.OMB_COMMS_TOKEN).toBe("n".repeat(48));
+    expect(started[0]!.integrations!.agents!.env.SANREMES_COMMS_TOKEN).toBe("n".repeat(48));
   });
 
   it.each([

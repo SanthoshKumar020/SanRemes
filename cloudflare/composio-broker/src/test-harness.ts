@@ -246,7 +246,7 @@ export function composioSignature(secret: string, id: string, timestamp: string 
 }
 
 export function cloudGrant(machineId: string, secret = CLOUD_GRANT_SECRET) {
-  return `v1.${machineId}.${createHmac("sha256", secret).update(`omb-connected-apps-cloud:v1\n${machineId}`).digest("base64url")}`;
+  return `v1.${machineId}.${createHmac("sha256", secret).update(`sanremes-connected-apps-cloud:v1\n${machineId}`).digest("base64url")}`;
 }
 
 /** A request body of `chunks` chunks of `chunkBytes` spaces, streamed without a Content-Length, that counts how much
@@ -322,7 +322,7 @@ export function brokerHarness(options: { migrations?: number } = {}) {
       return { response, body: await response.json() as { triggerId: string; error?: string } };
     },
     poll(owner: Installation, query = "", poller = "poller-main-0001") {
-      return harness.call(owner, `/v1/events${query ? `?${query}` : ""}`, { headers: { "x-omb-poller": poller } });
+      return harness.call(owner, `/v1/events${query ? `?${query}` : ""}`, { headers: { "x-sanremes-poller": poller } });
     },
     /** One Composio delivery. `id` is both the webhook-id header and the envelope id unless `envelopeId` says otherwise. */
     deliver(envelope: Record<string, unknown>, sign: {

@@ -1,5 +1,5 @@
-// Server: --url, --port, OPENMAUSBOT_URL or OMB_PORT, else the desktop ports. A credential never travels while a server
-// is being looked for; it comes from OPENMAUSBOT_TOKEN or --token-file only (a command line leaks).
+// Server: --url, --port, OPENSANREMES_URL or SANREMES_PORT, else the desktop ports. A credential never travels while a server
+// is being looked for; it comes from OPENSANREMES_TOKEN or --token-file only (a command line leaks).
 import { readFileSync } from "node:fs";
 
 import { EXIT, flag, HeadlessError, usageError, type Flags } from "./args.ts";
@@ -13,11 +13,11 @@ export type ToolHooks = Parameters<ToolCaller>[4];
 
 export interface ClientDeps {
   env: NodeJS.ProcessEnv;
-  /** control-omb: a verb that changes something never runs on a server it merely found. */
+  /** control-sanremes: a verb that changes something never runs on a server it merely found. */
   requireExplicitForMutations?: boolean;
   callTool?: ToolCaller;
   request?: Requester;
-  /** What `openmausbot login` saved; absent in a bot's shell, which never uses the person's sign-in. */
+  /** What `sanremes login` saved; absent in a bot's shell, which never uses the person's sign-in. */
   saved?: SavedServers;
 }
 
@@ -31,7 +31,7 @@ export async function loadMcp(): Promise<McpModule> {
     return await mcpModule;
   } catch (error) {
     mcpModule = undefined;
-    throw usageError(`OPENMAUSBOT_URL is not usable: ${error instanceof Error ? error.message : String(error)}`);
+    throw usageError(`OPENSANREMES_URL is not usable: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
@@ -61,7 +61,7 @@ export function readToken(flags: Flags, env: NodeJS.ProcessEnv): string | undefi
     if (!token) throw usageError(`--token-file ${file} is empty`);
     return token;
   }
-  return env.OPENMAUSBOT_TOKEN?.trim() || undefined;
+  return env.OPENSANREMES_TOKEN?.trim() || undefined;
 }
 
 export function namedServer(flags: Flags, env: NodeJS.ProcessEnv): { url: string } | { port: string } | undefined {
@@ -69,8 +69,8 @@ export function namedServer(flags: Flags, env: NodeJS.ProcessEnv): { url: string
   if (url) return { url };
   const port = flag(flags, "port")?.trim();
   if (port) return { port };
-  if (env.OPENMAUSBOT_URL?.trim()) return { url: env.OPENMAUSBOT_URL.trim() };
-  return env.OMB_PORT?.trim() ? { port: env.OMB_PORT.trim() } : undefined;
+  if (env.OPENSANREMES_URL?.trim()) return { url: env.OPENSANREMES_URL.trim() };
+  return env.SANREMES_PORT?.trim() ? { port: env.SANREMES_PORT.trim() } : undefined;
 }
 
 export async function openClient(flags: Flags, deps: ClientDeps, mutating: boolean): Promise<HeadlessClient> {
@@ -94,17 +94,17 @@ export async function openClient(flags: Flags, deps: ClientDeps, mutating: boole
     baseUrl = `http://127.0.0.1:${port}`;
   } else {
     if (mutating && deps.requireExplicitForMutations) {
-      throw usageError("mutating commands require an explicit OpenMausBot instance", "start `control-omb launch`, then pass its URL with --url");
+      throw usageError("mutating commands require an explicit SanRemes instance", "start `control-sanremes launch`, then pass its URL with --url");
     }
     if (token) {
       throw usageError("a token needs a named server, so it is never sent while looking for one",
-        "pass --url (or --port), or set OPENMAUSBOT_URL or OMB_PORT");
+        "pass --url (or --port), or set OPENSANREMES_URL or SANREMES_PORT");
     }
     try {
       baseUrl = await mcp.probeBaseUrls(DISCOVERY_PORTS.map((port) => `http://127.0.0.1:${port}`));
     } catch {
-      throw new HeadlessError(`no OpenMausBot server answered on 127.0.0.1 ports ${DISCOVERY_PORTS.join(", ")}`, EXIT.unreachable,
-        "start one with `openmausbot serve`, or name one with --url or OPENMAUSBOT_URL");
+      throw new HeadlessError(`no SanRemes server answered on 127.0.0.1 ports ${DISCOVERY_PORTS.join(", ")}`, EXIT.unreachable,
+        "start one with `sanremes serve`, or name one with --url or OPENSANREMES_URL");
     }
   }
   // A saved sign-in goes only to the exact address it was made at: the current server, or a named one that is the same.
@@ -113,10 +113,10 @@ export async function openClient(flags: Flags, deps: ClientDeps, mutating: boole
   const request = deps.request ?? mcp.request;
   if (signedIn && savedToken) {
     // Another server can take the same port later (the app closed, `serve` started): the sign-in is not for it.
-    const live = await request("/.well-known/openmausbot/environment", {}, baseUrl).catch(() => null) as { environmentId?: unknown } | null;
+    const live = await request("/.well-known/sanremes/environment", {}, baseUrl).catch(() => null) as { environmentId?: unknown } | null;
     if (typeof live?.environmentId === "string" && live.environmentId !== signedIn.environmentId) {
       throw new HeadlessError(`the server at ${baseUrl} is not "${signedIn.label}", the one you signed in to`, EXIT.needsLogin,
-        "sign in to it with openmausbot login, or name another server with --url");
+        "sign in to it with sanremes login, or name another server with --url");
     }
     token = savedToken;
     identity = { kind: "saved", name: signedIn.name, label: signedIn.label, scopes: signedIn.scopes, expiresAt: signedIn.expiresAt };
@@ -145,7 +145,7 @@ export async function openClient(flags: Flags, deps: ClientDeps, mutating: boole
 }
 
 export function serverWords(message: string): string {
-  const body = /^OpenMausBot API error \(\d+\): ([\s\S]*)$/.exec(message)?.[1];
+  const body = /^SanRemes API error \(\d+\): ([\s\S]*)$/.exec(message)?.[1];
   if (body === undefined) return message;
   try {
     const said = (JSON.parse(body) as { error?: unknown }).error;
@@ -163,11 +163,11 @@ export interface RefusalContext {
 
 function signInHint(context: RefusalContext): string {
   if (context.botShell) return BOT_SHELL_HINT;
-  if (context.identity?.kind === "token") return "the token given was not accepted, or lacks the scope: make a new one with openmausbot token create";
+  if (context.identity?.kind === "token") return "the token given was not accepted, or lacks the scope: make a new one with sanremes token create";
   if (context.identity?.kind === "saved" && !context.identity.scopes.includes("admin")) {
-    return "this sign-in is chat only: run openmausbot login again without --scope chat";
+    return "this sign-in is chat only: run sanremes login again without --scope chat";
   }
-  return "sign in once with `openmausbot login` (the app shows a card to allow it)";
+  return "sign in once with `sanremes login` (the app shows a card to allow it)";
 }
 
 export async function explain(error: unknown, baseUrl?: string, context: RefusalContext = {}): Promise<HeadlessError> {
@@ -180,7 +180,7 @@ export async function explain(error: unknown, baseUrl?: string, context: Refusal
   if (status === 401) {
     const said = context.identity?.kind === "saved" ? "your sign-in to this server ended" : context.identity?.kind === "token" ? "this server did not accept the token given" : "this server needs you signed in";
     return new HeadlessError(said, EXIT.needsLogin,
-      context.botShell ? BOT_SHELL_HINT : context.identity?.kind === "token" ? signInHint(context) : "run `openmausbot login`");
+      context.botShell ? BOT_SHELL_HINT : context.identity?.kind === "token" ? signInHint(context) : "run `sanremes login`");
   }
   if (status === 403) {
     const said = message === raw && /paired session token/.test(raw) ? "a change from a program on this computer needs you signed in" : message;
@@ -188,15 +188,15 @@ export async function explain(error: unknown, baseUrl?: string, context: Refusal
     return new HeadlessError(`not allowed: ${said.replace(/^forbidden: /, "")}`, unsigned ? EXIT.needsLogin : EXIT.notAllowed, signInHint(context));
   }
   if (status === 404 && /^no such (bot|channel|conversation|task|message)\b/i.test(message)) {
-    return new HeadlessError(message, EXIT.notFound, "openmausbot bots and openmausbot channels list the ids");
+    return new HeadlessError(message, EXIT.notFound, "sanremes bots and sanremes channels list the ids");
   }
-  if (status === 409) return new HeadlessError(message, EXIT.conflict, "it is busy: stop it first (openmausbot stop BOT), or try again when it finishes");
-  if (/cannot report a conversation's job/.test(message)) return new HeadlessError(message, EXIT.unreachable, "update OpenMausBot on the server");
+  if (status === 409) return new HeadlessError(message, EXIT.conflict, "it is busy: stop it first (sanremes stop BOT), or try again when it finishes");
+  if (/cannot report a conversation's job/.test(message)) return new HeadlessError(message, EXIT.unreachable, "update SanRemes on the server");
   const cause = (error as { cause?: { code?: unknown } })?.cause?.code;
   if ((error instanceof TypeError && /fetch failed/i.test(message)) || cause === "ECONNREFUSED" || cause === "ENOTFOUND"
     || (error instanceof Error && (error.name === "TimeoutError" || /timed out|aborted due to timeout/i.test(message)))) {
-    return new HeadlessError(`cannot reach OpenMausBot${baseUrl ? ` at ${baseUrl}` : ""}`, EXIT.unreachable,
-      "check the server is running and the address is right (openmausbot doctor)");
+    return new HeadlessError(`cannot reach SanRemes${baseUrl ? ` at ${baseUrl}` : ""}`, EXIT.unreachable,
+      "check the server is running and the address is right (sanremes doctor)");
   }
   if (error instanceof Error && error.name === "AbortError") return new HeadlessError("stopped", EXIT.interrupted);
   return new HeadlessError(message, EXIT.failed);
@@ -209,7 +209,7 @@ export async function readJob(client: HeadlessClient, threadId: string, query: R
     const status = (error as { status?: number }).status;
     const message = error instanceof Error ? error.message : String(error);
     if (status === 404 && !/no such conversation/.test(message)) {
-      throw new HeadlessError("this OpenMausBot server cannot report a conversation's job", EXIT.unreachable, "update OpenMausBot on the server");
+      throw new HeadlessError("this SanRemes server cannot report a conversation's job", EXIT.unreachable, "update SanRemes on the server");
     }
     throw error;
   }

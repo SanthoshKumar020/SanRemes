@@ -540,7 +540,7 @@
       "use_tool"
     ]
   },
-  "default+mausbot": {
+  "default+sanremes": {
     "bytes": 18153,
     "sha256": "da14e71c913492d74a764f38db64554af74d7eab62cc814be86b71d01f80733c",
     "tools": [
@@ -564,7 +564,7 @@
       "use_tool"
     ]
   },
-  "skills+shared+voice+mausbot": {
+  "skills+shared+voice+sanremes": {
     "bytes": 19001,
     "sha256": "627c6c4f0be1f86b61487b620ead43bed156f9a1b7e873ee803a0deb12197efd",
     "tools": [

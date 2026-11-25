@@ -74,7 +74,7 @@ it("a bridged turn on the chat-completions runtime carries on after use_tool nam
   const agents: NonNullable<SendTurnInput["integrations"]>["agents"] = {
     command: process.execPath,
     args: [join(dirname(fileURLToPath(import.meta.url)), "agents-proxy.ts")],
-    env: { OMB_HARNESS_URL: "http://127.0.0.1:9", OMB_BOT_ID: "bot-chat", OMB_THREAD_ID: "thread-chat", OMB_COMMS_TOKEN: "unused", [TOOL_BRIDGE_ENV]: "1" },
+    env: { SANREMES_HARNESS_URL: "http://127.0.0.1:9", SANREMES_BOT_ID: "bot-chat", SANREMES_THREAD_ID: "thread-chat", SANREMES_COMMS_TOKEN: "unused", [TOOL_BRIDGE_ENV]: "1" },
   };
   const threadId = randomUUID();
   await instance.adapter.sendTurn({ threadId, text: "Schedule my morning brief.", model: "fixture-model", integrations: { agents } });
@@ -148,7 +148,7 @@ it("does not fail a turn that ends after a hand-off refused only because nothing
   const agents: NonNullable<SendTurnInput["integrations"]>["agents"] = {
     command: process.execPath,
     args: [join(dirname(fileURLToPath(import.meta.url)), "agents-proxy.ts")],
-    env: { OMB_HARNESS_URL: `http://127.0.0.1:${harnessAddress.port}`, OMB_BOT_ID: "bot-chat", OMB_THREAD_ID: "thread-chat", OMB_COMMS_TOKEN: "unused" },
+    env: { SANREMES_HARNESS_URL: `http://127.0.0.1:${harnessAddress.port}`, SANREMES_BOT_ID: "bot-chat", SANREMES_THREAD_ID: "thread-chat", SANREMES_COMMS_TOKEN: "unused" },
   };
   await instance.adapter.sendTurn({ threadId: randomUUID(), text: "Answer Scout's question.", model: "fixture-model", integrations: { agents } });
   const completed = await recorder.until((event) => event.type === "turn.completed");

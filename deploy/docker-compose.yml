@@ -1,27 +1,27 @@
-# One OpenMausBot tenant: the harness server plus Caddy for TLS + login.
+# One SanRemes tenant: the harness server plus Caddy for TLS + login.
 #
 # The server only listens on loopback inside its container, and on two Unix
 # sockets in the `edge` volume; Caddy, in its own container, reaches it through
 # those. A request on a socket is never a local one: it needs a session, and
 # X-Forwarded-For names the client, exactly as when Caddy shared the server's
 # network. Caddy no longer shares that network because a server restarted on
-# its own (a crash, `docker compose restart`, `stop omb`) came back in a new
+# its own (a crash, `docker compose restart`, `stop sanremes`) came back in a new
 # one, leaving Caddy in the old one with HTTPS refused while both looked
 # healthy; a socket path is the same file again as soon as the server is back.
 #
 #   cp .env.example .env   # set DOMAIN
-#   docker compose pull omb && docker compose up -d     # prebuilt image
+#   docker compose pull sanremes && docker compose up -d     # prebuilt image
 #   docker compose up -d --build                        # or build from source
 #   ./update.sh                                         # later: the stable version, with a way back
 services:
-  omb:
+  sanremes:
     build:
       context: ..
       args:
         ENGINES: ${ENGINES:-}
-    # update.sh pins OMB_IMAGE in .env to the stable version's digest. Without it: `latest`, prebuilt on every main
+    # update.sh pins SANREMES_IMAGE in .env to the stable version's digest. Without it: `latest`, prebuilt on every main
     # push; `docker compose up --build` builds from source instead.
-    image: ${OMB_IMAGE:-ghcr.io/milind-soni/openmausbot:latest}
+    image: ${SANREMES_IMAGE:-ghcr.io/milind-soni/openmausbot:latest}
     restart: unless-stopped
     # The bots' browsers (docs/browser-packaging.md, "Process hygiene"): an
     # init collects the browser processes whose parents exit, and Chrome
@@ -30,32 +30,32 @@ services:
     shm_size: 512m
     volumes:
       - data:/data
-      - edge:/run/openmausbot
+      - edge:/run/sanremes
     environment:
-      OMB_PORT: "8799"
-      OMB_WEBHOOK_PORT: "8800"
+      SANREMES_PORT: "8799"
+      SANREMES_WEBHOOK_PORT: "8800"
       # What Caddy connects to (deploy/Caddyfile).
-      OMB_TUNNEL_SOCKET: /run/openmausbot/http.sock
-      OMB_WEBHOOK_SOCKET: /run/openmausbot/hooks.sock
+      SANREMES_TUNNEL_SOCKET: /run/sanremes/http.sock
+      SANREMES_WEBHOOK_SOCKET: /run/sanremes/hooks.sock
       # what the app prints as hook URLs — Caddy passes /hooks/* straight through
-      OMB_WEBHOOK_PUBLIC_URL: https://${DOMAIN}
+      SANREMES_WEBHOOK_PUBLIC_URL: https://${DOMAIN}
       # pairing links for remote clients point here (docs/self-hosting.md)
-      OMB_PUBLIC_URL: https://${DOMAIN}
-      OMB_SERVER_NAME: ${OMB_SERVER_NAME:-${DOMAIN}}
+      SANREMES_PUBLIC_URL: https://${DOMAIN}
+      SANREMES_SERVER_NAME: ${SANREMES_SERVER_NAME:-${DOMAIN}}
       # Who may sign in with an emailed code at /pair (docs/self-hosting.md,
       # "Sign in with your email"), and your own mail server for the codes.
       # With no value here, each is passed only when .env sets it. A list
       # .env leaves empty is Settings → Remote access's to manage; one that
       # names someone decides that list, and Settings refuses to change it.
-      OMB_SIGNIN_EMAILS:
-      OMB_SIGNIN_MEMBER_EMAILS:
-      OMB_SIGNIN_SMTP_URL:
-      OMB_SIGNIN_SMTP_FROM:
-      # "1": phones pair by QR through MausBot Relay (docs/phone-relay-server.md). Sign the
-      # container in once first: docker compose exec omb openmausbot login --relay
-      OMB_PHONE_RELAY:
+      SANREMES_SIGNIN_EMAILS:
+      SANREMES_SIGNIN_MEMBER_EMAILS:
+      SANREMES_SIGNIN_SMTP_URL:
+      SANREMES_SIGNIN_SMTP_FROM:
+      # "1": phones pair by QR through SanRemes Relay (docs/phone-relay-server.md). Sign the
+      # container in once first: docker compose exec sanremes sanremes login --relay
+      SANREMES_PHONE_RELAY:
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:8799/api/health | grep -q openmausbot"]
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:8799/api/health | grep -q sanremes"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -70,13 +70,13 @@ services:
     # whenever it answers, so `up` never waits on the server's health, and HTTPS is back
     # as soon as a restarted server is.
     depends_on:
-      omb:
+      sanremes:
         condition: service_started
     environment:
       DOMAIN: ${DOMAIN}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - edge:/run/openmausbot
+      - edge:/run/sanremes
       - caddy_data:/data
       - caddy_config:/config
 

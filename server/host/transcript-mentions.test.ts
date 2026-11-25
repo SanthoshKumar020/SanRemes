@@ -12,7 +12,7 @@ afterEach(() => {
 });
 
 function transcripts(rows: Array<[string, unknown]>): string {
-  const dir = mkdtempSync(join(tmpdir(), "omb-mentions-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-mentions-"));
   made.push(dir);
   const file = join(dir, "messages.db");
   const db = new DatabaseSync(file);
@@ -36,7 +36,7 @@ describe("which conversations mention a word", () => {
   });
 
   it("rejects when the transcripts are missing or cannot be read, so a caller keeps", async () => {
-    await expect(threadsMentioning(join(tmpdir(), "no-such-folder-omb", "messages.db"), ["x"])).rejects.toThrow(/missing/);
+    await expect(threadsMentioning(join(tmpdir(), "no-such-folder-sanremes", "messages.db"), ["x"])).rejects.toThrow(/missing/);
     const file = transcripts([]);
     const db = new DatabaseSync(file);
     db.exec("DROP TABLE messages");
@@ -51,6 +51,6 @@ describe("which conversations mention a word", () => {
   it("lists every conversation the transcripts hold, and rejects when they cannot be read", async () => {
     const file = transcripts([["a", { text: "x" }], ["b", { text: "y" }], ["a", { text: "z" }]]);
     expect([...await transcriptThreads(file)].sort()).toEqual(["a", "b"]);
-    await expect(transcriptThreads(join(tmpdir(), "no-such-folder-omb", "messages.db"))).rejects.toThrow(/missing/);
+    await expect(transcriptThreads(join(tmpdir(), "no-such-folder-sanremes", "messages.db"))).rejects.toThrow(/missing/);
   });
 });

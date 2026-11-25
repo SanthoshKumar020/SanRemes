@@ -80,7 +80,7 @@ const environments: Array<{ id: string; kind: "local" | "remote"; name: string; 
   { id: "local", kind: "local" as const, name: "This computer" },
   { id: "home", kind: "remote" as const, name: "Ada’s Cloud", origin: "https://ada.mausbot.cloud", home: true, color: "violet" },
   { id: "mini", kind: "remote" as const, name: long ? "Studio Mac mini in the back office (rendering and nightly builds)" : "Studio Mac mini", origin: "http://studio-mini.tail4c2e.ts.net:8799" },
-  { id: "vps", kind: "remote" as const, name: "Hetzner box", origin: "https://maus.example.com" },
+  { id: "vps", kind: "remote" as const, name: "Hetzner box", origin: "https://sanremes.example.com" },
   ...(ten ? [{ id: "lan", kind: "remote" as const, name: "Office NUC", origin: "http://192.168.1.40:8799" }] : []),
 ] : [{ id: "local", kind: "local" as const, name: "This computer" }];
 const statuses = full ? [
@@ -109,7 +109,7 @@ const ogb = {
       add: async (how: string, address?: string) => {
         if (how !== "link") return;
         if (!connectOk) return { outcome: "problem", problem: "unreachable", host: hostOf(address ?? "") };
-        environments.push({ id: "new-server", kind: "remote", name: "Garage NUC", origin: address ?? "https://maus.example.org" });
+        environments.push({ id: "new-server", kind: "remote", name: "Garage NUC", origin: address ?? "https://sanremes.example.org" });
         return { outcome: "connected" };
       },
       probe: async (address: string, code?: string) => {
@@ -136,10 +136,10 @@ const BOTS = [
 const row = (botId: string, kind: string, computerId: string | null, state: string, extra: object = {}) => ({ botId, kind, computerId, name: null, state, stateAt: state === "unknown" ? null : now - MIN, ...extra });
 const botMode = params.get("bots") ?? "full";
 const botRows = !full || botMode === "none" ? [] : botMode === "unknown" ? [
-  row("b1", "cloud", "cloud:b1", "unknown"), row("b2", "vps", "vps:gpu/omb-b2", "unknown", { vps: { serverId: "vps:gpu", alias: "gpu", container: "omb-b2" } }),
+  row("b1", "cloud", "cloud:b1", "unknown"), row("b2", "vps", "vps:gpu/sanremes-b2", "unknown", { vps: { serverId: "vps:gpu", alias: "gpu", container: "sanremes-b2" } }),
 ] : [
   row("b1", "local", "local", "ready"), row("b2", "local", "local", "ready"), row("b3", "cloud", "cloud:b3", "asleep"),
-  row("b4", "vps", "vps:gpu/omb-b4", "ready", { vps: { serverId: "vps:gpu", alias: "gpu", container: "omb-b4" } }), row("b5", "browser", null, "unknown"),
+  row("b4", "vps", "vps:gpu/sanremes-b4", "ready", { vps: { serverId: "vps:gpu", alias: "gpu", container: "sanremes-b4" } }), row("b5", "browser", null, "unknown"),
   ...(ten ? [row("b5", "cloud", "cloud:b5", "ready")] : []),
 ];
 const ANSWERS: Record<string, unknown> = {

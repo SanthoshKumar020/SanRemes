@@ -21,7 +21,7 @@ let events: EventRecorder;
 beforeEach(async () => {
   ensureDirs();
   chmodSync(CLI, 0o755);
-  dir = mkdtempSync(join(tmpdir(), "omb-pi-lifecycle-"));
+  dir = mkdtempSync(join(tmpdir(), "sanremes-pi-lifecycle-"));
   instance = await PiDriver.create({
     instanceId: "pi-lifecycle",
     displayName: "Pi lifecycle fixture",
@@ -164,8 +164,8 @@ it("makes the private turn MCP configuration available inside the bot box", asyn
   try {
     await instance.adapter.sendTurn({ threadId: "boxed-mcp", text: "wait" });
     await events.until((event) => event.type === "item.started");
-    const request = wrap.mock.calls.map(([request]) => request).find(({ env }) => env.OMB_MCP_CONFIG);
-    const configPath = request?.env.OMB_MCP_CONFIG;
+    const request = wrap.mock.calls.map(([request]) => request).find(({ env }) => env.SANREMES_MCP_CONFIG);
+    const configPath = request?.env.SANREMES_MCP_CONFIG;
     expect(configPath).toBeDefined();
     expect(request?.rw).toContain(dirname(configPath!));
     expect(JSON.parse(readFileSync(configPath!, "utf8"))).toMatchObject({ askUser: true, mcpServers: {} });

@@ -116,7 +116,7 @@ describe("the limit clock on a quiet home", () => {
 
   it("still starts a waiting limit-reset automation on time, and reads the next reset just after", async () => {
     vi.useFakeTimers({ now: NOW });
-    const dir = mkdtempSync(join(tmpdir(), "omb-limit-poll-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-limit-poll-"));
     dirs.push(dir);
     const reset = NOW + 20 * MINUTE;
     let report = usage([100, reset], [40, NOW + 5 * 24 * HOUR]);
@@ -155,7 +155,7 @@ describe("the limit clock on a quiet home", () => {
 
 /** A clock and a RoutineManager wired as index.ts wires them. */
 function wired(loadUsage: () => Promise<PlanUsageReport>, file?: string) {
-  const dir = mkdtempSync(join(tmpdir(), "omb-limit-poll-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-limit-poll-"));
   dirs.push(dir);
   const started: string[] = [];
   let routines: RoutineManager | null = null;
@@ -231,7 +231,7 @@ describe("the limit clock and the automations that wait for a reset", () => {
 describe("the limit clock after a restart, a clock change or a failed read", () => {
   it("reads at once after a restart that left an engine held", async () => {
     vi.useFakeTimers({ now: NOW });
-    const dir = mkdtempSync(join(tmpdir(), "omb-limit-holds-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-limit-holds-"));
     dirs.push(dir);
     const file = join(dir, "limit-holds.json");
     new LimitResetClock({ accounts: () => accounts, file, now: () => NOW }).noteRefusal("claude", NOW + 23 * HOUR);

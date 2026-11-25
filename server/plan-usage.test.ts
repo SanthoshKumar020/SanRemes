@@ -290,7 +290,7 @@ describe("an OpenCode Go allowance", () => {
 describe("plan usage fetcher", () => {
   it("does not call fetch when the Claude token is expired", async () => {
     const fetchImpl = vi.fn<PlanFetch>();
-    const configDir = join(tmpdir(), "omb-plan-usage-claude");
+    const configDir = join(tmpdir(), "sanremes-plan-usage-claude");
     const reads: string[] = [];
     const report = await fetchPlanUsage([account("claude", { id: "work", name: "Work Claude", configDir })], {
       fetch: fetchImpl,
@@ -343,7 +343,7 @@ describe("plan usage fetcher", () => {
 
   it("asks the keychain only for the custom config dir service", async () => {
     const token = "claude-keychain-other-token";
-    const configDir = normalize(join(tmpdir(), "omb-plan-usage-claude-other"));
+    const configDir = normalize(join(tmpdir(), "sanremes-plan-usage-claude-other"));
     const suffixed = `Claude Code-credentials-${createHash("sha256").update(configDir).digest("hex").slice(0, 8)}`;
     const fetchImpl = vi.fn<PlanFetch>(async () => jsonResponse({
       five_hour: { utilization: 25, resets_at: "2026-09-26T12:00:00.000Z" },
@@ -373,7 +373,7 @@ describe("plan usage fetcher", () => {
 
   it("does not use the default Claude keychain login for a custom config dir", async () => {
     const defaultToken = "claude-keychain-default-token";
-    const configDir = normalize(join(tmpdir(), "omb-plan-usage-claude-custom"));
+    const configDir = normalize(join(tmpdir(), "sanremes-plan-usage-claude-custom"));
     const suffixed = `Claude Code-credentials-${createHash("sha256").update(configDir).digest("hex").slice(0, 8)}`;
     const fetchImpl = vi.fn<PlanFetch>(async () => jsonResponse({}));
     const services: string[] = [];
@@ -659,7 +659,7 @@ describe("plan usage fetcher", () => {
       chatgpt: { driver: "codex", displayName: "ChatGPT plan", config: { authMode: "chatgpt-plan" } },
       "chatgpt-work": { driver: "codex", displayName: "Work", config: { authMode: "chatgpt-plan" } },
     };
-    const accounts = planAccountsFromInstances(instances, { OMB_CLOUD_ROLE: "home" });
+    const accounts = planAccountsFromInstances(instances, { SANREMES_CLOUD_ROLE: "home" });
     expect(accounts).toEqual([
       { id: "codex", name: "Codex", driver: "codex", environment: {} },
       { id: "chatgpt", name: "ChatGPT plan", driver: "codex", environment: { CODEX_HOME: chatgptAccountHome("chatgpt") } },

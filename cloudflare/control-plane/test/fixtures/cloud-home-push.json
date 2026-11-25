@@ -1,12 +1,12 @@
 {
-  "about": "Shared by OpenMausBot (cloudflare/control-plane/test/fixtures/cloud-home-push.json) and the Admin (tests/fixtures/cloud-home-push.json), byte for byte: the bodies a Cloud home's push routes accept and refuse at the Admin and at the control plane's machine routes, and the home's request signature. Change both copies together.",
+  "about": "Shared by SanRemes (cloudflare/control-plane/test/fixtures/cloud-home-push.json) and the Admin (tests/fixtures/cloud-home-push.json), byte for byte: the bodies a Cloud home's push routes accept and refuse at the Admin and at the control plane's machine routes, and the home's request signature. Change both copies together.",
   "signature": {
     "secret": "home-bootstrap-secret-0123456789abcdefghijklmnopq",
     "machineId": "cm_fixture",
     "action": "send",
     "timestamp": "1700000000",
     "nonce": "nonce-0123456789abcdef",
-    "body": "{\"v\":1,\"token\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"collapseId\":\"openmaus.th_1.7\",\"notification\":{\"kind\":\"approval\",\"title\":\"Scout in Launch needs approval\",\"botId\":\"bot_1\",\"botName\":\"Scout\",\"threadId\":\"th_1\",\"roomId\":\"grp_1\",\"roomName\":\"Launch\"}}",
+    "body": "{\"v\":1,\"token\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"collapseId\":\"sanremes.th_1.7\",\"notification\":{\"kind\":\"approval\",\"title\":\"Scout in Launch needs approval\",\"botId\":\"bot_1\",\"botName\":\"Scout\",\"threadId\":\"th_1\",\"roomId\":\"grp_1\",\"roomName\":\"Launch\"}}",
     "expected": "EZygRqHh-KpmISJhENeyTC12RticqJ9V8jZ_lcQ7XB4"
   },
   "accept": {
@@ -45,7 +45,7 @@
         "v": 1,
         "token": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
         "pairing": "pair_tag_01",
-        "collapseId": "openmaus.th_1.7",
+        "collapseId": "sanremes.th_1.7",
         "notification": {
           "kind": "approval",
           "title": "Scout in Launch needs approval",
@@ -83,13 +83,13 @@
           "kind": "needsYou",
           "headline": "Scout needs you",
           "since": 1700000000000,
-          "link": "openmausbot://chat/th_1",
+          "link": "sanremes://chat/th_1",
           "color": "#5b8def",
           "gradient": [
             "#5b8def",
             "#9b6bff"
           ],
-          "body": "maus"
+          "body": "sanremes"
         }
       },
       {
@@ -102,12 +102,12 @@
           "kind": "working",
           "headline": "Scout is working",
           "since": 1700000000000,
-          "link": "openmausbot://chat/th_1",
+          "link": "sanremes://chat/th_1",
           "color": "#5b8def",
           "gradient": [
             "#5b8def"
           ],
-          "body": "maus"
+          "body": "sanremes"
         }
       }
     ]
@@ -287,13 +287,13 @@
             "kind": "needsYou",
             "headline": "Scout needs you",
             "since": 1700000000000,
-            "link": "openmausbot://chat/th_1",
+            "link": "sanremes://chat/th_1",
             "color": "#5b8def",
             "gradient": [
               "#5b8def",
               "#9b6bff"
             ],
-            "body": "maus"
+            "body": "sanremes"
           }
         }
       },
@@ -313,13 +313,13 @@
             "kind": "needsYou",
             "headline": "Scout needs you",
             "since": 1700000000000,
-            "link": "openmausbot://chat/th_1",
+            "link": "sanremes://chat/th_1",
             "color": "#5b8def",
             "gradient": [
               "#5b8def",
               "#9b6bff"
             ],
-            "body": "maus",
+            "body": "sanremes",
             "line": "Running rm -rf /"
           }
         }
@@ -340,13 +340,13 @@
             "kind": "needsYou",
             "headline": "Scout needs you",
             "since": 1700000000000,
-            "link": "openmausbot://chat/th_1",
+            "link": "sanremes://chat/th_1",
             "color": "#5b8def",
             "gradient": [
               "#5b8def",
               "#9b6bff"
             ],
-            "body": "maus",
+            "body": "sanremes",
             "answers": [
               {
                 "label": "Allow"

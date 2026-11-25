@@ -9,11 +9,11 @@
 // MCP servers) and then holds the turn open, so the turn's capability is
 // still good while this test starts the dumped agents server itself and
 // talks to it the way the engine would. Nothing here touches a person's
-// OpenMausBot: the server, its data and its home are the fixture's.
+// SanRemes: the server, its data and its home are the fixture's.
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import type { WireMessage } from "../shared/wire.ts";
 import { createToolBridge, type BridgeTool } from "./drivers/agents-bridge.ts";
 import { ALWAYS_LOAD_META, DEFER_TOOLS_ENV } from "./drivers/agents-claude-defer.ts";
@@ -22,7 +22,7 @@ import { AGENTS_TOOL_BRIDGE_PROMPT } from "./system-prompt.ts";
 import { turnEvidence } from "./turn-outcome.ts";
 import { waitForExit } from "./testing/cleanup.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
-import { childEnv } from "./testing/omb-env.ts";
+import { childEnv } from "./testing/sanremes-env.ts";
 
 type McpServer = { command: string; args: string[]; env: Record<string, string> };
 type Launched = { pid: number; systemPrompt: string; systemPromptFile: string; mcpConfig: { mcpServers: Record<string, McpServer> } };
@@ -113,7 +113,7 @@ it("defers the agents tools instead of bridging them while Claude Code's tool se
       await control(["send", "--bot", bot.id, "--text", text]);
       const turn = await launched();
       const agents = turn.mcpConfig.mcpServers.agents!;
-      expect(agents.env.OMB_AGENTS_TOOL_BRIDGE, `switch ${switched}`).toBe("0");
+      expect(agents.env.SANREMES_AGENTS_TOOL_BRIDGE, `switch ${switched}`).toBe("0");
       expect(agents.env[DEFER_TOOLS_ENV], `switch ${switched}`).toBe("1");
       expect(turn.systemPrompt).not.toContain(AGENTS_TOOL_BRIDGE_PROMPT.trim());
       await withServer(agents, async (ask) => {
@@ -136,7 +136,7 @@ it("keeps a turn on the whole catalog until the switch is on, then mounts the br
     await control(["send", "--bot", bot.id, "--text", "Stay active."]);
     const before = await launched();
     const unbridged = before.mcpConfig.mcpServers.agents!;
-    expect(unbridged.env.OMB_AGENTS_TOOL_BRIDGE).toBe("0");
+    expect(unbridged.env.SANREMES_AGENTS_TOOL_BRIDGE).toBe("0");
     // With tool search off nothing is marked deferred (agents-claude-defer.ts).
     expect(unbridged.env[DEFER_TOOLS_ENV]).toBeUndefined();
     expect(before.systemPrompt).not.toContain("find_tool");
@@ -160,7 +160,7 @@ it("keeps a turn on the whole catalog until the switch is on, then mounts the br
     const after = await launched();
     expect(after.pid).not.toBe(before.pid);
     const bridged = after.mcpConfig.mcpServers.agents!;
-    expect(bridged.env.OMB_AGENTS_TOOL_BRIDGE).toBe("1");
+    expect(bridged.env.SANREMES_AGENTS_TOOL_BRIDGE).toBe("1");
     // it rides the first message's note, which is trimmed: the rule's leading space goes
     const rule = AGENTS_TOOL_BRIDGE_PROMPT.trim();
     expect(after.systemPrompt).toContain(rule);
@@ -170,7 +170,7 @@ it("keeps a turn on the whole catalog until the switch is on, then mounts the br
     // said once
     expect(after.systemPrompt.split(rule)).toHaveLength(2);
     // a fixture bot is not a Chief of Staff, so create_bot is not one of its tools
-    expect(bridged.env.OMB_CHIEF_OF_STAFF).toBe("0");
+    expect(bridged.env.SANREMES_CHIEF_OF_STAFF).toBe("0");
 
     // While that turn is open its capability is good: the proxy the engine
     // was handed answers through the fixture's own harness.
@@ -234,10 +234,10 @@ it("keeps a turn on the whole catalog until the switch is on, then mounts the br
     const { channel } = await control(["new-channel", "--name", "Bridge room", "--members", bot.id]);
     await control(["send-channel", "--channel", channel.id, "--text", "Stay active in this room."]);
     const room = await launched();
-    expect(room.mcpConfig.mcpServers.agents!.env.OMB_AGENTS_TOOL_BRIDGE).toBe("1");
+    expect(room.mcpConfig.mcpServers.agents!.env.SANREMES_AGENTS_TOOL_BRIDGE).toBe("1");
     // A room refuses widgets, pages and a computer pick, so its turn is not listed them.
-    expect(room.mcpConfig.mcpServers.agents!.env).toMatchObject({ OMB_ROOM: "1", OMB_COMPUTER_SELECTION: "0" });
-    expect(after.mcpConfig.mcpServers.agents!.env.OMB_ROOM).toBe("0");
+    expect(room.mcpConfig.mcpServers.agents!.env).toMatchObject({ SANREMES_ROOM: "1", SANREMES_COMPUTER_SELECTION: "0" });
+    expect(after.mcpConfig.mcpServers.agents!.env.SANREMES_ROOM).toBe("0");
     expect(room.systemPrompt).toContain(rule);
     await control(["interrupt", "--channel", channel.id]);
     await control(["wait", "--channel", channel.id, "--timeout", "30"]);
@@ -258,8 +258,8 @@ it("leaves every gate and limit where it was: a tool selection, a Chief-only too
     const gatedTurn = await launched();
     // With a selection the engine is handed the gate, which starts the proxy.
     const gate = gatedTurn.mcpConfig.mcpServers.agents!;
-    expect(JSON.parse(gate.env.OMB_GATE_TOOL_SCOPE!)).toEqual(toolScope);
-    expect((JSON.parse(gate.env.OMB_GATE_UPSTREAM!) as McpServer).env.OMB_AGENTS_TOOL_BRIDGE).toBe("0");
+    expect(JSON.parse(gate.env.SANREMES_GATE_TOOL_SCOPE!)).toEqual(toolScope);
+    expect((JSON.parse(gate.env.SANREMES_GATE_UPSTREAM!) as McpServer).env.SANREMES_AGENTS_TOOL_BRIDGE).toBe("0");
     expect(gatedTurn.systemPrompt).not.toContain("find_tool");
     await withServer(gate, async (ask) => {
       const list = await ask("tools/list");
@@ -278,13 +278,13 @@ it("leaves every gate and limit where it was: a tool selection, a Chief-only too
     await control(["send", "--bot", bot.id, "--text", "Stay active."]);
     const turn = await launched();
     const bridged = turn.mcpConfig.mcpServers.agents!;
-    expect(bridged.env.OMB_AGENTS_TOOL_BRIDGE).toBe("1");
-    expect(bridged.env.OMB_BOT_ID).toBe(bot.id);
+    expect(bridged.env.SANREMES_AGENTS_TOOL_BRIDGE).toBe("1");
+    expect(bridged.env.SANREMES_BOT_ID).toBe(bot.id);
 
     // The harness refuses a Chief-only tool to this bot whatever its proxy
     // lists. Started as if it were a Chief's, the proxy lets the call
     // through, and the harness's own refusal comes back the same both ways.
-    await withServer({ ...bridged, env: { ...bridged.env, OMB_CHIEF_OF_STAFF: "1" } }, async (ask) => {
+    await withServer({ ...bridged, env: { ...bridged.env, SANREMES_CHIEF_OF_STAFF: "1" } }, async (ask) => {
       const scout = { name: "Scout", role: "Ops", instructions: "Work." };
       const direct = await call(ask, "create_bot", scout);
       const throughBridge = await use(ask, "create_bot", scout);

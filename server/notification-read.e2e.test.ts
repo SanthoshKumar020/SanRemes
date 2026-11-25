@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { openSse } from "./testing/sse.ts";
 
 it("opening a conversation reads its notifications in the feed and tells every open app, leaving other conversations' alone", async () => {

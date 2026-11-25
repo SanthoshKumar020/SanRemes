@@ -43,9 +43,9 @@ describe.skipIf(process.platform === "win32")("mcp-gate and the processes it sta
       stdio: ["pipe", "pipe", "pipe"],
       env: {
         ...process.env,
-        OMB_GATE_NAME: "notes",
-        OMB_GATE_SPILL_DIR: join(scratch, "spill"),
-        OMB_GATE_UPSTREAM: JSON.stringify({
+        SANREMES_GATE_NAME: "notes",
+        SANREMES_GATE_SPILL_DIR: join(scratch, "spill"),
+        SANREMES_GATE_UPSTREAM: JSON.stringify({
           command: "/bin/sh",
           args: ["-c", `"${process.execPath}" "${server}"; exit 0`],
           env: { PID_FILE: pidFile, ...env },
@@ -58,7 +58,7 @@ describe.skipIf(process.platform === "win32")("mcp-gate and the processes it sta
   };
   const exited = () => gate!.exitCode !== null || gate!.signalCode !== null;
 
-  beforeEach(() => { scratch = mkdtempSync(join(tmpdir(), "omb-gate-life-")); });
+  beforeEach(() => { scratch = mkdtempSync(join(tmpdir(), "sanremes-gate-life-")); });
   afterEach(() => {
     gate?.kill("SIGKILL");
     if (serverPid) try { process.kill(serverPid, "SIGKILL"); } catch {}

@@ -13,7 +13,7 @@ import {
 } from "./config-backup.ts";
 
 const dirs: string[] = [];
-const tempDir = () => { const dir = mkdtempSync(join(tmpdir(), "omb-config-backup-")); dirs.push(dir); return dir; };
+const tempDir = () => { const dir = mkdtempSync(join(tmpdir(), "sanremes-config-backup-")); dirs.push(dir); return dir; };
 const configPath = (dir: string) => join(dir, "config.json");
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 
@@ -48,7 +48,7 @@ describe("a save that cannot read the file", () => {
     const error = configSaveRefusal(read, configPath(dir));
     expect((error as { status?: number }).status).toBe(503);
     expect(error.message).toContain(configPath(dir));
-    expect(error.message).toContain("openmausbot config restore");
+    expect(error.message).toContain("sanremes config restore");
   });
 
   it("keeps the bytes of a file it could not understand", () => {

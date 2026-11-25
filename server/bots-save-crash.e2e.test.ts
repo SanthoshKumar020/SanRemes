@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { launchVerificationServer } from "../scripts/control-omb.ts";
+import { launchVerificationServer } from "../scripts/control-sanremes.ts";
 import { waitForExit } from "./testing/cleanup.ts";
 
 type SavedBot = { id: string; approvalMode?: string; alwaysAllow?: string[]; toolScope?: { allow: string[] | null; deny: string[] } };

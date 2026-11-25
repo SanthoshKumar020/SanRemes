@@ -30,7 +30,7 @@ const cases: Array<{ name: string; values: Breakdown[]; expected: Breakdown }> =
 ];
 
 function fixture(liveTurns: () => LiveTurnView[] = () => []) {
-  const dataDir = mkdtempSync(join(tmpdir(), "omb-trace-breakdowns-"));
+  const dataDir = mkdtempSync(join(tmpdir(), "sanremes-trace-breakdowns-"));
   dirs.push(dataDir);
   const service = createTraceService({
     dataDir, recorder: { liveTurns }, now: () => AT + 10_000,

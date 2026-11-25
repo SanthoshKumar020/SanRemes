@@ -25,7 +25,7 @@ describe("Pi session spawn setup", () => {
   it.skipIf(process.platform === "win32")("isolates audience/conversation sandbox plans while resuming persisted turns", async () => {
     ensureDirs();
     chmodSync(cli, 0o755);
-    const dump = join(mkdtempSync(join(tmpdir(), "omb-pi-audience-")), "rpc.jsonl");
+    const dump = join(mkdtempSync(join(tmpdir(), "sanremes-pi-audience-")), "rpc.jsonl");
     const instance = await PiDriver.create({ instanceId: "pi-session-spawn", displayName: undefined, enabled: true,
       environment: { FAKE_PI_DUMP: dump, FAKE_PI_PERSIST_SESSION: "1", FAKE_PI_SESSION_FILE_IN_STATE_ONLY: "1" }, config: { cli, fullAuto: false } });
     const recorder = recordEvents(instance.adapter);
@@ -44,7 +44,7 @@ describe("Pi session spawn setup", () => {
       const started = recorder.events.find((event) => event.type === "session.started" && event.turnId === turnId);
       if (started?.type !== "session.started" || !started.sessionId) throw new Error("missing session file");
       const call = spawned.mock.calls.slice(before).find(([, args]) => args.includes("--session-dir"))!;
-      expect(call[2]!.box).toEqual({ rw: [dir, expect.stringContaining("omb-pi-mcp-")] });
+      expect(call[2]!.box).toEqual({ rw: [dir, expect.stringContaining("sanremes-pi-mcp-")] });
       const setup = { dataDir: DATA_DIR, home: join(DATA_DIR, ".."), codeRoots: [], engineRoots: [], bridges: [] };
       const request = { command: cli, args: call[1], env: {}, audience: { teamReadOnly: audience !== "team" } };
       expect(visibleInBox(planBox(setup, request), dir)).toBe("none");
@@ -115,7 +115,7 @@ describe("Pi session spawn setup", () => {
     try {
       await expect(instance.adapter.sendTurn({ threadId: "pi-session-setup-fails", text: "hi" }))
         .rejects.toThrow("session directory is not writable");
-      expect(vi.mocked(mkdtempSync).mock.calls.filter(([prefix]) => String(prefix).includes("omb-pi-mcp-"))).toEqual([]);
+      expect(vi.mocked(mkdtempSync).mock.calls.filter(([prefix]) => String(prefix).includes("sanremes-pi-mcp-"))).toEqual([]);
       expect(spawned).not.toHaveBeenCalled();
     } finally {
       await instance.dispose();

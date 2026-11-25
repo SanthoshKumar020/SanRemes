@@ -124,11 +124,11 @@ field; a value that is not a number is ignored:
 
 | Variable | Sets |
 | --- | --- |
-| `OMB_USAGE_CAP_DAILY_USD` | `server.dailyUsd` |
-| `OMB_USAGE_CAP_MONTHLY_USD` | `server.monthlyUsd` |
-| `OMB_USAGE_CAP_DAILY_TOKENS` | `server.dailyTokens` (a whole number) |
-| `OMB_USAGE_CAP_MONTHLY_TOKENS` | `server.monthlyTokens` (a whole number) |
-| `OMB_USAGE_CAP_STOPS` | `unattended` or `everything` |
+| `SANREMES_USAGE_CAP_DAILY_USD` | `server.dailyUsd` |
+| `SANREMES_USAGE_CAP_MONTHLY_USD` | `server.monthlyUsd` |
+| `SANREMES_USAGE_CAP_DAILY_TOKENS` | `server.dailyTokens` (a whole number) |
+| `SANREMES_USAGE_CAP_MONTHLY_TOKENS` | `server.monthlyTokens` (a whole number) |
+| `SANREMES_USAGE_CAP_STOPS` | `unattended` or `everything` |
 
 Per-bot caps are set in Settings or `config.json` only.
 

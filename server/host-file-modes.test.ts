@@ -9,7 +9,7 @@ afterEach(() => { for (const dir of made.splice(0)) rmSync(dir, { recursive: tru
 
 describe.skipIf(process.platform === "win32")("file overwrite permissions", () => {
   it.each([["022", 0o022], ["077", 0o077]] as const)("preserves existing modes when the process umask is %s", (_label, mask) => {
-    const dir = mkdtempSync(join(tmpdir(), "omb-host-file-modes-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-host-file-modes-"));
     made.push(dir);
     const script = `
       import { chmodSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';

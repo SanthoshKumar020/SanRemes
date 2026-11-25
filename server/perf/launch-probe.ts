@@ -8,7 +8,7 @@ import { watchLaunchWork } from "../../electron/launch-probes.mjs";
 /** With no launch record written by then, the counting stops anyway. */
 const WATCH_AT_MOST_MS = 120_000;
 
-const watch = process.env.OMB_DESKTOP_PARENT === "1"
+const watch = process.env.SANREMES_DESKTOP_PARENT === "1"
   ? watchLaunchWork({ childProcess: childProcess as unknown as Record<string, unknown>, sync: syncBuiltinESMExports, fetchOwners: [globalThis] })
   : null;
 if (watch) setTimeout(() => watch.finish(), WATCH_AT_MOST_MS).unref();

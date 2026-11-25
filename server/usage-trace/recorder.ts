@@ -347,11 +347,11 @@ export function createTraceRecorder(options: { dataDir: string; now?: () => numb
       span = tool;
       span.startedAt = served.startedAt;
       span.endedAt = served.endedAt;
-      span.timedBy = "omb";
+      span.timedBy = "sanremes";
     } else {
-      const id = `${turn.threadId}:${turn.turnId}:omb-${served.startedAt}-${turn.tools.size}`;
+      const id = `${turn.threadId}:${turn.turnId}:sanremes-${served.startedAt}-${turn.tools.size}`;
       span = { kind: "tool", id, threadId: turn.threadId, turnId: turn.turnId, name: served.name, startedAt: served.startedAt,
-        endedAt: served.endedAt, status: "ok", timedBy: "omb" };
+        endedAt: served.endedAt, status: "ok", timedBy: "sanremes" };
       turn.tools.set(id, span);
       turn.receipts.push(span);
       const step = turn.openStep;

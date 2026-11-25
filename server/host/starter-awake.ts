@@ -19,7 +19,7 @@ import { z } from "zod";
 import { botsTowardLimit } from "../../shared/bot-limit.ts";
 import { writeFileAtomic } from "../atomic.ts";
 
-/** How many bots a Starter Cloud keeps awake, not counting its MausBot or chief of staff. The one number to change. */
+/** How many bots a Starter Cloud keeps awake, not counting its SanRemes or chief of staff. The one number to change. */
 export const STARTER_AWAKE_LIMIT = 5;
 export const STARTER_AWAKE_FILE = "starter-awake.json";
 /** A routine takes the place only of a bot idle at least this long: one used a moment ago may be about to hear from the

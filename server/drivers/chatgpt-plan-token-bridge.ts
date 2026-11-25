@@ -7,8 +7,8 @@ import { join } from "node:path";
 /** A short-lived capability for a single Codex run. No OAuth credentials cross the command line. */
 export async function startChatGptTokenBridge(accessToken: () => Promise<string>) {
   const secret = randomBytes(32).toString("hex");
-  const directory = process.platform === "win32" ? undefined : mkdtempSync(join(tmpdir(), "omb-auth-"));
-  const path = directory ? join(directory, "s") : `\\\\.\\pipe\\omb-auth-${randomBytes(16).toString("hex")}`;
+  const directory = process.platform === "win32" ? undefined : mkdtempSync(join(tmpdir(), "sanremes-auth-"));
+  const path = directory ? join(directory, "s") : `\\\\.\\pipe\\sanremes-auth-${randomBytes(16).toString("hex")}`;
   const connections = new Set<Socket>();
   let closed = false;
   const server = createServer((socket) => {
@@ -38,7 +38,7 @@ export async function startChatGptTokenBridge(accessToken: () => Promise<string>
   }
   return {
     socketPath: path,
-    env: { OMB_CODEX_AUTH_SOCKET: path, OMB_CODEX_AUTH_SECRET: secret },
+    env: { SANREMES_CODEX_AUTH_SOCKET: path, SANREMES_CODEX_AUTH_SECRET: secret },
     close() {
       if (closed) return;
       closed = true;

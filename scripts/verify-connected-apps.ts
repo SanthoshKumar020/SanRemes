@@ -6,8 +6,8 @@ import { createServer } from "node:https";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
 import { credentialStoreFlags } from "../server/browser/egress/gate.ts";
-import { launchVerificationServer, runControlOmb } from "./control-omb.ts";
-import { agentBrowser, ensureUiBrowser, sessionEnv } from "./testing/control-omb-ui.ts";
+import { launchVerificationServer, runControlOmb } from "./control-sanremes.ts";
+import { agentBrowser, ensureUiBrowser, sessionEnv } from "./testing/control-sanremes-ui.ts";
 import { mountPreview, type MountedPreview } from "./testing/preview-fixture.ts";
 
 const fixture = await launchVerificationServer();
@@ -23,7 +23,7 @@ let attempts = 0;
 const requestBodies: Array<{ alias?: string }> = [];
 const deletedAccounts: string[] = [];
 const services: Record<string, { connected: boolean; pending: boolean; status: string; accounts: Array<{ id: string; alias: string; status: string }> }> = {};
-const evidence = resolve(process.env.OMB_UI_EVIDENCE_DIR ?? ".omb-scratch/connected-apps-evidence");
+const evidence = resolve(process.env.SANREMES_UI_EVIDENCE_DIR ?? ".sanremes-scratch/connected-apps-evidence");
 mkdirSync(evidence, { recursive: true });
 const pauseAuthorize = (fail = false) => {
   failure = fail;
@@ -65,7 +65,7 @@ try {
         const slug = req.url?.startsWith("/api/connectors/") ? req.url.split("/")[3]! : null;
         if (!failed && slug) services[slug] = {
           connected: false, pending: true, status: "INITIALIZING",
-          accounts: [...(services[slug]?.accounts ?? []), { id: `ca-${attempt}`, alias: body.alias ?? `omb-retry-${attempt}`, status: "INITIALIZING" }],
+          accounts: [...(services[slug]?.accounts ?? []), { id: `ca-${attempt}`, alias: body.alias ?? `sanremes-retry-${attempt}`, status: "INITIALIZING" }],
         };
         await hold;
         res.writeHead(failed ? 503 : 200, { "content-type": "application/json" });

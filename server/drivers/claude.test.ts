@@ -95,18 +95,18 @@ function answerQueue(conn: ReturnType<typeof connect>) {
 }
 
 const CONTROL_PLANE_FIXTURE = {
-  OMB_CLOUD_READY_TOKEN: "ready-should-not-leak", OMB_CLOUD_BOOTSTRAP: "bootstrap-should-not-leak",
-  OMB_LICENSE_KEY: "license-should-not-leak", OMB_INSTALLATION_CREDENTIAL: "fleet-should-not-leak",
+  SANREMES_CLOUD_READY_TOKEN: "ready-should-not-leak", SANREMES_CLOUD_BOOTSTRAP: "bootstrap-should-not-leak",
+  SANREMES_LICENSE_KEY: "license-should-not-leak", SANREMES_INSTALLATION_CREDENTIAL: "fleet-should-not-leak",
 };
 
 describe("ClaudeDriver.decodeConfig", () => {
   it("quotes hook paths as shell data rather than JSON strings", () => {
-    const settings = claudeHookSettings("/tmp/it's $OMB_HOOK_TEST `literal`/helper.ts", "linux") as { PostToolUse: Array<{ hooks: Array<{ command: string }> }> };
-    expect(settings.PostToolUse[0]!.hooks[0]!.command).toContain("'/tmp/it'\\''s $OMB_HOOK_TEST `literal`/helper.ts'");
+    const settings = claudeHookSettings("/tmp/it's $SANREMES_HOOK_TEST `literal`/helper.ts", "linux") as { PostToolUse: Array<{ hooks: Array<{ command: string }> }> };
+    expect(settings.PostToolUse[0]!.hooks[0]!.command).toContain("'/tmp/it'\\''s $SANREMES_HOOK_TEST `literal`/helper.ts'");
   });
 
   it("starts the hook helper without a shell on Windows, where Git Bash or PowerShell would read the command line", () => {
-    const helper = "C:\\Users\\it's $OMB_HOOK_TEST `literal`\\helper.ts";
+    const helper = "C:\\Users\\it's $SANREMES_HOOK_TEST `literal`\\helper.ts";
     const settings = claudeHookSettings(helper, "win32") as { PostToolUseFailure: Array<{ hooks: unknown[] }> };
     expect(settings.PostToolUseFailure[0]!.hooks).toEqual([{ type: "command", command: process.execPath, args: [helper], timeout: 5 }]);
   });
@@ -233,7 +233,7 @@ describe("ClaudeDriver.decodeConfig", () => {
 
   it.skipIf(process.platform !== "win32")("names permission pipes per harness process", () => {
     expect(permissionSocketPath("thread-abc")).toMatch(
-      new RegExp(`^\\\\\\\\\\.\\\\pipe\\\\openmausbot-perm-${process.pid}-thre[0-9a-f]{4}$`),
+      new RegExp(`^\\\\\\\\\\.\\\\pipe\\\\sanremes-perm-${process.pid}-thre[0-9a-f]{4}$`),
     );
   });
 
@@ -284,7 +284,7 @@ describe("ClaudeDriver.decodeConfig", () => {
   });
 
   it("disposes its account controller while a logout is running", async () => {
-    const home = mkdtempSync(join(tmpdir(), "omb-claude-logout-dispose-"));
+    const home = mkdtempSync(join(tmpdir(), "sanremes-claude-logout-dispose-"));
     const cli = join(home, "fake-logout.mjs");
     const pidPath = join(home, "logout-pid");
     writeFileSync(cli, [
@@ -330,7 +330,7 @@ describe("ClaudeDriver.decodeConfig", () => {
       expect(new Set(candidates).size).toBe(candidates.length);
     } else {
       expect(candidates).toHaveLength(2);
-      expect(candidates[1]).toMatch(/omb-perm-[0-9a-f]{16}\.sock$/);
+      expect(candidates[1]).toMatch(/sanremes-perm-[0-9a-f]{16}\.sock$/);
       expect(candidates[1]).not.toBe(candidates[0]);
     }
   });
@@ -339,7 +339,7 @@ describe("ClaudeDriver.decodeConfig", () => {
   it.skipIf(process.platform === "win32")(
     "binds the next candidate when the first is unbindable, and asks round-trip on it",
     async () => {
-      const dir = mkdtempSync(join(tmpdir(), "omb-broker-fallback-"));
+      const dir = mkdtempSync(join(tmpdir(), "sanremes-broker-fallback-"));
       const held = join(dir, "held.sock");
       // A directory squats the path the way a hung child holds a pipe.
       mkdirSync(held);
@@ -380,7 +380,7 @@ describe("ClaudeDriver.decodeConfig", () => {
   it.skipIf(process.platform === "win32")(
     "keeps a large non-ASCII ask whole across socket reads",
     async () => {
-      const dir = mkdtempSync(join(tmpdir(), "omb-broker-utf8-"));
+      const dir = mkdtempSync(join(tmpdir(), "sanremes-broker-utf8-"));
       const socketPath = join(dir, "broker.sock");
       const asks: Array<{ input: unknown }> = [];
       const broker = await createPermissionBroker({
@@ -413,7 +413,7 @@ describe("ClaudeDriver.decodeConfig", () => {
   it.skipIf(process.platform === "win32")(
     "rejects instead of returning an occupied path when every candidate is unavailable",
     async () => {
-      const dir = mkdtempSync(join(tmpdir(), "omb-broker-unavailable-"));
+      const dir = mkdtempSync(join(tmpdir(), "sanremes-broker-unavailable-"));
       const heldOne = join(dir, "held-one.sock");
       const heldTwo = join(dir, "held-two.sock");
       mkdirSync(heldOne);
@@ -508,7 +508,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
   beforeEach(() => {
     ensureDirs();
     chmodSync(FAKE_CLI, 0o755);
-    scratch = mkdtempSync(join(tmpdir(), "omb-claude-test-"));
+    scratch = mkdtempSync(join(tmpdir(), "sanremes-claude-test-"));
   });
 
   it("refuses an unsupported native selection before launching, even with instance tools and Full access", async () => {
@@ -529,7 +529,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     expect(seen.argv).toContain("--restricted");
     expect(seen.argv[seen.argv.indexOf("--disallowedTools") + 1]).toBe("Write");
     expect(seen.mcpConfig.mcpServers).not.toHaveProperty("browser");
-    expect(JSON.parse(seen.mcpConfig.mcpServers.agents.env.OMB_GATE_TOOL_SCOPE)).toEqual({ allow: ["native:*", "mcp:agents:list_bots"] });
+    expect(JSON.parse(seen.mcpConfig.mcpServers.agents.env.SANREMES_GATE_TOOL_SCOPE)).toEqual({ allow: ["native:*", "mcp:agents:list_bots"] });
   });
 
   it("keeps a bot's tool selection working with the person's own skills", async () => {
@@ -566,10 +566,10 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     delete process.env.COMPOSIO_API_KEY;
     delete process.env.BOX_TOKEN;
     delete process.env.OPENCODE_API_KEY;
-    delete process.env.OMB_TTS_KEY;
+    delete process.env.SANREMES_TTS_KEY;
     for (const name of Object.keys(CONTROL_PLANE_FIXTURE)) delete process.env[name];
-    delete process.env.OMB_CLAUDE_SESSION_IDLE_MS;
-    delete process.env.OMB_CLAUDE_SESSION_IDLE_MIN_MS;
+    delete process.env.SANREMES_CLAUDE_SESSION_IDLE_MS;
+    delete process.env.SANREMES_CLAUDE_SESSION_IDLE_MIN_MS;
     recorder?.stop();
     await instance?.dispose();
     await removeTempDir(scratch);
@@ -972,7 +972,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     process.env.ANTHROPIC_API_KEY = "sk-should-not-leak";
     process.env.XAI_API_KEY = "xai-should-not-leak";
     process.env.BOX_TOKEN = "box-should-not-leak";
-    process.env.OMB_TTS_KEY = "tts-should-not-leak";
+    process.env.SANREMES_TTS_KEY = "tts-should-not-leak";
 
     await instance.adapter.sendTurn({ threadId: "t-hygiene", text: "the secret prompt", system: "You are Testy." });
     await recorder.until((e) => e.type === "turn.completed");
@@ -990,7 +990,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     expect(seen.env.CLAUDE_CODE_ENTRYPOINT).toBeUndefined();
     expect(seen.env.XAI_API_KEY).toBeUndefined();
     expect(seen.env.BOX_TOKEN).toBeUndefined();
-    expect(seen.env.OMB_TTS_KEY).toBeUndefined();
+    expect(seen.env.SANREMES_TTS_KEY).toBeUndefined();
   });
 
   it("per-bot Ask restores the broker on a legacy bypass instance", async () => {
@@ -1365,7 +1365,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     }
   });
 
-  it.each([["ask", "0"], ["auto", "0"], ["ask", "1"], ["auto", "1"]] as const)("pre-allows the agents comms proxy while retaining native %s approval (OMB_OWN_MCP_HTTP=%s)", async (approvalMode, http) => {
+  it.each([["ask", "0"], ["auto", "0"], ["ask", "1"], ["auto", "1"]] as const)("pre-allows the agents comms proxy while retaining native %s approval (SANREMES_OWN_MCP_HTTP=%s)", async (approvalMode, http) => {
     vi.stubEnv(OWN_MCP_HTTP_ENV, http);
     await create();
     const dump = join(scratch, "dump.json");
@@ -1379,7 +1379,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
         agents: {
           command: process.execPath,
           args: ["/fake/agents-proxy.js"],
-          env: { OMB_HARNESS_URL: "http://127.0.0.1:1", OMB_BOT_ID: "b1", OMB_COMMS_TOKEN: "tok" },
+          env: { SANREMES_HARNESS_URL: "http://127.0.0.1:1", SANREMES_BOT_ID: "b1", SANREMES_COMMS_TOKEN: "tok" },
         },
       },
     });
@@ -1390,7 +1390,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
       // By URL: the same capability and settings as headers, and the loopback past any proxy the engine was given.
       const agents = seen.mcpConfig.mcpServers.agents;
       expect(agents).toMatchObject({ type: "http", alwaysLoad: true, url: "http://127.0.0.1:1/api/internal/mcp-http/agents", headers: { authorization: "Bearer tok" } });
-      expect(JSON.parse(Buffer.from(agents.headers["x-omb-agents-env"], "base64url").toString("utf8"))).toMatchObject({ OMB_BOT_ID: "b1", [DEFER_TOOLS_ENV]: "1" });
+      expect(JSON.parse(Buffer.from(agents.headers["x-sanremes-agents-env"], "base64url").toString("utf8"))).toMatchObject({ SANREMES_BOT_ID: "b1", [DEFER_TOOLS_ENV]: "1" });
       // Windows keeps one spelling of an environment name, so the engine sees NO_PROXY or no_proxy there, never both.
       const noProxy = Object.entries(seen.env as Record<string, string>).filter(([name]) => name.toLowerCase() === "no_proxy");
       expect(noProxy.map(([name]) => name).sort()).toEqual(process.platform === "win32" ? [expect.stringMatching(/^no_proxy$/i)] : ["NO_PROXY", "no_proxy"]);
@@ -1399,7 +1399,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
       expect(seen.mcpConfig.mcpServers.agents).toMatchObject({
         alwaysLoad: true,
         args: ["/fake/agents-proxy.js"],
-        env: { OMB_BOT_ID: "b1", OMB_COMMS_TOKEN: "tok", [DEFER_TOOLS_ENV]: "1" },
+        env: { SANREMES_BOT_ID: "b1", SANREMES_COMMS_TOKEN: "tok", [DEFER_TOOLS_ENV]: "1" },
       });
     }
     expect(seen.env.CLAUDE_CODE_DISABLE_CRON, "a deferred trigger must not lose to CronCreate").toBe("1");
@@ -1738,28 +1738,28 @@ describe("ClaudeDriver turns (fake CLI)", () => {
   });
 
   it("clamps a configured compaction window into the range the CLI accepts", () => {
-    expect(autoCompactWindow({ OMB_CLAUDE_AUTOCOMPACT: "50000" })).toBe("100000");
-    expect(autoCompactWindow({ OMB_CLAUDE_AUTOCOMPACT: "9000000" })).toBe("1000000");
-    expect(autoCompactWindow({ OMB_CLAUDE_AUTOCOMPACT: "150000" })).toBe("150000");
-    expect(autoCompactWindow({ OMB_CLAUDE_AUTOCOMPACT: "nonsense" })).toBe("200000");
+    expect(autoCompactWindow({ SANREMES_CLAUDE_AUTOCOMPACT: "50000" })).toBe("100000");
+    expect(autoCompactWindow({ SANREMES_CLAUDE_AUTOCOMPACT: "9000000" })).toBe("1000000");
+    expect(autoCompactWindow({ SANREMES_CLAUDE_AUTOCOMPACT: "150000" })).toBe("150000");
+    expect(autoCompactWindow({ SANREMES_CLAUDE_AUTOCOMPACT: "nonsense" })).toBe("200000");
     expect(autoCompactWindow({})).toBe("200000");
-    expect(autoCompactWindow({ OMB_CLAUDE_AUTOCOMPACT: "auto" })).toBe("auto");
-    expect(autoCompactWindow({ OMB_CLAUDE_AUTOCOMPACT: "off" })).toBe(null);
+    expect(autoCompactWindow({ SANREMES_CLAUDE_AUTOCOMPACT: "auto" })).toBe("auto");
+    expect(autoCompactWindow({ SANREMES_CLAUDE_AUTOCOMPACT: "off" })).toBe(null);
   });
 
   it("compacts at 1M by default only for the Claude Opus 5.5 (1M) pick", () => {
     expect(autoCompactWindow({}, "claude-opus-5-5[1m]")).toBe("1000000");
-    expect(autoCompactWindow({ OMB_CLAUDE_AUTOCOMPACT: "nonsense" }, "claude-opus-5-5[1m]")).toBe("1000000");
+    expect(autoCompactWindow({ SANREMES_CLAUDE_AUTOCOMPACT: "nonsense" }, "claude-opus-5-5[1m]")).toBe("1000000");
     expect(autoCompactWindow({}, "claude-opus-5-5")).toBe("200000");
     expect(autoCompactWindow({}, "claude-sonnet-4-6[1m]")).toBe("200000");
     expect(autoCompactWindow({}, null)).toBe("200000");
-    expect(autoCompactWindow({ OMB_CLAUDE_AUTOCOMPACT: "300000" }, "claude-opus-5-5[1m]")).toBe("300000");
-    expect(autoCompactWindow({ OMB_CLAUDE_AUTOCOMPACT: "off" }, "claude-opus-5-5[1m]")).toBe(null);
+    expect(autoCompactWindow({ SANREMES_CLAUDE_AUTOCOMPACT: "300000" }, "claude-opus-5-5[1m]")).toBe("300000");
+    expect(autoCompactWindow({ SANREMES_CLAUDE_AUTOCOMPACT: "off" }, "claude-opus-5-5[1m]")).toBe(null);
   });
 
   it("passes no compaction window when it is turned off", async () => {
     const dump = join(scratch, "compact-off.json");
-    await create(undefined, { FAKE_CLAUDE_DUMP: dump, OMB_CLAUDE_AUTOCOMPACT: "off" });
+    await create(undefined, { FAKE_CLAUDE_DUMP: dump, SANREMES_CLAUDE_AUTOCOMPACT: "off" });
     await instance.adapter.sendTurn({ threadId: "t-compact-off", text: "hi" });
     await recorder.until((e) => e.type === "turn.completed");
     expect(JSON.parse(readFileSync(dump, "utf8")).argv).not.toContain("--autocompact");
@@ -1776,7 +1776,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
       return { bot, thread, file };
     };
 
-    it("reaches a turn in a thread's own folder, beside OpenMausBot's own settings", async () => {
+    it("reaches a turn in a thread's own folder, beside SanRemes's own settings", async () => {
       const dump = join(scratch, "bot-settings.json");
       process.env.FAKE_CLAUDE_DUMP = dump;
       await create();
@@ -1897,13 +1897,13 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     expect(seen.argv).toContain("--strict-mcp-config");
     expect(seen.argv[seen.argv.indexOf("--setting-sources") + 1]).toBe("project");
     expect(seen.settings.claudeMdExcludes).toEqual(personalMemory());
-    // A bot's memory is OpenMausBot's: the CLI's per-folder one would split notes by thread and break the cached prompt.
+    // A bot's memory is SanRemes's: the CLI's per-folder one would split notes by thread and break the cached prompt.
     expect(seen.settings.env.CLAUDE_CODE_DISABLE_AUTO_MEMORY).toBe("1");
   });
 
   it("inherits the machine's configuration again when the escape hatch is set", async () => {
     const dump = join(scratch, "inherit.json");
-    await create(undefined, { FAKE_CLAUDE_DUMP: dump, OMB_CLAUDE_INHERIT_USER_CONFIG: "1" });
+    await create(undefined, { FAKE_CLAUDE_DUMP: dump, SANREMES_CLAUDE_INHERIT_USER_CONFIG: "1" });
 
     await instance.adapter.sendTurn({ threadId: "t-inherit", text: "hi" });
     await recorder.until((e) => e.type === "turn.completed");
@@ -1996,7 +1996,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     const docs = { type: "http" as const, url: "https://docs.example/mcp", headers: { Authorization: "Bearer tok-docs" } };
     const draw = { type: "http" as const, url: "https://mcp.excalidraw.com/mcp", headers: { Authorization: "Bearer tok-draw" } };
     const board = { command: "board-mcp", args: [], env: {} };
-    const agents = { command: process.execPath, args: ["agents-proxy.js"], env: { OMB_HARNESS_URL: "http://127.0.0.1:8799", OMB_COMMS_TOKEN: "comms-fixture" } };
+    const agents = { command: process.execPath, args: ["agents-proxy.js"], env: { SANREMES_HARNESS_URL: "http://127.0.0.1:8799", SANREMES_COMMS_TOKEN: "comms-fixture" } };
     await instance.adapter.sendTurn({
       threadId: "t-app-mcp", text: "hi",
       integrations: { agents, custom: { docs, draw, board }, mcpApps: { draw: { extension: true }, board: { extension: true } } },
@@ -2006,11 +2006,11 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     expect(seen.mcpConfig.mcpServers.docs).toEqual(docs);
     const proxy = seen.mcpConfig.mcpServers.draw;
     expect(proxy.args[0]).toContain("mcp-remote-proxy");
-    expect(JSON.parse(proxy.env.OMB_REMOTE_MCP_SERVER)).toEqual(draw);
-    expect(JSON.parse(proxy.env.OMB_REMOTE_MCP_APPS)).toEqual({ server: "draw", harnessUrl: "http://127.0.0.1:8799", token: "comms-fixture", extension: true });
+    expect(JSON.parse(proxy.env.SANREMES_REMOTE_MCP_SERVER)).toEqual(draw);
+    expect(JSON.parse(proxy.env.SANREMES_REMOTE_MCP_APPS)).toEqual({ server: "draw", harnessUrl: "http://127.0.0.1:8799", token: "comms-fixture", extension: true });
     const gate = seen.mcpConfig.mcpServers.board;
     expect(gate.args[0]).toContain("mcp-gate");
-    expect(JSON.parse(gate.env.OMB_GATE_APPS)).toMatchObject({ server: "board", extension: true });
+    expect(JSON.parse(gate.env.SANREMES_GATE_APPS)).toMatchObject({ server: "board", extension: true });
     expect(JSON.stringify(seen.argv)).not.toContain("tok-draw");
     expect(JSON.stringify(seen.argv)).not.toContain("comms-fixture");
   });
@@ -2038,16 +2038,16 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     await recorder.until((e) => e.type === "turn.completed");
     const docs = JSON.parse(readFileSync(dump, "utf8")).mcpConfig.mcpServers.docs;
     expect(docs.args[0]).toContain("mcp-gate");
-    expect(docs.env).not.toHaveProperty("OMB_GATE_DIRECTORY");
-    const upstream = JSON.parse(docs.env.OMB_GATE_UPSTREAM);
+    expect(docs.env).not.toHaveProperty("SANREMES_GATE_DIRECTORY");
+    const upstream = JSON.parse(docs.env.SANREMES_GATE_UPSTREAM);
     expect(upstream.args[0]).toContain("mcp-remote-proxy");
-    expect(upstream.env).not.toHaveProperty("OMB_REMOTE_MCP_DIRECTORY");
+    expect(upstream.env).not.toHaveProperty("SANREMES_REMOTE_MCP_DIRECTORY");
   });
 
   it("preserves only the selected account's auth settings in a private file", async () => {
     const account = join(scratch, "account");
     mkdirSync(account);
-    const settings = { apiKeyHelper: "echo synthetic-helper-key", env: { ANTHROPIC_BASE_URL: "http://127.0.0.1:9", ANTHROPIC_AUTH_TOKEN: "synthetic-token", OMB_TTS_KEY: "must-not-leak" }, hooks: { SessionStart: [{ command: "must-not-run" }] }, permissions: { defaultMode: "bypassPermissions" } };
+    const settings = { apiKeyHelper: "echo synthetic-helper-key", env: { ANTHROPIC_BASE_URL: "http://127.0.0.1:9", ANTHROPIC_AUTH_TOKEN: "synthetic-token", SANREMES_TTS_KEY: "must-not-leak" }, hooks: { SessionStart: [{ command: "must-not-run" }] }, permissions: { defaultMode: "bypassPermissions" } };
     writeFileSync(join(account, "settings.json"), JSON.stringify(settings));
     const dump = join(scratch, "account.json");
     await create(undefined, { FAKE_CLAUDE_DUMP: dump }, { configDir: account });
@@ -2084,7 +2084,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     expect(after.settings.env.ANTHROPIC_API_KEY).toBe("synthetic-new");
   });
 
-  it("loads third-party MCP tools on demand and keeps OpenMausBot's own servers loaded", async () => {
+  it("loads third-party MCP tools on demand and keeps SanRemes's own servers loaded", async () => {
     await create();
     const dump = join(scratch, "tool-search.json");
     process.env.FAKE_CLAUDE_DUMP = dump;
@@ -2499,18 +2499,18 @@ describe("ClaudeDriver turns (fake CLI)", () => {
   });
 
   it("warns on the Engines page while the escape hatch is set", async () => {
-    await create(undefined, { FAKE_CLAUDE_VERSION: "2.1.267", OMB_CLAUDE_INHERIT_USER_CONFIG: "1" });
+    await create(undefined, { FAKE_CLAUDE_VERSION: "2.1.267", SANREMES_CLAUDE_INHERIT_USER_CONFIG: "1" });
     expect(await instance.snapshot()).toMatchObject({
       state: "available",
       warning: {
         title: "Bots inherit this machine's Claude Code setup",
-        message: expect.stringContaining("OMB_CLAUDE_INHERIT_USER_CONFIG"),
+        message: expect.stringContaining("SANREMES_CLAUDE_INHERIT_USER_CONFIG"),
       },
     });
   });
 
   it("does not warn when the escape hatch is set to anything but 1", async () => {
-    await create(undefined, { FAKE_CLAUDE_VERSION: "2.1.267", OMB_CLAUDE_INHERIT_USER_CONFIG: "true" });
+    await create(undefined, { FAKE_CLAUDE_VERSION: "2.1.267", SANREMES_CLAUDE_INHERIT_USER_CONFIG: "true" });
     expect((await instance.snapshot()).warning).toBeUndefined();
   });
 
@@ -2600,7 +2600,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     await recorder.until((e) => e.type === "turn.completed");
 
     const seen = JSON.parse(readFileSync(dump, "utf8"));
-    expect(JSON.parse(seen.mcpConfig.mcpServers.shop.env.OMB_GATE_UPSTREAM)).toMatchObject({
+    expect(JSON.parse(seen.mcpConfig.mcpServers.shop.env.SANREMES_GATE_UPSTREAM)).toMatchObject({
       command: "npx",
       args: ["-y", "mcp-remote", "https://example.test/shop"],
     });
@@ -2628,13 +2628,13 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     const seen = JSON.parse(readFileSync(dump, "utf8"));
     const shop = seen.mcpConfig.mcpServers.shop;
     expect(shop.args[0]).toContain("mcp-gate");
-    expect(JSON.parse(shop.env.OMB_GATE_UPSTREAM)).toMatchObject({
+    expect(JSON.parse(shop.env.SANREMES_GATE_UPSTREAM)).toMatchObject({
       command: "npx",
       args: ["-y", "mcp-remote", "https://example.test/shop"],
       env: { SHOP_TOKEN: "secret" },
     });
-    expect(shop.env.OMB_GATE_NAME).toBe("shop");
-    expect(Number(shop.env.OMB_GATE_BUDGET)).toBeGreaterThan(0);
+    expect(shop.env.SANREMES_GATE_NAME).toBe("shop");
+    expect(Number(shop.env.SANREMES_GATE_BUDGET)).toBeGreaterThan(0);
     expect(JSON.stringify(seen.argv)).not.toContain("secret");
     expect(seen.mcpConfig.mcpServers.ogb.args[0]).not.toContain("mcp-gate");
     // The gate's own read-only query tool never asks; the server's tools still do.
@@ -2645,7 +2645,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
 
   it("mounts bot servers directly when the result budget is turned off", async () => {
     const dump = join(scratch, "gate-off.json");
-    await create(undefined, { FAKE_CLAUDE_DUMP: dump, OMB_MCP_RESULT_BUDGET: "0" });
+    await create(undefined, { FAKE_CLAUDE_DUMP: dump, SANREMES_MCP_RESULT_BUDGET: "0" });
 
     await instance.adapter.sendTurn({
       threadId: "t-gate-off",
@@ -2661,7 +2661,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
 
   it("gives each bot server its own result budget, over the app-wide one", async () => {
     const dump = join(scratch, "gate-own.json");
-    await create(undefined, { FAKE_CLAUDE_DUMP: dump, OMB_MCP_RESULT_BUDGET: "0" });
+    await create(undefined, { FAKE_CLAUDE_DUMP: dump, SANREMES_MCP_RESULT_BUDGET: "0" });
 
     await instance.adapter.sendTurn({
       threadId: "t-gate-own",
@@ -2674,7 +2674,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     await recorder.until((e) => e.type === "turn.completed");
 
     const seen = JSON.parse(readFileSync(dump, "utf8"));
-    expect(seen.mcpConfig.mcpServers.motion.env.OMB_GATE_BUDGET).toBe("40000");
+    expect(seen.mcpConfig.mcpServers.motion.env.SANREMES_GATE_BUDGET).toBe("40000");
     // the others keep the app-wide setting (here: off)
     expect(seen.mcpConfig.mcpServers.shop).toMatchObject({ command: "npx", args: ["shop"] });
   });
@@ -2694,7 +2694,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     await recorder.until((e) => e.type === "turn.completed");
 
     const seen = JSON.parse(readFileSync(dump, "utf8"));
-    expect(seen.mcpConfig.mcpServers.motion.env.OMB_GATE_BUDGET).toBe("40000");
+    expect(seen.mcpConfig.mcpServers.motion.env.SANREMES_GATE_BUDGET).toBe("40000");
     expect(seen.mcpConfig.mcpServers.docs).toEqual({ type: "http", url: "https://docs.example.test/mcp", headers: {} });
   });
 
@@ -2795,19 +2795,19 @@ describe("ClaudeDriver turns (fake CLI)", () => {
         agents: {
           command: process.execPath,
           args: ["/fake/agents-proxy.js"],
-          env: { OMB_HARNESS_URL: "http://127.0.0.1:1", OMB_BOT_ID: "b1", OMB_COMMS_TOKEN: "tok" },
+          env: { SANREMES_HARNESS_URL: "http://127.0.0.1:1", SANREMES_BOT_ID: "b1", SANREMES_COMMS_TOKEN: "tok" },
         },
       },
     });
     await recorder.until((e) => e.type === "turn.completed");
 
     const seen = JSON.parse(readFileSync(dump, "utf8"));
-    expect(JSON.parse(seen.mcpConfig.mcpServers.notes.env.OMB_GATE_UPSTREAM)).toMatchObject({
+    expect(JSON.parse(seen.mcpConfig.mcpServers.notes.env.SANREMES_GATE_UPSTREAM)).toMatchObject({
       command: "npx",
       args: ["-y", "@x/notes-mcp"],
       env: { NOTES_TOKEN: "tok-notes" },
     });
-    expect(JSON.parse(seen.mcpConfig.mcpServers.constructor.env.OMB_GATE_UPSTREAM)).toMatchObject({ command: "fixture-constructor" });
+    expect(JSON.parse(seen.mcpConfig.mcpServers.constructor.env.SANREMES_GATE_UPSTREAM)).toMatchObject({ command: "fixture-constructor" });
     const allowed = seen.argv[seen.argv.indexOf("--allowedTools") + 1].split(",");
     expect(allowed).toContain("mcp__agents");
     expect(allowed).not.toContain("mcp__notes");
@@ -2843,7 +2843,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     expect(seen.argv[seen.argv.indexOf("--disallowedTools") + 1].split(",")).toEqual(["Workflow", "ScheduleWakeup", "ReportFindings", "ListAgents"]);
 
     const inherited = join(scratch, "built-ins-inherit.json");
-    await create(undefined, { FAKE_CLAUDE_DUMP: inherited, OMB_CLAUDE_INHERIT_USER_CONFIG: "1" });
+    await create(undefined, { FAKE_CLAUDE_DUMP: inherited, SANREMES_CLAUDE_INHERIT_USER_CONFIG: "1" });
     await instance.adapter.sendTurn({ threadId: "t-built-ins-inherit", text: "hi" });
     await recorder.until((event) => event.type === "turn.completed");
     expect(JSON.parse(readFileSync(inherited, "utf8")).argv).not.toContain("--disallowedTools");
@@ -2855,14 +2855,14 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     setNativeSkillEnabled("bot-skills-off", "hatch-pet", false);
     try {
       const dump = join(scratch, "skills-off.json");
-      await create(undefined, { FAKE_CLAUDE_DUMP: dump, OMB_CLAUDE_INHERIT_USER_CONFIG: "1" });
+      await create(undefined, { FAKE_CLAUDE_DUMP: dump, SANREMES_CLAUDE_INHERIT_USER_CONFIG: "1" });
       await instance.adapter.sendTurn({ threadId: "t-skills-off", botId: "bot-skills-off", text: "hi" });
       await recorder.until((event) => event.type === "turn.completed");
       const seen = JSON.parse(readFileSync(dump, "utf8"));
       expect(seen.argv[seen.argv.indexOf("--disallowedTools") + 1].split(",")).toEqual(["Skill(hatch-pet)", "Skill(pdf)"]);
 
       const other = join(scratch, "skills-other.json");
-      await create(undefined, { FAKE_CLAUDE_DUMP: other, OMB_CLAUDE_INHERIT_USER_CONFIG: "1" });
+      await create(undefined, { FAKE_CLAUDE_DUMP: other, SANREMES_CLAUDE_INHERIT_USER_CONFIG: "1" });
       await instance.adapter.sendTurn({ threadId: "t-skills-other", botId: "bot-skills-on", text: "hi" });
       await recorder.until((event) => event.type === "turn.completed");
       expect(JSON.parse(readFileSync(other, "utf8")).argv).not.toContain("--disallowedTools");
@@ -2916,7 +2916,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
         composio: {
           command: process.execPath,
           args: ["/tmp/connector-proxy.js"],
-          env: { OMB_CONNECTOR_UPSTREAM_URL: "https://example.test/mcp" },
+          env: { SANREMES_CONNECTOR_UPSTREAM_URL: "https://example.test/mcp" },
         },
       },
     });
@@ -2926,7 +2926,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     expect(seen.mcpConfig.mcpServers.composio).toMatchObject({
       command: process.execPath,
       args: ["/tmp/connector-proxy.js"],
-      env: { OMB_CONNECTOR_UPSTREAM_URL: "https://example.test/mcp" },
+      env: { SANREMES_CONNECTOR_UPSTREAM_URL: "https://example.test/mcp" },
     });
     expect(JSON.stringify(seen.argv)).not.toContain("ak_test");
     expect(seen.argv[seen.argv.indexOf("--allowedTools") + 1]).toContain("mcp__composio");
@@ -2947,7 +2947,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
         composio: {
           command: process.execPath,
           args: ["/tmp/connector-proxy.js"],
-          env: { OMB_CONNECTOR_UPSTREAM_URL: "https://example.test/mcp" },
+          env: { SANREMES_CONNECTOR_UPSTREAM_URL: "https://example.test/mcp" },
         },
       },
     });
@@ -2957,7 +2957,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
       const seen = JSON.parse(readFileSync(dump, "utf8"));
       return seen.argv[seen.argv.indexOf("--mcp-config") + 1] as string;
     })();
-    expect(configPath).toMatch(/omb-mcp-/);
+    expect(configPath).toMatch(/sanremes-mcp-/);
     expect(existsSync(configPath)).toBe(false);
     expect(existsSync(dirname(configPath))).toBe(false);
   });
@@ -3005,7 +3005,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
         localComputer: {
           command: process.execPath,
           args: ["/fake/harness-mcp", "computer"],
-          env: { OMB_HARNESS_URL: "http://127.0.0.1:1" },
+          env: { SANREMES_HARNESS_URL: "http://127.0.0.1:1" },
           platform: "linux",
         },
       },
@@ -3196,7 +3196,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
       await expect(pendingAnswer).resolves.toMatchObject({ id: "before-stop", behavior: "deny" });
       const lateAnswer = nextAnswer();
       conn.write(JSON.stringify({ t: "ask", id: "after-stop", tool: "Bash", input: { command: "echo too late" } }) + "\n");
-      await expect(lateAnswer).resolves.toMatchObject({ id: "after-stop", behavior: "deny", message: "OpenMausBot: the turn ended" });
+      await expect(lateAnswer).resolves.toMatchObject({ id: "after-stop", behavior: "deny", message: "SanRemes: the turn ended" });
       expect(recorder.events.filter((e) => e.type === "request.opened")).toHaveLength(openedBefore);
       await expect(instance.adapter.respondToRequest(threadId, "after-stop", { behavior: "allow" })).resolves.toBe("unavailable");
     } finally {
@@ -3737,7 +3737,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     expect(dumpedPid(dump)).not.toBe(failedLaunch);
   });
 
-  it("reports which of the turn's own MCP servers did not connect, and none of OpenMausBot's", async () => {
+  it("reports which of the turn's own MCP servers did not connect, and none of SanRemes's", async () => {
     await create(undefined, { FAKE_CLAUDE_MCP_FAILED: "agents,blender,stranger" });
     const custom = { blender: { command: "/usr/bin/python3", args: ["/srv/blender.py"], env: {} }, notes: { command: "npx", args: ["notes-mcp"], env: {} } };
     const turn = await instance.adapter.sendTurn({ threadId: "t-custom-failed", text: "one", integrations: { custom } });
@@ -3841,7 +3841,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     await expect(answer).resolves.toMatchObject({
       id: "ask-between",
       behavior: "deny",
-      message: "OpenMausBot: the turn ended",
+      message: "SanRemes: the turn ended",
     });
     expect(recorder.events.filter((e) => e.type === "request.opened")).toHaveLength(opensBefore);
     await expect(
@@ -4000,8 +4000,8 @@ describe("ClaudeDriver turns (fake CLI)", () => {
 
   it("closes an idle session after the configured window", async () => {
     // Ten seconds is the floor; poll the native log for the close instead of sleeping past it.
-    process.env.OMB_CLAUDE_SESSION_IDLE_MIN_MS = "10000";
-    process.env.OMB_CLAUDE_SESSION_IDLE_MS = "10000";
+    process.env.SANREMES_CLAUDE_SESSION_IDLE_MIN_MS = "10000";
+    process.env.SANREMES_CLAUDE_SESSION_IDLE_MS = "10000";
     await create();
     await instance.adapter.sendTurn({ threadId: "t-idle", text: "one" });
     await recorder.until((e) => e.type === "turn.completed");
@@ -4472,7 +4472,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     expect(await nextAnswer()).toMatchObject({
       id: "dup-1",
       behavior: "deny",
-      message: "OpenMausBot: duplicate ask id — skipping this request.",
+      message: "SanRemes: duplicate ask id — skipping this request.",
     });
     expect(recorder.events.filter((e) => e.type === "request.opened" && e.requestId === "dup-1")).toHaveLength(1);
 
@@ -4501,7 +4501,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     expect(await conn2Answer).toMatchObject({
       id: "dup-2",
       behavior: "deny",
-      message: "OpenMausBot: duplicate ask id — skipping this request.",
+      message: "SanRemes: duplicate ask id — skipping this request.",
     });
     expect(recorder.events.filter((e) => e.type === "request.opened" && e.requestId === "dup-2")).toHaveLength(1);
 
@@ -4554,7 +4554,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     expect(await nextAnswer()).toMatchObject({
       id: "dup-4",
       behavior: "deny",
-      message: "OpenMausBot: duplicate ask id — skipping this request.",
+      message: "SanRemes: duplicate ask id — skipping this request.",
     });
     expect(recorder.events.filter((e) => e.type === "request.opened" && e.requestId === "dup-4")).toHaveLength(1);
 
@@ -4591,7 +4591,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     expect(await reply).toMatchObject({
       id: "ask-late",
       behavior: "deny",
-      message: "OpenMausBot: the turn ended",
+      message: "SanRemes: the turn ended",
     });
     expect(recorder.events.filter((e) => e.type === "request.opened")).toHaveLength(opensBefore);
     await expect(instance.adapter.respondToRequest("t-perm-late", "ask-late", { behavior: "allow" })).resolves.toBe(
@@ -4624,7 +4624,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     expect(await reply).toMatchObject({
       id: "q-late",
       behavior: "answer",
-      message: "OpenMausBot: the turn is ending — wrap up.",
+      message: "SanRemes: the turn is ending — wrap up.",
     });
     expect(recorder.events.filter((e) => e.type === "request.opened")).toHaveLength(opensBefore);
     await expect(
@@ -4665,7 +4665,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     await create(undefined, { CLAUDE_CONFIG_DIR: instanceConfigDir });
     const dump = join(scratch, "generate-text-env.json");
     process.env.FAKE_CLAUDE_DUMP = dump;
-    const names = ["XAI_API_KEY", "COMPOSIO_API_KEY", "BOX_TOKEN", "OPENCODE_API_KEY", "OMB_TTS_KEY"] as const;
+    const names = ["XAI_API_KEY", "COMPOSIO_API_KEY", "BOX_TOKEN", "OPENCODE_API_KEY", "SANREMES_TTS_KEY"] as const;
     for (const name of names) process.env[name] = `${name}-must-not-leak`;
 
     await expect(instance.generateText?.("summarize safely")).resolves.toBe("fake generated text");
@@ -4697,7 +4697,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     expect(seen.argv).toContain("--strict-mcp-config");
     expect(seen.argv[seen.argv.indexOf("--setting-sources") + 1]).toBe("project");
     expect(seen.argv).toContain("--no-session-persistence");
-    expect(seen.cwd).toContain("omb-claude-background-");
+    expect(seen.cwd).toContain("sanremes-claude-background-");
     expect(existsSync(seen.cwd)).toBe(false);
   });
 
@@ -4747,7 +4747,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
       "-p", "--model", "claude-haiku-5-5", "--output-format", "text", "--settings", BACKGROUND_SETTINGS,
       "--tools", "", "--no-session-persistence", "--strict-mcp-config", "--setting-sources", "project",
     ]);
-    // OMB_CLAUDE_INHERIT_USER_CONFIG keeps the person's own setup, still without tools
+    // SANREMES_CLAUDE_INHERIT_USER_CONFIG keeps the person's own setup, still without tools
     expect(backgroundCallArgs({ ...base, supports: cli([2, 1, 296]), isolated: false })).not.toContain("--strict-mcp-config");
     expect(backgroundCallArgs({ ...base, supports: cli([1, 0, 100]), isolated: true })).toEqual([
       "-p", "--model", "claude-haiku-5-5", "--output-format", "text", "--settings", BACKGROUND_SETTINGS, "--strict-mcp-config",
@@ -4878,7 +4878,7 @@ describe("ClaudeDriver resume recovery (fake CLI)", () => {
   beforeEach(async () => {
     ensureDirs();
     chmodSync(FAKE_CLI, 0o755);
-    scratch = mkdtempSync(join(tmpdir(), "omb-claude-recover-"));
+    scratch = mkdtempSync(join(tmpdir(), "sanremes-claude-recover-"));
     process.env.FAKE_CLAUDE_MODE = "dead-session";
     instance = await ClaudeDriver.create({
       instanceId: "claude-test",

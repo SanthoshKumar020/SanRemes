@@ -117,7 +117,7 @@ export interface FirstHourDeps {
   store: Pick<Store, "bot" | "bots" | "messagesFor" | "activePath" | "appendMessage" | "patchMessage" | "patchTask" | "patchBot" | "taskByThread" | "groupByThread">;
   dataDir: string;
   now?: () => number;
-  /** The Chief the first hour belongs to: the place's MausBot, or its main Chief. */
+  /** The Chief the first hour belongs to: the place's SanRemes, or its main Chief. */
   chief(): BotRecord | null;
   mainThread(botId: string): string | undefined;
   threadBusy(botId: string, threadId: string): boolean;
@@ -184,7 +184,7 @@ export function lookPrompt(input: { apps: readonly LookApp[]; name?: string; lan
   const mail = input.apps.includes("gmail"), calendar = input.apps.includes("googlecalendar");
   const who = input.name ?? "The person";
   return [
-    `OpenMausBot first look: ${who} just connected ${input.apps.map((app) => APP_NAME[app]).join(" and ")}. Give them their first look now, without being asked again.`,
+    `SanRemes first look: ${who} just connected ${input.apps.map((app) => APP_NAME[app]).join(" and ")}. Give them their first look now, without being asked again.`,
     `Read their ${[mail && "Gmail", calendar && "Google Calendar"].filter(Boolean).join(" and ")}, then write one short, concrete message in ${languageName(input.language)}:`,
     ...(calendar ? ["- This week: their meetings over the next 7 days, one line each (day, time, who), and say which ones overlap."] : []),
     ...(mail ? [
@@ -272,7 +272,7 @@ export function createFirstHour(deps: FirstHourDeps) {
     const chief = greeter();
     return deps.store.bots.filter((bot) => bot.id !== chief && !bot.hidden && !bot.movedTo).sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0) || a.name.localeCompare(b.name));
   };
-  /** Their names for the greeting, leaving out a MausBot that came along: "MausBot is here now… I'm MausBot" says nothing. */
+  /** Their names for the greeting, leaving out a SanRemes that came along: "SanRemes is here now… I'm SanRemes" says nothing. */
   const arrivals = (): string[] => {
     const own = greeter() ? deps.store.bot(greeter()!)?.name : undefined;
     return others().filter((bot) => !bot.defaultBot && (!own || (bot.name !== own && !bot.name.startsWith(`${own} (`)))).map((bot) => bot.name);

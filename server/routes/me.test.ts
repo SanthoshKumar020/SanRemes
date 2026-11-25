@@ -30,7 +30,7 @@ function selfHosted(names: MeRouteDeps["names"]) {
 
 describe("/api/me on a self-hosted server", () => {
   const setup = () => {
-    const dir = mkdtempSync(join(tmpdir(), "omb-me-route-")); dirs.push(dir);
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-me-route-")); dirs.push(dir);
     const store = createPersonNames(dir);
     return selfHosted({ store, shownAs: (record) => store.of(record) ?? record.email ?? record.label }).routes;
   };

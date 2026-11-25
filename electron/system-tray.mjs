@@ -20,7 +20,7 @@ export function createSystemTray({ Tray, Menu, nativeImage, iconPath, getWindow,
     { type: "separator" },
     { label: t("native.tray.quit"), click: onQuit },
   ]));
-  tray.setToolTip("OpenMausBot");
+  tray.setToolTip("SanRemes");
   label();
   tray.on("click", show);
   tray.on("double-click", show);
@@ -49,7 +49,7 @@ export function createSystemTray({ Tray, Menu, nativeImage, iconPath, getWindow,
           if (returned) return;
           returned = true; lent = false;
           if (tray.isDestroyed()) return;
-          tray.setToolTip("OpenMausBot");
+          tray.setToolTip("SanRemes");
           label();
         },
       };

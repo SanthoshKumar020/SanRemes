@@ -9,7 +9,7 @@ import { createMemoryUpkeep } from "./memory-upkeep.ts";
 import { workspaceDir } from "./workspace.ts";
 
 it("lets a Claude dream outlive the helper's default minute, but still stops it at three minutes", async () => {
-  const scratch = mkdtempSync(join(tmpdir(), "omb-dream-timeout-"));
+  const scratch = mkdtempSync(join(tmpdir(), "sanremes-dream-timeout-"));
   const dump = join(scratch, "helper.json");
   const bot = { id: "dream-timeout-test", name: "Scout", memoryUpkeep: true };
   const engine = await ClaudeDriver.create({

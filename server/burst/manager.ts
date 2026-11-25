@@ -19,9 +19,9 @@ const FAILURES_SHOWN = 10;
 /** What one merge turn reads of all the parts together: a burst of any size fits one engine's context. */
 const MERGE_BUDGET = 150_000;
 export const BURST_PART_MAX_RESTARTS = 2;
-/** OMB_BURST_PART_MAX_RESTARTS, a whole number from 0; anything else leaves the default. */
-export const burstPartMaxRestarts = (env: NodeJS.ProcessEnv = process.env): number => envWhole(env.OMB_BURST_PART_MAX_RESTARTS, BURST_PART_MAX_RESTARTS, 0);
-export const cutOffTooOften = (restarts: number): string => `Not started again: OpenMausBot restarted while this part ran ${restarts + 1} times.`;
+/** SANREMES_BURST_PART_MAX_RESTARTS, a whole number from 0; anything else leaves the default. */
+export const burstPartMaxRestarts = (env: NodeJS.ProcessEnv = process.env): number => envWhole(env.SANREMES_BURST_PART_MAX_RESTARTS, BURST_PART_MAX_RESTARTS, 0);
+export const cutOffTooOften = (restarts: number): string => `Not started again: SanRemes restarted while this part ran ${restarts + 1} times.`;
 export const ITEM_MAX = 2_000;
 export const INSTRUCTIONS_MAX = 12_000;
 
@@ -338,7 +338,7 @@ export function createBurstManager(deps: BurstManagerDeps) {
       return ownThreads.has(threadId);
     },
     /** After a restart: a running turn is gone, so its part goes back in line and a merge tries again, until restarts cut
-     * either off more than OMB_BURST_PART_MAX_RESTARTS times: the part then fails with one line, and the parts are
+     * either off more than SANREMES_BURST_PART_MAX_RESTARTS times: the part then fails with one line, and the parts are
      * posted as they came instead of merged. */
     recover(): void {
       store.prune(now() - PRUNE_AFTER_MS);

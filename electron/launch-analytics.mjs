@@ -38,7 +38,7 @@ function atLeast(version, minimum) {
  * only in the page's storage into the switch. Packaged builds only, never under the smoke tests or CI.
  */
 export function launchAnalyticsAllowed({ choice, firstLaunch, lastVersion, packaged, env }) {
-  if (!packaged || env.OMB_SMOKE_TEST === "1" || env.CI) return false;
+  if (!packaged || env.SANREMES_SMOKE_TEST === "1" || env.CI) return false;
   if (choice === true) return true;
   if (choice !== null) return false;
   return firstLaunch || atLeast(lastVersion, OPT_OUT_KEPT_SINCE);

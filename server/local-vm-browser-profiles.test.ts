@@ -14,15 +14,15 @@ afterEach(() => {
   for (const path of temporary.splice(0)) rmSync(path, { recursive: true, force: true });
 });
 const scratch = () => {
-  const dir = mkdtempSync(join(tmpdir(), "omb-vm-profiles-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-vm-profiles-"));
   temporary.push(dir);
   return dir;
 };
 
-/** The exact printf the image runs to write prepare-openmausbot-workspace.sh, pointed at a scratch workspace. */
+/** The exact printf the image runs to write prepare-sanremes-workspace.sh, pointed at a scratch workspace. */
 function prepareScript(dir: string, workspace: string): string {
   const dockerfile = managedImageDockerfile();
-  const end = dockerfile.indexOf("> /usr/local/bin/prepare-openmausbot-workspace.sh");
+  const end = dockerfile.indexOf("> /usr/local/bin/prepare-sanremes-workspace.sh");
   const start = dockerfile.lastIndexOf("RUN printf", end);
   expect(start).toBeGreaterThan(-1);
   const script = join(dir, "prepare.sh");
@@ -191,7 +191,7 @@ printf '%s\\n' "$*" >> '${log}'
 [ "$1" = cp ] || { echo "unexpected: $*" >&2; exit 64; }
 ${opts.fail ? `echo '${opts.fail}' >&2; exit 1` : ""}
 src="\${2#*:}"
-[ -e "${container}$src" ] || [ -L "${container}$src" ] || { echo "Error response from daemon: Could not find the file $src in container omb" >&2; exit 1; }
+[ -e "${container}$src" ] || [ -L "${container}$src" ] || { echo "Error response from daemon: Could not find the file $src in container sanremes" >&2; exit 1; }
 [ -e "$3" ] && { echo "destination exists" >&2; exit 1; }
 cp -RP "${container}$src" "$3"
 `);
@@ -199,7 +199,7 @@ cp -RP "${container}$src" "$3"
   return { runtime, log };
 }
 
-const target = (workspaceDir: string): LocalVmTarget => ({ key: "bot:x", containerName: "openmausbot-computer-x", workspaceDir, viewerPort: null, label: "x" });
+const target = (workspaceDir: string): LocalVmTarget => ({ key: "bot:x", containerName: "sanremes-computer-x", workspaceDir, viewerPort: null, label: "x" });
 
 describe.skipIf(process.platform === "win32")("rescueFirefoxProfile", () => {
   it("copies user-installed desktop apps into the durable area before replacement", async () => {
@@ -238,8 +238,8 @@ describe.skipIf(process.platform === "win32")("rescueFirefoxProfile", () => {
     expect(await rescueFirefoxProfile(runtime, target(workspace))).toBe("rescued");
     expect(readFileSync(join(workspace, ".browser-profiles", "mozilla", "firefox", "abc.default-esr", "cookies.sqlite"), "utf8")).toBe("signed in");
     const [copy] = readFileSync(log, "utf8").trim().split("\n");
-    expect(copy).toMatch(/^cp openmausbot-computer-x:\/home\/cua\/\.mozilla \S+\/\.mozilla-rescue-[0-9a-f]+$/);
-    expect(copy.startsWith(`cp openmausbot-computer-x:/home/cua/.mozilla ${workspace}/.mozilla-rescue-`)).toBe(true);
+    expect(copy).toMatch(/^cp sanremes-computer-x:\/home\/cua\/\.mozilla \S+\/\.mozilla-rescue-[0-9a-f]+$/);
+    expect(copy.startsWith(`cp sanremes-computer-x:/home/cua/.mozilla ${workspace}/.mozilla-rescue-`)).toBe(true);
     expect(readdirSync(join(workspace, ".browser-profiles"))).toEqual(["mozilla"]);
     expect(readdirSync(workspace)).toEqual([".browser-profiles"]);
   });

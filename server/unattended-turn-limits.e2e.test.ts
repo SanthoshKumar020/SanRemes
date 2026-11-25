@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it } from "vitest";
 
-import { launchVerificationServer, runControlOmb, type VerificationServer } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb, type VerificationServer } from "../scripts/control-sanremes.ts";
 import { failedTurnCause } from "../shared/failed-turn.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
 
@@ -25,7 +25,7 @@ afterEach(async () => {
 });
 
 async function launch(env: NodeJS.ProcessEnv) {
-  scratch = mkdtempSync(join(tmpdir(), "omb-unattended-"));
+  scratch = mkdtempSync(join(tmpdir(), "sanremes-unattended-"));
   const script = join(scratch, "calls.json");
   fixture = await launchVerificationServer({ ...env, FAKE_CLAUDE_TOOL_CALLS_FILE: script, FAKE_CLAUDE_RELEASE: join(scratch, "release") });
   const { url } = fixture.info;
@@ -53,7 +53,7 @@ async function launch(env: NodeJS.ProcessEnv) {
 }
 
 it("with the limits off, a looping run makes every call it wants to", async () => {
-  const { play } = await launch({ OMB_LOOP_GUARD_UNATTENDED_STOP_AT: "off", OMB_UNATTENDED_TURN_MAX_REQUESTS: "off" });
+  const { play } = await launch({ SANREMES_LOOP_GUARD_UNATTENDED_STOP_AT: "off", SANREMES_UNATTENDED_TURN_MAX_REQUESTS: "off" });
   const same = await play("Same failure", SAME_FAILURE, (_run, made) => made >= CALLS + 1);
   expect(same.made).toBe(CALLS + 1);
   expect(same.run.status).toBe("running");
@@ -61,7 +61,7 @@ it("with the limits off, a looping run makes every call it wants to", async () =
 }, hostTimeout(120_000));
 
 it("a run repeating one failure is stopped at the loop guard's count, and one that keeps going at its request limit, each with one line", async () => {
-  const { play } = await launch({ OMB_LOOP_GUARD_UNATTENDED_STOP_AT: "6", OMB_UNATTENDED_TURN_MAX_REQUESTS: "10" });
+  const { play } = await launch({ SANREMES_LOOP_GUARD_UNATTENDED_STOP_AT: "6", SANREMES_UNATTENDED_TURN_MAX_REQUESTS: "10" });
   const loopStop = "the same call failed the same way 6 times in a row: “Bash: git status” — the turn was stopped";
   const same = await play("Same failure", SAME_FAILURE, (run) => run?.status === "failed");
   expect(same.made).toBe(6);

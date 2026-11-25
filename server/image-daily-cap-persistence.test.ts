@@ -7,7 +7,7 @@ import { createImageDailyCap, IMAGE_DAY_FILE } from "./image-daily-cap.ts";
 
 const roots: string[] = [];
 const fixture = () => {
-  const root = mkdtempSync(join(tmpdir(), "omb-image-cap-persistence-"));
+  const root = mkdtempSync(join(tmpdir(), "sanremes-image-cap-persistence-"));
   roots.push(root);
   vi.spyOn(console, "warn").mockImplementation(() => undefined);
   return join(root, "data");

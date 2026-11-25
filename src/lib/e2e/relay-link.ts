@@ -1,4 +1,4 @@
-// A web page's way to a `serve --relay` computer from anywhere: an end-to-end encrypted session through MausBot Relay
+// A web page's way to a `serve --relay` computer from anywhere: an end-to-end encrypted session through SanRemes Relay
 // that carries plain HTTP to the server's own request handler (server/phone-relay.ts), as a session of its own.
 import { fromB64u, type Bytes } from "./bytes.ts";
 import { admission, credentialHash, keyId, psk } from "./credentials.ts";
@@ -6,11 +6,11 @@ import { streamFetch, type StreamRequest } from "./http.ts";
 import { dialRelay, type PhoneSession } from "./session.ts";
 
 /** As companion/src/e2e/descriptor.ts. */
-const RELAY_HOST = /^relay[1-9][0-9]?\.openmausbot\.com$/;
+const RELAY_HOST = /^relay[1-9][0-9]?\.sanremes\.com$/;
 const MAX_RELAY_NODES = 4;
 const PUBLIC_KEY_BYTES = 65;
 const HOST_ID_BYTES = 16;
-const APP = "openmausbot-web/1";
+const APP = "sanremes-web/1";
 
 export interface RelayRoute {
   remoteStatic: Bytes;
@@ -64,7 +64,7 @@ export interface RelayPairing {
   descriptor: unknown;
 }
 
-/** Redeems a pairing link's credential through the relay, as the MausBot phone app does. */
+/** Redeems a pairing link's credential through the relay, as the SanRemes phone app does. */
 export async function pairThroughRelay(route: RelayRoute, credential: string, deviceName: string): Promise<RelayPairing> {
   const session = await open(route, credential);
   try {

@@ -9,7 +9,7 @@ describe("ACP client paths", () => {
   it("allows turn-selected profile reads without granting writes or other profile files", async () => {
     const cwd = join(DATA_DIR, "client-task");
     const profile = join(DATA_DIR, "profile");
-    let skill = join(profile, "omb-skills", "hash");
+    let skill = join(profile, "sanremes-skills", "hash");
     mkdirSync(cwd, { recursive: true });
     mkdirSync(join(skill, "references"), { recursive: true });
     skill = realpathSync.native(skill);
@@ -27,7 +27,7 @@ describe("ACP client paths", () => {
   it.each(["root", "parent"])("rejects a staged %s replaced after staging", async (part) => {
     const base = join(DATA_DIR, "swapped-" + part);
     const cwd = join(base, "task");
-    const parent = join(base, "omb-skills");
+    const parent = join(base, "sanremes-skills");
     mkdirSync(cwd, { recursive: true });
     mkdirSync(join(parent, "hash"), { recursive: true });
     const root = realpathSync.native(join(parent, "hash"));

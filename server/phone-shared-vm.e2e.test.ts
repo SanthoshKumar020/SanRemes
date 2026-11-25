@@ -106,15 +106,15 @@ describe("a person's hold on the shared Local VM", () => {
     const text = `Work on the desktop ${randomUUID()}`;
     await ok("POST", `/api/bots/${botId}/messages`, { text, threadId });
     const servers = (await dumpFor(text)).mcpConfig.mcpServers;
-    return { computer: servers.computer, comms: servers.agents.env.OMB_COMMS_TOKEN as string };
+    return { computer: servers.computer, comms: servers.agents.env.SANREMES_COMMS_TOKEN as string };
   };
   const finishTurns = async (...turns: Array<[string, string]>) => {
     writeFileSync(finishFile, "finish");
     for (const [botId, threadId] of turns) await until(() => busy(botId, threadId), value => !value);
     rmSync(finishFile, { force: true });
   };
-  const gate = async (computer: any) => (await fetch(computer.env.OMB_CONTROL_URL, {
-    headers: { authorization: `Bearer ${computer.env.OMB_CONTROL_TOKEN}` },
+  const gate = async (computer: any) => (await fetch(computer.env.SANREMES_CONTROL_URL, {
+    headers: { authorization: `Bearer ${computer.env.SANREMES_CONTROL_TOKEN}` },
   })).json() as Promise<any>;
   const askSignIn = async (comms: string, site: string) => {
     const response = await fetch(`${base}/api/internal/request-sign-in`, {
@@ -128,7 +128,7 @@ describe("a person's hold on the shared Local VM", () => {
     sse.frames.slice(since).filter(frame => frame.kind === "computer-control" && frame.botId === botId);
 
   beforeAll(async () => {
-    home = mkdtempSync(join(tmpdir(), "omb-phone-shared-vm-"));
+    home = mkdtempSync(join(tmpdir(), "sanremes-phone-shared-vm-"));
     stateFile = join(home, "vm.json");
     dumpFile = join(home, "dump.json");
     finishFile = join(home, "finish");
@@ -177,13 +177,13 @@ describe("a person's hold on the shared Local VM", () => {
         join(ROOT, "server/index.ts")], {
         cwd: ROOT, env: {
           PATH: dirname(process.execPath), ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}),
-          HOME: home, USERPROFILE: home, OMB_DATA_DIR: data,
+          HOME: home, USERPROFILE: home, SANREMES_DATA_DIR: data,
           APPDATA: join(home, "appdata"), LOCALAPPDATA: join(home, "localappdata"),
           TEMP: home, TMP: home, TMPDIR: home,
-          OMB_PORT: String(port), OMB_WEBHOOK_PORT: String(port + 1), OMB_STATIC_DIR: ui, OMB_TEST_VM_STATE: stateFile,
-          OMB_BOAT_API: `http://127.0.0.1:${(boatServer.address() as { port: number }).port}`,
-          OMB_COMPUTER_CALL_WAIT_MS: String(CALL_WAIT_MS), OMB_TEST_LEASE_GRACE_MS: String(GRACE_MS),
-          OMB_TEST_VIEWER_RECHECK_MS: String(RECHECK_MS),
+          SANREMES_PORT: String(port), SANREMES_WEBHOOK_PORT: String(port + 1), SANREMES_STATIC_DIR: ui, SANREMES_TEST_VM_STATE: stateFile,
+          SANREMES_BOAT_API: `http://127.0.0.1:${(boatServer.address() as { port: number }).port}`,
+          SANREMES_COMPUTER_CALL_WAIT_MS: String(CALL_WAIT_MS), SANREMES_TEST_LEASE_GRACE_MS: String(GRACE_MS),
+          SANREMES_TEST_VIEWER_RECHECK_MS: String(RECHECK_MS),
         }, stdio: ["ignore", "pipe", "pipe"],
       });
       child.stdout!.on("data", chunk => { output += chunk; });
@@ -473,7 +473,7 @@ describe("a person's hold on the shared Local VM", () => {
     const threadId = where === "a room thread" ? (await ok("POST", `/api/groups/${group.id}/tasks`, {})).task.threadId : undefined;
     const text = `Work on the desktop ${randomUUID()}`;
     await ok("POST", `/api/groups/${group.id}/messages`, { text, ...(threadId ? { threadId } : {}) });
-    await askSignIn((await dumpFor(text)).mcpConfig.mcpServers.agents.env.OMB_COMMS_TOKEN, "a.example");
+    await askSignIn((await dumpFor(text)).mcpConfig.mcpServers.agents.env.SANREMES_COMMS_TOKEN, "a.example");
     writeFileSync(finishFile, "finish");
     expect((await control(api, witness)).body.helpReason).toBeTruthy();
     if (threadId) await until(() => api("POST", `/api/groups/${group.id}/tasks/${group.threadId}`, {}), response => response.status === 200);
@@ -489,7 +489,7 @@ describe("a person's hold on the shared Local VM", () => {
     const threadId: string = how === "the room" ? group.threadId : (await ok("POST", `/api/groups/${group.id}/tasks`, {})).task.threadId;
     const text = `Work on the desktop ${randomUUID()}`;
     await ok("POST", `/api/groups/${group.id}/messages`, { text, ...(how === "the room" ? {} : { threadId }) });
-    await askSignIn((await dumpFor(text)).mcpConfig.mcpServers.agents.env.OMB_COMMS_TOKEN, "a.example");
+    await askSignIn((await dumpFor(text)).mcpConfig.mcpServers.agents.env.SANREMES_COMMS_TOKEN, "a.example");
     writeFileSync(finishFile, "finish");
     expect((await control(api, witness)).body.helpReason).toBeTruthy();
     const since = sse.frames.length;
@@ -589,7 +589,7 @@ describe("a person's hold on the shared Local VM", () => {
       const onCloud = await newTask(a.id, "cloud");
       const { computer } = await startTurn(a.id, onCloud);
       // A Boat's tools reach the gate through the harness proxy, with the turn's computer capability.
-      const boatGate = () => gate({ env: { OMB_CONTROL_URL: `${base}/api/internal/computer-control?botId=${a.id}`, OMB_CONTROL_TOKEN: computer.env.OMB_MCP_TOKEN_COMPUTER } });
+      const boatGate = () => gate({ env: { SANREMES_CONTROL_URL: `${base}/api/internal/computer-control?botId=${a.id}`, SANREMES_CONTROL_TOKEN: computer.env.SANREMES_MCP_TOKEN_COMPUTER } });
       expect(await boatGate()).toEqual({ held: false, helpOpen: false });
       await control(api, a.id, { action: "take" });
       expect(await boatGate()).toMatchObject({ held: true, reason: "person" });
@@ -744,7 +744,7 @@ describe("a person's hold on the shared Local VM", () => {
     boatRow = { id: "bx_bkwtqrsz", name, state: "idle" };
     try {
       const { computer } = await startTurn(books.id, books.threadId);
-      const boatGate = () => gate({ env: { OMB_CONTROL_URL: `${base}/api/internal/computer-control?botId=${books.id}`, OMB_CONTROL_TOKEN: computer.env.OMB_MCP_TOKEN_COMPUTER } });
+      const boatGate = () => gate({ env: { SANREMES_CONTROL_URL: `${base}/api/internal/computer-control?botId=${books.id}`, SANREMES_CONTROL_TOKEN: computer.env.SANREMES_MCP_TOKEN_COMPUTER } });
       await control(api, witness, { action: "take" });
       expect((await ok("GET", "/api/bots?messages=0")).computerControl[books.id]).toMatchObject({ held: true });
       expect(await boatGate()).toEqual({ held: false, helpOpen: false });

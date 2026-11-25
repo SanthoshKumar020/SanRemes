@@ -1,4 +1,4 @@
-// 1Password on a real Team Cloud (OMB_CLOUD_ROLE=team) with a fake SDK: an Admin connects it in Settings → Vault for the
+// 1Password on a real Team Cloud (SANREMES_CLOUD_ROLE=team) with a fake SDK: an Admin connects it in Settings → Vault for the
 // whole team; a member's private chat and the bot's shared chat get its secrets by name and by op:// reference with no
 // card, never a Login's password; a member neither sees nor manages it; the Admin's signed report names the team's secrets
 // and 1Password's state, never a value, the token or a member's own secret. No value is ever printed.
@@ -17,7 +17,7 @@ const STRIPE = `sk_test_fake-1p-${randomBytes(12).toString("hex")}`;
 const BANK_PASSWORD = `fake-bank-${randomBytes(12).toString("hex")}`;
 const TEAM_VALUE = `fake-team-deploy-${randomBytes(12).toString("hex")}`;
 const ADA_VALUE = `fake-ada-own-${randomBytes(12).toString("hex")}`;
-const VAULT = "Shared with OpenMausBot";
+const VAULT = "Shared with SanRemes";
 const ITEMS = [
   { id: "i1", title: "Stripe secret key", category: "ApiCredentials", fields: [{ id: "credential", title: "credential", fieldType: "Concealed", value: STRIPE }] },
   { id: "i2", title: "Bank", category: "Login", fields: [{ id: "username", title: "username", fieldType: "Text", value: "treasurer" },

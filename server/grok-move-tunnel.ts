@@ -47,7 +47,7 @@ export interface GrokMove {
 export function grokMoveCloudflared(env: NodeJS.ProcessEnv = process.env, fromSource = import.meta.url.endsWith(".ts")): string | null {
   return resolveCloudflaredBinary(fromSource
     ? { isPackaged: false, appPath: resolve(dirname(fileURLToPath(import.meta.url)), ".."), environment: env }
-    : { isPackaged: true, resourcesPath: env.OMB_RESOURCES_PATH });
+    : { isPackaged: true, resourcesPath: env.SANREMES_RESOURCES_PATH });
 }
 
 interface Link { connectorUrl: string; expiresAt: number; inbox: MoveInbox; live: boolean; close(): void }
@@ -139,7 +139,7 @@ export function createGrokMove(options: {
     let child: ChildProcess | undefined;
     let timer: NodeJS.Timeout | undefined;
     // A config of its own, so a ~/.cloudflared/config.yml or /etc/cloudflared one with ingress rules is never read.
-    const runtime = mkdtempSync(join(tmpdir(), "omb-grok-move-"));
+    const runtime = mkdtempSync(join(tmpdir(), "sanremes-grok-move-"));
     const server: Server = createServer(moveListener(path, () => ({ inbox, expiresAt }), now));
     const close = () => {
       if (made) made.live = false;

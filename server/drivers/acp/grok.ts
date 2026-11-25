@@ -358,7 +358,7 @@ export function grokToolScopeProfile(scope: unknown, init: unknown, inherited?: 
   });
   // Grok rejects an empty curated construction.
   return {
-    ...inherited, name: inherited?.name ?? "openmausbot-tools", description: inherited?.description ?? "Owner-selected tools",
+    ...inherited, name: inherited?.name ?? "sanremes-tools", description: inherited?.description ?? "Owner-selected tools",
     injectDefaultTools: false, discoverSkills: false,
     toolConfig: { ...inherited?.toolConfig, tools: selected.length ? selected : [{ id: "GrokBuild:read_file", name_override: "read_file" }] },
     tools: [], disallowedTools: [...new Set([...(inherited?.disallowedTools ?? []), ...(selected.length ? [] : ["read_file"])])],
@@ -402,7 +402,7 @@ export function ensureGrokSteer(env: Record<string, string | undefined> = proces
     ? text.slice(0, found.insertAt) + (text.slice(0, found.insertAt).endsWith("\n") ? "" : eol) + line + text.slice(found.insertAt)
     : `${text}${text && !text.endsWith("\n") ? eol : ""}${text ? eol : ""}[ui]${eol}${line}`;
   // config.toml can hold `api_key` values (ensureGrokInjectSlug writes them), so the staged copy is private from its first byte.
-  const staged = `${path}.omb-${process.pid}.tmp`;
+  const staged = `${path}.sanremes-${process.pid}.tmp`;
   try {
     writeFileSync(staged, next, { mode: 0o600, flag: "wx" });
     renameSync(staged, path);

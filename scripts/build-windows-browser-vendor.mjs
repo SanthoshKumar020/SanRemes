@@ -73,7 +73,7 @@ export async function buildWindowsBrowserVendor(output) {
   const linker = command("x86_64-w64-mingw32-ld", ["--version"], repository, { capture: true }).split("\n")[0];
   assert(rust.startsWith(`rustc ${WINDOWS_VENDOR_RUST} `), `Expected Rust ${WINDOWS_VENDOR_RUST}, got ${rust}`);
   assert(cargo.startsWith(`cargo ${WINDOWS_VENDOR_RUST} `), `Expected Cargo ${WINDOWS_VENDOR_RUST}, got ${cargo}`);
-  const scratch = mkdtempSync(join(tmpdir(), "omb-browser-vendor-"));
+  const scratch = mkdtempSync(join(tmpdir(), "sanremes-browser-vendor-"));
   try {
     const source = join(scratch, "source");
     mkdirSync(source);

@@ -38,7 +38,7 @@ it.each([
   { name: "an original without any threading headers", headers: [], references: [], parent: undefined },
 ])("preserves $name through IMAP parsing, the host and outgoing MIME", async ({ headers, references, parent }) => {
   fake.source = Buffer.from(["From: sender@example.test", "To: me@shop.example", "Subject: Thread", ...headers, "", "Original"].join("\r\n"));
-  const dataDir = mkdtempSync(join(tmpdir(), "omb-email-threading-")); dirs.push(dataDir);
+  const dataDir = mkdtempSync(join(tmpdir(), "sanremes-email-threading-")); dirs.push(dataDir);
   const service = createEmailService({ dataDir, publicOnly: false, guard: openGuard, discover: { fetchText: async () => null, mx: async () => [], srv: async () => [], cname: async () => [], reverse: async () => [] }, test: { mailbox: (async () => ({ messages: 1 })) as never, sending: (async () => {}) as never } });
   await service.connect({ address: "me@shop.example", password: "fake-password" });
   const host = createEmailHost({ service, dataDir, bot: () => ({ id: "b1", name: "Test" }), inRoom: () => false, appendMessage() {}, markOutside() {} });

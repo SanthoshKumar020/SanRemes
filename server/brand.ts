@@ -39,7 +39,7 @@ export const brandSchema = z
 export type Brand = z.infer<typeof brandSchema>;
 
 export const DEFAULT_BRAND: Brand = { name: "SanRemes" };
-/** The product's name wherever a person reads it. SanRemes is this fork's name; OpenMausBot names the upstream open-source project and its repository. */
+/** The product's name wherever a person reads it. SanRemes is this fork's name; SanRemes names the upstream open-source project and its repository. */
 export const PRODUCT_NAME = "SanRemes";
 
 export interface BrandStatus {
@@ -53,7 +53,7 @@ export interface BrandStatus {
 }
 
 export function brandFile(): string {
-  return process.env.OMB_BRAND_FILE || join(DATA_DIR, "brand.json");
+  return process.env.SANREMES_BRAND_FILE || join(DATA_DIR, "brand.json");
 }
 
 /** Never throws. */

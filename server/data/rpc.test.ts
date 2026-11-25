@@ -15,7 +15,7 @@ const dirs: string[] = [];
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 
 function harness(signal = new AbortController().signal) {
-  const dir = mkdtempSync(join(tmpdir(), "omb-data-rpc-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-data-rpc-"));
   dirs.push(dir);
   const database = new FakeDataDatabase();
   let checks = 0;

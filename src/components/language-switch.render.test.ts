@@ -34,7 +34,7 @@ const announced = (i: number, extra: Partial<BotAnnouncement> = {}): BotAnnounce
 } as BotAnnouncement);
 const at = Date.UTC(2026, 10, 18, 9);
 const routines = Array.from({ length: 12 }, (_, i) => ({
-  id: `r${i}`, name: `Routine ${i}`, prompt: "Do it.", target: "bot", botId: `b${i % 12}`, runOn: "maus", enabled: true,
+  id: `r${i}`, name: `Routine ${i}`, prompt: "Do it.", target: "bot", botId: `b${i % 12}`, runOn: "sanremes", enabled: true,
   schedule: { type: "daily", time: `${String(8 + (i % 10)).padStart(2, "0")}:00`, weekdays: [0, 1, 2, 3, 4, 5, 6] }, durationMinutes: 30,
   nextRunAt: at + 3_600_000, createdAt: 0, updatedAt: 0,
 }));

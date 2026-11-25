@@ -13,7 +13,7 @@ const { BotThreadList, botRowProps } = await import("./Sidebar");
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const makeBot = (tasks: NonNullable<Bot["tasks"]>, threadId = "open-main"): Bot => ({
-  id: "maus", threadId, name: "Maus", title: "", description: "", notifications: true,
+  id: "sanremes", threadId, name: "SanRemes", title: "", description: "", notifications: true,
   color: "green", unread: false, messages: [], modelSelection: { instanceId: "fake", model: "test" },
   projects: [{ id: "taxes", name: "Taxes" }],
   tasks,

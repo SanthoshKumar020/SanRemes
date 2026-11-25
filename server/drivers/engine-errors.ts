@@ -10,10 +10,10 @@ import { MODEL_NO_ROUTE, USAGE_LIMIT } from "./retry.ts";
 
 /** How long an engine may stay quiet after a model request failed on a limit before the turn is ended as a usage limit,
  * so a backup the person chose carries on (or the bot waits for the reset): longer than any retry an engine makes without a provider's retry-after
- * (OMB_ACP_LIMIT_QUIET_MS overrides). */
+ * (SANREMES_ACP_LIMIT_QUIET_MS overrides). */
 export const DEFAULT_LIMIT_QUIET_MS = 2 * 60_000;
 export const limitQuietMs = (): number => {
-  const ms = Number(process.env.OMB_ACP_LIMIT_QUIET_MS);
+  const ms = Number(process.env.SANREMES_ACP_LIMIT_QUIET_MS);
   return Number.isFinite(ms) && ms > 0 ? ms : DEFAULT_LIMIT_QUIET_MS;
 };
 

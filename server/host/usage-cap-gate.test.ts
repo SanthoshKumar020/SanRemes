@@ -24,7 +24,7 @@ describe("the usage cap gate", () => {
     resetUsageTotalsForTests();
   };
   beforeEach(() => {
-    dataDir = mkdtempSync(join(tmpdir(), "omb-cap-gate-"));
+    dataDir = mkdtempSync(join(tmpdir(), "sanremes-cap-gate-"));
     resetUsageTotalsForTests();
     now = new Date("2026-09-15T12:00:00Z");
     caps = undefined;
@@ -123,7 +123,7 @@ describe("the usage cap gate", () => {
   it("shows the owner each cap with its use, and which values the environment holds", async () => {
     caps = { stops: "unattended", server: { dailyUsd: 4 }, bots: { a: { dailyUsd: 1 } } };
     await spend("2026-09-15T08:00:00.000Z", "a", 0.5);
-    const view = gate({ OMB_USAGE_CAP_DAILY_USD: "2", OMB_USAGE_CAP_STOPS: "everything" }).view();
+    const view = gate({ SANREMES_USAGE_CAP_DAILY_USD: "2", SANREMES_USAGE_CAP_STOPS: "everything" }).view();
     expect(view).toMatchObject({ stops: "everything", savedStops: "unattended", server: { dailyUsd: 4 }, bots: { a: { dailyUsd: 1 } },
       env: { stops: true, server: ["dailyUsd"], values: { stops: "everything", server: { dailyUsd: 2 } } } });
     expect(view.caps.map((cap) => [cap.id, cap.limit, cap.used, cap.percent])).toEqual([["server:day:usd", 2, 0.5, 25], ["bot:a:day:usd", 1, 0.5, 50]]);

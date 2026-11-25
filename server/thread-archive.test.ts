@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { launchVerificationServer, type VerificationServer } from "../scripts/control-omb.ts";
+import { launchVerificationServer, type VerificationServer } from "../scripts/control-sanremes.ts";
 import { readRegistry } from "./testing/registry.ts";
 
 describe("thread archive through an isolated HTTP fixture", () => {

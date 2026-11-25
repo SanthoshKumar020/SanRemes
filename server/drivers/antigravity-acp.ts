@@ -95,13 +95,13 @@ const REMOVED_ENVIRONMENT_KEYS = new Set([
   "CHROME_CRASHPAD_PIPE_NAME",
 ]);
 
-const BROWSER_MARKER = "__OPENMAUS_ANTIGRAVITY_AUTH_URL__";
+const BROWSER_MARKER = "__SANREMES_ANTIGRAVITY_AUTH_URL__";
 const browserHelperSource =
   `process.stderr.on("error",()=>process.exit(0)).write(` +
   `"${BROWSER_MARKER}"+JSON.stringify(process.argv[1])+"\\n",` +
   `()=>process.exit(0))`;
 
-const BROWSER_PREFLIGHT_URL = "https://example.invalid/openmaus-antigravity-browser-preflight";
+const BROWSER_PREFLIGHT_URL = "https://example.invalid/sanremes-antigravity-browser-preflight";
 const BROWSER_PREFLIGHT_MS = 30_000;
 const verifiedBrowserHelpers = new Set<string>();
 
@@ -144,7 +144,7 @@ export async function verifyAntigravityBrowserHelper(profile: AntigravityProfile
   if (verifiedBrowserHelpers.has(helper)) return;
   const reason = await antigravityBrowserHelperProblem(profile.environment, helper);
   if (reason) {
-    throw new Error(`Google sign-in cannot start: the helper that passes the sign-in link to OpenMausBot failed a check (${reason}). Restart OpenMausBot and try again. If it keeps failing, share this message.`);
+    throw new Error(`Google sign-in cannot start: the helper that passes the sign-in link to SanRemes failed a check (${reason}). Restart SanRemes and try again. If it keeps failing, share this message.`);
   }
   verifiedBrowserHelpers.add(helper);
 }
@@ -260,7 +260,7 @@ export async function prepareAntigravityProfile(input: {
   const directory = resolve(input.profileDirectory ?? antigravityProfileDirectory(input.instanceId, input.baseDir));
   const acpDirectory = join(directory, "antigravity-acp");
   await mkdir(acpDirectory, { recursive: true, mode: 0o700 });
-  const skillsDirectory = join(directory, "omb-skills");
+  const skillsDirectory = join(directory, "sanremes-skills");
   await mkdir(skillsDirectory, { recursive: true, mode: 0o700 });
   if (!(await lstat(skillsDirectory)).isDirectory()) throw new Error("Antigravity staging path must be a real directory.");
   if (process.platform !== "win32") {
@@ -276,7 +276,7 @@ export async function prepareAntigravityProfile(input: {
 
   const executable = process.platform === "win32" ? process.execPath.replaceAll("\\", "/") : process.execPath;
   if (/\r|\n|\0|%s/u.test(executable) || executable.includes(delimiter)) {
-    throw new Error("The OpenMausBot runtime path cannot safely suppress Antigravity browser launches.");
+    throw new Error("The SanRemes runtime path cannot safely suppress Antigravity browser launches.");
   }
   const browserCommand = [executable, "-e", browserHelperSource, "--", "%s"]
     .map(quoteBrowserArgument)
@@ -377,7 +377,7 @@ export class AntigravityAcpClient {
     this.child = spawnCli(
       runtime.executablePath,
       antigravityLaunchArgs(runtime, profile.directory),
-      { cwd, env: profile.environment, stdio: ["pipe", "pipe", "pipe"], box: { ro: [join(profile.directory, "omb-skills")], ...(relay ? { relay: relay.socketPath } : {}) } },
+      { cwd, env: profile.environment, stdio: ["pipe", "pipe", "pipe"], box: { ro: [join(profile.directory, "sanremes-skills")], ...(relay ? { relay: relay.socketPath } : {}) } },
       "bot",
     );
     this.child.stdout!.setEncoding("utf8");
@@ -526,7 +526,7 @@ export class AntigravityAcpClient {
         (this.nativeStartupHint ? `${this.nativeStartupHint} ` : "") +
         `Startup output: ${this.startupOutputBytes} bytes; diagnostic output: ${this.startupDiagnosticBytes} bytes. ` +
         (this.tempDirectory ? `Unpacked into temp: ${Math.round(Math.max(0, now - before) / 1_000_000)} MB. ` : "") +
-        "Retry setup. If it still fails, share this error and your OpenMausBot version; do not paste Google sign-in links or tokens.",
+        "Retry setup. If it still fails, share this error and your SanRemes version; do not paste Google sign-in links or tokens.",
       );
     };
     const initialized = await this.request("initialize", {
@@ -751,7 +751,7 @@ const OPEN_MODEL_ACCESS_RELEASE = [1, 5, 1] as const;
 export function antigravityClientInfo(version: string | null | undefined, editorName = ANTIGRAVITY_EDITOR_CLIENT_NAME): { name: string; version: string } {
   const match = /^(\d+)\.(\d+)\.(\d+)/u.exec(version?.trim() ?? "");
   const open = match !== null && OPEN_MODEL_ACCESS_RELEASE.reduce((difference, part, index) => difference || Number(match[index + 1]) - part, 0) >= 0;
-  return open || !editorName ? { name: "openmausbot", version: "0.0.0" } : { name: "zed", version: "0.0.0" };
+  return open || !editorName ? { name: "sanremes", version: "0.0.0" } : { name: "zed", version: "0.0.0" };
 }
 
 const runtimeVersion = (value: unknown) => typeof value === "string" ? value.replace(/^agy_acp_server_/u, "").trim() : "";
@@ -821,7 +821,7 @@ export function isValidAntigravityInitializeResult(
 }
 
 export async function validateAntigravityRuntime(runtime: AntigravityRuntime, expectedVersion: string): Promise<void> {
-  const profileDirectory = await mkdtemp(join(tmpdir(), "openmaus-antigravity-verify-"));
+  const profileDirectory = await mkdtemp(join(tmpdir(), "sanremes-antigravity-verify-"));
   let client: AntigravityAcpClient | undefined;
   let tempDirectory: string | undefined;
   let failed = false;

@@ -35,7 +35,7 @@ function harness(handlers: Partial<StepExecutors> = {}) {
 }
 
 describe("running a Skill Burger", () => {
-  it("runs each step where it ran, pipes values forward and fills args, with OMB_ARG_ env for commands", async () => {
+  it("runs each step where it ran, pipes values forward and fills args, with SANREMES_ARG_ env for commands", async () => {
     const h = harness({
       app: async (input) => {
         h.calls.push({ kind: "app", input });
@@ -45,14 +45,14 @@ describe("running a Skill Burger", () => {
     const workflow = wf([
       app("s1", "GMAIL_FETCH_EMAILS", { query: { $arg: "query" } }),
       app("s2", "GMAIL_FORWARD_MESSAGE", { message_id: { $step: "s1", path: "messages.0.id" }, to: { $arg: "to" } }),
-      { id: "s3", kind: "shell", label: "Archive", run: 'echo "$OMB_ARG_TO"', where: "vm" },
+      { id: "s3", kind: "shell", label: "Archive", run: 'echo "$SANREMES_ARG_TO"', where: "vm" },
     ], { query: { default: "invoice" }, to: { default: "a@example.com" } });
     const result = await h.start(workflow, { to: "priya@example.com", nope: "ignored" });
     expect(result).toMatchObject({ ok: true, status: "ok" });
     expect(h.calls.map((call) => call.kind)).toEqual(["app", "app", "shell"]);
     expect(h.calls[0]!.input).toMatchObject({ tool: "GMAIL_FETCH_EMAILS", args: { query: "invoice" } });
     expect(h.calls[1]!.input).toMatchObject({ args: { message_id: "m-42", to: "priya@example.com" } });
-    expect(h.calls[2]!.input).toMatchObject({ command: 'echo "$OMB_ARG_TO"', where: "vm", env: { OMB_ARG_QUERY: "invoice", OMB_ARG_TO: "priya@example.com" } });
+    expect(h.calls[2]!.input).toMatchObject({ command: 'echo "$SANREMES_ARG_TO"', where: "vm", env: { SANREMES_ARG_QUERY: "invoice", SANREMES_ARG_TO: "priya@example.com" } });
     expect(h.events).toEqual(["start s1", "done s1", "start s2", "done s2", "start s3", "done s3"]);
   });
 
@@ -187,6 +187,6 @@ describe("cases", () => {
 it("fills args from defaults and the request, and passes them to commands only through the environment", () => {
   const workflow = wf([{ id: "s1", kind: "shell", label: "x", run: "true" }], { to: { default: "a" }, n: {} });
   expect(runArgs(workflow, { to: "b", other: 1 })).toEqual({ to: "b" });
-  expect(argEnv({ to: "b", n: 3 })).toEqual({ OMB_ARG_TO: "b", OMB_ARG_N: "3" });
+  expect(argEnv({ to: "b", n: 3 })).toEqual({ SANREMES_ARG_TO: "b", SANREMES_ARG_N: "3" });
   expect(resolve({ a: [{ $arg: "to" }, { $step: "s1", path: "x.0" }] }, { to: "b" }, { s1: { state: "done", output: { x: ["y"] } } })).toEqual({ a: ["b", "y"] });
 });

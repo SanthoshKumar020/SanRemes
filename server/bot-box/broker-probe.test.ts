@@ -21,7 +21,7 @@ describe.skipIf(process.platform === "win32")("testing a URL server the way a bo
     if (dir) rmSync(dir, { recursive: true, force: true });
   });
   async function broker(): Promise<BrokerPath> {
-    dir = mkdtempSync(join(tmpdir(), "omb-broker-probe-"));
+    dir = mkdtempSync(join(tmpdir(), "sanremes-broker-probe-"));
     credentials = await openCredentialBroker({ socketPath: join(dir, "b.sock") });
     return { broker: { port: 18080, mintForThread: credentials.mintForThread, revokeThread: credentials.revokeThread }, socketPath: credentials.socketPath };
   }

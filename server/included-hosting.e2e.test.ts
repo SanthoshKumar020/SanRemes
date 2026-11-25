@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSy
 import { join } from "node:path";
 import { expect, it } from "vitest";
 
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { request } from "../scripts/mcp-server.ts";
 import { SITE_FILE } from "./host/netlify-sites.ts";
 import { startFakeAppHosting, type FakeAppHosting } from "./testing/fake-app-hosting.ts";
@@ -28,9 +28,9 @@ interface Fixture {
 
 async function withFixture(test: (f: Fixture) => Promise<void>, options: { hosting: boolean; apps?: number }) {
   const fake = await startFakeAppHosting(TOKEN, { apps: options.apps ?? 10 });
-  const env = options.hosting ? { OMB_CLOUD_HOSTING_URL: fake.url, OMB_CLOUD_HOSTING_TOKEN: TOKEN } : {};
+  const env = options.hosting ? { SANREMES_CLOUD_HOSTING_URL: fake.url, SANREMES_CLOUD_HOSTING_TOKEN: TOKEN } : {};
   const session = await launchVerificationServer({ ...process.env, ...env }, undefined, undefined, undefined, undefined, { scripted: true });
-  const cli = (...args: string[]) => runControlOmb(args, { env: { OPENMAUSBOT_URL: session.info.url } }) as Promise<any>;
+  const cli = (...args: string[]) => runControlOmb(args, { env: { OPENSANREMES_URL: session.info.url } }) as Promise<any>;
   const planPath = join(session.info.dataDir, "room-plan.json");
   const turnFor = (botId: string) => {
     const lines = existsSync(planPath + ".evidence.jsonl") ? readFileSync(planPath + ".evidence.jsonl", "utf8").trim().split("\n").filter(Boolean) : [];
@@ -129,7 +129,7 @@ it("lets a bot publish a folder of its own through the server, lists it with the
   for (const [where, text] of Object.entries({ engine: f.engineLaunch(), evidence, list: JSON.stringify(listed), config: JSON.stringify(config), log: readFileSync(f.logPath, "utf8"), disk: everyFile(f.dataDir) })) {
     expect(text.includes(TOKEN), where).toBe(false);
   }
-  expect(f.engineLaunch()).not.toContain("OMB_CLOUD_HOSTING");
+  expect(f.engineLaunch()).not.toContain("SANREMES_CLOUD_HOSTING");
 
   expect(await f.api("/api/published-apps/delete", { id: `included-${record.appKey}` })).toEqual({ ok: true });
   expect(f.fake.apps.size).toBe(0);

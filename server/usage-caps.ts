@@ -18,12 +18,12 @@ export type CapUnit = "usd" | "tokens";
 export type CapStops = "unattended" | "everything";
 
 export const CAP_FIELDS = [
-  { field: "dailyUsd", period: "day", unit: "usd", env: "OMB_USAGE_CAP_DAILY_USD" },
-  { field: "monthlyUsd", period: "month", unit: "usd", env: "OMB_USAGE_CAP_MONTHLY_USD" },
-  { field: "dailyTokens", period: "day", unit: "tokens", env: "OMB_USAGE_CAP_DAILY_TOKENS" },
-  { field: "monthlyTokens", period: "month", unit: "tokens", env: "OMB_USAGE_CAP_MONTHLY_TOKENS" },
+  { field: "dailyUsd", period: "day", unit: "usd", env: "SANREMES_USAGE_CAP_DAILY_USD" },
+  { field: "monthlyUsd", period: "month", unit: "usd", env: "SANREMES_USAGE_CAP_MONTHLY_USD" },
+  { field: "dailyTokens", period: "day", unit: "tokens", env: "SANREMES_USAGE_CAP_DAILY_TOKENS" },
+  { field: "monthlyTokens", period: "month", unit: "tokens", env: "SANREMES_USAGE_CAP_MONTHLY_TOKENS" },
 ] as const satisfies ReadonlyArray<{ field: keyof CapLimits; period: CapPeriod; unit: CapUnit; env: string }>;
-export const CAP_STOPS_ENV = "OMB_USAGE_CAP_STOPS";
+export const CAP_STOPS_ENV = "SANREMES_USAGE_CAP_STOPS";
 
 export interface Used { usd: number; tokens: number }
 export interface UsageTotals {
@@ -208,8 +208,8 @@ function numberFrom(raw: string | undefined, whole: boolean): number | undefined
   return Number.isFinite(value) && value >= 0 && (!whole || Number.isInteger(value)) ? value : undefined;
 }
 
-/** A headless server's caps: `OMB_USAGE_CAP_DAILY_USD`, `…_MONTHLY_USD`, `…_DAILY_TOKENS`, `…_MONTHLY_TOKENS` set the
- * server's caps and `OMB_USAGE_CAP_STOPS` what they stop. A value that is not a number is ignored. */
+/** A headless server's caps: `SANREMES_USAGE_CAP_DAILY_USD`, `…_MONTHLY_USD`, `…_DAILY_TOKENS`, `…_MONTHLY_TOKENS` set the
+ * server's caps and `SANREMES_USAGE_CAP_STOPS` what they stop. A value that is not a number is ignored. */
 export function capsFromEnv(env: NodeJS.ProcessEnv = process.env): { stops?: CapStops; server: CapLimits } {
   const server: CapLimits = {};
   for (const { field, unit, env: name } of CAP_FIELDS) {

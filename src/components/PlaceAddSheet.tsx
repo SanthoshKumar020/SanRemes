@@ -24,7 +24,7 @@ import { SwatchRadios } from "./SwatchRadios";
 import { AddFormLendSwitch } from "./LendComputerSwitch";
 import { SETTINGS_INPUT } from "./SettingsPrimitives";
 
-const PAIR_COMMAND = "npx openmausbot pair";
+const PAIR_COMMAND = "npx sanremes pair";
 
 /** A command to run on the server, with its own Copy button. */
 function CommandLine({ command, inline = false }: { command: string; inline?: boolean }) {

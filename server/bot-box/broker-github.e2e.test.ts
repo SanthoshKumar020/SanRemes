@@ -38,7 +38,7 @@ describe.skipIf(!backend)("git through the broker's github grant", () => {
   const receivePosts = () => fake.seen.filter((request) => request.method === "POST" && request.url.endsWith("/git-receive-pack")).length;
 
   beforeAll(async () => {
-    dir = mkdtempSync(join(tmpdir(), "omb-gh-e2e-"));
+    dir = mkdtempSync(join(tmpdir(), "sanremes-gh-e2e-"));
     mkdirSync(join(dir, "home"));
     const repo = join(dir, "github", "acme", "widgets.git");
     env = {

@@ -89,7 +89,7 @@ export interface AcpOneShotInput {
   timeoutMs?: number;
 }
 
-const REFUSAL = "OpenMausBot background text allows no tools, files, terminals or approvals.";
+const REFUSAL = "SanRemes background text allows no tools, files, terminals or approvals.";
 
 export function runAcpOneShot(input: AcpOneShotInput): Promise<string> {
   const { signal, onUsage } = input.options ?? {};
@@ -205,7 +205,7 @@ export function runAcpOneShot(input: AcpOneShotInput): Promise<string> {
     (async () => {
       const init = await request("initialize", {
         protocolVersion: 1,
-        clientInfo: { name: "openmausbot_memory", version: "1" },
+        clientInfo: { name: "sanremes_memory", version: "1" },
         clientCapabilities: {
           fs: { readTextFile: false, writeTextFile: false },
           terminal: false,

@@ -97,7 +97,7 @@ const EMBED: FakeModel = { name: "nomic-embed-text:latest", size: 274_302_450, d
 
 describe("Ollama's model list", () => {
   it("keeps the chat models with their size, parameters and quantization", () => {
-    expect(ollamaTags({ models: [LLAMA, EMBED, { name: "llama3.2:latest-omb-32k", size: GB }, { name: "mxbai-embed-large" }, LLAMA] })).toEqual([
+    expect(ollamaTags({ models: [LLAMA, EMBED, { name: "llama3.2:latest-sanremes-32k", size: GB }, { name: "mxbai-embed-large" }, LLAMA] })).toEqual([
       { name: "llama3.2:latest", bytes: 2_019_393_189, parameters: "3.2B", quantization: "Q4_K_M" },
     ]);
   });
@@ -462,7 +462,7 @@ describe("the chat engine on Ollama", () => {
         await recorder.until((event) => event.type === "turn.completed" && event.threadId === threadId);
       }
       expect(chats.map((chat) => chat.reasoning_effort)).toEqual(["none", undefined, "high", undefined]);
-      expect(chats[0]!.model).toMatch(/-omb-\d+k$/);
+      expect(chats[0]!.model).toMatch(/-sanremes-\d+k$/);
     } finally {
       recorder.stop();
       await instance.dispose();
@@ -478,7 +478,7 @@ describe("the chat engine on Ollama", () => {
       expect(instance.models.options.find((option) => option.id === "qwen3:4b")?.variants?.map((option) => option.id)).toEqual(["low", "max"]);
       await instance.adapter.sendTurn({ threadId: "configured", text: "hi", model: "qwen3:4b", variant: "max" });
       expect(await recorder.until((event) => event.type === "turn.completed")).toMatchObject({ ok: true });
-      expect(chats[0]).toMatchObject({ model: expect.stringMatching(/^qwen3:4b-omb-\d+k$/), reasoning_effort: "max" });
+      expect(chats[0]).toMatchObject({ model: expect.stringMatching(/^qwen3:4b-sanremes-\d+k$/), reasoning_effort: "max" });
     } finally { recorder.stop(); await instance.dispose(); }
   });
 

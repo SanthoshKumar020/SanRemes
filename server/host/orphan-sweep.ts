@@ -1,6 +1,6 @@
 // Leftovers already on disk from conversations deleted before their cleanup existed: tool results
 // (tool-results/<thread>), event logs (events/ and native/<thread>.ndjson) and the package installs of conversation
-// folders (task-workspaces/<bot>/<thread>) whose conversation is gone. Behind OMB_ORPHAN_SWEEP, off unless set:
+// folders (task-workspaces/<bot>/<thread>) whose conversation is gone. Behind SANREMES_ORPHAN_SWEEP, off unless set:
 // "report" counts what it would remove and the bytes, and changes nothing; "remove" also removes it. A pass runs ten
 // minutes after start and then once a day, and its numbers go to the log and to orphan-sweep.json.
 //
@@ -10,7 +10,7 @@
 // - An orphan goes only once it is a week old by its own newest change, the sweep has known it for a week and has seen
 //   it on seven different days, all in "remove" mode on this machine. What "report" saw does not count, and the notes
 //   are dropped when they come from another machine (a copied disk) or from the future (a clock set back).
-// - When more than a small share of all conversations on disk look orphaned (OMB_ORPHAN_SWEEP_MAX_SHARE percent, 10 by
+// - When more than a small share of all conversations on disk look orphaned (SANREMES_ORPHAN_SWEEP_MAX_SHARE percent, 10 by
 //   default), the records are more likely unreadable than the conversations gone: the pass reports only, loudly.
 // - No pass changes anything while the server is frozen after a move or a backup is being made or restored, checked
 //   before each removal.
@@ -25,8 +25,8 @@ import { join, resolve } from "node:path";
 import { writeFileAtomic } from "../atomic.ts";
 import { gateResultsName, hookResultsName, liveThreadIds, type ConversationFolderCleanup, type LiveRecords } from "./conversation-folder-cleanup.ts";
 
-export const ORPHAN_SWEEP_ENV = "OMB_ORPHAN_SWEEP";
-export const ORPHAN_SWEEP_SHARE_ENV = "OMB_ORPHAN_SWEEP_MAX_SHARE";
+export const ORPHAN_SWEEP_ENV = "SANREMES_ORPHAN_SWEEP";
+export const ORPHAN_SWEEP_SHARE_ENV = "SANREMES_ORPHAN_SWEEP_MAX_SHARE";
 export type OrphanSweepMode = "off" | "report" | "remove";
 export const ORPHAN_GRACE_MS = 7 * 24 * 60 * 60 * 1000;
 export const ORPHAN_PASS_DAYS = 7;

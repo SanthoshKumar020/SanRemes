@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { join, resolve } from "node:path";
 import type { Message } from "../shared/wire.ts";
-import { launchVerificationServer, runControlOmb, type VerificationServer } from "./control-omb.ts";
+import { launchVerificationServer, runControlOmb, type VerificationServer } from "./control-sanremes.ts";
 
 const cliPath = process.argv[2];
 assert(cliPath, "Pass the installed Pi CLI path explicitly");
@@ -92,7 +92,7 @@ try {
   assert(toolResults.some((result) => /seconds.*900/.test(result)), "Pi must receive the rejected timeout");
   assert(toolResults.some((result) => /timed out after 0.5 seconds/.test(result)), "Pi must receive the expired command result");
   const evidence = { fixture: fixture.info, cli, wait, messages, rejectedBeforeExecution: true, timedOutChildStopped: true };
-  const evidenceDir = resolve(".omb-scratch/verify-evidence");
+  const evidenceDir = resolve(".sanremes-scratch/verify-evidence");
   mkdirSync(evidenceDir, { recursive: true });
   writeFileSync(join(evidenceDir, "pi-shell-timeouts.json"), JSON.stringify(evidence, null, 2));
   console.log(JSON.stringify(evidence));

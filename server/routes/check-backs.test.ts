@@ -22,7 +22,7 @@ function ctx(path: string, method: string, body?: unknown) {
 }
 
 function setup(refusal: string | null = null) {
-  const dir = mkdtempSync(join(tmpdir(), "omb-check-back-routes-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-check-back-routes-"));
   dirs.push(dir);
   const checkBacks = createCheckBacks({ dataDir: dir, now: () => T0, alive: () => true, busy: () => false, line: (record) => `line-${record.id}`, start: async () => {}, log: () => {} });
   let body: unknown;

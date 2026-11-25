@@ -204,7 +204,7 @@ export interface AcpSupport extends AcpDriverHooks {
   clientCapabilitiesMeta?: Record<string, unknown>;
   /** Made once per process: rewrites a session/update before the turn reads it, or drops it by returning null. */
   updateFilter?(): (update: Record<string, any>) => Record<string, any> | null; /** Rewrites a session/request_permission's params (its options and tool call) before the card is built. */ permissionRequest?(params: Record<string, any>): Record<string, any>;
-  /** OpenMausBot's own MCP servers as this server's endpoints, no process each: always, or in each session whose agent's `initialize` says it reaches MCP servers by URL. */
+  /** SanRemes's own MCP servers as this server's endpoints, no process each: always, or in each session whose agent's `initialize` says it reaches MCP servers by URL. */
   ownMcpOverHttp?: boolean | "advertised";
   /** How many tools the agent lists of its own beside the MCP servers', counted against a provider's tool limit. */
   engineTools?: number;
@@ -318,7 +318,7 @@ export function createAcpDriver(support: AcpSupport): ProviderDriver<AcpConfig> 
   const SOURCE = support.nativeSource;
   const decodeConfig = decodeAcpConfig(support.defaultCli);
   const DENY_TIMEOUT_NOTE =
-    "OpenMausBot: nobody answered this permission request in time. Skip this action and finish what you can without it.";
+    "SanRemes: nobody answered this permission request in time. Skip this action and finish what you can without it.";
   const QUESTION_NO_MATCH_NOTE =
     "That answer isn't one of the choices this AI can take, so the question was closed and the turn stopped. Ask again and pick one of the options.";
 
@@ -461,7 +461,7 @@ export function createAcpDriver(support: AcpSupport): ProviderDriver<AcpConfig> 
             for (const link of host.links) closeSession(link.threadId, "recycle");
           }
           host.recycle = null;
-        }, envOr("OMB_ACP_SHARED_RECYCLE_MS", 60_000)); // shared: a process several conversations used, recycled once none is left
+        }, envOr("SANREMES_ACP_SHARED_RECYCLE_MS", 60_000)); // shared: a process several conversations used, recycled once none is left
         host.recycle.unref?.();
       };
       const armIdle = (threadId: string) => {
@@ -1076,7 +1076,7 @@ export function createAcpDriver(support: AcpSupport): ProviderDriver<AcpConfig> 
                   "initialize",
                   {
                     protocolVersion: 1, ...(support.initializeMeta ? { _meta: support.initializeMeta } : {}),
-                    clientInfo: support.clientInfo?.(instanceId) ?? { name: "openmausbot", version: "0.0.0" },
+                    clientInfo: support.clientInfo?.(instanceId) ?? { name: "sanremes", version: "0.0.0" },
                     clientCapabilities: {
                       fs: {
                         readTextFile: support.clientFileSystem === true,
@@ -1413,7 +1413,7 @@ export function createAcpDriver(support: AcpSupport): ProviderDriver<AcpConfig> 
             if (err) {
               const failure = err as NodeJS.ErrnoException & { killed?: boolean };
               const reason = failure.code === "ENOENT"
-                ? `\`${config.cli}\` isn't installed, or isn't on this app's PATH. Install it for the user running OpenMausBot or use Set CLI, then check again.`
+                ? `\`${config.cli}\` isn't installed, or isn't on this app's PATH. Install it for the user running SanRemes or use Set CLI, then check again.`
                 : failure.code === "EACCES" || failure.code === "EPERM"
                   ? `\`${config.cli}\` isn't executable. Check its file permissions, then check again.`
                   : failure.killed && failure.code == null
@@ -1439,7 +1439,7 @@ export function createAcpDriver(support: AcpSupport): ProviderDriver<AcpConfig> 
         if (support.requireAuthenticationBeforeSpawn && !(await support.isAuthenticated(env, turnConfig, instanceId, instanceEnvNames(input.environment, env)))) {
           throw new Error(support.loginNote);
         }
-        const cwd = mkdtempSync(join(await support.oneShotFolder?.() ?? tmpdir(), "omb-acp-memory-"));
+        const cwd = mkdtempSync(join(await support.oneShotFolder?.() ?? tmpdir(), "sanremes-acp-memory-"));
         try {
           const turnModel = oneShotTurnModel(support, env, options, catalog.models);
           const turn = { threadId: `memory-text-${newId()}`, text: prompt, approvalMode: "ask", cwd, ...(turnModel ? { model: turnModel } : {}) } as SendTurnInput;

@@ -11,9 +11,9 @@ export interface HoldLimits {
 
 const IDLE_MS = { default: 5 * 60_000, min: 60_000, max: 60 * 60_000 };
 
-/** OMB_BROWSER_HOLD_IDLE_MS sets the idle limit, from one minute to an hour; anything else keeps five minutes. */
+/** SANREMES_BROWSER_HOLD_IDLE_MS sets the idle limit, from one minute to an hour; anything else keeps five minutes. */
 export function holdLimits(env: NodeJS.ProcessEnv = process.env): HoldLimits {
-  const idle = Number(env.OMB_BROWSER_HOLD_IDLE_MS);
+  const idle = Number(env.SANREMES_BROWSER_HOLD_IDLE_MS);
   return { graceMs: 2 * 60_000, idleMs: Number.isFinite(idle) && idle >= IDLE_MS.min && idle <= IDLE_MS.max ? idle : IDLE_MS.default };
 }
 

@@ -65,7 +65,7 @@ function runGit(directory: string, args: string[]): Promise<void> {
   const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("GIT_")));
   return new Promise((resolveRun, rejectRun) => {
     execFile("git", [
-      "-c", "user.name=OpenMaus", "-c", "user.email=model-discovery@openmaus.invalid",
+      "-c", "user.name=OpenMaus", "-c", "user.email=model-discovery@sanremes.invalid",
       "-c", "commit.gpgsign=false", "-c", `core.hooksPath=${join(directory, ".git", "no-hooks")}`, "-c", "core.fsmonitor=false",
       ...args,
     ], { cwd: directory, env: { ...env, GIT_TERMINAL_PROMPT: "0", GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" }, timeout: 10_000, windowsHide: true }, (error) => {
@@ -87,7 +87,7 @@ export function discoveryDirectory(): Promise<string> {
   discoveryFolder ??= (async () => {
     const directory = join(DATA_DIR, "providers", "opencode", "discovery");
     mkdirSync(directory, { recursive: true });
-    const marker = join(directory, ".openmaus-project");
+    const marker = join(directory, ".sanremes-project");
     if (!existsSync(marker)) {
       try {
         rmSync(directory, { recursive: true, force: true });
@@ -122,7 +122,7 @@ export function surveyOpenCodeEfforts(
  * discovery folder survive; a probe cut off by its timeout leaves its ids for the next probe to delete. */
 type ProbeSessionLedger = Record<string, number>;
 
-const probeLedgerPath = (cwd: string) => join(cwd, ".openmaus-probe-sessions.json");
+const probeLedgerPath = (cwd: string) => join(cwd, ".sanremes-probe-sessions.json");
 
 function readProbeLedger(cwd: string): ProbeSessionLedger {
   try {
@@ -262,7 +262,7 @@ export async function probeOpenCodeSession(
     void (async () => {
       const initialized = await request("initialize", {
         protocolVersion: 1,
-        clientInfo: { name: "openmausbot", version: "0.0.0" },
+        clientInfo: { name: "sanremes", version: "0.0.0" },
         clientCapabilities: { fs: { readTextFile: false, writeTextFile: false }, terminal: false },
       });
       deletesSessions = deletesAcpSessions(initialized);

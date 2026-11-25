@@ -1,4 +1,4 @@
-// The cache cap (docs/bot-box.md, "Tool caches: the cap"): behind OMB_CACHE_SWEEP (off), a background sweeper keeps each
+// The cache cap (docs/bot-box.md, "Tool caches: the cap"): behind SANREMES_CACHE_SWEEP (off), a background sweeper keeps each
 // tools' cache root, and the app's own cache folder, under its cap, removing whole folders, least recently written first
 // (units.ts). What makes it safe:
 //   - it deletes only through open folders inside a root (tree.ts), from a fixed list of whole tool folders, so it can
@@ -25,7 +25,7 @@ export const CACHE_SWEEP_STATE = "cache-sweep.json";
 export interface CacheSweeperDeps {
   dataDir: string;
   home: string;
-  /** The switches and cap overrides (OMB_CACHE_SWEEP, OMB_CACHE_CAP_TOOLS, OMB_CACHE_CAP_APP). */
+  /** The switches and cap overrides (SANREMES_CACHE_SWEEP, SANREMES_CACHE_CAP_TOOLS, SANREMES_CACHE_CAP_APP). */
   env: Record<string, string | undefined>;
   /** The tools' cache folders are in use now: their switch is on and the bot box is live (read at every pass). */
   tools: () => boolean;
@@ -70,7 +70,7 @@ export interface ClearResult {
 }
 
 export class CacheSweepOff extends Error {
-  constructor() { super("The cache cap is off on this server (OMB_CACHE_SWEEP), so nothing is deleted."); }
+  constructor() { super("The cache cap is off on this server (SANREMES_CACHE_SWEEP), so nothing is deleted."); }
 }
 
 const empty = (): State => ({ cleared: { count: 0, bytes: 0, entries: 0, at: null, reason: null }, emergency: { count: 0, bytes: 0, at: null }, lastSweep: null });

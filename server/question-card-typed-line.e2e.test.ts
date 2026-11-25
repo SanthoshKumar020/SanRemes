@@ -4,7 +4,7 @@ import { connect, type Socket } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { CARD_SETTLE_MS } from "./host/ask-cards.ts";
 
 const POLL = { timeout: 30_000, interval: 100 };

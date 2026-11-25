@@ -30,7 +30,7 @@ describe("shared computer authority and lifecycle", () => {
     broker.close();
   });
   it("a computer whose person changed is no longer lent to its former person", () => {
-    const dir = mkdtempSync(join(tmpdir(), "omb-lent-rekey-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-lent-rekey-"));
     const lent = new LentComputers(join(dir, "lent.json"));
     const broker = new SharedComputers(id => id === "owner", lent);
     const computer = registration(); broker.register(computer, alice, secret);
@@ -59,7 +59,7 @@ describe("shared computer authority and lifecycle", () => {
     broker.close();
   });
   it("chromeLender names the newest computer that lends Chrome, and whether it is online", () => {
-    const dir = mkdtempSync(join(tmpdir(), "omb-chrome-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-chrome-"));
     let live = true;
     const broker = new SharedComputers(() => live, new LentComputers(join(dir, "lent.json")));
     const a = { ...registration(), name: "A", platform: "darwin" as const, chrome: true };
@@ -309,7 +309,7 @@ describe("a dropped channel recovers by itself", () => {
     broker.complete(computer.id, alice.session, secret, job!.id, "back");
     await expect(waiting).resolves.toBe("back");
     await vi.advanceTimersByTimeAsync(45_000);
-    const offline = expect(broker.request({ computer_id: computer.id, action: "computer_tools" }, alice.person, () => true)).rejects.toThrow(/^Desktop is lent but has been offline for 1 min: OpenMausBot on it is closed/);
+    const offline = expect(broker.request({ computer_id: computer.id, action: "computer_tools" }, alice.person, () => true)).rejects.toThrow(/^Desktop is lent but has been offline for 1 min: SanRemes on it is closed/);
     await vi.advanceTimersByTimeAsync(15_000);
     await offline;
     broker.close();
@@ -330,7 +330,7 @@ describe("owner partition (audit H1, H2)", () => {
   });
   it("a desktop that pairs again is used while its old sign-in is still live", async () => {
     vi.useFakeTimers({ now: Date.now() });
-    const dir = mkdtempSync(join(tmpdir(), "omb-repaired-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-repaired-"));
     const broker = new SharedComputers(id => id === "old" || id === "new", new LentComputers(join(dir, "lent.json")));
     const computer = registration({ computer: true });
     broker.register(computer, { session: "old", person: alice.person }, secret);
@@ -456,7 +456,7 @@ describe("server-side scope check (audit M1)", () => {
   it("on the person's own Cloud, a folder that isn't lent says where it is lent from, and never asks a card that can't lend one", () => {
     const refusal = sharedComputerScopeRefusal(lent, { action: "read_file", folder_id: randomUUID() }, "ask_for_computer");
     expect(refusal).toMatch(/^That folder isn't lent to this Cloud: use a folder_id list_shared_computers gives\./u);
-    expect(refusal).toContain("share it from the OpenMausBot desktop app, under Files");
+    expect(refusal).toContain("share it from the SanRemes desktop app, under Files");
     expect(refusal).not.toContain("ask_for_computer");
     expect(sharedComputerScopeRefusal(lent, { action: "read_file", folder_id: readOnly.id }, "ask_for_computer")).toBeNull();
   });
@@ -466,7 +466,7 @@ describe("server-side scope check (audit M1)", () => {
       expect(sharedComputerScopeRefusal(current, { action, folder_id: readOnly.id })).toMatch(/read-only/);
       expect(sharedComputerScopeRefusal(current, { action, folder_id: randomUUID() })).toMatch(/not been shared/);
       expect(sharedComputerScopeRefusal(current, { action, folder_id: writable.id })).toBeNull();
-      expect(sharedComputerScopeRefusal(lent, { action, folder_id: writable.id })).toMatch(/older OpenMausBot .* write_file/);
+      expect(sharedComputerScopeRefusal(lent, { action, folder_id: writable.id })).toMatch(/older SanRemes .* write_file/);
     }
   });
   it("names the computer when its terminal isn't lent, sends the bot to no switch, and tells it not to run the command another way", () => {
@@ -477,9 +477,9 @@ describe("server-side scope check (audit M1)", () => {
     expect(sharedComputerScopeRefusal({ ...lent, terminal: true }, { action: "run_command" })).toBeNull();
   });
   it("says where the person lends apps and screen, in the refusal and in the list a bot reads", () => {
-    const steps = "OpenMausBot on that Mac lends them by itself once macOS allows it Accessibility and Screen Recording: tell the person in one sentence to allow both for OpenMausBot in System Settings → Privacy & Security on that Mac, and to update OpenMausBot there if it is an older version.";
+    const steps = "SanRemes on that Mac lends them by itself once macOS allows it Accessibility and Screen Recording: tell the person in one sentence to allow both for SanRemes in System Settings → Privacy & Security on that Mac, and to update SanRemes there if it is an older version.";
     expect(sharedComputerScopeRefusal({ ...lent, platform: "darwin" }, { action: "computer_call" })).toBe(`Apps and screen are not lent to this server. ${steps}`);
-    expect(sharedComputerScopeRefusal({ ...lent, platform: "win32" }, { action: "computer_call" })).toContain("OpenMausBot on that PC lends them by itself once its computer control works");
+    expect(sharedComputerScopeRefusal({ ...lent, platform: "win32" }, { action: "computer_call" })).toContain("SanRemes on that PC lends them by itself once its computer control works");
     expect(sharedComputerScopeRefusal(lent, { action: "computer_call" })).not.toMatch(/Settings|use-my-computer/u);
     const broker = new SharedComputers(() => true);
     const mac = { ...registration(), platform: "darwin" as const };
@@ -569,8 +569,8 @@ describe("MCP servers a lent computer runs for this server", () => {
   });
 
   it("refuses a desktop too old to run them, and a command server where the terminal isn't lent; an address needs no terminal", () => {
-    expect(sharedComputerScopeRefusal({ ...lender(), mcpServers: undefined }, { action: "mcp_tools", server: address })).toContain("older OpenMausBot");
-    expect(sharedComputerScopeRefusal(lender(), { action: "mcp_call", server: command })).toBe("notes starts a program on Ada's Mac, which doesn't let this server run programs right now. Tell the person in one sentence that they can turn on \"Let Clouds run commands on this Mac\" from the OpenMausBot icon in its menu bar.");
+    expect(sharedComputerScopeRefusal({ ...lender(), mcpServers: undefined }, { action: "mcp_tools", server: address })).toContain("older SanRemes");
+    expect(sharedComputerScopeRefusal(lender(), { action: "mcp_call", server: command })).toBe("notes starts a program on Ada's Mac, which doesn't let this server run programs right now. Tell the person in one sentence that they can turn on \"Let Clouds run commands on this Mac\" from the SanRemes icon in its menu bar.");
     expect(sharedComputerScopeRefusal(lender(), { action: "mcp_call", server: command }, "ask_for_computer")).toContain('Call ask_for_computer with need "terminal"');
     expect(sharedComputerScopeRefusal(lender({ terminal: true }), { action: "mcp_call", server: command })).toBeNull();
     expect(sharedComputerScopeRefusal(lender(), { action: "mcp_tools", server: address })).toBeNull();
@@ -578,7 +578,7 @@ describe("MCP servers a lent computer runs for this server", () => {
   });
 
   it("finds the computer an MCP server runs on by its installs, online or as last known, and never another person's", () => {
-    const dir = mkdtempSync(join(tmpdir(), "omb-lent-mcp-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-lent-mcp-"));
     let live = true;
     const broker = new SharedComputers(() => live, new LentComputers(join(dir, "lent.json")));
     const computer = lender(); broker.register(computer, alice, secret);
@@ -641,7 +641,7 @@ describe("MCP servers a lent computer runs for this server", () => {
 describe("the computer the person types on", () => {
   it("is the online computer lent by the session that sent the line, put first; no other session or person sees it", async () => {
     vi.useFakeTimers({ now: Date.now() });
-    const dir = mkdtempSync(join(tmpdir(), "omb-typing-on-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-typing-on-"));
     const broker = new SharedComputers(() => true, new LentComputers(join(dir, "lent.json")));
     const pc = { ...registration(), name: "WIN-1", platform: "win32" as const };
     const laptop = { ...registration(), name: "UBUNTU-1", platform: "linux" as const };
@@ -662,7 +662,7 @@ describe("the computer the person types on", () => {
 
   it("is listed live when another computer with the same name holds the one record kept for that name", async () => {
     vi.useFakeTimers({ now: Date.now() });
-    const dir = mkdtempSync(join(tmpdir(), "omb-typing-same-name-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-typing-same-name-"));
     const broker = new SharedComputers(() => true, new LentComputers(join(dir, "lent.json")));
     const first = { ...registration(), name: "PC", platform: "win32" as const };
     const second = { ...registration(), name: "PC", platform: "win32" as const };

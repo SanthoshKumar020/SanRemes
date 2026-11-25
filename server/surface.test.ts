@@ -270,7 +270,7 @@ describe("surfacePrompt", () => {
     expect(beside).toContain("This computer is the person's own: their screen, their apps and the browsers they are signed in to.");
     expect(beside).toContain("use, in this order: a connected app that does it, your built-in browser, a cloud computer if select_computer offers one.");
     expect(beside).toContain("Use their own browser or screen only when the task needs their own signed-in session and nothing else works.");
-    expect(beside).toContain("OpenMausBot asks them once whether you may, at every approval level except Full access");
+    expect(beside).toContain("SanRemes asks them once whether you may, at every approval level except Full access");
     expect(beside).toContain("never mention DevTools, CDP, debugging ports, profiles, grants, binding, attaching, endpoints or drivers");
     const alone = surfacePrompt({ computer: "local", browser: false });
     expect(alone).not.toMatch(/web pages included/);
@@ -305,7 +305,7 @@ describe("surfacePrompt", () => {
     expect(text).toContain("verify its result before claiming success");
     expect(text).toContain("Announcing an action is not performing it");
     expect(text).toContain("never act on a different computer or describe a host window as a VM");
-    expect(text).toContain("use OpenMausBot's mounted browser/computer tools first");
+    expect(text).toContain("use SanRemes's mounted browser/computer tools first");
     expect(text).toContain("Do not substitute the provider's own desktop");
   });
 
@@ -442,7 +442,7 @@ describe("surfacePrompt", () => {
     }
     // Nothing mounted: the lent computer is still reachable, so the paragraph never says no screen can be reached.
     const none = surfacePrompt({ computer: null, browser: false }, { lentToServer: lent });
-    expect(none).not.toContain("You cannot open apps, click, or inspect a screen through OpenMausBot.");
+    expect(none).not.toContain("You cannot open apps, click, or inspect a screen through SanRemes.");
     expect(none).toContain("No place's tools can open apps, click, or inspect a screen this turn.");
     expect(surfacePrompt({ computer: "local", browser: false }, { lentToServer: lent })).toContain("Their Mac (Studio) is reached only through shared_computer");
   });

@@ -17,7 +17,7 @@ function simpleLogin(world, available = true) {
 }
 
 function fixture(t, { login = false, battery = false, available = true, updates = "by-itself", platform = "darwin" } = {}) {
-  const dir = mkdtempSync(path.join(tmpdir(), "omb-always-on-"));
+  const dir = mkdtempSync(path.join(tmpdir(), "sanremes-always-on-"));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const world = { login, battery, chose: [], held: new Set(), started: [], nextId: 1 };
   const loginItem = simpleLogin(world, available);

@@ -18,7 +18,7 @@ export function ForkPanel() {
   const asideRef = useRef<HTMLElement>(null);
   const focusedLoad = useRef<string | undefined>(undefined);
   const beside = useFeature("roomFeed");
-  const resize = useComputerPanelResize({ key: "omb-thread-panel-width", defaultWidth: 440 });
+  const resize = useComputerPanelResize({ key: "sanremes-thread-panel-width", defaultWidth: 440 });
   // Beside the Inbox the chat keeps the 440 it has beside any other side panel.
   const width = useInboxPanel().open ? Math.min(resize.panelWidth, BESIDE_INBOX_MAX) : resize.panelWidth;
   useLayoutEffect(() => {

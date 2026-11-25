@@ -22,7 +22,7 @@ const instances: ProviderInstance[] = [];
 const FAKE_ACP = join(dirname(fileURLToPath(import.meta.url)), "..", "testing", "fake-acp-cli.ts");
 
 function folder(): string {
-  const directory = mkdtempSync(join(tmpdir(), "omb-antigravity-native-"));
+  const directory = mkdtempSync(join(tmpdir(), "sanremes-antigravity-native-"));
   scratch.push(directory);
   return directory;
 }
@@ -107,7 +107,7 @@ describe.skipIf(WINDOWS)("signing in to the native Antigravity CLI", () => {
     const instance = await create(instanceId, fixture);
     expect(await loginAt(fixture, antigravityProfileDirectory(instanceId), "fixture-code")).toBe(0);
     expect(existsSync(credentials(instanceId))).toBe(true);
-    // The CLI itself accepts a session: the sign-in is valid, whatever file MausBot looks at.
+    // The CLI itself accepts a session: the sign-in is valid, whatever file SanRemes looks at.
     expect(await sessionAcceptedAt(fixture, antigravityProfileDirectory(instanceId))).toBe(true);
     expect(await instance.snapshot()).toMatchObject({ authenticated: true });
     const { done } = await turn(instance, "native-terminal", fixture.directory);

@@ -37,7 +37,7 @@ export function liveSessionWiring(input: LiveSessionWiringInput): {
   const env = input.env ?? process.env;
   const fetchImpl = input.fetchImpl ?? fetch;
 
-  const operatorAgent = () => Boolean(env.OMB_FISH_LIVE_AGENT_ID?.trim());
+  const operatorAgent = () => Boolean(env.SANREMES_FISH_LIVE_AGENT_ID?.trim());
 
   const setUpAgent = async (key: string, endpoint: LiveEndpoint, language: string): Promise<LiveEndpoint> => {
     const fishAgentId = await setUpFishAgent(key, endpoint, (input.productName ?? productName)(), language, fetchImpl);

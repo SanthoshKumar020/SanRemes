@@ -58,7 +58,7 @@ export function accountHint(slugs: readonly string[], accounts: ConnectedAccount
   if (known.length < 2) return "";
   const app = appName(toolkit);
   const names = known.map((account) => account.alias?.trim() || account.id).join(", ");
-  return `OpenMausBot note: ${app} refused this because the connected account the call used cannot reach it. `
+  return `SanRemes note: ${app} refused this because the connected account the call used cannot reach it. `
     + `That is about that account, not about a lack of access to ${app}: ${app} has ${known.length} connected accounts (${names}). `
     + `Name another one in the call's account field (an alias or an id) and try it once, `
     + `before telling the person you have no access to ${app}.`;
@@ -74,10 +74,10 @@ export function missingAccountHint(slugs: readonly string[], accounts: Connected
   const app = appName(toolkit);
   const names = known.map((account) => account.alias?.trim() || account.id).join(", ");
   if (known.length === 1)
-    return `OpenMausBot note: ${app} refused this because the call named no account and ${app} has more than one `
+    return `SanRemes note: ${app} refused this because the call named no account and ${app} has more than one `
       + `connected account, of which one can run a call (${names}). Name that one in the call's account field `
       + `(an alias or an id) and try the call again.`;
-  return `OpenMausBot note: ${app} refused this because the call named no account and ${app} has ${known.length} `
+  return `SanRemes note: ${app} refused this because the call named no account and ${app} has ${known.length} `
     + `connected accounts (${names}). Name one of them in the call's account field (an alias or an id) and try the `
     + `call again.`;
 }

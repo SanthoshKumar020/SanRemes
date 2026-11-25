@@ -9,7 +9,7 @@ import { ProcessRegistry, staleSingletonLock, strays, sweep, userDataDirOf, type
 
 const dirs: string[] = [];
 const scratch = () => {
-  const dir = mkdtempSync(join(tmpdir(), "omb-chrome-test-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-chrome-test-"));
   dirs.push(dir);
   return dir;
 };

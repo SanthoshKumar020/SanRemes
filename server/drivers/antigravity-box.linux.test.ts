@@ -13,13 +13,13 @@ import { antigravityProfileAuthenticated, forwardAntigravityCallback, prepareAnt
 import { AntigravityAuthController } from "./antigravity-auth.ts";
 import { resolveAntigravityRuntime } from "./antigravity-runtime.ts";
 
-const detection = detectBox({ env: { ...process.env, OMB_BOT_BOX: "1" } });
+const detection = detectBox({ env: { ...process.env, SANREMES_BOT_BOX: "1" } });
 const available = detection.box === "bwrap" && detection.tools !== null;
 const FAKE_SIGNIN = join(dirname(fileURLToPath(import.meta.url)), "..", "testing", "fake-antigravity-signin.ts");
 
 describe.skipIf(!available)(`Antigravity's Google sign-in in a real box (${available ? "bubblewrap works here" : `skipped: ${detection.reason}`})`, () => {
-  const root = mkdtempSync(join(tmpdir(), "omb-ag-box-"));
-  const home = join(root, "home"), dataDir = join(home, ".openmausbot"), runtimeDir = join(home, "runtime");
+  const root = mkdtempSync(join(tmpdir(), "sanremes-ag-box-"));
+  const home = join(root, "home"), dataDir = join(home, ".sanremes"), runtimeDir = join(home, "runtime");
   beforeAll(async () => {
     mkdirSync(dataDir, { recursive: true });
     mkdirSync(runtimeDir, { recursive: true });
@@ -27,7 +27,7 @@ describe.skipIf(!available)(`Antigravity's Google sign-in in a real box (${avail
       writeFileSync(join(runtimeDir, name), readFileSync(FAKE_SIGNIN));
       chmodSync(join(runtimeDir, name), 0o755);
     }
-    await botBox.start({ dataDir, home, port: 18799, denyEnv: new Set(), env: { ...process.env, OMB_BOT_BOX: "1" }, log: () => {} });
+    await botBox.start({ dataDir, home, port: 18799, denyEnv: new Set(), env: { ...process.env, SANREMES_BOT_BOX: "1" }, log: () => {} });
   });
   afterAll(async () => {
     await botBox.stop();

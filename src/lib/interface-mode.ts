@@ -4,7 +4,7 @@ import { hasPriorRun } from "./prior-run";
 import { SIMPLE_ONLY } from "./simple-only";
 import { windowPrefChanged } from "./window-pref-changes";
 
-export const ADVANCED_MODE_KEY = "omb-advanced-mode";
+export const ADVANCED_MODE_KEY = "sanremes-advanced-mode";
 
 let sessionChoice: boolean | undefined;
 const listeners = new Set<() => void>();

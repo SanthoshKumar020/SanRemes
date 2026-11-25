@@ -74,7 +74,7 @@ describe("a room feed row", () => {
     expect(body.className).toContain("mask-image");
     expect(body.textContent?.endsWith("…")).toBe(true);
     act(() => root!.unmount());
-    render(row({ text: '<attached-image path="/tmp/omb-uploads/a.png" name="a.png" />' }));
+    render(row({ text: '<attached-image path="/tmp/sanremes-uploads/a.png" name="a.png" />' }));
     expect(item().textContent).toContain("An attachment");
   });
 

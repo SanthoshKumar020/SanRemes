@@ -43,7 +43,7 @@ function probe(overrides: { files?: Record<string, string | null>; lists?: Recor
   };
 }
 
-const OPTIONS = { dataDir: "/srv/mausbot", port: 8799 };
+const OPTIONS = { dataDir: "/srv/sanremes", port: 8799 };
 const byId = (checks: HostCheck[], id: string) => checks.find((check) => check.id === id);
 
 describe("doctor --host", () => {
@@ -57,8 +57,8 @@ describe("doctor --host", () => {
       "ok    Unprivileged user namespaces are allowed",
       "ok    seccomp is available",
       "ok    cgroup v2",
-      "ok    412 GB free for /srv/mausbot",
-      "ok    /srv/mausbot is on an encrypted disk",
+      "ok    412 GB free for /srv/sanremes",
+      "ok    /srv/sanremes is on an encrypted disk",
       "ok    8 CPUs, 32 GB memory (a team of 20 needs 8 CPUs and 16 GB)",
       "ok    Port 8799 is free for the server",
       "ok    Ports 80 and 443 are free",
@@ -93,7 +93,7 @@ describe("doctor --host", () => {
     expect(report.human.at(-1)).toBe("1 problem.");
   });
 
-  it("asks the MausBot connector on a server that runs one: its home's own AppArmor profile stands in for the server-wide switch", async () => {
+  it("asks the SanRemes connector on a server that runs one: its home's own AppArmor profile stands in for the server-wide switch", async () => {
     const connector = (box: boolean) => async (command: string, args: string[]): Promise<CommandResult> => {
       if (command === "docker" && args[0] === "exec") {
         const checks = [{ id: "profiles", ok: true }, box ? { id: "box", ok: true } : { id: "box", ok: false, fix: "Our bots' safety box can't start on this server yet. Run the install command again to repair it." }];
@@ -104,7 +104,7 @@ describe("doctor --host", () => {
     const stock = { files: { "/proc/sys/kernel/apparmor_restrict_unprivileged_userns": "1\n" } };
     const passing = await checkHost(probe({ ...stock, run: connector(true) }), OPTIONS);
     expect(byId(passing, "userns")).toMatchObject({ status: "ok", message: expect.stringContaining("its own AppArmor profile") });
-    expect(byId(passing, "connector")).toEqual({ id: "connector", status: "ok", message: "MausBot connector: its 2 checks pass, the bots' box among them" });
+    expect(byId(passing, "connector")).toEqual({ id: "connector", status: "ok", message: "SanRemes connector: its 2 checks pass, the bots' box among them" });
     expect(hostReport(passing).exitCode).toBe(0);
     const failing = await checkHost(probe({ ...stock, run: connector(false) }), OPTIONS);
     expect(byId(failing, "userns")).toMatchObject({ status: "FAIL", fix: expect.stringContaining("install command again") });
@@ -131,10 +131,10 @@ describe("doctor --host", () => {
 
   it("needs ports 80 and 443 for --domain, unless this server already answers", async () => {
     const taken = { files: { "/proc/net/tcp": tcp(22, 80, 8799), "/proc/net/tcp6": tcp(443) } };
-    expect(byId(await checkHost(probe(taken), { ...OPTIONS, domain: "maus.example.com" }), "web-ports"))
-      .toMatchObject({ status: "FAIL", message: "Ports 80 and 443 are taken, and --domain maus.example.com needs 80 and 443" });
-    const ours = await checkHost(probe({ ...taken, serverAnswers: async () => true }), { ...OPTIONS, domain: "maus.example.com" });
-    expect(byId(ours, "port")).toMatchObject({ status: "ok", message: "OpenMausBot already answers on port 8799" });
+    expect(byId(await checkHost(probe(taken), { ...OPTIONS, domain: "sanremes.example.com" }), "web-ports"))
+      .toMatchObject({ status: "FAIL", message: "Ports 80 and 443 are taken, and --domain sanremes.example.com needs 80 and 443" });
+    const ours = await checkHost(probe({ ...taken, serverAnswers: async () => true }), { ...OPTIONS, domain: "sanremes.example.com" });
+    expect(byId(ours, "port")).toMatchObject({ status: "ok", message: "SanRemes already answers on port 8799" });
     expect(byId(ours, "web-ports")!.status).toBe("warn");
   });
 
@@ -163,24 +163,24 @@ describe("doctor --host", () => {
     const seen: string[] = [];
     const watching = probe({ freeBytes: (path) => { seen.push(path); return 412 * GB; } });
     const ctx = (flags: Record<string, string | boolean>, env: NodeJS.ProcessEnv = {}) => ({ flags, env }) as unknown as VerbContext;
-    await hostDoctor(ctx({ host: true }, { OMB_DATA_DIR: "/srv/from-env" }), watching);
-    const flagged = await hostDoctor(ctx({ host: true, "data-dir": "/srv/mausbot", port: "9000", domain: "Maus.Example.com" }), probe({
+    await hostDoctor(ctx({ host: true }, { SANREMES_DATA_DIR: "/srv/from-env" }), watching);
+    const flagged = await hostDoctor(ctx({ host: true, "data-dir": "/srv/sanremes", port: "9000", domain: "SanRemes.Example.com" }), probe({
       freeBytes: (path) => { seen.push(path); return 412 * GB; }, files: { "/proc/net/tcp": tcp(443, 9000) } }));
-    expect(seen).toEqual(["/srv/from-env", "/srv/mausbot"]);
+    expect(seen).toEqual(["/srv/from-env", "/srv/sanremes"]);
     const homes = { under: () => "/fake-account/person", realHome: () => "/fake-account/person" };
     await hostDoctor(ctx({ host: true }), watching, homes);
-    expect(seen.at(-1)).toBe(posix.resolve(join("/fake-account/person", ".openmausbot")));
+    expect(seen.at(-1)).toBe(posix.resolve(join("/fake-account/person", ".sanremes")));
     await expect(hostDoctor(ctx({ host: true }, { NODE_ENV: "test" }), watching, homes)).rejects.toThrow(/refusing to use the real data folder/);
     await hostDoctor(ctx({ host: true, "data-dir": "/srv/given" }, { NODE_ENV: "test" }), watching, homes);
     expect(seen.at(-1)).toBe("/srv/given");
     expect((flagged.result as { checks: HostCheck[] }).checks.filter((check) => check.status === "FAIL").map((check) => check.message))
-      .toEqual(["Port 9000 is taken by another program", "Port 443 is taken, and --domain maus.example.com needs 80 and 443"]);
+      .toEqual(["Port 9000 is taken by another program", "Port 443 is taken, and --domain sanremes.example.com needs 80 and 443"]);
     await expect(hostDoctor(ctx({ host: true, port: "99999" }), probe())).rejects.toMatchObject({ exitCode: 2 });
   });
 
   it("is doctor --host on the command line, and its flags belong to it", async () => {
     const io: HeadlessIo = { out: () => undefined, err: () => undefined, readStdin: async () => "" };
-    expect(await runHeadless(["doctor", "--domain", "maus.example.com"], { io, env: {} })).toBe(2);
+    expect(await runHeadless(["doctor", "--domain", "sanremes.example.com"], { io, env: {} })).toBe(2);
     expect(await runHeadless(["doctor", "--host", "--wait", "1m"], { io, env: {} })).toBe(2);
   });
 

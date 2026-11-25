@@ -17,7 +17,7 @@ executable can be staged:
 | Windows x64 | `cloudflared-windows-amd64.exe` | `76b2805253d0d6ffacb092a7acfbee99e7af6917835c0c5410e23f3ef5052da2` | same as release asset |
 
 The staged executables are generated build output and are intentionally not
-checked into git. Set `OMB_CLOUDFLARED_ARCHIVE_DIR` to a directory containing
+checked into git. Set `SANREMES_CLOUDFLARED_ARCHIVE_DIR` to a directory containing
 the exact official release assets to prepare a package from a reviewed local
 download. Otherwise the preparation script downloads them from the release URL
 above.

@@ -101,7 +101,7 @@ const GROUP_OF: Record<AddKind, (device: Device) => boolean> = {
 export interface AddDeviceProps {
   /** This computer's own page in the desktop app. */
   here: boolean;
-  /** A MausBot Cloud's page: another computer opens it by signing in, with no code. */
+  /** A SanRemes Cloud's page: another computer opens it by signing in, with no code. */
   cloud: boolean;
   devices: readonly Device[];
   /** Every source has answered at least once. */

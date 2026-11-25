@@ -10,7 +10,7 @@ import { recordEvents } from "./testing/events.ts";
 import { TRIAL_CREDIT_REFUSED } from "./trial-credit.ts";
 
 const TOKEN = `omb_ai_${"t".repeat(43)}`;
-/** OMB_CLOUD_AI_URL exactly as the Admin sets it: an OpenAI base URL, its `/v1` included. */
+/** SANREMES_CLOUD_AI_URL exactly as the Admin sets it: an OpenAI base URL, its `/v1` included. */
 const RELAY = "https://cloud.example.test/api/cloud/services/ai/v1";
 const credential = { token: TOKEN, api: RELAY, included: true };
 const MODELS = { object: "list", data: [
@@ -35,15 +35,15 @@ describe("what the credit's engine is made of", () => {
     for (const body of [null, "models", { data: "x" }, { models: [] }]) expect(parseCreditModels(body)).toEqual([]);
   });
 
-  it("is OpenMausBot's own chat engine on the relay, with this machine's token as its own key: never Claude Code, Codex or an Anthropic route", () => {
+  it("is SanRemes's own chat engine on the relay, with this machine's token as its own key: never Claude Code, Codex or an Anthropic route", () => {
     const configs = cloudCreditInstanceConfig(credential, parseCreditModels(MODELS));
     expect(Object.keys(configs)).toEqual([CLOUD_CREDIT_INSTANCE]);
     const entry = configs[CLOUD_CREDIT_INSTANCE]!;
     expect(entry).toEqual({ driver: "openai-compat", displayName: "Trial credit · Claude",
-      config: { url: RELAY, apiKeyEnv: "OPENMAUSBOT_TRIAL_CREDIT_KEY", provider: "", model: "claude-haiku-4-5", managedModels: ["claude-haiku-4-5", "claude-sonnet-5"] },
-      environment: { OPENMAUSBOT_TRIAL_CREDIT_KEY: TOKEN } });
+      config: { url: RELAY, apiKeyEnv: "OPENSANREMES_TRIAL_CREDIT_KEY", provider: "", model: "claude-haiku-4-5", managedModels: ["claude-haiku-4-5", "claude-sonnet-5"] },
+      environment: { OPENSANREMES_TRIAL_CREDIT_KEY: TOKEN } });
     expect(JSON.stringify(configs)).not.toMatch(/ANTHROPIC|claudeAgent|codex|\/messages/);
-    expect(OpenAICompatDriver.decodeConfig(entry.config)).toEqual({ url: RELAY, apiKeyEnv: "OPENMAUSBOT_TRIAL_CREDIT_KEY",
+    expect(OpenAICompatDriver.decodeConfig(entry.config)).toEqual({ url: RELAY, apiKeyEnv: "OPENSANREMES_TRIAL_CREDIT_KEY",
       model: "claude-haiku-4-5", managedModels: ["claude-haiku-4-5", "claude-sonnet-5"], key: undefined, provider: undefined });
   });
 });
@@ -85,7 +85,7 @@ describe("the credit's engine on a Cloud home", () => {
     providers.push(provider);
     return provider;
   };
-  beforeEach(() => { data = mkdtempSync(join(tmpdir(), "omb-trial-credit-")); });
+  beforeEach(() => { data = mkdtempSync(join(tmpdir(), "sanremes-trial-credit-")); });
   afterEach(() => {
     for (const provider of providers.splice(0)) provider.close();
     vi.useRealTimers(); vi.unstubAllGlobals();

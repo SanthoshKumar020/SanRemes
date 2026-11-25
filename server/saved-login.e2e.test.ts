@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { expect, it } from "vitest";
 
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { removeTempDir } from "./testing/cleanup.ts";
 import { FakeLoginPage, LOGIN_FORM } from "./testing/fake-login-page.ts";
 import { freePortBlock } from "./testing/ports.ts";
@@ -53,7 +53,7 @@ async function browserFixture(url: string, cuaRecord?: string) {
   });
   await new Promise<void>((ready) => bridge.listen(port, "127.0.0.1", ready));
 
-  const tools = mkdtempSync(join(tmpdir(), "omb-saved-login-e2e-"));
+  const tools = mkdtempSync(join(tmpdir(), "sanremes-saved-login-e2e-"));
   const binaryPath = join(tools, "agent-browser");
   // The stand-in agent-browser: always running, `close` and `set` do nothing, `mcp` answers get_url and eval from the
   // page, and every other command goes to the bridge.
@@ -77,7 +77,7 @@ else if (args[0] === "mcp") {
 else bridge("/engine", { args, proxy: process.env.AGENT_BROWSER_PROXY }).then((text) => { process.stdout.write(text); process.exit(0); }, () => process.exit(1));
 `, { mode: 0o755 });
 
-  const fixture = await launchVerificationServer(cuaRecord ? { OMB_TEST_DESKTOP_CUA_CONNECTION: cuaRecord } : {}, undefined, undefined, { binaryPath, executablePath: join(tools, "chrome") }, undefined, { scripted: true });
+  const fixture = await launchVerificationServer(cuaRecord ? { SANREMES_TEST_DESKTOP_CUA_CONNECTION: cuaRecord } : {}, undefined, undefined, { binaryPath, executablePath: join(tools, "chrome") }, undefined, { scripted: true });
   const base = fixture.info.url;
   const planPath = join(fixture.info.dataDir, "room-plan.json");
   const evidence = () => existsSync(`${planPath}.evidence.jsonl`)
@@ -230,7 +230,7 @@ it.skipIf(process.platform === "win32")("fills a login kept to one bot on its gu
 // Auto mounts this computer only on macOS and Windows, and the stand-in browser is a shebang script.
 it.runIf(process.platform === "darwin")("on Auto, signs in in the bot's own browser beside this computer, never on the person's screen", async () => {
   // What the desktop app hands its own server once computer control is ready; the driver itself never runs here.
-  const record = join(mkdtempSync(join(tmpdir(), "omb-saved-login-cua-")), "cua-connection.json");
+  const record = join(mkdtempSync(join(tmpdir(), "sanremes-saved-login-cua-")), "cua-connection.json");
   writeFileSync(record, JSON.stringify({
     mode: "embedded", status: "ready", socketPath: join(dirname(record), "cua.sock"), mcpCommand: "/fixture/cua-driver", mcpArgs: ["mcp"], mcpEnv: {},
   }), { mode: 0o600 });

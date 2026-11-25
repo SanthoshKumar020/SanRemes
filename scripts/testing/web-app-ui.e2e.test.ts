@@ -4,14 +4,14 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb, type VerificationServer } from "../control-omb.ts";
+import { launchVerificationServer, runControlOmb, type VerificationServer } from "../control-sanremes.ts";
 import { waitForExit } from "../../server/testing/cleanup.ts";
-import { ensureUiBrowser } from "./control-omb-ui.ts";
+import { ensureUiBrowser } from "./control-sanremes-ui.ts";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
-const enabled = process.env.OMB_UI_E2E === "1";
-const build = process.env.OMB_WEB_APP_BUILD || join(root, "dist");
-if (!enabled) console.log("skipping web app UI: build the UI and set OMB_UI_E2E=1 for browser qualification");
+const enabled = process.env.SANREMES_UI_E2E === "1";
+const build = process.env.SANREMES_WEB_APP_BUILD || join(root, "dist");
+if (!enabled) console.log("skipping web app UI: build the UI and set SANREMES_UI_E2E=1 for browser qualification");
 
 async function connect(url: string) {
   const socket = new WebSocket(url);
@@ -49,7 +49,7 @@ async function connect(url: string) {
 }
 
 (enabled ? it : it.skip)("qualifies the served phone web app and keeps controls inside safe areas", async () => {
-  if (!existsSync(join(build, "index.html"))) throw new Error("Run pnpm build before OMB_UI_E2E=1 web-app qualification");
+  if (!existsSync(join(build, "index.html"))) throw new Error("Run pnpm build before SANREMES_UI_E2E=1 web-app qualification");
   let fixture: VerificationServer | undefined;
   let chrome: ChildProcess | undefined;
   let cdp: Awaited<ReturnType<typeof connect>> | undefined;
@@ -80,7 +80,7 @@ async function connect(url: string) {
       return value.result.value;
     };
     await request("Page.enable");
-    await request("Page.addScriptToEvaluateOnNewDocument", { source: "localStorage.setItem('omb-analytics-opt-out','1');localStorage.setItem('omb-email-gate','skipped');localStorage.setItem('grok-move-2026-11','1');localStorage.setItem('teams-2026-11b','1');localStorage.setItem('modelgo-offer-2026-11','1');" });
+    await request("Page.addScriptToEvaluateOnNewDocument", { source: "localStorage.setItem('sanremes-analytics-opt-out','1');localStorage.setItem('sanremes-email-gate','skipped');localStorage.setItem('grok-move-2026-11','1');localStorage.setItem('teams-2026-11b','1');localStorage.setItem('modelgo-offer-2026-11','1');" });
     await request("Runtime.enable");
     await request("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 1 });
     await request("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });

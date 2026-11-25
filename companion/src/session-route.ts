@@ -41,7 +41,7 @@ export function webSessionHeaders(req: IncomingMessage, deviceId: string, upgrad
   const out: Record<string, string | string[]> = {};
   const hop = hopByHop(req.headers);
   for (const [name, value] of Object.entries(req.headers)) {
-    if (value === undefined || hop.has(name) || DROPPED.has(name) || name.startsWith("x-openmausbot-")) continue;
+    if (value === undefined || hop.has(name) || DROPPED.has(name) || name.startsWith("x-sanremes-")) continue;
     out[name] = value;
   }
   out.host = HOST;
@@ -86,8 +86,8 @@ export function forwardWebSession(target: WebSessionTarget, deviceId: string, re
   upstream.once("error", () => {
     clearTimeout(deadline);
     if (res.headersSent) res.destroy();
-    else if (timedOut()) reply(res, 504, "OpenMausBot did not respond");
-    else reply(res, 502, "OpenMausBot is not running on this computer");
+    else if (timedOut()) reply(res, 504, "SanRemes did not respond");
+    else reply(res, 502, "SanRemes is not running on this computer");
   });
   // Also before the reply starts: a device that leaves must not keep a stream open on the server.
   res.once("close", () => upstream.destroy());

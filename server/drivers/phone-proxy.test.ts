@@ -396,7 +396,7 @@ describe("phone MCP text input", () => {
 });
 
 describe("phone MCP lazy claim gate", () => {
-  const harnessEnv = { OMB_HARNESS_URL: "http://127.0.0.1:8799", OMB_PHONE_TOKEN: "tok" };
+  const harnessEnv = { SANREMES_HARNESS_URL: "http://127.0.0.1:8799", SANREMES_PHONE_TOKEN: "tok" };
   const stub = (handler: (request: Request) => Promise<{ ok: boolean; status: number }>) => {
     const calls: Request[] = [];
     const fetchImpl = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => {
@@ -589,7 +589,7 @@ describe("phone batch runs", () => {
 
   it.each([
     { refusal: "Another thread is using the phone. This call was not performed. Pause phone work until that thread finishes, then read the screen again before acting.", said: "Another thread is using the phone. Pause phone work until that thread finishes, then read the screen again before acting" },
-    { refusal: "OpenMausBot could not be reached to reserve the phone. This call was not performed; try again.", said: "OpenMausBot could not be reached to reserve the phone" },
+    { refusal: "SanRemes could not be reached to reserve the phone. This call was not performed; try again.", said: "SanRemes could not be reached to reserve the phone" },
     { refusal: "A person has taken control of the phone, so this call was NOT performed. Do not act until they hand it back. To wait, call read_screen: each phone call waits up to 45 seconds and returns as soon as they hand the phone back. Meanwhile you may work on anything that does not need the phone.", said: "A person has taken control of the phone. Do not act until they hand it back. To wait, call read_screen: each phone call waits up to 45 seconds and returns as soon as they hand the phone back. Meanwhile you may work on anything that does not need the phone" },
     { refusal: "The person has handed the phone back. This call was NOT performed: the screen may have changed. Call read_screen, then continue the task.", said: "The person has handed the phone back. Call read_screen, then continue the task" },
     { refusal: "The phone is free now, but this call had to wait for it, so it was NOT performed. Call again: the next call goes through at once. If you meant to tap or type from an earlier read_screen, call read_screen again first: the screen may have changed while you waited.", said: "The phone is free now, but this call had to wait for it. Call again: the next call goes through at once. If you meant to tap or type from an earlier read_screen, call read_screen again first: the screen may have changed while you waited" },
@@ -691,9 +691,9 @@ describe.skipIf(process.platform === "win32")("phone MCP calls through a stand-i
   const DUMP = "-s FAKE123 shell uiautomator dump /dev/tty";
 
   const startProxy = (harness: Record<string, string> = {}): Call => {
-    const env: NodeJS.ProcessEnv = { ...process.env, OMB_ADB_PATH: adb };
-    delete env.OMB_HARNESS_URL;
-    delete env.OMB_PHONE_TOKEN;
+    const env: NodeJS.ProcessEnv = { ...process.env, SANREMES_ADB_PATH: adb };
+    delete env.SANREMES_HARNESS_URL;
+    delete env.SANREMES_PHONE_TOKEN;
     delete env.PH_ANDROID_SERIAL;
     const proxy = spawn(process.execPath, [fileURLToPath(new URL("./phone-proxy.ts", import.meta.url))], { env: { ...env, ...harness }, stdio: ["pipe", "pipe", "ignore"] });
     proxies.push(proxy);
@@ -712,7 +712,7 @@ describe.skipIf(process.platform === "win32")("phone MCP calls through a stand-i
   };
 
   beforeAll(() => {
-    home = mkdtempSync(join(tmpdir(), "omb-phone-proxy-"));
+    home = mkdtempSync(join(tmpdir(), "sanremes-phone-proxy-"));
     adb = join(home, "adb");
     writeFileSync(adb, `#!/bin/sh
 echo "$*" >> "$(dirname "$0")/adb.log"
@@ -762,7 +762,7 @@ case "$*" in
 esac
 `);
     chmodSync(twoMatches, 0o755);
-    const onTwoMatches = startProxy({ OMB_ADB_PATH: twoMatches });
+    const onTwoMatches = startProxy({ SANREMES_ADB_PATH: twoMatches });
     rmSync(join(home, "adb.log"), { force: true });
     const response = await onTwoMatches("batch", { steps: [{ action: "tap_text", text: "search", index: "1" }, { action: "tap_text", text: "history", exact: "true" }] });
     expect(response.result).toEqual({ content: [{ type: "text", text: `1. tap_text: Tapped "Search history"\nStep 2 failed: No visible Android text matches "history". Its effect is unknown; call read_screen or screenshot before trying it again. ${EARLIER_AND_LATER}` }] });
@@ -810,7 +810,7 @@ esac
     await new Promise<void>((resolve) => harness.listen(0, "127.0.0.1", resolve));
     try {
       const { port } = harness.address() as AddressInfo;
-      const claimed = startProxy({ OMB_HARNESS_URL: `http://127.0.0.1:${port}`, OMB_PHONE_TOKEN: "tok" });
+      const claimed = startProxy({ SANREMES_HARNESS_URL: `http://127.0.0.1:${port}`, SANREMES_PHONE_TOKEN: "tok" });
       rmSync(join(home, "adb.log"), { force: true });
       const response = await claimed(name, args, "this call");
       expect(response.result).toEqual(result);
@@ -829,7 +829,7 @@ esac
     await new Promise<void>((resolve) => harness.listen(0, "127.0.0.1", resolve));
     try {
       const { port } = harness.address() as AddressInfo;
-      const claimed = startProxy({ OMB_HARNESS_URL: `http://127.0.0.1:${port}`, OMB_PHONE_TOKEN: "tok" });
+      const claimed = startProxy({ SANREMES_HARNESS_URL: `http://127.0.0.1:${port}`, SANREMES_PHONE_TOKEN: "tok" });
       rmSync(join(home, "adb.log"), { force: true });
       const response = await claimed("batch", { steps: [{ action: "tap", x: 540, y: 1200 }, { action: "press", key: "enter" }] });
       expect(response.result).toEqual({ content: [{ type: "text", text: "1. tap: Tapped 540,1200\nStopped before step 2: Another thread is using the phone. Pause phone work until that thread finishes, then read the screen again before acting. Steps before it were done; do not repeat them. Later steps were not performed." }] });
@@ -851,7 +851,7 @@ esac
     await new Promise<void>((resolve) => harness.listen(0, "127.0.0.1", resolve));
     try {
       const { port } = harness.address() as AddressInfo;
-      const claimed = startProxy({ OMB_HARNESS_URL: `http://127.0.0.1:${port}`, OMB_PHONE_TOKEN: "tok" });
+      const claimed = startProxy({ SANREMES_HARNESS_URL: `http://127.0.0.1:${port}`, SANREMES_PHONE_TOKEN: "tok" });
       await claimed("batch", { steps: [{ action: "tap", x: 540, y: 1200 }, { action: "wait", seconds: 0 }] });
       expect(asked).toEqual(["{}", '{"wait":false}', '{"wait":false}']);
     } finally {
@@ -864,7 +864,7 @@ const PERSON_TEXT = "A person has taken control of the phone, so this call was N
 const HANDED_BACK_TEXT = "The person has handed the phone back. This call was NOT performed: the screen may have changed. Call read_screen, then continue the task.";
 
 describe("phone MCP claim while a person may hold the phone", () => {
-  const harnessEnv = { OMB_HARNESS_URL: "http://127.0.0.1:8799", OMB_PHONE_TOKEN: "tok" };
+  const harnessEnv = { SANREMES_HARNESS_URL: "http://127.0.0.1:8799", SANREMES_PHONE_TOKEN: "tok" };
   const answering = (answer: () => Response) => (async () => answer()) as unknown as typeof fetch;
   const refusal = (body: unknown) => answering(() => new Response(JSON.stringify(body), { status: 423 }));
 
@@ -876,7 +876,7 @@ describe("phone MCP claim while a person may hold the phone", () => {
   it.each([
     [{ reason: "person" }, PERSON_TEXT],
     [{ reason: "handed-back" }, HANDED_BACK_TEXT],
-    [{}, "OpenMausBot could not reserve the phone for this call. This call was not performed; try again, or start a new turn if it keeps failing."],
+    [{}, "SanRemes could not reserve the phone for this call. This call was not performed; try again, or start a new turn if it keeps failing."],
   ])("tells the bot what a 423 %j means", async (body, message) => {
     await expect(createPhoneClaim(harnessEnv, refusal(body))()).resolves.toEqual({ ok: false, message });
   });
@@ -905,7 +905,7 @@ describe("phone MCP calls claim before each command sent to the phone", () => {
   const onPhone = (...command: string[]) => ["-s", "USB123", ...command];
   const DUMP = onPhone("shell", "uiautomator", "dump", "/dev/tty");
   const APPS = onPhone("shell", "cmd", "package", "query-activities", "--brief", "-a", "android.intent.action.MAIN", "-c", "android.intent.category.LAUNCHER");
-  const SAVED_DUMP = "/data/local/tmp/openmaus-window.xml";
+  const SAVED_DUMP = "/data/local/tmp/sanremes-window.xml";
   const SAVE_READ_AND_REMOVE = onPhone("shell", `rm -f ${SAVED_DUMP}; uiautomator dump ${SAVED_DUMP} >/dev/null && cat ${SAVED_DUMP}; status=$?; rm -f ${SAVED_DUMP}; exit $status`);
   const namingTheSavedDumpWithoutRemovingIt = (commands: string[][]) =>
     commands.filter((command) => command.join(" ").includes(SAVED_DUMP) && !command.join(" ").includes(`rm -f ${SAVED_DUMP}`));
@@ -978,7 +978,7 @@ describe("phone MCP calls claim before each command sent to the phone", () => {
   }
 
   beforeEach(() => {
-    vi.stubEnv("OMB_ADB_PATH", process.execPath);
+    vi.stubEnv("SANREMES_ADB_PATH", process.execPath);
     vi.stubEnv("PH_ANDROID_SERIAL", "");
   });
   afterEach(() => {
@@ -1177,7 +1177,7 @@ describe("phone MCP calls claim before each command sent to the phone", () => {
       },
     });
 
-    const result = await callPhoneTool("tap_text", { text: "Where to?" }, createPhoneClaim({ OMB_HARNESS_URL: "http://127.0.0.1:8799", OMB_PHONE_TOKEN: "tok" }, harness), adb);
+    const result = await callPhoneTool("tap_text", { text: "Where to?" }, createPhoneClaim({ SANREMES_HARNESS_URL: "http://127.0.0.1:8799", SANREMES_PHONE_TOKEN: "tok" }, harness), adb);
 
     expect(result).toEqual({ content: [{ type: "text", text: HANDED_BACK_TEXT }], isError: true });
     expect(commands.filter((command) => command.includes("input"))).toEqual([]);

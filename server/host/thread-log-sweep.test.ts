@@ -51,9 +51,9 @@ const sessionIds = (file: string) => readFileSync(file, "utf8").split("\n").filt
 const BIG_CAP = 1024 ** 4;
 
 describe("the conversation logs' switch and cap", () => {
-  it("never cuts unless OMB_THREAD_LOG_CUT is set", async () => {
+  it("never cuts unless SANREMES_THREAD_LOG_CUT is set", async () => {
     expect(threadLogCutEnabled({})).toBe(false);
-    expect(threadLogCutEnabled({ OMB_THREAD_LOG_CUT: "1" })).toBe(true);
+    expect(threadLogCutEnabled({ SANREMES_THREAD_LOG_CUT: "1" })).toBe(true);
     const small = writeEvents("small", 100);
     age(small, AGE_MS + DAY);
     const result = await sweepThreadLogs({ dataDir, mode: "on", cap: 1, threads: threads({ small: false }), now: () => NOW });
@@ -98,7 +98,7 @@ describe("the conversation logs' switch and cap", () => {
       const events = writeEvents("t1", 6_000);
       age(events, AGE_MS + DAY);
       let asked = 0;
-      expect(startThreadLogSweep({ cloudHome: true, env: { OMB_THREAD_LOG_SWEEP: "on" }, dataDir, threads: () => (asked++, new Map()), paused: () => true, log: () => {} })).toBe(true);
+      expect(startThreadLogSweep({ cloudHome: true, env: { SANREMES_THREAD_LOG_SWEEP: "on" }, dataDir, threads: () => (asked++, new Map()), paused: () => true, log: () => {} })).toBe(true);
       await vi.advanceTimersByTimeAsync(FIRST_PASS_MS);
       expect(asked).toBe(0);
       expect(existsSync(join(dataDir, STAMP_FILE))).toBe(false);
@@ -110,16 +110,16 @@ describe("the conversation logs' switch and cap", () => {
 
   it("is off unless set, and counts only in report", () => {
     expect(threadLogSweepMode({})).toBe("off");
-    expect(threadLogSweepMode({ OMB_THREAD_LOG_SWEEP: "maybe" })).toBe("off");
-    expect(threadLogSweepMode({ OMB_THREAD_LOG_SWEEP: "dry-run" })).toBe("report");
-    expect(threadLogSweepMode({ OMB_THREAD_LOG_SWEEP: " ON " })).toBe("on");
+    expect(threadLogSweepMode({ SANREMES_THREAD_LOG_SWEEP: "maybe" })).toBe("off");
+    expect(threadLogSweepMode({ SANREMES_THREAD_LOG_SWEEP: "dry-run" })).toBe("report");
+    expect(threadLogSweepMode({ SANREMES_THREAD_LOG_SWEEP: " ON " })).toBe("on");
   });
 
   it("caps at the larger of 2 GiB and 3% of the volume, or what the Admin set", () => {
     expect(threadLogCap({}, 10 * 1024 ** 3)).toBe(2 * 1024 ** 3);
     expect(threadLogCap({}, 200 * 1024 ** 3)).toBe(Math.floor(0.03 * 200 * 1024 ** 3));
     expect(threadLogCap({}, null)).toBe(2 * 1024 ** 3);
-    expect(threadLogCap({ OMB_THREAD_LOG_CAP: "512M" }, 200 * 1024 ** 3)).toBe(512 * 1024 ** 2);
+    expect(threadLogCap({ SANREMES_THREAD_LOG_CAP: "512M" }, 200 * 1024 ** 3)).toBe(512 * 1024 ** 2);
     expect(parseBytes("1.5G")).toBe(1.5 * 1024 ** 3);
     expect(parseBytes("12345")).toBe(12345);
     expect(parseBytes("-1")).toBeNull();

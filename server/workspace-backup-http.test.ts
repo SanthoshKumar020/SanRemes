@@ -33,13 +33,13 @@ function fakeArchive() {
   mkdirSync(directory, { recursive: true, mode: 0o700 });
   const path = join(directory, "workspace.ombbackup");
   writeFileSync(path, "fixture encrypted bytes", { mode: 0o600 });
-  const summary: WorkspaceBackupSummary = { format: "openmaus.workspace-backup", version: 1, id, createdAt: "2026-09-11T00:00:00Z", appVersion: "0.1.71", files: 1, directories: 0, bytes: 23, bots: 0, groups: 0, threads: 0, messages: 0, exclusions: [], warnings: [] };
+  const summary: WorkspaceBackupSummary = { format: "sanremes.workspace-backup", version: 1, id, createdAt: "2026-09-11T00:00:00Z", appVersion: "0.1.71", files: 1, directories: 0, bytes: 23, bots: 0, groups: 0, threads: 0, messages: 0, exclusions: [], warnings: [] };
   return { id, path, summary };
 }
 
 beforeEach(async () => {
   vi.resetAllMocks();
-  dataDir = mkdtempSync(join(tmpdir(), "omb-backup-http-"));
+  dataDir = mkdtempSync(join(tmpdir(), "sanremes-backup-http-"));
   maintenance = new WorkspaceBackupMaintenance();
   sessions = new SessionRegistry({ file: join(dataDir, "sessions.json") });
   admin = sessions.issue({ label: "Fixture admin", scopes: ["admin", "client"] });
@@ -147,7 +147,7 @@ it("finds the original export after a lost response and allows only its own sess
     expect((await post("/api/workspace-backup/export", { password: PASSWORD })).status).toBe(409);
     expect(maintenance.active).toBe(true);
   } finally { release(); }
-  const ready = { state: "ready", id: artifact.id, filename: "OpenMausBot-2026-09-11.ombbackup" };
+  const ready = { state: "ready", id: artifact.id, filename: "SanRemes-2026-09-11.ombbackup" };
   await expect.poll(async () => (await get(path)).json()).toMatchObject(ready);
   expect(await (await post(path, { password: PASSWORD })).json()).toMatchObject(ready);
   expect(archive.create).toHaveBeenCalledOnce();
@@ -278,11 +278,11 @@ it("keeps a validated stage after rejecting a malformed or oversized upload", as
 });
 
 it("accepts drafts between 1 and 2 MiB and enforces the preference cap in UTF-8 bytes", async () => {
-  const clientState = { "omb-drafts": "a".repeat(1536 * 1024) };
+  const clientState = { "sanremes-drafts": "a".repeat(1536 * 1024) };
   expect((await post("/api/workspace-backup/export", { password: PASSWORD, clientState })).status).toBe(200);
   expect(archive.create.mock.calls[0][1].clientState).toEqual(clientState);
   // Fits the request framing allowance but exceeds the preference byte cap; string.length alone would accept it.
-  const tooLarge = { "omb-drafts": "é".repeat(1024 ** 2) };
+  const tooLarge = { "sanremes-drafts": "é".repeat(1024 ** 2) };
   const rejected = await post("/api/workspace-backup/export", { password: PASSWORD, clientState: tooLarge });
   expect(rejected.status).toBe(413);
   expect((await rejected.json() as { error: string }).error).toContain("2 MB backup preference limit");

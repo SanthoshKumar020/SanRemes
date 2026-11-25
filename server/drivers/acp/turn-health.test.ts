@@ -28,7 +28,7 @@ afterEach(async () => {
 });
 
 function folder(): string {
-  const directory = mkdtempSync(join(tmpdir(), "omb-turn-health-"));
+  const directory = mkdtempSync(join(tmpdir(), "sanremes-turn-health-"));
   scratch.push(directory);
   return directory;
 }

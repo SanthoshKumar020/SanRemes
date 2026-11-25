@@ -1,6 +1,6 @@
 // Which runtime an Antigravity account runs. Its CLI path decides: `antigravity` the native CLI,
 // `agy_acp_server` the pinned (Classic) runtime. With neither, a computer that has the pinned runtime keeps it, nothing
-// is moved or removed, and a new install takes the CLI. OMB_ANTIGRAVITY_NATIVE_CLI=1 gives such an account the
+// is moved or removed, and a new install takes the CLI. SANREMES_ANTIGRAVITY_NATIVE_CLI=1 gives such an account the
 // CLI even where the pinned runtime is installed; an account set to a runtime keeps it, and nothing is removed.
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, statSync, truncateSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -23,7 +23,7 @@ afterEach(async () => {
 });
 
 function dataFolder(): string {
-  const baseDir = mkdtempSync(join(tmpdir(), "omb-antigravity-opt-in-"));
+  const baseDir = mkdtempSync(join(tmpdir(), "sanremes-antigravity-opt-in-"));
   scratch.push(baseDir);
   return baseDir;
 }
@@ -73,10 +73,10 @@ function recordingFetch() {
 }
 
 describe.skipIf(!pinned || WINDOWS)("by default, a computer that has the pinned runtime", () => {
-  it("is not switched by OMB_ANTIGRAVITY_NATIVE_CLI unless it is exactly 1", async () => {
+  it("is not switched by SANREMES_ANTIGRAVITY_NATIVE_CLI unless it is exactly 1", async () => {
     expect((await import("./antigravity-cli-install.ts")).ANTIGRAVITY_CLI_FIRST).toBe(false);
     for (const value of ["0", "true", "yes", ""]) {
-      vi.stubEnv("OMB_ANTIGRAVITY_NATIVE_CLI", value);
+      vi.stubEnv("SANREMES_ANTIGRAVITY_NATIVE_CLI", value);
       vi.resetModules();
       expect((await import("./antigravity-cli-install.ts")).ANTIGRAVITY_CLI_FIRST, value).toBe(false);
     }
@@ -157,9 +157,9 @@ describe.skipIf(!pinned || WINDOWS)("a new install", () => {
   });
 });
 
-describe.skipIf(!pinned || WINDOWS)("with OMB_ANTIGRAVITY_NATIVE_CLI=1", () => {
+describe.skipIf(!pinned || WINDOWS)("with SANREMES_ANTIGRAVITY_NATIVE_CLI=1", () => {
   async function optedIn() {
-    vi.stubEnv("OMB_ANTIGRAVITY_NATIVE_CLI", "1");
+    vi.stubEnv("SANREMES_ANTIGRAVITY_NATIVE_CLI", "1");
     vi.resetModules();
     return import("./antigravity-runtime.ts");
   }

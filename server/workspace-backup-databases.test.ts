@@ -21,7 +21,7 @@ const TIMEOUT_MS = 120_000;
 const scratch: string[] = [];
 // Windows keeps a just-closed file busy for a moment; rm retries EBUSY/EPERM.
 afterEach(() => { for (const path of scratch.splice(0)) rmSync(path, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 }); });
-const directory = () => { const path = mkdtempSync(join(tmpdir(), "omb-backup-databases-")); scratch.push(path); return path; };
+const directory = () => { const path = mkdtempSync(join(tmpdir(), "sanremes-backup-databases-")); scratch.push(path); return path; };
 
 async function restored(backup: string): Promise<string> {
   const target = directory();
@@ -131,7 +131,7 @@ CREATE VIEW large AS SELECT id, big FROM measures WHERE big > 0;`;
 describe("a bot's Data tables in a full backup", () => {
   it("round-trips them exactly: columns, types, views, rows, and what the engine had not yet written into the file", async () => {
     const source = directory();
-    const env = { ...process.env, OMB_DUCKDB_DIR: undefined, OMB_RESOURCES_PATH: undefined };
+    const env = { ...process.env, SANREMES_DUCKDB_DIR: undefined, SANREMES_RESOURCES_PATH: undefined };
     const engine = createDataEngine({ botFolder: (id) => join(source, "bots", id), dataDir: source, env });
     try {
       const database = await engine.forBot("b1");
@@ -185,7 +185,7 @@ describe("a bot's Data tables in a full backup", () => {
   it("says which bot's Data query holds its database, and that a restart ends it", async () => {
     const running = await releaseDataForBackup({ release: async () => [{ botId: "b1", why: "running" }] }, () => "Ledger").catch((error: unknown) => error);
     expect(running).toMatchObject({ status: 409, errorKey: "serverError.backup.dataQueryRunning", errorParams: { bot: "Ledger" } });
-    expect((running as Error).message).toBe("Ledger's Data query is still running and did not stop when asked. Fully quit and reopen OpenMausBot (or restart the hosted server) to stop it, then try again.");
+    expect((running as Error).message).toBe("Ledger's Data query is still running and did not stop when asked. Fully quit and reopen SanRemes (or restart the hosted server) to stop it, then try again.");
     const failed = await releaseDataForBackup({ release: async () => [{ botId: "b1", why: "failed", detail: "IO Error: disk full" }] }).catch((error: unknown) => error);
     expect(failed).toMatchObject({ status: 409, errorKey: "serverError.backup.dataCloseFailed" });
     expect((failed as Error).message).toContain("b1's Data tables could not be closed for the backup (IO Error: disk full).");
@@ -261,7 +261,7 @@ function legacyBackup(source: string, out: string): string {
   walk(source);
   const files = entries.filter((entry) => entry.type === "file");
   writeFileSync(join(stage, "manifest.json"), JSON.stringify({
-    summary: { format: "openmaus.workspace-backup", version: 1, id: randomUUID(), createdAt: new Date().toISOString(), appVersion: "0.1.174",
+    summary: { format: "sanremes.workspace-backup", version: 1, id: randomUUID(), createdAt: new Date().toISOString(), appVersion: "0.1.174",
       files: files.length, directories: entries.length - files.length, bytes: files.reduce((sum, entry) => sum + entry.size, 0),
       bots: 0, groups: 0, threads: 0, messages: 0, exclusions: [], warnings: [] },
     sourceDataDir: source, clientState: {}, entries,

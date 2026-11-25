@@ -1,10 +1,10 @@
 import type { HelperFollowupField } from "./helper-followup.ts";
-import type { MausColor } from "./wire.ts";
+import type { SanRemesColor } from "./wire.ts";
 
 /** SanRemes: every person's built-in helper. A new install's first bot (its Chief of Staff too); an existing place or
  * person without one is given one once. It can be renamed and recoloured, hidden from the sidebar, never deleted. */
 export const DEFAULT_BOT_NAME = "SanRemes";
-export const DEFAULT_BOT_COLOR: MausColor = "chrome";
+export const DEFAULT_BOT_COLOR: SanRemesColor = "chrome";
 
 export interface DefaultBotMark {
   /** Team Cloud only: the lowercased email of the member this SanRemes bot belongs to. Absent: the place's own. */

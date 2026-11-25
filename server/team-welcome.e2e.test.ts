@@ -1,4 +1,4 @@
-// A real Team Cloud (OMB_CLOUD_ROLE=team): each person's first screen is theirs alone. Who invited them comes from the
+// A real Team Cloud (SANREMES_CLOUD_ROLE=team): each person's first screen is theirs alone. Who invited them comes from the
 // Admin's signed claim only; whether they saw it, and the steps they finished, are kept per person, never team-wide.
 import { randomBytes } from "node:crypto";
 import { afterAll, beforeAll, expect, it } from "vitest";
@@ -61,10 +61,10 @@ it("the Cloud's own welcome for admins: one admin finishing it ends it for that 
   expect(adas).not.toContain("cloud-welcome-shown");
 });
 
-it("tells a signed-in member, never anyone before sign-in, where their team page on MausBot Cloud is", async () => {
+it("tells a signed-in member, never anyone before sign-in, where their team page on SanRemes Cloud is", async () => {
   const cleo = (await team.pair(CLEO)).token!;
   expect((await team.as(cleo, "GET", "/api/auth/session")).body.teamSignIn).toMatch(/\/cloud\/team\/team-acme-1$/);
-  const descriptor = await (await fetch(`${team.base}/.well-known/openmausbot/environment`, { headers: fx.edge })).json() as Record<string, unknown>;
+  const descriptor = await (await fetch(`${team.base}/.well-known/sanremes/environment`, { headers: fx.edge })).json() as Record<string, unknown>;
   expect(JSON.stringify(descriptor)).not.toContain("/cloud/team/");
 });
 

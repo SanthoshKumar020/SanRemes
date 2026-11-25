@@ -59,7 +59,7 @@ describe("the unboxed credential helper", () => {
     ({ server } = await serve(route));
     const port = (server.address() as AddressInfo).port;
     const added = unboxedGitCredential({})!;
-    const secret = /x-omb-git-credential: ([A-Za-z0-9_-]+)/.exec(added.env.GIT_CONFIG_PARAMETERS!)![1]!;
+    const secret = /x-sanremes-git-credential: ([A-Za-z0-9_-]+)/.exec(added.env.GIT_CONFIG_PARAMETERS!)![1]!;
     const ask = (headers: Record<string, string>, method = "GET") => fetch(`http://127.0.0.1:${port}${GIT_CREDENTIAL_PATH}`, { method, headers });
     const good = await ask({ [GIT_CREDENTIAL_HEADER]: secret });
     expect(good.status).toBe(200);
@@ -83,7 +83,7 @@ describe("the unboxed credential helper", () => {
     provideGithubSignIn({ token: async () => null, reportAuthFailure: () => {}, signedIn: () => true });
     const route = createGitCredentialRoutes({ port: 1, enabled: () => true });
     const added = unboxedGitCredential({})!;
-    const secret = /x-omb-git-credential: ([A-Za-z0-9_-]+)/.exec(added.env.GIT_CONFIG_PARAMETERS!)![1]!;
+    const secret = /x-sanremes-git-credential: ([A-Za-z0-9_-]+)/.exec(added.env.GIT_CONFIG_PARAMETERS!)![1]!;
     for (const auth of [{ kind: "session", scopes: ["admin"] }, { kind: "loopback", scopes: [], trust: "service" }]) {
       ({ server } = await serve(route, auth as unknown as RequestAuth));
       expect((await fetch(`http://127.0.0.1:${(server.address() as AddressInfo).port}${GIT_CREDENTIAL_PATH}`, { headers: { [GIT_CREDENTIAL_HEADER]: secret } })).status).toBe(403);
@@ -101,7 +101,7 @@ describe("the unboxed credential helper", () => {
   // The helper as git runs it: `git credential fill` with the spawn's environment, through git's shell and curl.
   const haveTools = spawnSync("git", ["--version"]).status === 0 && spawnSync("curl", ["--version"]).status === 0;
   it.skipIf(!haveTools)("gives git the token for github.com, after a helper of the person's own that has nothing, and nothing for another host", async () => {
-    dir = mkdtempSync(join(tmpdir(), "omb-git-helper-"));
+    dir = mkdtempSync(join(tmpdir(), "sanremes-git-helper-"));
     provideGithubSignIn({ token: async () => TOKEN, reportAuthFailure: () => {}, signedIn: () => true });
     const route = createGitCredentialRoutes({ port: 1, enabled: () => true });
     ({ server } = await serve(route));
@@ -124,7 +124,7 @@ describe("the unboxed credential helper", () => {
   });
 
   it.skipIf(!haveTools)("leaves the person's own working credentials in charge: their helper answers and ours is never asked", async () => {
-    dir = mkdtempSync(join(tmpdir(), "omb-git-helper-"));
+    dir = mkdtempSync(join(tmpdir(), "sanremes-git-helper-"));
     provideGithubSignIn({ token: async () => TOKEN, reportAuthFailure: () => {}, signedIn: () => true });
     let asked = 0;
     const counted = createGitCredentialRoutes({ port: 1, enabled: () => true });

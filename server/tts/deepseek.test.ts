@@ -50,7 +50,7 @@ beforeAll(async () => {
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   const address = server.address();
   if (!address || typeof address === "string") throw new Error("Expected TCP fixture");
-  vi.stubEnv("OMB_DEEPSEEK_SPEECH_API", `http://127.0.0.1:${address.port}/v1`);
+  vi.stubEnv("SANREMES_DEEPSEEK_SPEECH_API", `http://127.0.0.1:${address.port}/v1`);
 });
 afterAll(async () => {
   server.closeAllConnections();

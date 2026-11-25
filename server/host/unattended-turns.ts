@@ -27,13 +27,13 @@ function limit(raw: string | undefined, fallback: number, least: number): number
   return Number.isSafeInteger(value) && value >= least ? value : fallback;
 }
 
-/** OMB_UNATTENDED_TURN_MAX_MS (from 60000), OMB_UNATTENDED_TURN_MAX_REQUESTS and OMB_UNATTENDED_TURN_MAX_DENIALS (from 1):
+/** SANREMES_UNATTENDED_TURN_MAX_MS (from 60000), SANREMES_UNATTENDED_TURN_MAX_REQUESTS and SANREMES_UNATTENDED_TURN_MAX_DENIALS (from 1):
  * whole numbers, or `off` for no limit; anything else leaves the default. */
 export function unattendedLimits(env: NodeJS.ProcessEnv = process.env): UnattendedLimits {
   return {
-    maxMs: limit(env.OMB_UNATTENDED_TURN_MAX_MS, UNATTENDED_DEFAULTS.maxMs, MIN_MS),
-    maxRequests: limit(env.OMB_UNATTENDED_TURN_MAX_REQUESTS, UNATTENDED_DEFAULTS.maxRequests, 1),
-    maxDenials: limit(env.OMB_UNATTENDED_TURN_MAX_DENIALS, UNATTENDED_DEFAULTS.maxDenials, 1),
+    maxMs: limit(env.SANREMES_UNATTENDED_TURN_MAX_MS, UNATTENDED_DEFAULTS.maxMs, MIN_MS),
+    maxRequests: limit(env.SANREMES_UNATTENDED_TURN_MAX_REQUESTS, UNATTENDED_DEFAULTS.maxRequests, 1),
+    maxDenials: limit(env.SANREMES_UNATTENDED_TURN_MAX_DENIALS, UNATTENDED_DEFAULTS.maxDenials, 1),
   };
 }
 

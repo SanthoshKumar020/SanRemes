@@ -45,7 +45,7 @@ dotfile: it is never uploaded with the site, and it never holds the token.
 | `title` | yes | What the bot called the site (`--title`), one line, at most 120 characters. The site's `name` until a title is given. |
 | `createdAt` | yes | When the site was created, ISO 8601 in UTC. |
 | `botName` | no | The bot's name as it gave it (`--bot-name`), one line, at most 80 characters. |
-| `botId` | no | The bot's id, when the command's environment has `OMB_BOT_ID`. Prefer the record's path. |
+| `botId` | no | The bot's id, when the command's environment has `SANREMES_BOT_ID`. Prefer the record's path. |
 | `deployId` | no | Netlify's id of the latest production deploy that was started. Absent until the first one starts. |
 | `deployState` | no | That deploy's state when last seen: Netlify's own word (`uploading`, `uploaded`, `processing`, `ready`, `error`, …). Only `ready` means it is live. |
 | `publishedAt` | no | When the latest production deploy was first seen ready, ISO 8601 in UTC. While a newer deploy is still being processed it is the time of the one before. Absent until a deploy has been ready. |

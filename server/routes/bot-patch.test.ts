@@ -97,7 +97,7 @@ describe("PATCH /api/bots/:id memory model", () => {
 
     expect((await patch(bot.id, { memoryModel: { ...memoryModel, instanceId: "other" } })).status).toBe(400);
     expect((await patch(bot.id, { memoryModel: { ...memoryModel, model: "vendor/unknown" } })).status).toBe(400);
-    expect((await patch(bot.id, { memoryModel }, { headers: { "x-openmausbot-companion": "1" } })).status).toBe(403);
+    expect((await patch(bot.id, { memoryModel }, { headers: { "x-sanremes-companion": "1" } })).status).toBe(403);
     expect(await patch(bot.id, { memoryModel })).toMatchObject({ status: 200, body: { bot: { modelSelection: chatModel, memoryModel } } });
     expect(new Store(() => sonnet).bot(bot.id)?.memoryModel).toEqual(memoryModel);
     expect((await patch(bot.id, { memoryModel: null })).status).toBe(200);
@@ -168,7 +168,7 @@ describe("PATCH /api/bots/:id vpsAlias relocation guard", () => {
     const member = { kind: "session", via: "bearer", scopes: ["client"], session: { id: "s", label: "Laptop", scopes: ["client"] } } as unknown as RequestAuth;
 
     const fromMember = await patch(bot.id, { vpsAlias: "gamma-vps" }, { auth: member });
-    const fromPhone = await patch(bot.id, { vpsAlias: "gamma-vps" }, { headers: { "x-openmausbot-companion": "1" } });
+    const fromPhone = await patch(bot.id, { vpsAlias: "gamma-vps" }, { headers: { "x-sanremes-companion": "1" } });
 
     expect(fromMember.status).toBe(403);
     expect(fromMember.body.error).toMatch(/not "vpsAlias"/);
@@ -268,7 +268,7 @@ describe("PATCH /api/bots/:id vpsAlias relocation guard", () => {
 });
 
 describe("PATCH /api/bots/:id defaultBot: null", () => {
-  it("demotes a hidden MausBot to a regular bot that shows in the sidebar again", async () => {
+  it("demotes a hidden SanRemes to a regular bot that shows in the sidebar again", async () => {
     const { store, bot, patch } = fixture();
     store.patchBot(bot.id, { defaultBot: {}, sidebarHidden: true });
     expect((await patch(bot.id, { defaultBot: null })).status).toBe(200);
@@ -421,7 +421,7 @@ describe("PATCH /api/bots/:id phoneApps", () => {
     const { store, bot, patch } = fixture();
 
     const client = await patch(bot.id, { phoneApps: { calendar: "write" } }, { auth: { kind: "session", via: "bearer", scopes: ["client"], session: { id: "s-member", email: "member@example.com", label: "Front desk" } } as unknown as RequestAuth });
-    const paired = await patch(bot.id, { phoneApps: { calendar: "write" } }, { headers: { "x-openmausbot-companion": "1" } });
+    const paired = await patch(bot.id, { phoneApps: { calendar: "write" } }, { headers: { "x-sanremes-companion": "1" } });
 
     expect(client.status).toBe(403);
     expect(paired.status).toBe(403);
@@ -551,7 +551,7 @@ describe("PATCH /api/bots/:id mainThreadChoice", () => {
   it("refuses a client session and a paired device", async () => {
     const { store, bot, patch } = fixture();
     const client = await patch(bot.id, { mainThreadChoice: bot.threadId }, { auth: { kind: "session", via: "bearer", scopes: ["client"], session: { id: "s-member", email: "member@example.com", label: "Front desk" } } as unknown as RequestAuth });
-    const paired = await patch(bot.id, { mainThreadChoice: bot.threadId }, { headers: { "x-openmausbot-companion": "1" } });
+    const paired = await patch(bot.id, { mainThreadChoice: bot.threadId }, { headers: { "x-sanremes-companion": "1" } });
     expect(client.status).toBe(403);
     expect(paired.status).toBe(403);
     expect(store.bot(bot.id)?.mainThreadChoice).toBeUndefined();

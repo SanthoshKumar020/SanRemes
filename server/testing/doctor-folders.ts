@@ -18,7 +18,7 @@ afterEach(() => {
 });
 
 export function dataFolder(): string {
-  const folder = mkdtempSync(join(tmpdir(), "omb-doctor-"));
+  const folder = mkdtempSync(join(tmpdir(), "sanremes-doctor-"));
   folders.push(folder);
   return folder;
 }

@@ -4,7 +4,7 @@ Ask a bot in ordinary language, for example:
 
 > Prepare a report at 9 am on the first of every month, in Asia/Kolkata.
 
-The bot turns calendar timing into a cron expression, and OpenMausBot validates
+The bot turns calendar timing into a cron expression, and SanRemes validates
 it. The change applies at once; its card shows the rule, its timezone and the
 next three dates, with Edit, Pause and Undo. The scheduler wakes the bot at the
 matching time; no model runs in the background to check the date.
@@ -42,7 +42,7 @@ which becomes "Checked back Fri 9:00" once it runs. Cancel is optional.
 - **Limits:** at least a minute and at most 90 days ahead; 10 waiting per
   conversation and 50 per bot. Over a limit the bot is told why in one line.
 - **Reliable:** each check-back is kept in `check-backs.json`. The desktop runs
-  them only while OpenMausBot is running; a check-back that came due while the
+  them only while SanRemes is running; a check-back that came due while the
   computer slept or the app was closed runs once, late, when it is back, and
   its turn says it is late. A Cloud wakes for the next one. One that was being
   started when the server stopped is closed with a line, never started twice.
@@ -65,7 +65,7 @@ it with a new time turns it back on.
 
 Deleting a bot deletes its schedules and webhooks too, and their runs. A
 webhook's address stops working at once. Automations left behind by a bot
-deleted in an earlier version are removed the next time OpenMausBot starts, and
+deleted in an earlier version are removed the next time SanRemes starts, and
 never run meanwhile.
 
 ## Advanced cron
@@ -107,10 +107,10 @@ use an appropriate event/webhook workflow instead of a fake weekly schedule.
 - Routine execution defaults to **Bot’s current setup**: its selected model and
   configured computer, including a self-hosted VPS. No Boat key is needed for
   that VPS. **Boat cloud computer** is a separate, explicit choice: the bot's
-  own model works on its Boat. The agent tools call these `run_on: "maus"` and
+  own model works on its Boat. The agent tools call these `run_on: "sanremes"` and
   `run_on: "box"`; legacy stored `runOn: "cloud"` still means Boat and is not
   migrated to a different runner.
-- OpenMausBot must be running to dispatch routines, including cloud-targeted
+- SanRemes must be running to dispatch routines, including cloud-targeted
   routines. There is no external always-on scheduling service: the schedule
   runs inside the app on your computer — it is not Grok's or anyone's cloud —
   so a sleeping computer or a quit app runs nothing, and the app cannot wake
@@ -118,12 +118,12 @@ use an appropriate event/webhook workflow instead of a fake weekly schedule.
   in, it keeps the computer from idle-sleeping for the hour before a due
   routine and while one runs (Automations → *Keep this computer awake for
   routines*, on by default; a closed lid still sleeps). For true 24/7, run
-  OpenMausBot on a VPS — see [deploy-vps.md](deploy-vps.md).
+  SanRemes on a VPS — see [deploy-vps.md](deploy-vps.md).
 - Catching up after downtime (the app closed, the computer asleep, a Cloud
   home off or restarting): for each routine, the newest occurrence that came
   due meanwhile runs late, if it is no more than 12 hours past its time, and
   the ones before it close on one **Missed** row that counts them and says why
-  ("Missed 3 scheduled runs because this computer was asleep or OpenMausBot
+  ("Missed 3 scheduled runs because this computer was asleep or SanRemes
   was not running"; on a Cloud, "because this Cloud was asleep or
   restarting"). That row is shown as already seen: the newest one is running,
   so it asks nothing of you. When even the newest is more than 12 hours old,
@@ -253,7 +253,7 @@ use an appropriate event/webhook workflow instead of a fake weekly schedule.
   the schedule, an event or **Run now** started it: 3 hours of work for a
   bot's run, 12 hours for a room goal's run (which stays running across every
   member's turn). A server whose routines run longer may set another default
-  (`OMB_ROUTINE_RUN_LIMIT_HOURS`). Work is the time the run spent running since its current
+  (`SANREMES_ROUTINE_RUN_LIMIT_HOURS`). Work is the time the run spent running since its current
   start: the time it is queued (behind a busy bot, for its one retry, for a
   usage limit's reset) and the time it waits (on your approval or answer, on a
   conversation left with you, on work it handed to teammates) is not in it.
@@ -292,12 +292,12 @@ use an appropriate event/webhook workflow instead of a fake weekly schedule.
 - An unattended run (scheduled, webhook or Run now) recovers from a passing
   failure by itself, the same on the desktop, a headless server and a Cloud
   home (`server/routine-recovery.ts`):
-  - Its engine stalled, OpenMausBot restarted while it ran, the provider
+  - Its engine stalled, SanRemes restarted while it ran, the provider
     rate-limited it, or the provider failed for a moment: it starts once more
     in the same conversation after a short wait (15 s; a minute after a rate
     limit), told to check what its first start already did. A second failure
     fails it: "Failed after one automatic retry: …".
-  - A run that a shutdown or crash cut off is picked up once when OpenMausBot
+  - A run that a shutdown or crash cut off is picked up once when SanRemes
     starts again; the same run, never a copy.
   - Its bot or conversation was busy when it started: it waits there,
     checking every 30 s, for up to an hour.

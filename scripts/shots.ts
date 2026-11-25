@@ -1,5 +1,5 @@
 // The before and after pictures a UI PR carries: one page of the running `pnpm dev` app at a phone, a tablet and a
-// desktop width, in Midnight and Daylight, with a headless Chrome in a throwaway profile (OMB_CDP_CHROME, else the
+// desktop width, in Midnight and Daylight, with a headless Chrome in a throwaway profile (SANREMES_CDP_CHROME, else the
 // installed Google Chrome).
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -76,13 +76,13 @@ export function shotPlan(options: ShotsOptions): Shot[] {
 async function main(argv: string[]): Promise<void> {
   const options = parseShotsArgs(argv);
   mkdirSync(resolve(options.out), { recursive: true });
-  const profile = mkdtempSync(join(tmpdir(), "omb-shots-chrome-"));
+  const profile = mkdtempSync(join(tmpdir(), "sanremes-shots-chrome-"));
   let page: HeadlessPage | undefined;
   try {
     page = await openHeadlessChrome(profile);
     for (const shot of shotPlan(options)) {
       // The app keeps its skin in localStorage; set before its first paint, like a person's own choice.
-      const { identifier } = await page.send("Page.addScriptToEvaluateOnNewDocument", { source: `try { localStorage.setItem("omb-skin", ${JSON.stringify(shot.skin)}) } catch {}` });
+      const { identifier } = await page.send("Page.addScriptToEvaluateOnNewDocument", { source: `try { localStorage.setItem("sanremes-skin", ${JSON.stringify(shot.skin)}) } catch {}` });
       await page.send("Emulation.setDeviceMetricsOverride", { width: shot.width, height: shot.height, deviceScaleFactor: 2, mobile: shot.mobile });
       await page.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: shot.scheme }] });
       await page.evaluate("globalThis.ombShotsLeft = true");

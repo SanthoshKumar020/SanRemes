@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it } from "vitest";
 
-import { launchVerificationServer, runControlOmb, type VerificationServer } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb, type VerificationServer } from "../scripts/control-sanremes.ts";
 import { AUTOMATION_REPLY_PROMPT } from "./system-prompt.ts";
 import { launchRestartableServer } from "./testing/restartable-server.ts";
 import { openSse, type SseRecorder } from "./testing/sse.ts";
@@ -81,7 +81,7 @@ async function server(env: NodeJS.ProcessEnv = {}) {
 async function brokerOf(s: Awaited<ReturnType<typeof server>>, threadId: string): Promise<any[]> {
   const dump = join(s.dataDir, "fake-claude-dump.json");
   await expect.poll(() => {
-    try { return JSON.parse(readFileSync(dump, "utf8")).mcpConfig?.mcpServers?.agents?.env?.OMB_THREAD_ID === threadId; } catch { return false; }
+    try { return JSON.parse(readFileSync(dump, "utf8")).mcpConfig?.mcpServers?.agents?.env?.SANREMES_THREAD_ID === threadId; } catch { return false; }
   }, { timeout: 20_000 }).toBe(true);
   const socketPath = JSON.parse(readFileSync(dump, "utf8")).mcpConfig.mcpServers.ogb.args.at(-1);
   const socket = broker = connect(socketPath);
@@ -460,7 +460,7 @@ it("brings the files a run sent with attach_file into its report", async () => {
 }, 120_000);
 
 it("leaves the images a run's tools returned in the run, and reports the files it sent", async () => {
-  const calls = join(mkdtempSync(join(tmpdir(), "omb-report-files-")), "tool-calls.json");
+  const calls = join(mkdtempSync(join(tmpdir(), "sanremes-report-files-")), "tool-calls.json");
   fixture = await launchVerificationServer({ ...process.env, FAKE_CLAUDE_TOOL_CALLS_FILE: calls });
   const { url, dataDir } = fixture.info;
   const api = async (method: string, path: string, body?: unknown) => (await fetch(`${url}${path}`, {

@@ -10,7 +10,7 @@ export { harnessMcpRequest } from "./harness-mcp-request.ts";
 const MAX_PENDING = 16;
 
 function run(kind: HarnessMcpKind): void {
-  const connection = { url: process.env.OMB_HARNESS_URL ?? "", token: process.env[harnessMcpTokenEnv(kind)] ?? "", kind, toolLimit: toolLimitFromEnv() };
+  const connection = { url: process.env.SANREMES_HARNESS_URL ?? "", token: process.env[harnessMcpTokenEnv(kind)] ?? "", kind, toolLimit: toolLimitFromEnv() };
   let input = Buffer.alloc(0);
   let pending = 0;
   const output = (message: unknown) => {

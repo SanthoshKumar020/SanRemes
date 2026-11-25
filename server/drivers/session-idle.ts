@@ -1,12 +1,12 @@
 // The one idle policy for what the server keeps loaded between turns. Each kept thing has a scope, named as such here and
 // at each call site:
 //   per-chat  a conversation's engine session (Claude's stream, an ACP session in a process of its own), kept for that
-//             conversation's next turn: OMB_SESSION_IDLE_MS (10 minutes; 150 s on a box of 1.5 GB or less), 30 s for a
+//             conversation's next turn: SANREMES_SESSION_IDLE_MS (10 minutes; 150 s on a box of 1.5 GB or less), 30 s for a
 //             conversation no person has in front of them, and while a person asked a prompt-cache keep-warm, until then.
 //   per-bot   a bot's browser, kept for any of its conversations: the browser idle time (Settings, 10 minutes on the
 //             desktop, 3 on a Cloud home; host/browser.ts).
 //   shared    a process several bots' conversations use (a shared ACP process): recycled 60 s after its last session
-//             (OMB_ACP_SHARED_RECYCLE_MS), a fixed time that does not shrink.
+//             (SANREMES_ACP_SHARED_RECYCLE_MS), a fixed time that does not shrink.
 // Where turns wait for room (a Cloud home, a self-hosted Linux server), the per-chat and per-bot times shrink as memory or
 // the pids limit fills (EngineMemory.roomFactor: the signals admission reads), down to a tenth and never below their
 // floor, and per-chat engines already kept are looked at again every couple of seconds (sweepIdleEngines), not only when
@@ -62,8 +62,8 @@ function usableMilliseconds(raw: string | undefined): number | null {
   return Number.isFinite(value) && value > 0 && value <= MAX_TIMER_MS ? value : null;
 }
 
-/** Per-harness names (OMB_CLAUDE_SESSION_IDLE_*, OMB_ACP_SESSION_IDLE_*) win over OMB_SESSION_IDLE_MS /
- *  OMB_SESSION_IDLE_MIN_MS, which win over the box's default; the floor is the greater of ten seconds and any configured
+/** Per-harness names (SANREMES_CLAUDE_SESSION_IDLE_*, SANREMES_ACP_SESSION_IDLE_*) win over SANREMES_SESSION_IDLE_MS /
+ *  SANREMES_SESSION_IDLE_MIN_MS, which win over the box's default; the floor is the greater of ten seconds and any configured
  *  minimum. */
 export function sessionIdlePolicy(
   driverPrefix: string,
@@ -74,15 +74,15 @@ export function sessionIdlePolicy(
   const minimumMs = Math.max(
     MINIMUM_IDLE_MS,
     usableMilliseconds(
-      env[`OMB_${driverPrefix}_SESSION_IDLE_MIN_MS`] ?? env.OMB_SESSION_IDLE_MIN_MS,
+      env[`SANREMES_${driverPrefix}_SESSION_IDLE_MIN_MS`] ?? env.SANREMES_SESSION_IDLE_MIN_MS,
     ) ?? 0,
   );
   const configured =
     usableMilliseconds(
-      env[`OMB_${driverPrefix}_SESSION_IDLE_MS`] ?? env.OMB_SESSION_IDLE_MS,
+      env[`SANREMES_${driverPrefix}_SESSION_IDLE_MS`] ?? env.SANREMES_SESSION_IDLE_MS,
     ) ?? (boxBytes <= SMALL_BOX_BYTES ? SMALL_BOX_IDLE_MS : DEFAULT_IDLE_MS);
   const idleMs = Math.max(minimumMs, configured);
-  const chosen = usableMilliseconds(env[`OMB_${driverPrefix}_SESSION_IDLE_MS`] ?? env.OMB_SESSION_IDLE_MS) !== null;
+  const chosen = usableMilliseconds(env[`SANREMES_${driverPrefix}_SESSION_IDLE_MS`] ?? env.SANREMES_SESSION_IDLE_MS) !== null;
   return { idleMs, minimumMs, ...(coldStart === "expensive" && !chosen && boxBytes > SMALL_BOX_BYTES ? { expensiveIdleMs: Math.max(idleMs, EXPENSIVE_IDLE_MS) } : {}) };
 }
 
@@ -111,11 +111,11 @@ export const SMALL_BOX_IDLE_ENGINES = 2;
 const IDLE_ENGINES_FEWEST = 4, IDLE_ENGINES_MOST = 8;
 
 /** How many engines may stay idle at once across every driver and conversation, whatever the idle times allow:
- * OMB_IDLE_ENGINES_MAX (1 or more), else one per 2 GB of the box between four and eight, and two on a box of 1.5 GB or
+ * SANREMES_IDLE_ENGINES_MAX (1 or more), else one per 2 GB of the box between four and eight, and two on a box of 1.5 GB or
  * less. Each holds 250 to 450 MB with its MCP servers. */
 export function idleEngineCap(env: Record<string, string | undefined> = process.env, boxBytes: number = boxMemory().bytes): number {
-  const configured = Number(env.OMB_IDLE_ENGINES_MAX);
-  if (env.OMB_IDLE_ENGINES_MAX && Number.isInteger(configured) && configured >= 1) return configured;
+  const configured = Number(env.SANREMES_IDLE_ENGINES_MAX);
+  if (env.SANREMES_IDLE_ENGINES_MAX && Number.isInteger(configured) && configured >= 1) return configured;
   if (boxBytes <= SMALL_BOX_BYTES) return SMALL_BOX_IDLE_ENGINES;
   return Math.min(IDLE_ENGINES_MOST, Math.max(IDLE_ENGINES_FEWEST, Math.floor(boxBytes / (2 * GB))));
 }

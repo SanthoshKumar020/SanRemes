@@ -11,7 +11,7 @@ import { useStoreSelector } from "@/state/store-select";
 import { markTeamPrivateChatsLineSaid, sharedChatAudience } from "./TeamPrivateChatsLine";
 
 const SIDES = [{ side: "me", label: "teamSide.me", Icon: Lock }, { side: "team", label: "teamSide.team", Icon: Users }] as const;
-const HINT_KEY = (teamId: string) => `omb.team-side-hint.${teamId}`;
+const HINT_KEY = (teamId: string) => `sanremes.team-side-hint.${teamId}`;
 const FOCUS = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
 
 let openedAtStart: number | null = null;

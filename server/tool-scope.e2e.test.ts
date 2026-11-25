@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb, verificationServerEnvironment } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb, verificationServerEnvironment } from "../scripts/control-sanremes.ts";
 
 async function withFixture(mode: "happy" | "hang", run: (helpers: {
   api(method: string, path: string, body?: unknown, headers?: Record<string, string>): Promise<{ status: number; body: any }>;
@@ -176,7 +176,7 @@ it("carries the latest original tool selection into fresh direct and room MCP co
     expect((await api("PATCH", `/api/bots/${bot.id}`, { toolScope: direct })).status).toBe(200);
     await control(["send", "--bot", bot.id, "--text", "Reply once."]);
     const first = await dump();
-    expect(JSON.parse(first.mcpConfig.mcpServers.notes.env.OMB_GATE_TOOL_SCOPE)).toEqual(direct);
+    expect(JSON.parse(first.mcpConfig.mcpServers.notes.env.SANREMES_GATE_TOOL_SCOPE)).toEqual(direct);
     await control(["wait", "--bot", bot.id, "--timeout", "30"]);
     const roomScope = { deny: ["mcp:notes:write_notes"] };
     expect((await api("PATCH", `/api/bots/${bot.id}`, { toolScope: roomScope })).status).toBe(200);
@@ -184,7 +184,7 @@ it("carries the latest original tool selection into fresh direct and room MCP co
     await control(["send-channel", "--channel", channel.id, "--text", "Reply once in this room."]);
     const second = await dump();
     expect(second.pid).not.toBe(first.pid);
-    expect(JSON.parse(second.mcpConfig.mcpServers.notes.env.OMB_GATE_TOOL_SCOPE)).toEqual(roomScope);
+    expect(JSON.parse(second.mcpConfig.mcpServers.notes.env.SANREMES_GATE_TOOL_SCOPE)).toEqual(roomScope);
     await control(["wait", "--channel", channel.id, "--timeout", "30"]);
   });
 }, 60_000);

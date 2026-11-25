@@ -4,7 +4,7 @@ description: Let a supported agent control the local desktop through the bundled
 icon: MousePointer2
 ---
 
-Local control is off by default. The Electron main process owns the bundled CUA driver lifecycle so operating-system permissions are attributed to OpenMausBot rather than a background helper.
+Local control is off by default. The Electron main process owns the bundled CUA driver lifecycle so operating-system permissions are attributed to SanRemes rather than a background helper.
 
 ## macOS
 
@@ -14,7 +14,7 @@ The packaged app can request Accessibility and Screen Recording permission. Afte
 
 The Windows app (x64) ships its own computer-control helper, `cua-driver.exe` with `cua-driver-background.exe`. There is no
 permission to grant: once a bot is set to **This computer**, it can use the apps on your screen. If Windows Security or
-Smart App Control blocks the helper, the Screen panel says so; allow it and restart MausBot. Windows on Arm is not
+Smart App Control blocks the helper, the Screen panel says so; allow it and restart SanRemes. Windows on Arm is not
 supported yet.
 
 To let bots on a server of your own (a VPS) use this PC instead, see
@@ -22,7 +22,7 @@ To let bots on a server of your own (a VPS) use this PC instead, see
 
 ## Ubuntu
 
-Ubuntu 24.04 GNOME host control is temporarily disabled while the real-seat input-safety blocker in issue #345 is resolved. Packaged builds retain the pinned runtime for reproducible review, but MausBot does not start it and clears legacy opt-ins. Chat, screen preview, Cloud, and Local VM remain available. Do not start the bundled driver manually as a workaround.
+Ubuntu 24.04 GNOME host control is temporarily disabled while the real-seat input-safety blocker in issue #345 is resolved. Packaged builds retain the pinned runtime for reproducible review, but SanRemes does not start it and clears legacy opt-ins. Chat, screen preview, Cloud, and Local VM remain available. Do not start the bundled driver manually as a workaround.
 
 ## Safety model
 

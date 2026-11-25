@@ -12,7 +12,7 @@ const dirs: string[] = [];
 afterEach(async () => { for (const dir of dirs.splice(0)) await removeTempDir(dir); });
 
 function setup() {
-  const dataDir = mkdtempSync(join(tmpdir(), "omb-bot-holds-"));
+  const dataDir = mkdtempSync(join(tmpdir(), "sanremes-bot-holds-"));
   dirs.push(dataDir);
   const bots = [
     { id: "ada", name: "Ada", section: "Sales" },

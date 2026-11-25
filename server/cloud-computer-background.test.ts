@@ -190,9 +190,9 @@ describe.each([
 ])("background commands with %s", (_label, cfg, root, authorization) => {
   beforeEach(() => {
     vi.stubEnv("BOX_TOKEN", undefined);
-    vi.stubEnv("OMB_BOAT_API", `${base}/boat/api/v1`);
-    vi.stubEnv("OMB_CLOUD_BOAT_URL", `${base}/relay/api/box/v1`);
-    vi.stubEnv("OMB_CLOUD_BOAT_TOKEN", INCLUDED);
+    vi.stubEnv("SANREMES_BOAT_API", `${base}/boat/api/v1`);
+    vi.stubEnv("SANREMES_CLOUD_BOAT_URL", `${base}/relay/api/box/v1`);
+    vi.stubEnv("SANREMES_CLOUD_BOAT_TOKEN", INCLUDED);
   });
 
   const call = (name: string, args: unknown, boxId = BOX, budgetMs?: number) => {

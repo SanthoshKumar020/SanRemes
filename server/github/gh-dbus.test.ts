@@ -28,8 +28,8 @@ afterEach(() => {
 });
 
 describe.skipIf(!gh)("GitHub CLI and the D-Bus session (Linux)", () => {
-  it("dials the address it is given, so OpenMausBot's dead one keeps it away from the person's keyring", async () => {
-    dir = mkdtempSync(join(tmpdir(), "omb-gh-dbus-"));
+  it("dials the address it is given, so SanRemes's dead one keeps it away from the person's keyring", async () => {
+    dir = mkdtempSync(join(tmpdir(), "sanremes-gh-dbus-"));
     const folders = { home: join(dir, "home"), config: join(dir, "config") };
     for (const folder of [folders.home, folders.config, join(folders.home, ".run")]) mkdirSync(folder, { recursive: true });
     let dialled = 0;
@@ -45,7 +45,7 @@ describe.skipIf(!gh)("GitHub CLI and the D-Bus session (Linux)", () => {
     expect(listening.code).not.toBe(0);
     expect(dialled).toBeGreaterThan(0);
 
-    // OpenMausBot's own address: nothing there, the keyring is unavailable, and gh simply has no token.
+    // SanRemes's own address: nothing there, the keyring is unavailable, and gh simply has no token.
     dialled = 0;
     const own = await run(ownGhEnv(folders));
     expect(own.code).not.toBe(0);

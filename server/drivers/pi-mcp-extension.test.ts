@@ -18,7 +18,7 @@ import extension, {
 
 const tempDirs: string[] = [];
 const clients: StdioMcp[] = [];
-const originalMcpConfig = process.env.OMB_MCP_CONFIG;
+const originalMcpConfig = process.env.SANREMES_MCP_CONFIG;
 
 type ExtensionApi = Parameters<typeof extension>[0];
 type RegisteredTool = Parameters<ExtensionApi["registerTool"]>[0];
@@ -35,7 +35,7 @@ interface SchemaNode {
 }
 
 function tempDir(): string {
-  const dir = mkdtempSync(join(tmpdir(), "omb-pi-mcp-ext-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-pi-mcp-ext-"));
   tempDirs.push(dir);
   return dir;
 }
@@ -58,8 +58,8 @@ afterEach(async () => {
   vi.restoreAllMocks();
   for (const client of clients.splice(0)) client.dispose();
   for (const dir of tempDirs.splice(0)) await removeTempDir(dir);
-  if (originalMcpConfig === undefined) delete process.env.OMB_MCP_CONFIG;
-  else process.env.OMB_MCP_CONFIG = originalMcpConfig;
+  if (originalMcpConfig === undefined) delete process.env.SANREMES_MCP_CONFIG;
+  else process.env.SANREMES_MCP_CONFIG = originalMcpConfig;
 });
 
 describe("Pi MCP JSON Schema conversion", () => {
@@ -283,8 +283,8 @@ describe("Pi MCP extension registration", () => {
   };
   const scopeConfig = (toolScope: unknown, other = {}) => {
     const dir = tempDir();
-    process.env.OMB_MCP_CONFIG = join(dir, "scope.json");
-    writeFileSync(process.env.OMB_MCP_CONFIG, JSON.stringify({ toolScope, ...other }));
+    process.env.SANREMES_MCP_CONFIG = join(dir, "scope.json");
+    writeFileSync(process.env.SANREMES_MCP_CONFIG, JSON.stringify({ toolScope, ...other }));
     return dir;
   };
 
@@ -377,7 +377,7 @@ describe("Pi MCP extension registration", () => {
     expect(f.current()).toEqual([]);
     expect(await f.handlers.get("tool_call")?.({ toolName: "read" })).toMatchObject({ block: true });
     await expect(extension({ registerTool() {}, on() {} })).rejects.toThrow(/enforcement/i);
-    writeFileSync(process.env.OMB_MCP_CONFIG!, "not json");
+    writeFileSync(process.env.SANREMES_MCP_CONFIG!, "not json");
     await expect(extension(f.api)).rejects.toThrow(/configuration/i);
   });
 
@@ -497,7 +497,7 @@ describe("Pi MCP extension registration", () => {
     const dir = tempDir();
     const config = join(dir, "mcp.json");
     writeFileSync(config, JSON.stringify({ mcpServers: { test: { command: process.execPath, args: [script] } } }));
-    process.env.OMB_MCP_CONFIG = config;
+    process.env.SANREMES_MCP_CONFIG = config;
 
     const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     const tools: RegisteredTool[] = [];
@@ -541,7 +541,7 @@ describe("Pi MCP extension registration", () => {
     const dir = tempDir();
     const config = join(dir, "mcp.json");
     writeFileSync(config, JSON.stringify({ mcpServers: { test: { command: process.execPath, args: [script] } } }));
-    process.env.OMB_MCP_CONFIG = config;
+    process.env.SANREMES_MCP_CONFIG = config;
 
     const tools: RegisteredTool[] = [];
     const handlers = new Map<string, ShutdownHandler>();
@@ -565,8 +565,8 @@ describe("Pi MCP extension registration", () => {
 describe("Pi ask_user tool", () => {
   const load = async (config: Record<string, unknown>, active = ["read", "ask_user"]) => {
     const dir = tempDir();
-    process.env.OMB_MCP_CONFIG = join(dir, "mcp.json");
-    writeFileSync(process.env.OMB_MCP_CONFIG, JSON.stringify(config));
+    process.env.SANREMES_MCP_CONFIG = join(dir, "mcp.json");
+    writeFileSync(process.env.SANREMES_MCP_CONFIG, JSON.stringify(config));
     const tools: RegisteredTool[] = [];
     let current = active;
     await extension({

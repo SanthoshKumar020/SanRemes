@@ -4,7 +4,7 @@ import test from "node:test";
 
 import { PANE_IDENTITY_RULES, paneBaseUserAgent, paneIdentityMode, paneRequestUserAgent, paneTabUserAgent, withoutAppToken } from "./browser-pane-identity.mjs";
 
-const ELECTRON = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) OpenMausBot/0.1.175 Chrome/146.0.7680.165 Electron/43.7.9 Safari/537.36";
+const ELECTRON = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) SanRemes/0.1.175 Chrome/146.0.7680.165 Electron/43.7.9 Safari/537.36";
 const NATIVE = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.7680.165 Electron/43.7.9 Safari/537.36";
 const CLEANED = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.7680.165 Safari/537.36";
 
@@ -12,7 +12,7 @@ test("by default a pane is Electron's own Chromium: only the app's token goes, E
   assert.equal(paneBaseUserAgent(ELECTRON, "native"), NATIVE);
   assert.equal(paneBaseUserAgent(ELECTRON, undefined), NATIVE);
   assert.equal(paneIdentityMode("anything else"), "native");
-  assert.equal(withoutAppToken(ELECTRON.replace("OpenMausBot/0.1.175", "MausBot/0.2.0 Extra/1")), NATIVE);
+  assert.equal(withoutAppToken(ELECTRON.replace("SanRemes/0.1.175", "SanRemes/0.2.0 Extra/1")), NATIVE);
   assert.equal(paneBaseUserAgent(ELECTRON, "cleaned"), CLEANED);
 });
 

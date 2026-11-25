@@ -7,20 +7,20 @@ import { CREDENTIAL_TARGETS, credentialConfigPatch, desktopCredentialSlot, isCon
 import { KEY_CATALOG, KEY_SECTIONS, keyEntry, keyForInstance, keyHidden, keyMatches, looksLikeOtherKey, savedState, shownKeyEntry, type KeyId } from "./key-catalog";
 
 const NOT_A_PERSONS_KEY: Record<string, string> = {
-  OMB_ANTHROPIC_API_URL: "the address the Anthropic key goes to, set by a hosted install",
-  OMB_HOSTED_MODEL_TOKEN: "a hosted install's model token",
-  OMB_HOSTED_MODELS: "a hosted install's model list",
-  OMB_COMPOSIO_BROKER_TOKEN: "MausBot Cloud's connected-apps broker",
-  OMB_CLOUD_BOAT_TOKEN: "MausBot Cloud's included computers",
-  OMB_CLOUD_VOICE_TOKEN: "MausBot Cloud's included voice",
-  OMB_CLOUD_DECIDER_TOKEN: "MausBot Cloud's included decisions",
-  OMB_CLOUD_AI_TOKEN: "MausBot Cloud's included AI",
-  OMB_CLOUD_X_TOKEN: "MausBot Cloud's included X research",
-  OMB_CLOUD_HOSTING_TOKEN: "MausBot Cloud's included app hosting",
-  OMB_CLOUD_CONNECTED_APPS_GRANT: "MausBot Cloud's connected apps",
-  OMB_BROWSER_CONNECTION: "the app's own browser, not a credential",
-  OMB_USER_DATA: "the app's own data folder, not a credential",
-  OMB_BOAT_API: "the Boat address, not a credential",
+  SANREMES_ANTHROPIC_API_URL: "the address the Anthropic key goes to, set by a hosted install",
+  SANREMES_HOSTED_MODEL_TOKEN: "a hosted install's model token",
+  SANREMES_HOSTED_MODELS: "a hosted install's model list",
+  SANREMES_COMPOSIO_BROKER_TOKEN: "SanRemes Cloud's connected-apps broker",
+  SANREMES_CLOUD_BOAT_TOKEN: "SanRemes Cloud's included computers",
+  SANREMES_CLOUD_VOICE_TOKEN: "SanRemes Cloud's included voice",
+  SANREMES_CLOUD_DECIDER_TOKEN: "SanRemes Cloud's included decisions",
+  SANREMES_CLOUD_AI_TOKEN: "SanRemes Cloud's included AI",
+  SANREMES_CLOUD_X_TOKEN: "SanRemes Cloud's included X research",
+  SANREMES_CLOUD_HOSTING_TOKEN: "SanRemes Cloud's included app hosting",
+  SANREMES_CLOUD_CONNECTED_APPS_GRANT: "SanRemes Cloud's connected apps",
+  SANREMES_BROWSER_CONNECTION: "the app's own browser, not a credential",
+  SANREMES_USER_DATA: "the app's own data folder, not a credential",
+  SANREMES_BOAT_API: "the Boat address, not a credential",
 };
 
 const electron = (file: string) => readFileSync(new URL(`../../../electron/${file}`, import.meta.url), "utf8");

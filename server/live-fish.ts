@@ -18,13 +18,13 @@ const HISTORY_TOTAL_CHARS = 6_000;
 export const FISH_DELEGATE_TOOL = "delegate";
 /** What a "fish" call reports as its voice: the voice is set on the Fish agent, not per call. */
 export const FISH_AGENT_VOICE = "agent";
-export const FISH_UPDATE_PREFIX = "[OpenMausBot]";
+export const FISH_UPDATE_PREFIX = "[SanRemes]";
 const MAX_QUEUED_COMMANDS = 50;
 export const RELAY_POLL_MS = 15_000;
 
 /** Only a loopback http URL is accepted, read at call time. */
 export function fishLiveBaseUrl(env: NodeJS.ProcessEnv = process.env): string {
-  const override = env.OMB_FISH_LIVE_URL?.trim() ?? "";
+  const override = env.SANREMES_FISH_LIVE_URL?.trim() ?? "";
   return /^http:\/\/127\.0\.0\.1:\d{1,5}$/.test(override) ? override : FISH_BASE;
 }
 

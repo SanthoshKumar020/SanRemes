@@ -24,8 +24,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { gzipSync } from "node:zlib";
 
-import { runControlOmb, verificationServerArgs, verificationServerEnvironment } from "./control-omb.ts";
-import { installedChrome } from "./testing/control-omb-ui.ts";
+import { runControlOmb, verificationServerArgs, verificationServerEnvironment } from "./control-sanremes.ts";
+import { installedChrome } from "./testing/control-sanremes-ui.ts";
 import { FRAMES_START, FRAMES_STOP, launchChrome, switchExpression, TRANSCRIPT_BOX, type Chrome, type Page } from "./testing/bench-desktop-page.ts";
 import { removeTempDir, waitForExit } from "../server/testing/cleanup.ts";
 import { freePortBlock } from "../server/testing/ports.ts";
@@ -49,14 +49,14 @@ const { values } = parseArgs({
 const only = new Set((values.only ?? PHASES.join(",")).split(",").map((phase) => phase.trim()).filter(Boolean));
 for (const phase of only) if (!(PHASES as readonly string[]).includes(phase)) throw new Error(`unknown phase ${phase}; phases: ${PHASES.join(", ")}`);
 const IDLE_MS = Number(values["idle-seconds"]) * 1000;
-const STORAGE = { "omb-analytics-opt-out": "1", "omb-email-gate": "skipped", "omb-simple-mode-prompt": "1", "grok-move-2026-11": "1", "teams-2026-11b": "1", "modelgo-offer-2026-11": "1", "omb-advanced-mode": values.advanced ? "1" : "0" };
+const STORAGE = { "sanremes-analytics-opt-out": "1", "sanremes-email-gate": "skipped", "sanremes-simple-mode-prompt": "1", "grok-move-2026-11": "1", "teams-2026-11b": "1", "modelgo-offer-2026-11": "1", "sanremes-advanced-mode": values.advanced ? "1" : "0" };
 const log = (line: string) => process.stderr.write(`bench-desktop: ${line}\n`);
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const round = (value: number, digits = 1) => Math.round(value * 10 ** digits) / 10 ** digits;
 const median = (samples: number[]) => { const sorted = [...samples].sort((a, b) => a - b); return sorted.length ? sorted[Math.floor(sorted.length / 2)]! : NaN; };
 const percentile = (samples: number[], p: number) => { const sorted = [...samples].sort((a, b) => a - b); return sorted[Math.min(sorted.length - 1, Math.max(0, Math.ceil((p / 100) * sorted.length) - 1))] ?? NaN; };
 const kb = (bytes: number) => round(bytes / 1024);
-const work = mkdtempSync(join(tmpdir(), "openmausbot-bench-work-"));
+const work = mkdtempSync(join(tmpdir(), "sanremes-bench-work-"));
 const cleanups: Array<() => Promise<void>> = [];
 
 // A long markdown answer the fake engine streams in small chunks, after a run of tool calls.
@@ -89,7 +89,7 @@ function platformEnv(extra: Record<string, string> = {}): NodeJS.ProcessEnv {
 }
 
 function newDataDir(): string {
-  const dir = mkdtempSync(join(process.platform === "win32" ? tmpdir() : "/tmp", "openmausbot-bench-"));
+  const dir = mkdtempSync(join(process.platform === "win32" ? tmpdir() : "/tmp", "sanremes-bench-"));
   mkdirSync(join(dir, "tmp"), { recursive: true });
   writeFileSync(join(dir, "config.json"), JSON.stringify({
     features: { smartSetupChoices: false },
@@ -105,9 +105,9 @@ async function startFixture(options: { dataDir?: string; staticDir?: string; fak
   const port = await freePortBlock([0, 1]);
   const env = verificationServerEnvironment(platformEnv(options.fake), dataDir, port);
   const tallyPath = join(dataDir, "bench-tally.json");
-  env.OMB_BENCH_TALLY = tallyPath;
-  if (options.staticDir) env.OMB_STATIC_DIR = options.staticDir;
-  if (options.bundle) env.OMB_SERVER_COMPILE_CACHE = options.bundle.cache;
+  env.SANREMES_BENCH_TALLY = tallyPath;
+  if (options.staticDir) env.SANREMES_STATIC_DIR = options.staticDir;
+  if (options.bundle) env.SANREMES_SERVER_COMPILE_CACHE = options.bundle.cache;
   const hook = ["--import", pathToFileURL(join(ROOT, "scripts", "testing", "bench-server-tally.mjs")).href];
   const args = options.bundle ? [...hook, options.bundle.entry] : [...hook, ...verificationServerArgs(env)];
   const logPath = join(work, `server-${port}.log`);
@@ -121,7 +121,7 @@ async function startFixture(options: { dataDir?: string; staticDir?: string; fak
     if (child.exitCode !== null) break;
     try {
       const response = await fetch(`${url}/api/health`, { signal: AbortSignal.timeout(1_000) });
-      if (response.ok && (await response.json() as { app?: string }).app === "openmausbot") { readyMs = performance.now() - started; break; }
+      if (response.ok && (await response.json() as { app?: string }).app === "sanremes") { readyMs = performance.now() - started; break; }
     } catch { /* not listening yet */ }
     await sleep(25);
   }
@@ -189,7 +189,7 @@ async function serveDist(dir: string, target: string): Promise<{ url: string; cl
   const upstream = new URL(target);
   const server: Server = createServer((req, res) => {
     const path = (req.url ?? "/").split("?")[0]!;
-    if (path.startsWith("/api") || path.startsWith("/.well-known/openmausbot")) {
+    if (path.startsWith("/api") || path.startsWith("/.well-known/sanremes")) {
       const forward = httpRequest({ host: upstream.hostname, port: upstream.port, path: req.url, method: req.method, headers: req.headers }, (answer) => {
         res.writeHead(answer.statusCode ?? 502, answer.headers);
         answer.pipe(res);
@@ -580,7 +580,7 @@ async function main() {
 
   let chrome: Chrome | undefined;
   if (needsUi) {
-    if (!chromePath) throw new Error("no Chrome: run `control-omb ui launch` once, or pass --chrome PATH");
+    if (!chromePath) throw new Error("no Chrome: run `control-sanremes ui launch` once, or pass --chrome PATH");
     chrome = await launchChrome(chromePath);
     cleanups.push(() => chrome!.close());
   }
@@ -661,7 +661,7 @@ async function main() {
     log("seeding the big workspace");
     const dataDir = newDataDir();
     const seedOut = execFileSync(process.execPath, ["--experimental-strip-types", join(ROOT, "scripts", "testing", "bench-desktop-seed.ts"), values.bots!, values.threads!, values.messages!], {
-      cwd: ROOT, encoding: "utf8", env: { ...platformEnv(), PATH: dirname(process.execPath), HOME: dataDir, OMB_DATA_DIR: dataDir, TMPDIR: join(dataDir, "tmp") }, maxBuffer: 16 * 1024 * 1024,
+      cwd: ROOT, encoding: "utf8", env: { ...platformEnv(), PATH: dirname(process.execPath), HOME: dataDir, SANREMES_DATA_DIR: dataDir, TMPDIR: join(dataDir, "tmp") }, maxBuffer: 16 * 1024 * 1024,
     });
     const seeded = JSON.parse(seedOut.trim().split("\n").at(-1)!) as { bigBotId: string; bigThreadId: string; bigLastMessageId: string; otherBotId: string; otherThreadId: string; otherSideThreadId: string; bots: number; threads: number; bigMessages: number };
     const fixture = await startFixture({ dataDir, staticDir: dist, fake: STREAM_ENV });

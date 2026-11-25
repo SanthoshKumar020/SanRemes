@@ -105,7 +105,7 @@ describe("the sign-in's command", () => {
 
 describe.skipIf(WINDOWS)("a sign-in run by the CLI", () => {
   function setup(env: Record<string, string> = {}) {
-    const directory = mkdtempSync(join(tmpdir(), "omb-antigravity-login-"));
+    const directory = mkdtempSync(join(tmpdir(), "sanremes-antigravity-login-"));
     scratch.push(directory);
     const fixture: NativeFixture = nativeFixture(join(directory, "cli"));
     const runtime: AntigravityRuntime = { executablePath: fixture.executable, harnessPath: null, source: "override", version: "1.5.14" };

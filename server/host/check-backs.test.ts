@@ -11,7 +11,7 @@ const MIN = 60_000;
 const dirs: string[] = [];
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 
-function harness(over: Partial<CheckBackDeps> = {}, dir = mkdtempSync(join(tmpdir(), "omb-check-backs-"))) {
+function harness(over: Partial<CheckBackDeps> = {}, dir = mkdtempSync(join(tmpdir(), "sanremes-check-backs-"))) {
   if (!dirs.includes(dir)) dirs.push(dir);
   const h = {
     dir,

@@ -22,7 +22,7 @@ vi.mock("@/lib/cloud-guest", () => ({ useCanWriteIn: () => true }));
 const { Sidebar } = await import("./Sidebar");
 const { BotEditorStore, initialState } = await import("@/state/store");
 const { setLocale } = await import("@/lib/i18n");
-const BOT_TYPE = "application/x-openmausbot-sidebar-bot";
+const BOT_TYPE = "application/x-sanremes-sidebar-bot";
 
 const bot = (id: string, extra: Partial<Bot> = {}): Bot => ({
   id, name: id[0]!.toUpperCase() + id.slice(1), threadId: `${id}-t`, title: "", description: "", color: "green", unread: false,

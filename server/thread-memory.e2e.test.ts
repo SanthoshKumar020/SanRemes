@@ -5,14 +5,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it } from "vitest";
 
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { CAPTURE_MARKER } from "./memory-capture.ts";
 import { TIDY_MARKER } from "./memory-tidy.ts";
 
 type Step = { tool: string; arguments: Record<string, unknown> };
 
 it("keeps each conversation's matter in its own notes, and the person's facts everywhere", async () => {
-  const scratch = mkdtempSync(join(tmpdir(), "omb-thread-memory-"));
+  const scratch = mkdtempSync(join(tmpdir(), "sanremes-thread-memory-"));
   const routes = join(scratch, "routes.json");
   const learnerLog = join(scratch, "learner.jsonl");
   writeFileSync(routes, JSON.stringify({

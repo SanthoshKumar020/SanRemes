@@ -5,12 +5,12 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { request } from "../scripts/mcp-server.ts";
 
 it("moves the Sent-to row through claimed, working, waiting on a teammate and done, and the work conversation shows the same", async () => {
   const session = await launchVerificationServer({ ...process.env }, undefined, undefined, undefined, undefined, { scripted: true });
-  const cli = (...args: string[]) => runControlOmb(args, { env: { OPENMAUSBOT_URL: session.info.url } }) as Promise<any>;
+  const cli = (...args: string[]) => runControlOmb(args, { env: { OPENSANREMES_URL: session.info.url } }) as Promise<any>;
   const api = (path: string, init?: { method: string; body: unknown }) =>
     request(path, init ? { method: init.method, body: JSON.stringify(init.body) } : {}, session.info.url) as Promise<any>;
   const plan = join(session.info.dataDir, "room-plan.json");

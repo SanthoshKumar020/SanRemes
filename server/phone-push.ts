@@ -2,7 +2,7 @@
 // sign-in request or a finished reply would reach a phone that holds no live event stream, this asks the push relay in
 // the hosted control plane to wake it, with the installation credential this server already has; a Cloud home, which has
 // none, asks its Admin to relay instead (phone-push-admin.ts). The push is content-free: kind, a title from names alone,
-// opaque ids. Off unless `features.phonePush` (or OMB_PHONE_PUSH=1).
+// opaque ids. Off unless `features.phonePush` (or SANREMES_PHONE_PUSH=1).
 import { mkdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { z } from "zod";
@@ -35,10 +35,10 @@ import { cloudHomePushAccess, cloudHomePushRequest, type CloudHomePushAccess } f
 import { conversationLanguage, serverLine, type ServerLineKey } from "./server-lines.ts";
 
 export const PHONE_PUSH_FILE = "push-devices.json";
-export const PHONE_PUSH_ENV = "OMB_PHONE_PUSH";
+export const PHONE_PUSH_ENV = "SANREMES_PHONE_PUSH";
 /** A push-only installation credential, for a server that holds no other (a Cloud home). */
-export const PHONE_PUSH_CREDENTIAL_ENV = "OMB_PUSH_CREDENTIAL";
-export const PHONE_PUSH_DESKTOP_MESSAGE = "openmausbot:phone-push-access";
+export const PHONE_PUSH_CREDENTIAL_ENV = "SANREMES_PUSH_CREDENTIAL";
+export const PHONE_PUSH_DESKTOP_MESSAGE = "sanremes:phone-push-access";
 
 const INSTALLATION_CREDENTIAL = /^omb_install_[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}$/;
 /** As routes/phones.ts `phoneKey` mints them. */
@@ -64,7 +64,7 @@ const TITLES: Record<PushKind, ServerLineKey> = {
   done: "server.notify.done",
 };
 
-/** On only when switched on: OMB_PHONE_PUSH=1 or 0 wins over `features.phonePush` in config.json. */
+/** On only when switched on: SANREMES_PHONE_PUSH=1 or 0 wins over `features.phonePush` in config.json. */
 export function phonePushEnabled(cfg: { features?: { phonePush?: boolean } }, env: NodeJS.ProcessEnv = process.env): boolean {
   if (env[PHONE_PUSH_ENV] === "1") return true;
   if (env[PHONE_PUSH_ENV] === "0") return false;
@@ -155,7 +155,7 @@ function pushableOf(value: unknown): PushableNotification | null {
  * relay takes. Reads the kind, the ids and the names; the title is the server's own line for that kind, from names. */
 export function phonePushNotification(notification: PushableNotification, room?: { id: string; name: string }): PhonePushNotification | null {
   if (!isPushKind(notification.kind) || !PUSH_ID.test(notification.botId) || !PUSH_ID.test(notification.threadId)) return null;
-  const botName = clip(notification.botName, PUSH_NAME_MAX) || "MausBot";
+  const botName = clip(notification.botName, PUSH_NAME_MAX) || "SanRemes";
   const roomName = room && PUSH_ID.test(room.id) ? clip(room.name, PUSH_NAME_MAX) : "";
   const language = conversationLanguage(notification.threadId);
   const who = roomName ? serverLine(language, "server.notify.inRoom", { bot: botName, room: roomName }) : botName;
@@ -446,8 +446,8 @@ export function phonePushAccess(controlPlane: unknown, credential: unknown): Ins
 }
 
 /** Where this server's control-plane access comes from, first match wins: the desktop app's private message (its
- * credential lives in the OS store this process cannot read), OMB_PUSH_CREDENTIAL, a fleet's
- * OMB_INSTALLATION_CREDENTIAL, `openmausbot login`'s tunnel-account.json. OMB_CONTROL_PLANE_URL overrides the origin.
+ * credential lives in the OS store this process cannot read), SANREMES_PUSH_CREDENTIAL, a fleet's
+ * SANREMES_INSTALLATION_CREDENTIAL, `sanremes login`'s tunnel-account.json. SANREMES_CONTROL_PLANE_URL overrides the origin.
  * Last, a Cloud home (server/cloud-home.ts) with none of those: its Admin relays, signed with its bootstrap secret. */
 export class PhonePushAccessSource {
   private desktop: InstallationPushAccess | null | undefined;
@@ -472,13 +472,13 @@ export class PhonePushAccessSource {
   }
 
   private controlPlane(): string {
-    if (Object.hasOwn(this.env, "OMB_CONTROL_PLANE_URL")) return normalizeControlPlaneURL(this.env.OMB_CONTROL_PLANE_URL ?? "");
+    if (Object.hasOwn(this.env, "SANREMES_CONTROL_PLANE_URL")) return normalizeControlPlaneURL(this.env.SANREMES_CONTROL_PLANE_URL ?? "");
     return this.options.defaultControlPlane;
   }
 
   current(): PhonePushAccess | null {
     if (this.desktop !== undefined) return this.desktop;
-    const fromEnv = this.env[PHONE_PUSH_CREDENTIAL_ENV]?.trim() || this.env.OMB_INSTALLATION_CREDENTIAL?.trim();
+    const fromEnv = this.env[PHONE_PUSH_CREDENTIAL_ENV]?.trim() || this.env.SANREMES_INSTALLATION_CREDENTIAL?.trim();
     if (fromEnv) return phonePushAccess(this.controlPlane(), fromEnv);
     let document: unknown;
     try {

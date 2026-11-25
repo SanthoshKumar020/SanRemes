@@ -53,17 +53,17 @@ export const TURN_WAIT_MS = 10 * 60_000;
 const TURN_POLL_MS = 15_000;
 export const PASS_EVERY_MS = 6 * 60 * 60_000;
 
-/** OMB_THREAD_LOG_SWEEP: `report` (or `dry-run`) counts and changes nothing; `on` trims; anything else is off. */
+/** SANREMES_THREAD_LOG_SWEEP: `report` (or `dry-run`) counts and changes nothing; `on` trims; anything else is off. */
 export function threadLogSweepMode(env: NodeJS.ProcessEnv): ThreadLogSweepMode {
-  const raw = env.OMB_THREAD_LOG_SWEEP?.trim().toLowerCase();
+  const raw = env.SANREMES_THREAD_LOG_SWEEP?.trim().toLowerCase();
   if (raw === "report" || raw === "dry-run") return "report";
   return raw === "on" ? "on" : "off";
 }
 
-/** OMB_THREAD_LOG_CUT: over the cap, also cut week-idle logs to their session lines (events) or remove them (native).
+/** SANREMES_THREAD_LOG_CUT: over the cap, also cut week-idle logs to their session lines (events) or remove them (native).
  * Off by default: it is the one step that empties the Inspector and Activity rows of those conversations. */
 export function threadLogCutEnabled(env: NodeJS.ProcessEnv): boolean {
-  const raw = env.OMB_THREAD_LOG_CUT?.trim().toLowerCase();
+  const raw = env.SANREMES_THREAD_LOG_CUT?.trim().toLowerCase();
   return raw === "1" || raw === "on";
 }
 
@@ -75,9 +75,9 @@ export function parseBytes(raw: string | undefined): number | null {
   return Number.isSafeInteger(bytes) && bytes > 0 ? bytes : null;
 }
 
-/** OMB_THREAD_LOG_CAP when set, else the larger of 2 GiB and 3% of the volume. */
+/** SANREMES_THREAD_LOG_CAP when set, else the larger of 2 GiB and 3% of the volume. */
 export function threadLogCap(env: NodeJS.ProcessEnv, volumeBytes: number | null): number {
-  return parseBytes(env.OMB_THREAD_LOG_CAP) ?? Math.max(MIN_CAP_BYTES, Math.floor(CAP_SHARE * (volumeBytes ?? 0)));
+  return parseBytes(env.SANREMES_THREAD_LOG_CAP) ?? Math.max(MIN_CAP_BYTES, Math.floor(CAP_SHARE * (volumeBytes ?? 0)));
 }
 
 function volumeBytes(path: string): number | null {
@@ -287,7 +287,7 @@ export interface ThreadLogSweepDeps {
   dataDir: string;
   mode: Exclude<ThreadLogSweepMode, "off">;
   cap: number;
-  /** Over the cap after trimming, cut week-idle logs too (OMB_THREAD_LOG_CUT). */
+  /** Over the cap after trimming, cut week-idle logs too (SANREMES_THREAD_LOG_CUT). */
   cut?: boolean;
   threads(): ReadonlyMap<string, ThreadState>;
   /** A move freeze or a backup under way: the pass stops before its next file. */
@@ -404,7 +404,7 @@ export interface StartThreadLogSweepDeps {
   log?(line: string): void;
 }
 
-/** Cloud homes only, and only with OMB_THREAD_LOG_SWEEP set: a pass when due, at the earliest FIRST_PASS_MS after start. */
+/** Cloud homes only, and only with SANREMES_THREAD_LOG_SWEEP set: a pass when due, at the earliest FIRST_PASS_MS after start. */
 export function startThreadLogSweep(deps: StartThreadLogSweepDeps): boolean {
   const mode = threadLogSweepMode(deps.env);
   if (!deps.cloudHome || mode === "off") return false;

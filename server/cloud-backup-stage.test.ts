@@ -13,7 +13,7 @@ import { BACKUP_STAGE, prepareBackupStage, stageReserve } from "./cloud-backup-s
 const GB = 1024 ** 3;
 const scratch: string[] = [];
 afterEach(() => { for (const path of scratch.splice(0)) rmSync(path, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 }); });
-const directory = () => { const path = mkdtempSync(join(tmpdir(), "omb-backup-stage-")); scratch.push(path); return path; };
+const directory = () => { const path = mkdtempSync(join(tmpdir(), "sanremes-backup-stage-")); scratch.push(path); return path; };
 const roomy = () => ({ free: 100 * GB, total: 200 * GB });
 const posix = process.platform !== "win32";
 
@@ -128,7 +128,7 @@ describe("prepareBackupStage", () => {
     const done = await prepareBackupStage({ dataDir: data, disk: () => ({ free, total }), log: (line) => lines.push(line) });
     expect(done.staged).toEqual(["runtime.db"]);
     expect(done.skipped.map((item) => item.name)).toEqual(["messages.db"]);
-    expect(lines).toEqual([expect.stringMatching(/^omb backup: messages\.db not snapshotted \(.+ free, the copy needs up to .+ and must leave 1\.0 GB\); the backup packs its live files$/)]);
+    expect(lines).toEqual([expect.stringMatching(/^sanremes backup: messages\.db not snapshotted \(.+ free, the copy needs up to .+ and must leave 1\.0 GB\); the backup packs its live files$/)]);
     expect(readdirSync(done.stage)).toEqual(["runtime.db"]);
     expect(stageReserve(200 * GB)).toBe(10 * GB);
   });
@@ -165,15 +165,15 @@ describe("prepareBackupStage", () => {
 
 describe("the command a Cloud server's backup runs", () => {
   const entry = fileURLToPath(new URL("./cloud-backup-db-snapshot.ts", import.meta.url));
-  it("stages the data folder OMB_DATA_DIR names and prints what it staged; with none named, exits 2", () => {
+  it("stages the data folder SANREMES_DATA_DIR names and prints what it staged; with none named, exits 2", () => {
     const data = directory();
     database(join(data, "messages.db"), 7);
-    const ran = spawnSync(process.execPath, [entry], { encoding: "utf8", env: { ...process.env, OMB_DATA_DIR: data } });
+    const ran = spawnSync(process.execPath, [entry], { encoding: "utf8", env: { ...process.env, SANREMES_DATA_DIR: data } });
     expect(ran.status, ran.stderr).toBe(0);
     expect(ran.stdout.trim()).toBe("messages.db");
     expect(restored(join(data, BACKUP_STAGE, "messages.db"))).toMatchObject({ check: "ok", count: 7 });
     const env: NodeJS.ProcessEnv = { ...process.env };
-    delete env.OMB_DATA_DIR;
+    delete env.SANREMES_DATA_DIR;
     const unnamed = spawnSync(process.execPath, [entry], { encoding: "utf8", env });
     expect(unnamed.status).toBe(2);
   });

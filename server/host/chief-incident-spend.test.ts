@@ -24,7 +24,7 @@ const deadTool = (at: number) => `MCP server "crm" could not start (pid ${4000 +
 const spawnRefused = (at: number) => `spawn /usr/local/bin/claude EAGAIN (pid ${30000 + Math.floor(at / MINUTE) % 997})`;
 
 function world(botCount: number, failure: (at: number) => string, refuseStart = false) {
-  const dir = mkdtempSync(join(tmpdir(), "omb-chief-incident-spend-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-chief-incident-spend-"));
   dirs.push(dir);
   let now = START, made = 0;
   vi.useFakeTimers({ now, toFake: ["Date"] });
@@ -102,7 +102,7 @@ describe("a failure's words, without what changes from run to run", () => {
     expect(failureShape(deadTool(START))).toBe(failureShape(deadTool(START + 5 * MINUTE)));
     expect(failureShape(spawnRefused(START))).toBe(failureShape(spawnRefused(START + 5 * MINUTE)));
     expect(failureShape("Request req_011CUa7xYz9 to /v1/messages failed: 529 overloaded")).toBe(failureShape("Request req_022ABb1qWe3 to /v1/messages failed: 529 overloaded"));
-    expect(failureShape("Error in /home/omb/data/bots/7f3e9c2a-1b4d-4e8f-9a6b-2c1d3e4f5a6b/run.log line 12")).toBe(failureShape("Error in /home/omb/data/bots/0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d/run.log line 12"));
+    expect(failureShape("Error in /home/sanremes/data/bots/7f3e9c2a-1b4d-4e8f-9a6b-2c1d3e4f5a6b/run.log line 12")).toBe(failureShape("Error in /home/sanremes/data/bots/0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d/run.log line 12"));
     expect(failureShape(deadTool(START))).not.toBe(failureShape("Claude is overloaded right now. Wait a minute, then run it again."));
   });
 
@@ -159,8 +159,8 @@ describe("a routine every 5 minutes on a server whose engines cannot start, for 
 });
 
 describe("twenty bots under one Chief whose routines all fail at once", () => {
-  it("start no more Chief turns in an hour than OMB_CHIEF_INCIDENT_TURNS_PER_HOUR, and count the rest on one line", async () => {
-    vi.stubEnv("OMB_CHIEF_INCIDENT_TURNS_PER_HOUR", "6");
+  it("start no more Chief turns in an hour than SANREMES_CHIEF_INCIDENT_TURNS_PER_HOUR, and count the rest on one line", async () => {
+    vi.stubEnv("SANREMES_CHIEF_INCIDENT_TURNS_PER_HOUR", "6");
     try {
       const w = world(20, (at) => `The AI stopped before it answered (${at})`);
       await w.passTo(START + INCIDENT_WINDOW_MS - MINUTE);
@@ -177,7 +177,7 @@ describe("twenty bots under one Chief whose routines all fail at once", () => {
 
 describe("eight teammates' runs that stall within the hour, past a Chief's share of 6", () => {
   it("tell the person of the 2 the Chief is not started for, and list and link them on its one line", () => {
-    vi.stubEnv("OMB_CHIEF_INCIDENT_TURNS_PER_HOUR", "6");
+    vi.stubEnv("SANREMES_CHIEF_INCIDENT_TURNS_PER_HOUR", "6");
     try {
       const w = world(8, () => "");
       for (let i = 0; i < 8; i++) {

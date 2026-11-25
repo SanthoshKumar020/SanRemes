@@ -75,7 +75,7 @@ it("rejects unknown inputs, URLs, paths, malformed PNG, duplicate CIDs and size/
 });
 
 async function withHost(run: (call: (args: Record<string, unknown>) => Promise<EmailToolResult>) => Promise<void>, replyMessageId = "<original@example.test>") {
-  const dataDir = mkdtempSync(join(tmpdir(), "omb-inline-host-"));
+  const dataDir = mkdtempSync(join(tmpdir(), "sanremes-inline-host-"));
   try {
     const service = createEmailService({ dataDir, publicOnly: false, guard: openGuard, discover: { fetchText: async () => null, mx: async () => [], srv: async () => [], cname: async () => [], reverse: async () => [] }, test: { mailbox: (async () => ({ messages: 1 })) as never, sending: (async () => {}) as never } });
     await service.connect({ address: "me@shop.example", password: "fake-password" });

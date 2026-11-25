@@ -2,14 +2,14 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb, type VerificationServer } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb, type VerificationServer } from "../scripts/control-sanremes.ts";
 import { removeTempDir } from "./testing/cleanup.ts";
 import { readHandoffs } from "./testing/handoff-rows.ts";
 
 const TOKEN = "external-runtime-timeout-fixture-0123456789abcdef";
 
 it("answers an external caller's long ask at once and lets it poll the slow peer's answer without waking its engine", async () => {
-  const scratch = mkdtempSync(join(tmpdir(), "omb-external-timeout-"));
+  const scratch = mkdtempSync(join(tmpdir(), "sanremes-external-timeout-"));
   const gate = join(scratch, "finish-peer");
   let fixture: VerificationServer | undefined;
   try {

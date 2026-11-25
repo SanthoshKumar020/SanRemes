@@ -27,8 +27,8 @@ function useVisibility(key: string) {
 }
 
 export function useChatActivity(): ChatActivity {
-  const [routines, toggleRoutines] = useVisibility("omb-advanced-chat-automation");
-  const [tools, toggleTools] = useVisibility("omb-advanced-chat-tools");
+  const [routines, toggleRoutines] = useVisibility("sanremes-advanced-chat-automation");
+  const [tools, toggleTools] = useVisibility("sanremes-advanced-chat-tools");
   // One object per pair of choices, so the chat's filtered list changes only when a switch does.
   // eslint-disable-next-line react-hooks/exhaustive-deps -- each toggle is fresh exactly when its value changes
   return useMemo(() => ({ routines, tools, toggleRoutines, toggleTools }), [routines, tools]);

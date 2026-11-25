@@ -187,7 +187,7 @@ describe("a bot's page", () => {
     expect(button("About this app")!.getAttribute("aria-expanded")).toBe("true");
   });
 
-  it("puts mausbot.send in the person's message box as a draft, only while they use it, and sends nothing itself", async () => {
+  it("puts sanremes.send in the person's message box as a draft, only while they use it, and sends nothing itself", async () => {
     const composer = document.createElement("div");
     composer.dataset.tour = "composer";
     composer.appendChild(document.createElement("textarea"));

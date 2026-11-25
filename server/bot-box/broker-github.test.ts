@@ -61,7 +61,7 @@ unixSocket("the github grant in the broker", () => {
   });
 
   async function start(deps: Partial<GithubGrantDeps> = {}): Promise<string> {
-    dir = mkdtempSync(join(tmpdir(), "omb-gh-grant-"));
+    dir = mkdtempSync(join(tmpdir(), "sanremes-gh-grant-"));
     upstream = createServer((req, res) => {
       const chunks: Buffer[] = [];
       req.on("data", (chunk: Buffer) => { if (!chunks.length) onFirstChunk?.(); chunks.push(chunk); });

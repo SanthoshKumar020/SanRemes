@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { CarvedAvatar, REST_POSE, carvedFills, carvedGeometry } from "./CarvedAvatar";
-import { MausAvatar } from "./Avatar";
+import { SanRemesAvatar } from "./Avatar";
 import { CARVED_BODIES, CARVED_BODY_IDS } from "../../shared/carved-bodies";
 import { MAUS_COLORS } from "@/lib/mascot";
 
@@ -22,8 +22,8 @@ describe("CarvedAvatar", () => {
     }
   });
 
-  it.each(["pumpkin", "laddu"] as const)("is what MausAvatar wears for the %s body", (bodyId) => {
-    const markup = renderToStaticMarkup(createElement(MausAvatar, { color: "orange", bodyId, animated: false }));
+  it.each(["pumpkin", "laddu"] as const)("is what SanRemesAvatar wears for the %s body", (bodyId) => {
+    const markup = renderToStaticMarkup(createElement(SanRemesAvatar, { color: "orange", bodyId, animated: false }));
     expect(markup).toContain(`data-carved-body="${bodyId}"`);
     expect(markup).not.toContain("linearGradient");
   });

@@ -33,7 +33,7 @@ afterEach(async () => { await Promise.all(services.splice(0).map((service) => se
 afterAll(async () => { for (const folder of folders) await removeTempDir(folder); });
 
 function setup({ quietMs = 1_000, linkOptions = {} }: { quietMs?: number; linkOptions?: ConstructorParameters<typeof PaneLink>[1] } = {}) {
-  const dataDir = mkdtempSync(join(tmpdir(), "omb-browser-pane-"));
+  const dataDir = mkdtempSync(join(tmpdir(), "sanremes-browser-pane-"));
   folders.push(dataDir);
   const main = new FakeMain(documents);
   const link = new PaneLink(main, { quietMs, maxHoldMs: 2_000, ...linkOptions });
@@ -249,7 +249,7 @@ describe("the bots' browser as desktop panes", () => {
   });
 
   it("fails to open when the app has not said it shows panes", async () => {
-    const dataDir = mkdtempSync(join(tmpdir(), "omb-browser-pane-"));
+    const dataDir = mkdtempSync(join(tmpdir(), "sanremes-browser-pane-"));
     folders.push(dataDir);
     const silent = { on: () => undefined, postMessage: () => undefined };
     const link = new PaneLink(silent);
@@ -390,7 +390,7 @@ describe("deleting a bot's browser with the pane", () => {
     backend.erase("bot:b");
     expect(main.toMain.some((message) => message.op === "erase")).toBe(false);
     backend.erase("bot:a");
-    expect(main.toMain.filter((message) => message.op === "erase")).toEqual([{ type: "openmausbot:browser-pane", op: "erase", partition: main.partitions[0] }]);
+    expect(main.toMain.filter((message) => message.op === "erase")).toEqual([{ type: "sanremes:browser-pane", op: "erase", partition: main.partitions[0] }]);
     expect(backend.used("bot:a")).toBe(false);
   });
 });
@@ -421,7 +421,7 @@ describe("the pane's identity", () => {
   });
 
   it("passes the cleaned identity to the app when the config asks for it", async () => {
-    const dataDir = mkdtempSync(join(tmpdir(), "omb-browser-pane-"));
+    const dataDir = mkdtempSync(join(tmpdir(), "sanremes-browser-pane-"));
     folders.push(dataDir);
     const main = new FakeMain(documents);
     const link = new PaneLink(main);
@@ -484,14 +484,14 @@ describe("a site turning the pane away", () => {
 
 describe("the pane partition", () => {
   it("is per profile and per data folder, and in memory for a temporary profile", async () => {
-    const one = mkdtempSync(join(tmpdir(), "omb-browser-pane-"));
-    const two = mkdtempSync(join(tmpdir(), "omb-browser-pane-"));
+    const one = mkdtempSync(join(tmpdir(), "sanremes-browser-pane-"));
+    const two = mkdtempSync(join(tmpdir(), "sanremes-browser-pane-"));
     folders.push(one, two);
-    expect(panePartition(one, "bot:a")).toMatch(/^persist:omb-pane-[0-9a-f]{24}$/);
+    expect(panePartition(one, "bot:a")).toMatch(/^persist:sanremes-pane-[0-9a-f]{24}$/);
     expect(panePartition(one, "bot:a")).toBe(panePartition(one, "bot:a"));
     expect(panePartition(one, "bot:a")).not.toBe(panePartition(one, "bot:b"));
     expect(panePartition(one, "bot:a")).not.toBe(panePartition(two, "bot:a"));
-    expect(panePartition(one, "temp:guest-1", () => "0a1b2c3d")).toMatch(/^omb-pane-[0-9a-f]{24}-0a1b2c3d$/);
+    expect(panePartition(one, "temp:guest-1", () => "0a1b2c3d")).toMatch(/^sanremes-pane-[0-9a-f]{24}-0a1b2c3d$/);
     for (const partition of [panePartition(one, "shared:p1"), panePartition(one, "temp:guest-1")]) expect(partition).toMatch(PANE_PARTITION);
   });
 });
@@ -508,8 +508,8 @@ describe("the pane link", () => {
     main.post({ op: "which", req: 2, botId: "b", threadId: "t-1" });
     await sleep(5);
     expect(main.toMain).toEqual([
-      { type: "openmausbot:browser-pane", op: "resolved", req: 1, browser: "bot:a" },
-      { type: "openmausbot:browser-pane", op: "resolved", req: 2, browser: null },
+      { type: "sanremes:browser-pane", op: "resolved", req: 1, browser: "bot:a" },
+      { type: "sanremes:browser-pane", op: "resolved", req: 2, browser: null },
     ]);
     expect(() => main.post({ op: "which", req: 3, botId: "a b", threadId: null })).toThrow(/malformed/);
   });

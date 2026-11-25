@@ -24,7 +24,7 @@ describe("OMP ACP driver", () => {
 
   beforeEach(() => {
     ensureDirs();
-    scratch = mkdtempSync(join(tmpdir(), "omb-omp-contract-"));
+    scratch = mkdtempSync(join(tmpdir(), "sanremes-omp-contract-"));
   });
 
   afterEach(async () => {

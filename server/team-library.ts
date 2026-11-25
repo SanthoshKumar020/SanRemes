@@ -8,7 +8,7 @@ export const TEAM_LIBRARY_REPOSITORY = "https://github.com/milind-soni/openmausb
 export const TEAM_LIBRARY_RAW_ROOT = "https://raw.githubusercontent.com/milind-soni/openmausbot-teams/main";
 export const TEAM_LIBRARY_CATALOG_URL = `${TEAM_LIBRARY_RAW_ROOT}/catalog.json`;
 
-// Templates published from MausBot are merged into the catalog automatically, so it grows by several a day.
+// Templates published from SanRemes are merged into the catalog automatically, so it grows by several a day.
 const MAX_CATALOG_BYTES = 2_000_000, MAX_CATALOG_TEAMS = 1000;
 const MAX_MANIFEST_BYTES = 1_000_000;
 
@@ -31,7 +31,7 @@ export interface TeamCatalogEntry {
 }
 
 export interface TeamCatalog {
-  format: "openmaus.catalog";
+  format: "sanremes.catalog";
   version: 1;
   repositoryUrl: typeof TEAM_LIBRARY_REPOSITORY;
   teams: TeamCatalogEntry[];
@@ -70,7 +70,7 @@ function stringList(value: unknown, field: string, maxItems: number): string[] {
 
 /** Validate the remotely maintained index before any of it reaches the renderer. */
 export function parseTeamCatalog(value: unknown): TeamCatalog {
-  if (!isRecord(value) || value.format !== "openmaus.catalog" || value.version !== 1) {
+  if (!isRecord(value) || value.format !== "sanremes.catalog" || value.version !== 1) {
     throw new Error("The team library catalog is not supported");
   }
   if (!Array.isArray(value.teams) || value.teams.length > MAX_CATALOG_TEAMS) {
@@ -116,7 +116,7 @@ export function parseTeamCatalog(value: unknown): TeamCatalog {
     };
   });
   return {
-    format: "openmaus.catalog",
+    format: "sanremes.catalog",
     version: 1,
     repositoryUrl: TEAM_LIBRARY_REPOSITORY,
     teams,

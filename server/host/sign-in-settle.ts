@@ -30,8 +30,8 @@ export type SignInSettled = { status: number; body: Record<string, unknown> };
 
 /** The line that resumes work handed on when the person answered its sign-in in the chat instead of pressing Done. */
 export function signInChatPrompt(site: string, line: string, instruction?: string): string {
-  if (instruction) return `OpenMausBot handoff update: instead of pressing I'm done on ${JSON.stringify(instruction)}, the person wrote in the chat: ${JSON.stringify(line.slice(0, 400))}. Re-read the page first (a new snapshot or screenshot): your earlier refs are stale. Then continue as their line says. Never ask for a password, a one-time code or payment details in chat.`;
-  return `OpenMausBot sign-in update: instead of pressing Done on the sign-in to ${site}, the person wrote in the chat: ${JSON.stringify(line.slice(0, 400))}. Check you are signed in, then continue the task that paused for it. Never ask them for a password or a one-time code in chat.`;
+  if (instruction) return `SanRemes handoff update: instead of pressing I'm done on ${JSON.stringify(instruction)}, the person wrote in the chat: ${JSON.stringify(line.slice(0, 400))}. Re-read the page first (a new snapshot or screenshot): your earlier refs are stale. Then continue as their line says. Never ask for a password, a one-time code or payment details in chat.`;
+  return `SanRemes sign-in update: instead of pressing Done on the sign-in to ${site}, the person wrote in the chat: ${JSON.stringify(line.slice(0, 400))}. Check you are signed in, then continue the task that paused for it. Never ask them for a password or a one-time code in chat.`;
 }
 
 export function createSignInSettle(deps: SignInSettleDeps) {

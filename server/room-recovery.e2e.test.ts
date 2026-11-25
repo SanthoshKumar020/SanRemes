@@ -3,7 +3,7 @@ import { closeSync, existsSync, openSync, readFileSync, writeFileSync } from "no
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb, verificationServerEnvironment } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb, verificationServerEnvironment } from "../scripts/control-sanremes.ts";
 import { handleToolCall, request } from "../scripts/mcp-server.ts";
 import { waitForExit } from "./testing/cleanup.ts";
 import { readHandoffs } from "./testing/handoff-rows.ts";
@@ -20,7 +20,7 @@ it("boots, starts an interrupted routine once more, and reports it back to its s
     // Reproduce the persisted state of an interrupted process, not a second live writer.
     writeFileSync(join(dataDir, "routines.json"), JSON.stringify({ version: 1, routines: [], runs: [{
       id: "interrupted-room-run", routineId: "interrupted-routine", routineName: "Room report",
-      botId: bot.id, target: "bot", runOn: "maus", sourceThreadId: channel.activeTaskId,
+      botId: bot.id, target: "bot", runOn: "sanremes", sourceThreadId: channel.activeTaskId,
       status: "running", prompt: "Report once", createdAt: Date.now(), scheduledFor: Date.now(),
     }] }));
     const env: NodeJS.ProcessEnv = {};
@@ -28,12 +28,12 @@ it("boots, starts an interrupted routine once more, and reports it back to its s
       if (process.env[key]) env[key] = process.env[key];
     }
     Object.assign(env, {
-      HOME: dataDir, USERPROFILE: dataDir, OMB_DATA_DIR: dataDir,
+      HOME: dataDir, USERPROFILE: dataDir, SANREMES_DATA_DIR: dataDir,
       APPDATA: join(dataDir, "AppData", "Roaming"), LOCALAPPDATA: join(dataDir, "AppData", "Local"),
       XDG_CONFIG_HOME: join(dataDir, ".config"), XDG_CACHE_HOME: join(dataDir, ".cache"),
       XDG_DATA_HOME: join(dataDir, ".local", "share"), HERMES_HOME: join(dataDir, ".hermes"),
       TEMP: join(dataDir, "tmp"), TMP: join(dataDir, "tmp"), TMPDIR: join(dataDir, "tmp"),
-      OMB_PORT: new URL(url).port, OMB_WEBHOOK_PORT: String(Number(new URL(url).port) + 1),
+      SANREMES_PORT: new URL(url).port, SANREMES_WEBHOOK_PORT: String(Number(new URL(url).port) + 1),
       PATH: dirname(process.execPath), FAKE_CLAUDE_MODE: "happy",
     });
     const log = openSync(logPath, "a", 0o600);
@@ -74,7 +74,7 @@ it("keeps a routine waiting through a restart, reruns its cut teammate once, and
     await waitForExit(fixture.child, { signal: "SIGTERM" });
     const at = Date.now() - 60_000;
     writeFileSync(join(dataDir, "routines.json"), JSON.stringify({ version: 1, routines: [], runs: [{
-      id: "cut-run", routineId: "cut-routine", routineName: "Weekly export", botId: chief.id, target: "bot", runOn: "maus",
+      id: "cut-run", routineId: "cut-routine", routineName: "Weekly export", botId: chief.id, target: "bot", runOn: "sanremes",
       threadId: chief.activeTaskId, status: "running", prompt: "Have Engineering build the export", createdAt: at, scheduledFor: at, startedAt: at,
     }] }));
     const node = { result: "", executions: 0, kind: "work", restarts: 0, rootId: "cut-root" };

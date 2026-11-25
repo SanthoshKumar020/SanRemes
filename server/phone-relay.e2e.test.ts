@@ -1,4 +1,4 @@
-// The real server with OMB_PHONE_RELAY=1, a fake control plane and the fake relay, driven by the reference phone: the
+// The real server with SANREMES_PHONE_RELAY=1, a fake control plane and the fake relay, driven by the reference phone: the
 // pairing code the owner makes on the server is redeemed through the relay, and the phone is then a session like any.
 import { readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -19,14 +19,14 @@ let credential: string;
 let tokenRequests: unknown[];
 let logPath: string;
 let base: string;
-const dockerSocket = join(tmpdir(), `omb-relay-e2e-docker-${process.pid}.sock`);
+const dockerSocket = join(tmpdir(), `sanremes-relay-e2e-docker-${process.pid}.sock`);
 const boot = (extra?: Record<string, string>) => rig.boot(extra);
 
 beforeAll(async () => {
   rig = await startPhoneRelayRig();
   ({ relay, hostId, credential, tokenRequests } = rig);
   // As Docker runs it: its Caddy reaches the server over this socket, which is no tunnel.
-  ({ logPath, base } = await boot({ OMB_TUNNEL_SOCKET: dockerSocket }));
+  ({ logPath, base } = await boot({ SANREMES_TUNNEL_SOCKET: dockerSocket }));
 }, 60_000);
 
 afterAll(async () => {
@@ -70,12 +70,12 @@ describe("serve --relay", () => {
     const session = await waitFor(() => phone(reply.token).catch(() => null), 8_000);
     expect(json(await http(session, "GET", "/api/auth/session", { token: reply.token }))).toMatchObject({ kind: "session", id: reply.device.id, scopes: ["client"] });
     // No session, a loopback Host and the CLI's owner header: still a remote request through the relay.
-    const spoofed = await http(session, "GET", "/api/auth/session", { headers: { host: base.slice("http://".length), "x-openmausbot-cli": "1" } });
+    const spoofed = await http(session, "GET", "/api/auth/session", { headers: { host: base.slice("http://".length), "x-sanremes-cli": "1" } });
     expect(spoofed.status).toBe(403);
     // Chat-only stays chat-only: the server's own scope rule answers.
     expect((await http(session, "POST", "/api/auth/pairing", { token: reply.token, body: "{}", headers: { "content-type": "application/json" } })).status).toBe(403);
 
-    // `openmausbot devices revoke`: the phone hears it inside the encryption.
+    // `sanremes devices revoke`: the phone hears it inside the encryption.
     expect((await owner(`/api/auth/sessions/${reply.device.id}`, { method: "DELETE" })).status).toBe(200);
     await session.closed;
     expect(session.removed).toBe(true);
@@ -84,10 +84,10 @@ describe("serve --relay", () => {
 
   it("stays off on a server that serves a tunnel or runs on a fleet credential, and asks the control plane nothing", async () => {
     const asked = tokenRequests.length;
-    const socket = join(tmpdir(), `omb-relay-e2e-${process.pid}-${Date.now()}.sock`);
-    const tunnel = await boot({ OMB_SERVES_TUNNEL: "1", OMB_TUNNEL_SOCKET: socket });
+    const socket = join(tmpdir(), `sanremes-relay-e2e-${process.pid}-${Date.now()}.sock`);
+    const tunnel = await boot({ SANREMES_SERVES_TUNNEL: "1", SANREMES_TUNNEL_SOCKET: socket });
     onTestFinished(() => rmSync(socket, { force: true }));
-    const fleet = await boot({ OMB_INSTALLATION_CREDENTIAL: credential });
+    const fleet = await boot({ SANREMES_INSTALLATION_CREDENTIAL: credential });
     for (const server of [tunnel, fleet]) {
       const status = await (await fetch(`${server.base}/api/auth/pairing`)).json() as { relay?: { grant: string; reason?: string } };
       expect(status.relay).toMatchObject({ grant: "tunnel", reason: expect.any(String) });

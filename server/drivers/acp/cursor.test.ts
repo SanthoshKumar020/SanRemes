@@ -204,7 +204,7 @@ describe("CursorAgentDriver", () => {
   it("lists every model the ACP session advertises when `cursor-agent models` lists only auto", async () => {
     ensureDirs();
     chmodSync(FAKE_CLI, 0o755);
-    const scratch = mkdtempSync(join(tmpdir(), "omb-cursor-acp-catalog-"));
+    const scratch = mkdtempSync(join(tmpdir(), "sanremes-cursor-acp-catalog-"));
     scratchDirs.push(scratch);
     const dump = join(scratch, "dump.json");
     const rpc = join(scratch, "rpc.jsonl");
@@ -305,7 +305,7 @@ describe("CursorAgentDriver", () => {
   it("spawns `agent [--force|--auto-review] --approve-mcps [--model …] acp` and keeps Cursor credentials", async () => {
     ensureDirs();
     chmodSync(FAKE_CLI, 0o755);
-    const scratch = mkdtempSync(join(tmpdir(), "omb-cursor-"));
+    const scratch = mkdtempSync(join(tmpdir(), "sanremes-cursor-"));
     scratchDirs.push(scratch);
     const dump = join(scratch, "dump.json");
     process.env.FAKE_ACP_DUMP = dump;
@@ -346,10 +346,10 @@ describe("CursorAgentDriver", () => {
     }
   });
 
-  it("mounts OpenMausBot team tools over HTTP and respawns when their bearer changes", async () => {
+  it("mounts SanRemes team tools over HTTP and respawns when their bearer changes", async () => {
     ensureDirs();
     chmodSync(FAKE_CLI, 0o755);
-    const scratch = mkdtempSync(join(tmpdir(), "omb-cursor-agents-"));
+    const scratch = mkdtempSync(join(tmpdir(), "sanremes-cursor-agents-"));
     scratchDirs.push(scratch);
     const dump = join(scratch, "dump.json");
     const launches = join(scratch, "launches");
@@ -359,11 +359,11 @@ describe("CursorAgentDriver", () => {
       command: process.execPath,
       args: ["/app/dist-server/agents-proxy.js"],
       env: {
-        OMB_HARNESS_URL: harness,
-        OMB_COMMS_TOKEN: token,
-        OMB_BOT_ID: "chief",
-        OMB_THREAD_ID: "t-agents",
-        OMB_CHIEF_OF_STAFF: "1",
+        SANREMES_HARNESS_URL: harness,
+        SANREMES_COMMS_TOKEN: token,
+        SANREMES_BOT_ID: "chief",
+        SANREMES_THREAD_ID: "t-agents",
+        SANREMES_CHIEF_OF_STAFF: "1",
         ELECTRON_RUN_AS_NODE: "1",
       },
     });
@@ -397,11 +397,11 @@ describe("CursorAgentDriver", () => {
           headers: [
             { name: "authorization", value: "Bearer token-one" },
             {
-              name: "x-omb-agents-env",
+              name: "x-sanremes-agents-env",
               value: Buffer.from(JSON.stringify({
-                OMB_BOT_ID: "chief",
-                OMB_THREAD_ID: "t-agents",
-                OMB_CHIEF_OF_STAFF: "1",
+                SANREMES_BOT_ID: "chief",
+                SANREMES_THREAD_ID: "t-agents",
+                SANREMES_CHIEF_OF_STAFF: "1",
               })).toString("base64url"),
             },
           ],
@@ -440,7 +440,7 @@ describe("CursorAgentDriver", () => {
   it("sends cursor_login only when no Cursor key is in the agent's env", async () => {
     ensureDirs();
     chmodSync(FAKE_CLI, 0o755);
-    const scratch = mkdtempSync(join(tmpdir(), "omb-cursor-auth-"));
+    const scratch = mkdtempSync(join(tmpdir(), "sanremes-cursor-auth-"));
     scratchDirs.push(scratch);
     process.env.FAKE_ACP_AUTH_METHOD = "cursor_login";
     const authenticateCalls = async (environment: Record<string, string>) => {
@@ -474,7 +474,7 @@ describe("CursorAgentDriver", () => {
   it("omits --force when fullAuto is off, still approves MCP, and completes a turn", async () => {
     ensureDirs();
     chmodSync(FAKE_CLI, 0o755);
-    const scratch = mkdtempSync(join(tmpdir(), "omb-cursor-safe-"));
+    const scratch = mkdtempSync(join(tmpdir(), "sanremes-cursor-safe-"));
     scratchDirs.push(scratch);
     const dump = join(scratch, "dump.json");
     process.env.FAKE_ACP_DUMP = dump;
@@ -516,7 +516,7 @@ describe("CursorAgentDriver", () => {
     const start = async (threadId: string, env: Record<string, string> = {}) => {
       ensureDirs();
       chmodSync(FAKE_CLI, 0o755);
-      scratch = mkdtempSync(join(tmpdir(), "omb-cursor-ask-"));
+      scratch = mkdtempSync(join(tmpdir(), "sanremes-cursor-ask-"));
       Object.assign(process.env, { FAKE_ACP_MODE: "ask-question", FAKE_ACP_ASK_ANSWER: join(scratch, "answer.json"), ...env });
       instance = await CursorAgentDriver.create({
         instanceId: "cursor-ask",
@@ -652,7 +652,7 @@ describe("CursorAgentDriver", () => {
     const turn = async (threadId: string, last: string, before: string[] = []) => {
       ensureDirs();
       chmodSync(FAKE_CLI, 0o755);
-      const scratch = mkdtempSync(join(tmpdir(), "omb-cursor-reply-failure-"));
+      const scratch = mkdtempSync(join(tmpdir(), "sanremes-cursor-reply-failure-"));
       scratchDirs.push(scratch);
       process.env.FAKE_ACP_UPDATES_FILE = join(scratch, "updates.json");
       writeFileSync(process.env.FAKE_ACP_UPDATES_FILE, JSON.stringify(before.map((text) => ({
@@ -704,7 +704,7 @@ describe("CursorAgentDriver", () => {
     it("sends the stable instructions again on the next turn, as the failed call may not be in Cursor's history", async () => {
       ensureDirs();
       chmodSync(FAKE_CLI, 0o755);
-      const scratch = mkdtempSync(join(tmpdir(), "omb-cursor-reply-receipt-"));
+      const scratch = mkdtempSync(join(tmpdir(), "sanremes-cursor-reply-receipt-"));
       scratchDirs.push(scratch);
       const updates = join(scratch, "updates.json");
       const dump = join(scratch, "dump.json");
@@ -736,7 +736,7 @@ describe("CursorAgentDriver", () => {
     const scripted = async (threadId: string, updates: Array<Record<string, unknown>>) => {
       ensureDirs();
       chmodSync(FAKE_CLI, 0o755);
-      const scratch = mkdtempSync(join(tmpdir(), "omb-cursor-reply-held-"));
+      const scratch = mkdtempSync(join(tmpdir(), "sanremes-cursor-reply-held-"));
       scratchDirs.push(scratch);
       process.env.FAKE_ACP_UPDATES_FILE = join(scratch, "updates.json");
       writeFileSync(process.env.FAKE_ACP_UPDATES_FILE, JSON.stringify(updates.map((update) => ({ update }))));
@@ -928,7 +928,7 @@ describe("cursor ACP model namespace (NS: set_model wiring)", () => {
   it("does not reselect a session already on the parameterised id, and still spawns with the argv slug", async () => {
     ensureDirs();
     chmodSync(FAKE_CLI, 0o755);
-    const scratch = mkdtempSync(join(tmpdir(), "omb-cursor-acpid-"));
+    const scratch = mkdtempSync(join(tmpdir(), "sanremes-cursor-acpid-"));
     const dump = join(scratch, "dump.json");
     process.env.FAKE_ACP_DUMP = dump;
     // What cursor-agent 2026.08.11 really advertises: `auto` is `default[]`.
@@ -961,7 +961,7 @@ describe("cursor ACP model namespace (NS: set_model wiring)", () => {
   it("declares the parameterized picker and turns Fast off for a plain slug, on for a -fast slug", async () => {
     ensureDirs();
     chmodSync(FAKE_CLI, 0o755);
-    const scratch = mkdtempSync(join(tmpdir(), "omb-cursor-fast-"));
+    const scratch = mkdtempSync(join(tmpdir(), "sanremes-cursor-fast-"));
     const dump = join(scratch, "dump.json");
     process.env.FAKE_ACP_DUMP = dump;
     process.env.FAKE_ACP_CURSOR_FAST = "1";
@@ -997,7 +997,7 @@ describe("cursor ACP model namespace (NS: set_model wiring)", () => {
   it("fails the turn before prompting when Cursor keeps Fast on after being asked to turn it off", async () => {
     ensureDirs();
     chmodSync(FAKE_CLI, 0o755);
-    const scratch = mkdtempSync(join(tmpdir(), "omb-cursor-fast-stuck-"));
+    const scratch = mkdtempSync(join(tmpdir(), "sanremes-cursor-fast-stuck-"));
     const dump = join(scratch, "dump.json");
     process.env.FAKE_ACP_DUMP = dump;
     process.env.FAKE_ACP_CURSOR_FAST = "stuck";
@@ -1081,7 +1081,7 @@ describe("cursor ACP model namespace (NS: set_model wiring)", () => {
   it("sets the advertised variant for an effort slug and says when it differs", async () => {
     ensureDirs();
     chmodSync(FAKE_CLI, 0o755);
-    const scratch = mkdtempSync(join(tmpdir(), "omb-cursor-effort-"));
+    const scratch = mkdtempSync(join(tmpdir(), "sanremes-cursor-effort-"));
     const dump = join(scratch, "dump.json");
     process.env.FAKE_ACP_DUMP = dump;
     process.env.FAKE_ACP_SESSION_MODELS = "default[]|Auto,grok-4.7[context=256k,reasoning_effort=high,fast=true]|grok-4.7";

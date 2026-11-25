@@ -16,9 +16,9 @@ import { appendAdminAction, type AdminActor } from "./admin-activity.ts";
 import { isNewerVersion, updateCommand, type InstallKind, type UpdateCheck } from "./update-check.ts";
 
 /** Where a Docker install mounts the two folders (deploy/install.sh's compose.yaml, update-runner.sh's override):
- * `request` (writable) and `status` (read-only). OMB_SERVER_UPDATE_DIR names another place. */
-export const SERVER_UPDATE_DIR = "/run/omb-update";
-export const SERVER_UPDATE_DIR_ENV = "OMB_SERVER_UPDATE_DIR";
+ * `request` (writable) and `status` (read-only). SANREMES_SERVER_UPDATE_DIR names another place. */
+export const SERVER_UPDATE_DIR = "/run/sanremes-update";
+export const SERVER_UPDATE_DIR_ENV = "SANREMES_SERVER_UPDATE_DIR";
 /** One request per five minutes; the runner on the host keeps its own, shorter gap. */
 export const REQUEST_GAP_MS = 5 * 60_000;
 /** A request the host has not taken by then is reported as never started, and may be made again. */
@@ -147,7 +147,7 @@ export function serverUpdateStatus(input: {
   version: string;
   activeTurns: number;
   now: number;
-  /** The update check follows the stable channel, as update.sh does; with OMB_UPDATE_CHANNEL=newest it does not. */
+  /** The update check follows the stable channel, as update.sh does; with SANREMES_UPDATE_CHANNEL=newest it does not. */
   followsStable?: boolean;
 }): ServerUpdateStatus {
   const { install, check, facts, pending, version, now } = input;
@@ -163,7 +163,7 @@ export function serverUpdateStatus(input: {
   if (runner && input.followsStable !== false) {
     const own = {
       command: `cd ${runner.dir} && sudo ./update.sh`, rollback: `cd ${runner.dir} && sudo ./update.sh --rollback`,
-      logs: `cd ${runner.dir} && sudo docker compose logs --tail 50 omb`, setup: `cd ${runner.dir} && sudo ./update-runner.sh --install`,
+      logs: `cd ${runner.dir} && sudo docker compose logs --tail 50 sanremes`, setup: `cd ${runner.dir} && sudo ./update-runner.sh --install`,
     };
     return { ...base, ...own, ...extra, mode: runner.held ? "held" : "button" };
   }

@@ -71,7 +71,7 @@ export function BuiltInBrowserRow() {
 }
 
 /** Self-hosted servers only, for the owner: browserEngine.egress.localNetwork lets bots' browsers open this server's
- * own sites and its local network. OpenMausBot's own ports, cloud metadata and link-local addresses stay closed. */
+ * own sites and its local network. SanRemes's own ports, cloud metadata and link-local addresses stay closed. */
 export function ServerSitesRow() {
   const state = useStoreSelector((s) => ({ config: s.config }), sameFields);
   const owner = useOwnerOrAdmin();
@@ -132,7 +132,7 @@ export function BrowserProxyRow() {
   );
 }
 
-/** browserEngine.engine: the bots' browsers run on OpenMausBot's own Chrome driver instead of agent-browser. */
+/** browserEngine.engine: the bots' browsers run on SanRemes's own Chrome driver instead of agent-browser. */
 export function NewBrowserSettings() {
   const state = useStoreSelector((s) => ({ config: s.config }), sameFields);
   const on = state.config?.browserEngine?.engine === "chrome";

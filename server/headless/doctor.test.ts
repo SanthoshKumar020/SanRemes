@@ -3,29 +3,29 @@ import { describe, expect, it, vi } from "vitest";
 import type { HeadlessIo } from "./output.ts";
 import { runHeadless } from "./main.ts";
 
-const refused = (status: number) => Object.assign(new Error(`OpenMausBot API error (${status}): {"error":"forbidden"}`), { status });
+const refused = (status: number) => Object.assign(new Error(`SanRemes API error (${status}): {"error":"forbidden"}`), { status });
 
-/** `openmausbot doctor` on a server whose local callers without a session get the service routes only: a shared server,
+/** `sanremes doctor` on a server whose local callers without a session get the service routes only: a shared server,
  * or one in the hardened profile, as in the server's container, where deploy/update.sh runs it. */
 function sharedServer(engines: number | "old server") {
   const callTool = vi.fn(async (name: string) => {
-    if (name === "get_system_health") return { status: "connected", app: "openmausbot", packaged: true };
+    if (name === "get_system_health") return { status: "connected", app: "sanremes", packaged: true };
     if (name === "list_available_models") throw refused(403);
     throw new Error(`unexpected tool ${name}`);
   });
   const request = vi.fn(async (path: string) => {
     if (path === "/api/health/engines") {
       if (engines === "old server") throw refused(403);
-      return { app: "openmausbot", engines };
+      return { app: "sanremes", engines };
     }
-    if (path === "/.well-known/openmausbot/environment") return { version: "0.1.160", label: "maus.example.com", capabilities: { jobs: true } };
+    if (path === "/.well-known/sanremes/environment") return { version: "0.1.160", label: "sanremes.example.com", capabilities: { jobs: true } };
     if (path === "/api/auth/session") return { kind: "loopback", scopes: ["client"], trust: "service" };
     throw refused(403);
   });
   const out: string[] = [];
   const io: HeadlessIo = { out: (text) => out.push(text), err: () => {}, readStdin: async () => "" };
   return async (argv: string[]) => {
-    const code = await runHeadless(argv, { env: { OPENMAUSBOT_URL: "http://127.0.0.1:19999" }, io, callTool: callTool as any, request: request as any });
+    const code = await runHeadless(argv, { env: { OPENSANREMES_URL: "http://127.0.0.1:19999" }, io, callTool: callTool as any, request: request as any });
     return { code, out };
   };
 }
@@ -58,7 +58,7 @@ describe("doctor --data", () => {
     const out: string[] = [], err: string[] = [];
     const io: HeadlessIo = { out: (text) => out.push(text), err: (text) => err.push(text), readStdin: async () => "" };
     const callTool = vi.fn(async () => { throw new Error("doctor --data must not reach a server"); });
-    const code = await runHeadless(argv, { env: dataDir ? { OMB_DATA_DIR: dataDir } : {}, io, callTool: callTool as any });
+    const code = await runHeadless(argv, { env: dataDir ? { SANREMES_DATA_DIR: dataDir } : {}, io, callTool: callTool as any });
     return { code, out, err, callTool };
   }
 
@@ -66,7 +66,7 @@ describe("doctor --data", () => {
     const { mkdtempSync, mkdirSync, rmSync, writeFileSync, existsSync } = await import("node:fs");
     const { tmpdir } = await import("node:os");
     const { join } = await import("node:path");
-    const data = mkdtempSync(join(tmpdir(), "omb-doctor-cli-"));
+    const data = mkdtempSync(join(tmpdir(), "sanremes-doctor-cli-"));
     try {
       for (const name of ["events", "native"]) mkdirSync(join(data, name));
       const stray = join(data, "config.json.999999.0b4d8f7a-3c2e-4f1a-9b6d-5e7c8a9f0d1e.tmp");

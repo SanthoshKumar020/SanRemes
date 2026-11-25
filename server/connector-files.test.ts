@@ -175,7 +175,7 @@ describe("connected-app file arguments", () => {
 describe("which files a bot may send", () => {
   const made: string[] = [];
   afterEach(() => { for (const dir of made.splice(0)) rmSync(dir, { recursive: true, force: true }); });
-  const dir = () => { const path = mkdtempSync(join(tmpdir(), "omb-connector-files-")); made.push(path); return path; };
+  const dir = () => { const path = mkdtempSync(join(tmpdir(), "sanremes-connector-files-")); made.push(path); return path; };
   const put = (path: string) => { mkdirSync(join(path, ".."), { recursive: true }); writeFileSync(path, report); return path; };
   const scope = (over: Partial<BotFileScope>): BotFileScope => ({ roots: [], attachments: [], refuse: [], ...over });
 
@@ -207,7 +207,7 @@ describe("which files a bot may send", () => {
 
   it("never sends the home folder's hidden folders or the app's own data, even when the bot works in the home folder", async () => {
     const home = dir();
-    const data = join(home, ".openmausbot"), desktop = join(home, "AppData", "Roaming", "MausBot");
+    const data = join(home, ".sanremes"), desktop = join(home, "AppData", "Roaming", "SanRemes");
     const inHome = scope({ roots: [home], refuse: [data, desktop], home });
     const sensitive = /hidden folder or in the app's own data/;
     await expect(openBotFile(put(join(home, ".ssh", "id_ed25519")), inHome)).rejects.toThrow(sensitive);

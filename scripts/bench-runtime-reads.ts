@@ -25,7 +25,7 @@ const median = (run: () => unknown, times = 7): number => {
 console.log(JSON.stringify({ benchmark: "runtime-reads", node: process.version, platform: platform(), arch: arch(), bots: BOTS,
   scope: "Real runtime.db and coordinator, synthetic finished roots spread over 34 standing threads. Not model throughput." }));
 for (const rows of sizes.length ? sizes : [1_809, 5_000, 20_000, 50_000]) {
-  const directory = mkdtempSync(join(tmpdir(), "omb-runtime-reads-"));
+  const directory = mkdtempSync(join(tmpdir(), "sanremes-runtime-reads-"));
   try {
     const store = openRuntimeStore(join(directory, "runtime.db"));
     const now = Date.now();

@@ -21,7 +21,7 @@ let scripts: string;
 beforeAll(() => {
   ensureDirs();
   chmodSync(FAKE_CLI, 0o755);
-  scratch = mkdtempSync(join(tmpdir(), "omb-claude-live-reply-"));
+  scratch = mkdtempSync(join(tmpdir(), "sanremes-claude-live-reply-"));
   scripts = join(scratch, "scripts.json");
   writeFileSync(scripts, JSON.stringify(liveReplyScripts()));
 });

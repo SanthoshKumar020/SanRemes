@@ -1,7 +1,7 @@
 // Loaded only by group-local-vm.e2e.test.ts via --import. Replace the container
 // boundary, preserving the real server, lease code, MCP config and fake driver.
 import { registerHooks } from 'node:module';
-const state = process.env.OMB_TEST_VM_STATE;
+const state = process.env.SANREMES_TEST_VM_STATE;
 if (!state) throw new Error('An explicit isolated VM state file is required');
 const actual = new URL('../container-computer.ts?actual', import.meta.url).href;
 const atomic = new URL('../atomic.ts', import.meta.url).href;
@@ -69,7 +69,7 @@ registerHooks({
         while (read().blocked || read().blockedTarget === target.key) await new Promise(r => setTimeout(r, 30));
         const missing = !(await containerComputerExists('podman', target));
         const stopped = read().stopped?.includes(target.key);
-        // An old desktop: made by OpenMausBot, on an image this release no longer runs (and maybe not yet rebuilt).
+        // An old desktop: made by SanRemes, on an image this release no longer runs (and maybe not yet rebuilt).
         const image = !read().imageMissing;
         const outdated = !missing && Boolean(read().outdated?.includes(target.key));
         const ready = !missing && !stopped && !outdated && image && !read().failed;
@@ -111,11 +111,11 @@ registerHooks({
       }
     ` };
     const result = nextLoad(url, context);
-    if (url.endsWith('/computer-control.ts') && process.env.OMB_TEST_LEASE_GRACE_MS) {
-      return { ...result, source: String(result.source).replace('const LEASE_GRACE_MS = 60_000;', `const LEASE_GRACE_MS = ${Number(process.env.OMB_TEST_LEASE_GRACE_MS)};`) };
+    if (url.endsWith('/computer-control.ts') && process.env.SANREMES_TEST_LEASE_GRACE_MS) {
+      return { ...result, source: String(result.source).replace('const LEASE_GRACE_MS = 60_000;', `const LEASE_GRACE_MS = ${Number(process.env.SANREMES_TEST_LEASE_GRACE_MS)};`) };
     }
-    if (url.endsWith('/routes/desktop-viewer.ts') && process.env.OMB_TEST_VIEWER_RECHECK_MS) {
-      return { ...result, source: String(result.source).replace('const RECHECK_MS = 5_000;', `const RECHECK_MS = ${Number(process.env.OMB_TEST_VIEWER_RECHECK_MS)};`) };
+    if (url.endsWith('/routes/desktop-viewer.ts') && process.env.SANREMES_TEST_VIEWER_RECHECK_MS) {
+      return { ...result, source: String(result.source).replace('const RECHECK_MS = 5_000;', `const RECHECK_MS = ${Number(process.env.SANREMES_TEST_VIEWER_RECHECK_MS)};`) };
     }
     if (url.endsWith('/computer-idle.ts')) {
       return { ...result, source: `import { readFileSync as readVmIdle } from 'node:fs';\n` +

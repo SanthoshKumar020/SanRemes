@@ -13,21 +13,21 @@ describe("the first hour's words", () => {
     for (const language of FIRST_HOUR_LANGUAGES) {
       const w = firstHourWords(language);
       const english = language !== "en" ? firstHourWords("en") : null;
-      const lines = (words: typeof w) => [words.connect, words.lookLater("Gmail", 1), words.arrivedGreeting("Sam", "MausBot", ["Coder"]), words.briefOn, words.phoneTitle, words.phoneBody, words.phoneButton, words.firstLookReady, words.firstBriefReady];
+      const lines = (words: typeof w) => [words.connect, words.lookLater("Gmail", 1), words.arrivedGreeting("Sam", "SanRemes", ["Coder"]), words.briefOn, words.phoneTitle, words.phoneBody, words.phoneButton, words.firstLookReady, words.firstBriefReady];
       for (const line of lines(w)) {
         expect(line.trim(), language).not.toBe("");
         if (english) expect(lines(english), language).not.toContain(line);
       }
       expect(w.lookLater("Gmail and Google Calendar", 2), language).toContain("Gmail and Google Calendar");
       for (const arrived of [["Coder"], ["Coder", "Writer"]]) {
-        const line = w.arrivedGreeting("Sam", "MausBot", arrived);
-        for (const part of ["Sam", "MausBot", ...arrived]) expect(line, language).toContain(part);
+        const line = w.arrivedGreeting("Sam", "SanRemes", arrived);
+        for (const part of ["Sam", "SanRemes", ...arrived]) expect(line, language).toContain(part);
       }
-      expect(w.arrivedGreeting(undefined, "MausBot", ["A", "B", "C", "D"]), language).toContain("4");
-      expect(w.arrivedGreeting(undefined, "MausBot", ["Coder"]), language).not.toContain("undefined");
-      expect(w.greeting("Sam", "MausBot"), language).toContain("Sam");
-      expect(w.greeting(undefined, "MausBot"), language).toContain("MausBot");
-      expect(w.greeting(undefined, "MausBot"), language).not.toContain("undefined");
+      expect(w.arrivedGreeting(undefined, "SanRemes", ["A", "B", "C", "D"]), language).toContain("4");
+      expect(w.arrivedGreeting(undefined, "SanRemes", ["Coder"]), language).not.toContain("undefined");
+      expect(w.greeting("Sam", "SanRemes"), language).toContain("Sam");
+      expect(w.greeting(undefined, "SanRemes"), language).toContain("SanRemes");
+      expect(w.greeting(undefined, "SanRemes"), language).not.toContain("undefined");
       expect(w.briefOn, language).toMatch(/8/);
       const done = w.list([w.sorted(40), w.drafted(6), w.prepped(4)]);
       for (const n of ["40", "6", "4"]) expect(done, language).toContain(n);

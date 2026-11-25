@@ -99,7 +99,7 @@ test("a Team plan's Cloud is its team's: its setup is followed every 15 seconds,
   f.teams = team({ state: "setting_up", origin: null, pairingAvailable: false, setup: { step: "storage" } });
   let state = await f.client.refresh();
   assert.deepEqual(state.teams[0].machine, { status: "provisioning", setup: { step: "storage" } }); assert.equal(f.delay, 15_000);
-  f.teams = team({ state: "ready", status: "ready", origin: "https://omb-t-2.fly.dev", pairingAvailable: true });
+  f.teams = team({ state: "ready", status: "ready", origin: "https://sanremes-t-2.fly.dev", pairingAvailable: true });
   state = await f.client.refresh();
   assert.equal(state.machine, undefined); assert.equal(f.delay, 60_000, "the team's Cloud is ready: nothing is being set up");
   f.teams = undefined; await f.client.refresh(); assert.equal(f.delay, 15_000, "no team listed yet: its setup");
@@ -183,7 +183,7 @@ test("what this person may buy: the session's own offer when signed in, else the
   const asked = () => f.requests.filter(row => row.route === "/api/public/config");
   assert.equal(await f.client.offer(), null); assert.equal(asked().length, 1);
   assert.equal(await f.client.offer(), null); assert.equal(asked().length, 1, "a failed ask counts for 30 seconds");
-  f.now += 30_000; f.publicConfig = { status: 200, body: { name: "OpenMausBot", surface: "cloud", plans: plans(), trial: { days: 7, holdDays: 3, creditUsd: 5 }, refundDays: 14 } };
+  f.now += 30_000; f.publicConfig = { status: 200, body: { name: "SanRemes", surface: "cloud", plans: plans(), trial: { days: 7, holdDays: 3, creditUsd: 5 }, refundDays: 14 } };
   const [first, second] = await Promise.all([f.client.offer(), f.client.offer()]);
   assert.deepEqual(first.plans.map(plan => [plan.tier, plan.amount, plan.trialDays]), [["starter", 1500, 7], ["pro", 4900, 7]]);
   assert.deepEqual([first.recommended, first.creditUsd, first.refundDays], ["pro", 5, 14]);
@@ -211,7 +211,7 @@ test("Dodo's own checkout page is the only checkout address ever opened", () => 
   assert.equal(checkoutDestination("https://checkout.dodopayments.com/session/cks_123?x=1"), "https://checkout.dodopayments.com/session/cks_123?x=1");
   for (const url of ["https://test.checkout.dodopayments.com/session/cks_123", "http://checkout.dodopayments.com/session/1", "https://checkout.dodopayments.com.evil.test/session/1",
     "https://user:pw@checkout.dodopayments.com/session/1", "https://checkout.dodopayments.com/session/1#x", "https://checkout.dodopayments.com/session/1#",
-    "javascript:alert(1)", "file:///etc/passwd", "openmausbot://cloud", "https://evil.example.test/", "", 42, null, `https://checkout.dodopayments.com/${"x".repeat(2100)}`]) {
+    "javascript:alert(1)", "file:///etc/passwd", "sanremes://cloud", "https://evil.example.test/", "", 42, null, `https://checkout.dodopayments.com/${"x".repeat(2100)}`]) {
     assert.equal(checkoutDestination(url), null, String(url));
   }
   assert.equal(checkoutDestination("https://test.checkout.dodopayments.com/session/cks_123", { fixture: true }), "https://test.checkout.dodopayments.com/session/cks_123");
@@ -563,7 +563,7 @@ test("invalid browser URLs are refused and cancellation cannot persist a late is
 });
 
 test("Cloud records use separate encrypted atomic storage, not plaintext or saved entitlements", async t => {
-  const directory = await mkdtemp(join(tmpdir(), "omb-cloud-record-"));
+  const directory = await mkdtemp(join(tmpdir(), "sanremes-cloud-record-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const file = join(directory, "cloud-account.bin"); let unlocked = true;
   // The fixture substitutes encryption; it does not use the user's keychain.
@@ -575,7 +575,7 @@ test("Cloud records use separate encrypted atomic storage, not plaintext or save
 });
 
 test("a saved Cloud sign-in is read back after a restart with Electron 43's decrypt shape ({ shouldReEncrypt, result })", async t => {
-  const directory = await mkdtemp(join(tmpdir(), "omb-cloud-electron43-"));
+  const directory = await mkdtemp(join(tmpdir(), "sanremes-cloud-electron43-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const file = join(directory, "cloud-account.bin");
   // Exactly what safeStorage.decryptStringAsync resolves to in Electron 43, not a bare string.
@@ -593,7 +593,7 @@ const electron43Store = (file, lock = { locked: false }, decrypt) => createCloud
 const savedSignIn = f => ({ origin: f.origin, token: accessToken, expiresAt: f.now + 86400_000, device: { id: "fixture-device" }, account: { id: "fixture-account", email: "person@example.test" } });
 
 test("a saved Cloud sign-in that can never be read is removed, and signing in again is the one next step", async t => {
-  const directory = await mkdtemp(join(tmpdir(), "omb-cloud-unreadable-"));
+  const directory = await mkdtemp(join(tmpdir(), "sanremes-cloud-unreadable-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const file = join(directory, "cloud-account.bin");
   for (const decrypt of [
@@ -612,7 +612,7 @@ test("a saved Cloud sign-in that can never be read is removed, and signing in ag
 });
 
 test("a locked keychain never removes the saved Cloud sign-in: it is read again, sooner then each minute, until it opens", async t => {
-  const directory = await mkdtemp(join(tmpdir(), "omb-cloud-locked-"));
+  const directory = await mkdtemp(join(tmpdir(), "sanremes-cloud-locked-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const file = join(directory, "cloud-account.bin"), lock = { locked: false };
   const f = await fixture(t, { store: electron43Store(file, lock) });
@@ -638,7 +638,7 @@ test("a locked keychain never removes the saved Cloud sign-in: it is read again,
 });
 
 test("Clear pressed while a read of the saved sign-in is under way: a read that opens it keeps it, and signs in", async t => {
-  const directory = await mkdtemp(join(tmpdir(), "omb-cloud-clear-race-"));
+  const directory = await mkdtemp(join(tmpdir(), "sanremes-cloud-clear-race-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const file = join(directory, "cloud-account.bin"), lock = { locked: true };
   let gate = null;
@@ -658,7 +658,7 @@ test("Clear pressed while a read of the saved sign-in is under way: a read that 
 });
 
 test("Clear pressed while a read never finishes (a keychain prompt nobody answers): it clears after a short wait, and a sign-in can start", async t => {
-  const directory = await mkdtemp(join(tmpdir(), "omb-cloud-clear-hung-"));
+  const directory = await mkdtemp(join(tmpdir(), "sanremes-cloud-clear-hung-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const file = join(directory, "cloud-account.bin"), lock = { locked: true };
   let hang = null, release = () => {};
@@ -679,7 +679,7 @@ test("Clear pressed while a read never finishes (a keychain prompt nobody answer
 });
 
 test("a decrypt answer in a shape this app does not know is never taken for an unreadable sign-in", async t => {
-  const directory = await mkdtemp(join(tmpdir(), "omb-cloud-shape-"));
+  const directory = await mkdtemp(join(tmpdir(), "sanremes-cloud-shape-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const file = join(directory, "cloud-account.bin");
   const f = await fixture(t, { store: electron43Store(file, undefined, async () => ({ shouldReEncrypt: false })) });
@@ -689,7 +689,7 @@ test("a decrypt answer in a shape this app does not know is never taken for an u
 });
 
 test("cancelling during the encrypted write queues deletion after it and cannot restore the grant", async t => {
-  const directory = await mkdtemp(join(tmpdir(), "omb-cloud-cancel-")); t.after(() => rm(directory, { recursive: true, force: true }));
+  const directory = await mkdtemp(join(tmpdir(), "sanremes-cloud-cancel-")); t.after(() => rm(directory, { recursive: true, force: true }));
   let release, writing = false; const gate = new Promise(resolve => { release = resolve; });
   const store = createCloudAccountStore({ file: join(directory, "cloud-account.bin"), encryption: { available: async () => true,
     encrypt: async value => { writing = true; await gate; return Buffer.from(value); }, decrypt: value => value.toString() } });
@@ -749,7 +749,7 @@ test("My Cloud's line in the server menus says what is true now: the trial's end
 
 test("the session's teams come with a verified session, each with its Cloud; a team pairing is asked of the Admin's team route for the team's own address, and 404 means the person is no longer in it", async t => {
   const f = await fixture(t); await f.connect();
-  const origin = "https://omb-u-acme.fly.dev", code = "AAAA-BBBB-CCCC";
+  const origin = "https://sanremes-u-acme.fly.dev", code = "AAAA-BBBB-CCCC";
   assert.equal(f.client.state().teams, undefined, "in no team: nothing added");
   f.teams = [{ id: "team-acme", name: "Acme", role: "member", machine: { state: "ready", origin, pairingAvailable: true, status: "ready" } }, { id: "team-x", name: "Later", role: "admin", machine: null }];
   await f.client.refresh();

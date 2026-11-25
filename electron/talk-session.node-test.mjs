@@ -51,7 +51,7 @@ test("the box's words and timings are fixed", () => {
     busy: "Voice is in use in SanRemes",
     serverDown: "Open SanRemes to talk",
     starting: "SanRemes is still starting. Try again in a moment.",
-    noMausbot: "Set up SanRemes first, then try again.",
+    noSanRemes: "Set up SanRemes first, then try again.",
     moved: "SanRemes lives on My Cloud now — talk to it there",
     permission: "Talking needs Microphone + Speech Recognition access — System Settings → Privacy & Security.",
     dictationOff: "Turn on Dictation in System Settings → Keyboard, then try again.",
@@ -179,11 +179,11 @@ test("permission and setup problems say what to fix, in the composer's words: on
   }
 });
 
-test("a server that can't take asks says why and stops listening: down, still starting, no MausBot, or moved to My Cloud", async () => {
+test("a server that can't take asks says why and stops listening: down, still starting, no SanRemes, or moved to My Cloud", async () => {
   const notices = [
     ["server-down", "Open SanRemes to talk", "native.talk.openSanRemes"],
     ["starting", TALK_TEXT.starting, "native.talk.starting"],
-    ["no-mausbot", TALK_TEXT.noMausbot, "native.talk.setUpFirst"],
+    ["no-sanremes", TALK_TEXT.noSanRemes, "native.talk.setUpFirst"],
     ["moved", "SanRemes lives on My Cloud now — talk to it there", "native.talk.movedToCloud"],
   ];
   for (const [code, text, textCode] of notices) {
@@ -317,7 +317,7 @@ test("replaced while listening closes the box and nothing is sent", async () => 
   assert.equal(h.starts.length, 2);
 });
 
-test("clicking the box opens the chat; before the chat is known it only brings MausBot forward", async () => {
+test("clicking the box opens the chat; before the chat is known it only brings SanRemes forward", async () => {
   const idle = harness(); idle.session.open();
   assert.deepEqual(idle.opened, []); assert.equal(idle.closed, 0);
 

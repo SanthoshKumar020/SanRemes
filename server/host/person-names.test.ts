@@ -10,7 +10,7 @@ import { cleanDisplayName, createPersonNames } from "./person-names.ts";
 
 const dirs: string[] = [];
 afterEach(async () => { for (const dir of dirs.splice(0)) await removeTempDir(dir); });
-const dataDir = () => { const dir = mkdtempSync(join(tmpdir(), "omb-person-names-")); dirs.push(dir); return dir; };
+const dataDir = () => { const dir = mkdtempSync(join(tmpdir(), "sanremes-person-names-")); dirs.push(dir); return dir; };
 
 describe("a name a person chooses on a self-hosted server", () => {
   it("is trimmed, 1 to 60 characters, and never holds a control character", () => {

@@ -43,7 +43,7 @@ describe("handoffLine", () => {
   });
 });
 
-function harness(over: Partial<HandoffStatusDeps> = {}, dir = mkdtempSync(join(tmpdir(), "omb-handoff-status-"))) {
+function harness(over: Partial<HandoffStatusDeps> = {}, dir = mkdtempSync(join(tmpdir(), "sanremes-handoff-status-"))) {
   if (!dirs.includes(dir)) dirs.push(dir);
   const nodes = new Map<string, HandoffNode>();
   const rows = new Map<string, { id: string; threadRef?: { botId: string; threadId: string; title: string }; handoff?: HandoffStatusLine }>();

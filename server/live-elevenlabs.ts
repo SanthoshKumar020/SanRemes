@@ -30,7 +30,7 @@ const CLIENT_EVENTS = [
 /** ElevenLabs ends a conversation after 10 minutes unless the agent allows longer; a Live call may last an hour, as with Gemini. */
 const CALL_AT_MOST_SECONDS = 60 * 60;
 
-/** `model` is the agent id, "" while no usable one is saved. The API root is the one ElevenLabs voices use (OMB_ELEVENLABS_API). */
+/** `model` is the agent id, "" while no usable one is saved. The API root is the one ElevenLabs voices use (SANREMES_ELEVENLABS_API). */
 export function elevenLabsLiveEndpoint(agentId: string | null | undefined, env: NodeJS.ProcessEnv = process.env): LiveEndpoint {
   const id = agentId?.trim() ?? "";
   return { provider: "elevenlabs", apiBase: `${elevenLabsProviderApi(env).replace(/\/+$/, "")}/convai`, model: AGENT_ID.test(id) ? id : "" };

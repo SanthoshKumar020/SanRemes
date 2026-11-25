@@ -26,7 +26,7 @@ const until = async (check, what, ms = 5000) => {
 };
 
 async function scratch(t) {
-  const dir = await realpath(await mkdtemp(path.join(tmpdir(), "omb-lend-own-server-")));
+  const dir = await realpath(await mkdtemp(path.join(tmpdir(), "sanremes-lend-own-server-")));
   t.after(() => rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }));
   return dir;
 }
@@ -41,7 +41,7 @@ function selfHosted({ scopes = ["admin", "client"], own = true, extra = {}, mcp 
     const route = new URL(url).pathname;
     const owner = state.own && state.scopes.includes("admin");
     if (route === "/api/auth/session") return json({ kind: "session", id: state.sessionId, scopes: state.scopes, ...(owner ? { own: true, lending: { sharedComputers: true, lendingDetails: true, fileEdits: true, ...(mcp ? { lentMcp: true } : {}), ...(mcp && caller ? { mcpCaller: true } : {}) } } : {}), ...state.extra });
-    if (route === "/.well-known/openmausbot/environment") return json({ environmentId: state.environmentId, capabilities: { remoteSessions: true } });
+    if (route === "/.well-known/sanremes/environment") return json({ environmentId: state.environmentId, capabilities: { remoteSessions: true } });
     const body = init?.body ? JSON.parse(init.body) : {};
     if (route === "/api/shared-computers/connect") { state.connects.push(body); return json({ ok: true }); }
     if (route.endsWith("/poll")) {
@@ -246,7 +246,7 @@ function mainLending({ response = 1, own = true, flag = false, offer, refusal = 
   const lending = installServerLending({ ipcMain: { handle: (channel, handler) => handlers.set(channel, handler) }, guard: (_channel, handler) => handler, sharing: () => controller,
     dialogs: { chooseFolder: async () => null, confirmServerAccess: async () => true }, validate: async folders => folders ?? [], dialog, window: () => win,
     saved: id => { if (id !== garage.id) throw new Error("unknown"); return garage; }, candidate: env => !env.cloud && !env.team && !env.home, flag: async () => flag,
-    environments: () => [garage, { id: "acme", name: "Acme", origin: "https://omb-t-acme.fly.dev", team: { id: "t" } }], active: () => garage,
+    environments: () => [garage, { id: "acme", name: "Acme", origin: "https://sanremes-t-acme.fly.dev", team: { id: "t" } }], active: () => garage,
     // This app's own page sends an empty event here; the server's own page sends { page: env }.
     local: event => !event?.page && !event?.other, page: event => event?.page ?? null, screen, allowScreen: async () => { calls.allowScreen = (calls.allowScreen ?? 0) + 1; }, now });
   return { handlers, calls, lending, win, info };
@@ -363,9 +363,9 @@ test("a server that can't be lent to says why in one word; a Cloud or team never
   }
   const flagged = mainLending({ own: false, flag: true });
   assert.deepEqual(await flagged.handlers.get("lend:state")({}, "garage"), { name: "Garage", lendable: false, why: "settings" });
-  const team = { id: "acme", name: "Acme", origin: "https://omb-t-acme.fly.dev", team: { id: "t" } };
+  const team = { id: "acme", name: "Acme", origin: "https://sanremes-t-acme.fly.dev", team: { id: "t" } };
   assert.deepEqual(await mainLending().handlers.get("lend:state")({ page: team }), { name: "Acme", lendable: false, why: "team" });
-  const cloud = { id: "home", name: "My Cloud", origin: "https://omb-h.fly.dev", home: true };
+  const cloud = { id: "home", name: "My Cloud", origin: "https://sanremes-h.fly.dev", home: true };
   assert.deepEqual(await mainLending().handlers.get("lend:state")({ page: cloud }), { name: "My Cloud", lendable: false, why: "cloud" });
   // A Cloud's or a team's page changes nothing: no stop written on its grant, no system prompt for the screen.
   for (const page of [team, cloud]) {
@@ -392,7 +392,7 @@ test("on, its apps and screen as the system allows them: macOS asks for its two 
   await mac.handlers.get("lend:allow-screen")({}, "garage");
   assert.equal(mac.calls.allowScreen, 1);
   const ready = { status: "ready", path: "/x", socket: "/tmp/cua.sock", version: "0.45.4" };
-  const windows = mainLending({ screen: async () => screenStatus({ platform: "win32", connection: { ...ready, socket: "\\\\.\\pipe\\cua-omb-1" } }) });
+  const windows = mainLending({ screen: async () => screenStatus({ platform: "win32", connection: { ...ready, socket: "\\\\.\\pipe\\cua-sanremes-1" } }) });
   await windows.handlers.get("lend:set")({}, "garage", true);
   const view = await windows.handlers.get("lend:state")({}, "garage");
   assert.equal(view.on, true);

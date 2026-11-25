@@ -57,7 +57,7 @@ downloads, then records a complete file/symlink inventory. Missing, modified,
 or incomplete staged resources fail the pre-signing package check.
 
 Archives and extracted binaries are generated build output, not git content.
-Set `OMB_BROWSER_ARCHIVE_DIR` to a directory of reviewed vendor assets for an
+Set `SANREMES_BROWSER_ARCHIVE_DIR` to a directory of reviewed vendor assets for an
 offline build; cached bytes are still verified. Browser dependencies are
 updated through reviewed OpenMausBot releases, not a silent browser updater.
 

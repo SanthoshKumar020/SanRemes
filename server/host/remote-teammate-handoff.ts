@@ -171,7 +171,7 @@ export function createRemoteHandoff(deps: RemoteHandoffDeps) {
     const from = (parent && deps.botName(parent.botId)) || "A bot";
     const doneWhen = deps.coordinator().status(node.id)?.assignment?.doneWhen;
     const asks = node.mode === "consult" ? "asks you this question; answer it and act on nothing" : node.mode === "notify" ? "lets you know this; no reply goes back" : "hands you this work; your reply goes back to it";
-    return clip(redactSecretsInText(`${from}, a bot on another OpenMausBot server, ${asks}:\n\n${node.text}${doneWhen ? `\n\nDone when: ${doneWhen}` : ""}`), BOT_API_MAX_MESSAGE_CHARS);
+    return clip(redactSecretsInText(`${from}, a bot on another SanRemes server, ${asks}:\n\n${node.text}${doneWhen ? `\n\nDone when: ${doneWhen}` : ""}`), BOT_API_MAX_MESSAGE_CHARS);
   }
 
   const failed = (text: string): HostTurnResult => ({ ok: false, text, failure: { text } });

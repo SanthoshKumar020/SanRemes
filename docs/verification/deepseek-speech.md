@@ -7,7 +7,7 @@ node node_modules/vitest/vitest.mjs run server/tts/deepseek.test.ts server/route
 ```
 
 The server fixture uses `launchVerificationServer`, a temporary home and the
-fake engine. It restarts only that child with `OMB_DEEPSEEK_SPEECH_API` pointing
+fake engine. It restarts only that child with `SANREMES_DEEPSEEK_SPEECH_API` pointing
 to a loopback stand-in. No DeepSeek account, real credential or microphone is
 used.
 

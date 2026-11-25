@@ -9,7 +9,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const now = Date.parse("2026-01-31T12:00:00Z");
 let root: string;
 
-beforeEach(() => { root = mkdtempSync(join(tmpdir(), "omb-workspace-retention-")); });
+beforeEach(() => { root = mkdtempSync(join(tmpdir(), "sanremes-workspace-retention-")); });
 afterEach(() => { rmSync(root, { recursive: true, force: true }); });
 
 function candidate(overrides: Partial<TaskWorkspaceRetentionCandidate> & { threadId: string }): TaskWorkspaceRetentionCandidate {

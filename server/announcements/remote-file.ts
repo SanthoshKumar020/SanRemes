@@ -10,7 +10,7 @@ import { dirname } from "node:path";
 import { writeFileAtomic } from "../atomic.ts";
 
 /** "1" stops the download and everything these files show on this server's pages, the bundled copies included. */
-export const ANNOUNCEMENTS_DISABLE_ENV = "OMB_DISABLE_ANNOUNCEMENTS";
+export const ANNOUNCEMENTS_DISABLE_ENV = "SANREMES_DISABLE_ANNOUNCEMENTS";
 export const REMOTE_FILE_TTL_MS = 60 * 60 * 1000;
 /** Back off failed fetches, so an offline computer does not try on every page load. */
 export const REMOTE_FILE_RETRY_MS = 5 * 60 * 1000;
@@ -163,7 +163,7 @@ export class RemoteJsonFile<T> {
     const timer = setTimeout(() => controller.abort(), this.options.timeoutMs ?? REMOTE_FILE_FETCH_TIMEOUT_MS);
     try {
       const response = await (this.options.fetch ?? fetch)(this.spec.url, {
-        headers: { accept: "application/json", "user-agent": "OpenMausBot" },
+        headers: { accept: "application/json", "user-agent": "SanRemes" },
         // Nothing of the person's goes with it.
         credentials: "omit",
         referrerPolicy: "no-referrer",

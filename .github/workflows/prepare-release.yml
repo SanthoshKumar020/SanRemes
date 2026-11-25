@@ -77,7 +77,7 @@ jobs:
             echo "::error::v$VERSION already exists in $GITHUB_REPOSITORY"
             exit 1
           fi
-          if gh release view "v$VERSION" --repo milind-soni/openmausbot-releases > /dev/null 2>&1; then
+          if gh release view "v$VERSION" --repo SanthoshKumar020/SanRemes > /dev/null 2>&1; then
             echo "::error::v$VERSION already exists in the legacy updater mirror"
             exit 1
           fi
@@ -121,7 +121,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.next }}
         run: |
-          body="Bumps OpenMausBot to \`$VERSION\`. Merging this PR automatically starts the existing release workflow and assembles a draft release from the exact merge commit."
+          body="Bumps SanRemes to \`$VERSION\`. Merging this PR automatically starts the existing release workflow and assembles a draft release from the exact merge commit."
           # A bump that raises the written data format changes what the app does, so its PR says so.
           if ! git diff --quiet HEAD~1 HEAD -- server/data-format.ts; then
             body="$body

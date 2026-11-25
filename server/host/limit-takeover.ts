@@ -70,7 +70,7 @@ export interface LimitTakeoverDeps {
   tell(bot: Bot, text: string): void;
   /** A conversation moved off a limited or signed-out AI: it goes back once that ends. */
   record(failover: LimitFailover): void;
-  /** OMB_QUOTA_SWITCH: off, nothing carries on by itself. */
+  /** SANREMES_QUOTA_SWITCH: off, nothing carries on by itself. */
   enabled?(): boolean;
   /** Where the AIs run, for the sign-out notice: "on the Cloud", "on this computer". */
   where?: string;

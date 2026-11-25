@@ -79,7 +79,7 @@ export function createLendingIndicator({ Tray, Menu, nativeImage, iconPath, onPa
     const fix = screen ? screenFixLabel(view.screen, t) : null;
     const said = [...acting.map(bot => bot.label), ...line ? [line] : []].join(". ");
     const typing = view.typing && !view.pauseError ? t("native.lendTray.typing", { device: namedDevice(device, t) }) : null;
-    tray.setToolTip(`OpenMausBot: ${said}${pending ? `. ${pending}` : ""}${screen ? `. ${screen}` : ""}${problems.length ? `. ${problems.join(". ")}` : ""}`);
+    tray.setToolTip(`SanRemes: ${said}${pending ? `. ${pending}` : ""}${screen ? `. ${screen}` : ""}${problems.length ? `. ${problems.join(". ")}` : ""}`);
     // Electron shows a tray title beside the icon on macOS only.
     tray.setTitle?.(title);
     tray.setContextMenu(Menu.buildFromTemplate([

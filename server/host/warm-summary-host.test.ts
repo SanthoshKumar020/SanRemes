@@ -350,7 +350,7 @@ describe("warm summaries for a Claude conversation", () => {
     expect(f.compactCalls).toHaveLength(1);
   });
 
-  it("uses OpenMausBot's own fold for an engine without its own compaction", async () => {
+  it("uses SanRemes's own fold for an engine without its own compaction", async () => {
     const f = setup({}, { native: false });
     f.finishTurn();
     await f.advance(WARM_SUMMARY_IDLE_MS);
@@ -494,7 +494,7 @@ describe("Compact now", () => {
     await expect(f.host.compactNow(target, new AbortController().signal, check())).resolves.toBe("skipped");
   });
 
-  it("leaves the idle plan of an engine that only compacts in place on OpenMausBot's own fold", async () => {
+  it("leaves the idle plan of an engine that only compacts in place on SanRemes's own fold", async () => {
     const f = setup({}, { native: false, inPlace: async () => ok() });
     f.finishTurn();
     await f.advance(WARM_SUMMARY_IDLE_MS);

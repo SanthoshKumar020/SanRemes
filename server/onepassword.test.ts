@@ -83,7 +83,7 @@ describe("1Password logins", () => {
       { id: "v2", title: "Finance", items: 1, bots: "all" },
       { id: "v1", title: "Shared with OMB", items: 2, bots: "all" },
     ] });
-    expect(calls).toEqual(["createClient OpenMausBot", "vaults.list", "items.list v2", "items.getAll v2 f1", "items.list v1", "items.getAll v1 i1,i2,i4,i5,i6,i7,i8,i11,i3,i10"]);
+    expect(calls).toEqual(["createClient SanRemes", "vaults.list", "items.list v2", "items.getAll v2 f1", "items.list v1", "items.getAll v1 i1,i2,i4,i5,i6,i7,i8,i11,i3,i10"]);
     const rows = source.list();
     expect(rows.map((row) => [row.site, row.hosts, row.username, row.hasTotp, row.source, row.bots])).toEqual([
       ["example.com", ["accounts.example.com"], "alice@example.com", true, "1password", "all"],
@@ -359,7 +359,7 @@ describe("1Password secrets", () => {
       return use ? readLinkedSecret(use) : null;
     };
     expect(await read("op://Shared with OMB/Stripe secret key")).toBe(STRIPE);
-    expect(await read("op://shared with omb/stripe secret key/credential")).toBe(STRIPE);
+    expect(await read("op://shared with sanremes/stripe secret key/credential")).toBe(STRIPE);
     expect(await read("op://v1/i6")).toBe(STRIPE);
     expect(await read("op://Shared with OMB/Plain token/token")).toBe(PLAIN_TOKEN);
     expect(await read("op://Shared with OMB/Partner API/Client ID")).toBe(CLIENT_ID);

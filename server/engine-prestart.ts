@@ -7,7 +7,7 @@
 // so a wrong guess costs a process that was never used, never a wrong one that was.
 //
 // Not started ahead: a bot's very first conversation (no launch to go by), a launch that mounts anything beyond
-// OpenMausBot's own tool servers (a person's MCP servers, connected apps, a browser or a computer would be started
+// SanRemes's own tool servers (a person's MCP servers, connected apps, a browser or a computer would be started
 // early), a guest's or tool-scoped turn, and any host where engines wait for memory.
 import { randomBytes } from "node:crypto";
 
@@ -60,7 +60,7 @@ interface Launch {
   bearers: Array<{ slot: string; grants: string; token: string }>;
 }
 
-/** The tool servers OpenMausBot runs itself: starting them early starts nothing of the person's. */
+/** The tool servers SanRemes runs itself: starting them early starts nothing of the person's. */
 const OWN_SERVERS = new Set(["agents", "phone", "data", "device", "email", "hooks", "custom", "customResultBudgets", "mcpApps"]);
 
 function startsOnlyOwnServers(input: SendTurnInput): boolean {

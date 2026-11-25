@@ -19,8 +19,8 @@ describe("the container's limits, from Linux's own files", () => {
   it("reads the pids limit and the count against it: cgroup v2, a cgroup that is not the mount's root, and v1", () => {
     expect(readPids(files({ "/sys/fs/cgroup/pids.max": "512\n", "/sys/fs/cgroup/pids.current": "31\n" }))).toEqual({ max: 512, current: 31 });
     expect(readPids(files({ "/sys/fs/cgroup/pids.max": "max\n", "/sys/fs/cgroup/pids.current": "31\n" }))).toEqual({ max: "max", current: 31 });
-    expect(readPids(files({ "/proc/self/cgroup": "0::/system.slice/omb.service\n", "/sys/fs/cgroup/system.slice/omb.service/pids.max": "4096\n",
-      "/sys/fs/cgroup/system.slice/omb.service/pids.current": "40\n", "/sys/fs/cgroup/pids.current": "9000\n" }))).toEqual({ max: 4096, current: 40 });
+    expect(readPids(files({ "/proc/self/cgroup": "0::/system.slice/sanremes.service\n", "/sys/fs/cgroup/system.slice/sanremes.service/pids.max": "4096\n",
+      "/sys/fs/cgroup/system.slice/sanremes.service/pids.current": "40\n", "/sys/fs/cgroup/pids.current": "9000\n" }))).toEqual({ max: 4096, current: 40 });
     expect(readPids(files({ "/proc/self/cgroup": "5:cpu,cpuacct:/\n3:pids:/\n", "/sys/fs/cgroup/pids/pids.max": "1024\n", "/sys/fs/cgroup/pids/pids.current": "77\n" }))).toEqual({ max: 1024, current: 77 });
     expect(readPids(() => null)).toEqual({ max: null, current: null });
   });
@@ -66,7 +66,7 @@ describe("the container's limits, from Linux's own files", () => {
 });
 
 describe("where turns wait for room, and the one setting", () => {
-  it("reads OMB_TURNS_MAX_RUNNING as a number, off, or the container's own limits", () => {
+  it("reads SANREMES_TURNS_MAX_RUNNING as a number, off, or the container's own limits", () => {
     expect(turnsSetting("12")).toBe(12);
     expect(turnsSetting(" off ")).toBe("off");
     expect(turnsSetting("0")).toBe("off");
@@ -77,16 +77,16 @@ describe("where turns wait for room, and the one setting", () => {
     const limited = () => true, open = () => false;
     expect(gateHost({}, "linux", limited)).toBe("server");
     expect(gateHost({}, "linux", open)).toBeNull();
-    expect(gateHost({ OMB_TURNS_MAX_RUNNING: "auto" }, "linux", open)).toBe("server");
-    expect(gateHost({ OMB_TURNS_MAX_RUNNING: "8" }, "linux", open)).toBe("server");
-    expect(gateHost({ OMB_CLOUD_ROLE: "home" }, "linux", open)).toBe("cloud");
-    expect(gateHost({ OMB_CLOUD_ROLE: "team", OMB_TURNS_MAX_RUNNING: "off" }, "linux", open)).toBe("cloud");
-    expect(gateHost({ OMB_DESKTOP_PARENT: "1" }, "linux", limited)).toBeNull();
-    expect(gateHost({ OMB_DESKTOP_PARENT: "1", OMB_TURNS_MAX_RUNNING: "4" }, "linux", limited)).toBeNull();
-    expect(gateHost({ OMB_TURNS_MAX_RUNNING: "off" }, "linux", limited)).toBeNull();
+    expect(gateHost({ SANREMES_TURNS_MAX_RUNNING: "auto" }, "linux", open)).toBe("server");
+    expect(gateHost({ SANREMES_TURNS_MAX_RUNNING: "8" }, "linux", open)).toBe("server");
+    expect(gateHost({ SANREMES_CLOUD_ROLE: "home" }, "linux", open)).toBe("cloud");
+    expect(gateHost({ SANREMES_CLOUD_ROLE: "team", SANREMES_TURNS_MAX_RUNNING: "off" }, "linux", open)).toBe("cloud");
+    expect(gateHost({ SANREMES_DESKTOP_PARENT: "1" }, "linux", limited)).toBeNull();
+    expect(gateHost({ SANREMES_DESKTOP_PARENT: "1", SANREMES_TURNS_MAX_RUNNING: "4" }, "linux", limited)).toBeNull();
+    expect(gateHost({ SANREMES_TURNS_MAX_RUNNING: "off" }, "linux", limited)).toBeNull();
     for (const platform of ["darwin", "win32"] as const) {
       expect(gateHost({}, platform, () => { throw new Error("nothing is read off Linux"); })).toBeNull();
-      expect(gateHost({ OMB_TURNS_MAX_RUNNING: "6" }, platform, open)).toBe("server");
+      expect(gateHost({ SANREMES_TURNS_MAX_RUNNING: "6" }, platform, open)).toBe("server");
     }
   });
 
@@ -98,7 +98,7 @@ describe("where turns wait for room, and the one setting", () => {
     expect(containerLimited(files({ "/sys/fs/cgroup/pids.max": "max\n", "/sys/fs/cgroup/memory.max": "max\n" }))).toBe(false);
     expect(containerLimited(files({ "/sys/fs/cgroup/memory/memory.limit_in_bytes": "9223372036854771712\n" }))).toBe(false);
     // A server under systemd on a plain machine: its limits sit in its own cgroup's directory, not at the root.
-    expect(containerLimited(files({ "/proc/self/cgroup": "0::/system.slice/omb.service\n", "/sys/fs/cgroup/system.slice/omb.service/pids.max": "4915\n" }))).toBe(false);
+    expect(containerLimited(files({ "/proc/self/cgroup": "0::/system.slice/sanremes.service\n", "/sys/fs/cgroup/system.slice/sanremes.service/pids.max": "4915\n" }))).toBe(false);
     expect(containerLimited(() => null)).toBe(false);
   });
 

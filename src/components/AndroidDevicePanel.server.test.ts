@@ -145,7 +145,7 @@ describe("AndroidDevicePanel with the server's phones", () => {
 
   it("shows a ready phone's live screen from the server, not the desktop app's screenshots", async () => {
     await panel({ available: true, devices: [PHONE] }, true);
-    expect(FakePhoneSocket.all.map((socket) => new URL(socket.url, "http://omb.test").pathname)).toEqual(["/api/usb-phones/p1/stream"]);
+    expect(FakePhoneSocket.all.map((socket) => new URL(socket.url, "http://sanremes.test").pathname)).toEqual(["/api/usb-phones/p1/stream"]);
     expect(bridge.frame).not.toHaveBeenCalled();
     expect(document.body.textContent).toContain("Watching · the bots keep working");
     expect(document.body.textContent).toContain("First-time USB setup");

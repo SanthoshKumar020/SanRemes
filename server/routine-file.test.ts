@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { keepUnreadableAside, readRoutineFile } from "./routine-file.ts";
 
 const dirs: string[] = [];
-const tempFile = () => { const dir = mkdtempSync(join(tmpdir(), "omb-routine-file-")); dirs.push(dir); return join(dir, "routines.json"); };
+const tempFile = () => { const dir = mkdtempSync(join(tmpdir(), "sanremes-routine-file-")); dirs.push(dir); return join(dir, "routines.json"); };
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 
 describe("reading routines.json", () => {

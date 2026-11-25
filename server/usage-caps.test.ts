@@ -16,7 +16,7 @@ const row = (at: string, botId: string, costUsd: number | null, input = 1_000, o
 describe("what has been used", () => {
   let dataDir: string;
   const now = new Date("2026-09-15T12:00:00Z");
-  beforeEach(() => { dataDir = mkdtempSync(join(tmpdir(), "omb-caps-")); resetUsageTotalsForTests(); });
+  beforeEach(() => { dataDir = mkdtempSync(join(tmpdir(), "sanremes-caps-")); resetUsageTotalsForTests(); });
   afterEach(async () => { await removeTempDir(dataDir); });
 
   it("adds up the UTC day and month for the server and for each bot, in dollars and in fresh tokens", async () => {
@@ -114,7 +114,7 @@ describe("what has been used", () => {
 
 describe("caps from the environment", () => {
   it("reads the server's caps and what they stop, ignores what is not a number, and wins over config.json", () => {
-    const env = { OMB_USAGE_CAP_DAILY_USD: "5", OMB_USAGE_CAP_MONTHLY_TOKENS: "2000000", OMB_USAGE_CAP_DAILY_TOKENS: "1.5", OMB_USAGE_CAP_MONTHLY_USD: "lots", OMB_USAGE_CAP_STOPS: "Everything" };
+    const env = { SANREMES_USAGE_CAP_DAILY_USD: "5", SANREMES_USAGE_CAP_MONTHLY_TOKENS: "2000000", SANREMES_USAGE_CAP_DAILY_TOKENS: "1.5", SANREMES_USAGE_CAP_MONTHLY_USD: "lots", SANREMES_USAGE_CAP_STOPS: "Everything" };
     expect(capsFromEnv(env)).toEqual({ stops: "everything", server: { dailyUsd: 5, monthlyTokens: 2_000_000 } });
     expect(capsFromEnv({})).toEqual({ server: {} });
     expect(effectiveCaps({ stops: "unattended", server: { dailyUsd: 1, monthlyUsd: 30 }, bots: { a: { dailyUsd: 2 } } }, env))

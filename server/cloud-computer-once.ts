@@ -29,11 +29,11 @@ const STOP_MS = 10_000;
 const TAKEN_EXIT = 75;
 const UNCLAIMED_EXIT = 76;
 const KEY = /^[0-9a-f]{16}$/;
-const takenMark = (key: string) => `omb-once:${key}:taken`;
-const unclaimedMark = (key: string) => `omb-once:${key}:unclaimed`;
+const takenMark = (key: string) => `sanremes-once:${key}:taken`;
+const unclaimedMark = (key: string) => `sanremes-once:${key}:unclaimed`;
 
 /** Shell words, expanded on the computer. */
-const CLAIM_DIRS = { disk: "${HOME:-/tmp}/.cache/omb-once", memory: "/dev/shm/omb-once" };
+const CLAIM_DIRS = { disk: "${HOME:-/tmp}/.cache/sanremes-once", memory: "/dev/shm/sanremes-once" };
 
 export const newCallKey = (): string => randomBytes(8).toString("hex");
 

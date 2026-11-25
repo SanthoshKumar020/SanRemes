@@ -37,7 +37,7 @@ async function relayAt(port?: number): Promise<FakeRelay> {
 
 /** A relay that answers each control socket's auth with `script`: how many sockets it saw is the dial count. */
 async function scriptedRelay(script: (socket: WebSocket) => void): Promise<{ url: string; dials: () => number }> {
-  const server = new WebSocketServer({ port: 0, host: "127.0.0.1", handleProtocols: () => "omb-relay.v1" });
+  const server = new WebSocketServer({ port: 0, host: "127.0.0.1", handleProtocols: () => "sanremes-relay.v1" });
   await new Promise((resolve) => server.once("listening", resolve));
   let dials = 0;
   server.on("connection", (socket) => {
@@ -195,7 +195,7 @@ describe("the relay client", () => {
     });
     instance.start();
     await waitFor(() => relay.admitted(hid).size === 1);
-    const phone = new WebSocket(`${relay.url}/v1/phone`, ["omb-relay.v1"]);
+    const phone = new WebSocket(`${relay.url}/v1/phone`, ["sanremes-relay.v1"]);
     await new Promise((resolve) => phone.once("open", resolve));
     phone.send(JSON.stringify({ t: "phone", v: 1, hid, adm: b64u(adm) }));
     const ready = await new Promise<string>((resolve) => phone.once("message", (data) => resolve(String(data))));

@@ -1,4 +1,4 @@
-// The browser service on the real Chrome the driver's suites use (OMB_CDP_CHROME, or OMB_CDP_E2E=1 for the installed
+// The browser service on the real Chrome the driver's suites use (SANREMES_CDP_CHROME, or SANREMES_CDP_E2E=1 for the installed
 // one): pages from a loopback fixture server, a calibrated identity, and a data folder of its own.
 import { mkdtempSync } from "node:fs";
 import { join } from "node:path";
@@ -48,7 +48,7 @@ export async function startService({ screen, egressPort, display, displayFailed,
   const executablePath = CHROME;
   const sandbox = !sandboxDisabled(process.env);
   await identityOf(executablePath, sandbox);
-  const dataDir = mkdtempSync(join(testRoot(), "omb-browser-service-"));
+  const dataDir = mkdtempSync(join(testRoot(), "sanremes-browser-service-"));
   const registry = registered ? new ProcessRegistry(browserRoot(dataDir)) : null;
   const backend = new LocalBackend({
     dataDir,

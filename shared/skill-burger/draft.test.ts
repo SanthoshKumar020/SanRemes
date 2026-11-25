@@ -135,7 +135,7 @@ describe("draftWorkflow", () => {
       tool("Bash", { command: "cp out.txt 'staging done.txt'" }, { summary: "cp out.txt 'staging done.txt'" }),
     ])!;
     const [push, note] = draft.workflow.steps;
-    expect(push).toMatchObject({ kind: "shell", run: 'git push origin "$OMB_ARG_VALUE"' });
+    expect(push).toMatchObject({ kind: "shell", run: 'git push origin "$SANREMES_ARG_VALUE"' });
     expect(note).toMatchObject({ kind: "shell", run: "cp out.txt 'staging done.txt'" });
     expect(draft.workflow.args).toEqual({ value: { default: "staging" } });
   });

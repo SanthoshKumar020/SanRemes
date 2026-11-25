@@ -1,4 +1,4 @@
-// The bots' browser runs on agent-browser or, with browserEngine.engine set to "chrome", on OpenMausBot's own Chrome
+// The bots' browser runs on agent-browser or, with browserEngine.engine set to "chrome", on SanRemes's own Chrome
 // driver. A session's spec says which: the new engine's names the profile it drives. Everything that reaches a browser
 // goes through the two routers here, which keep the agent-browser engine's API.
 import { existsSync } from "node:fs";
@@ -29,7 +29,7 @@ import { LiveV1 } from "./viewers/live-v1.ts";
 import { StreamV2, type StreamRequest } from "./viewers/stream-v2.ts";
 
 /** A spec's command when the new engine runs the session; its one argument is the profile key. */
-export const CHROME_ENGINE = "omb-cdp";
+export const CHROME_ENGINE = "sanremes-cdp";
 
 type Spec = Pick<BrowserSpawnSpec, "command" | "env"> & { args?: readonly string[] };
 
@@ -103,7 +103,7 @@ export class ChromeEngine {
       bwrap: options.host === "desktop" ? null : () => (options.probeBwrap ?? findBwrap)(env, platform),
       ...(options.log ? { log: options.log } : {}),
     });
-    const desktopSize = parseDisplay(env.OMB_BROWSER_SCREEN?.trim() ?? "") ?? DESKTOP_SIZE;
+    const desktopSize = parseDisplay(env.SANREMES_BROWSER_SCREEN?.trim() ?? "") ?? DESKTOP_SIZE;
     const backend = new LocalBackend({
       dataDir: options.dataDir,
       host: options.host,
@@ -128,7 +128,7 @@ export class ChromeEngine {
       ...(options.log ? { log: options.log } : {}),
     });
     options.pane?.backend.fallBackTo(backend);
-    const maxRunning = Number(env.OMB_BROWSER_MAX_RUNNING) || MAX_RUNNING[options.host];
+    const maxRunning = Number(env.SANREMES_BROWSER_MAX_RUNNING) || MAX_RUNNING[options.host];
     this.service = new BrowserService({
       dataDir: options.dataDir,
       backend: () => backendFor(backend, options.pane),
@@ -232,7 +232,7 @@ export class ChromeEngine {
   summary(): { kind: "engine"; version: string; chrome: string; desktopView?: true } | { kind: "unavailable"; reason: string } {
     const plan = this.launcher.plan();
     if (plan.kind === "legacy") return { kind: "unavailable", reason: `Chrome is needed for the new browser: ${plan.reason}` };
-    return { kind: "engine", version: "omb-cdp", chrome: this.launcher.describe(), ...(this.desktopView() ? { desktopView: true as const } : {}) };
+    return { kind: "engine", version: "sanremes-cdp", chrome: this.launcher.describe(), ...(this.desktopView() ? { desktopView: true as const } : {}) };
   }
 
   /** fill_login's reads and typing on the new engine. */

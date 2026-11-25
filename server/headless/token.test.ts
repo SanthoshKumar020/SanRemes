@@ -1,4 +1,4 @@
-import "../testing/scrub-ambient-omb-env.ts";
+import "../testing/scrub-ambient-sanremes-env.ts";
 
 import { mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
@@ -12,7 +12,7 @@ import { removeTempDir } from "../testing/cleanup.ts";
 import type { HeadlessIo } from "./output.ts";
 import { runHeadless } from "./main.ts";
 
-const dir = mkdtempSync(join(tmpdir(), "omb-token-"));
+const dir = mkdtempSync(join(tmpdir(), "sanremes-token-"));
 let server: Server;
 let origin: string;
 let registry: SessionRegistry;
@@ -85,7 +85,7 @@ describe("token", () => {
     expect(tokens).toEqual([expect.objectContaining({ name: "Deploys", scope: "admin" })]);
     const refused = await run(["token", "revoke", device.session.id]);
     expect(refused.code).toBe(1);
-    expect(refused.err[1]).toContain("openmausbot sessions revoke");
+    expect(refused.err[1]).toContain("sanremes sessions revoke");
     expect(registry.list()).toHaveLength(2);
     expect((await run(["token", "revoke", tokens[0].id])).code).toBe(0);
     expect(registry.list().map((session) => session.label)).toEqual(["Phone"]);
@@ -107,7 +107,7 @@ describe("token", () => {
     const file = join(dir, "old-token");
     const made = await run(["token", "create", "CI", "--out", file]);
     expect(made.code).toBe(5);
-    expect(made.err[0]).toBe("error: this OpenMausBot server cannot make access tokens");
+    expect(made.err[0]).toBe("error: this SanRemes server cannot make access tokens");
     expect(registry.list()).toEqual([]);
     expect(() => readFileSync(file)).toThrow();
   });
@@ -115,6 +115,6 @@ describe("token", () => {
   it("passes on the server's own limit on a token's term", async () => {
     const made = await run(["token", "create", "CI", "--expires", "3000d", "--out", join(dir, "long-token")]);
     expect(made.code).toBe(1);
-    expect(made.err[0]).toContain("OMB_SESSION_MAX_DAYS");
+    expect(made.err[0]).toContain("SANREMES_SESSION_MAX_DAYS");
   });
 });

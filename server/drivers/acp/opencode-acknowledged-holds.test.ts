@@ -19,7 +19,7 @@ it.each([
   { saved: RETIRED, shared: false },
   { saved: RETIRED, shared: true },
 ])("holds the acknowledged model when saved=$saved and shared=$shared", async ({ saved, shared }) => {
-  const dir = mkdtempSync(join(tmpdir(), "omb-opencode-ack-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-opencode-ack-"));
   const failure = join(dir, "failure.json");
   writeFileSync(failure, JSON.stringify({ code: "QUOTA_EXCEEDED", message: "FreeUsageLimitError: free models are limited today" }));
   const catalog = parseOpenCodeModelsOutput([

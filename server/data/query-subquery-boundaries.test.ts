@@ -9,7 +9,7 @@ import { createDataEngine } from "./engine.ts";
 import { DataSheetStore } from "./sheet.ts";
 import { describeTarget, exportData, quoteLiteral, showCard, type DataContext } from "./tools.ts";
 
-const root = mkdtempSync(join(tmpdir(), "omb-query-boundaries-"));
+const root = mkdtempSync(join(tmpdir(), "sanremes-query-boundaries-"));
 const engine = createDataEngine({ botFolder: (id) => join(root, "bots", id), dataDir: join(root, "data") });
 const connection = "bot" as const;
 let sequence = 0;

@@ -36,7 +36,7 @@ function setup(current: MeetingRecord, over: Partial<MeetingRouteDeps> = {}) {
   const postNotes = vi.fn(async () => "notes-1");
   const routes = createMeetingRoutes({
     meetings: () => meetings, computerOwner: () => "b1", personName: () => "Milind", sendsFreely: () => false,
-    outbound: () => ({ hold, beforeDispatch }), markOutside, folder: () => mkdtempSync(join(tmpdir(), "omb-meeting-folder-")), postNotes,
+    outbound: () => ({ hold, beforeDispatch }), markOutside, folder: () => mkdtempSync(join(tmpdir(), "sanremes-meeting-folder-")), postNotes,
     createRoutine: () => "Set up the routine.", dateLine: () => "Saturday, November 7, 2026", ...over,
   });
   const call = async (action: string, body: Record<string, unknown>) => {

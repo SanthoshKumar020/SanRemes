@@ -20,7 +20,7 @@ describe("provider MCP tool grants", () => {
     expect(providerToolAllowKey("claude", "mcp__telnyx__invoke_api_endpoint", config)).toBeNull();
     expect(providerToolAllowKey("claude", "mcp__computer__click", config)).toBeNull();
     expect(providerToolAllowKey("claude", "mcp__phone__tap", { builtin: "phone" })).toBeNull();
-    expect(providerToolAllowKey("codex", "mcp__openmausbot_phone__tap_text", config)).toBeNull();
+    expect(providerToolAllowKey("codex", "mcp__sanremes_phone__tap_text", config)).toBeNull();
     expect(providerToolAllowKey("claude", "mcp__agents__shared_computer", { builtin: "agents" })).toBeNull();
     expect(providerToolAllowKey("claude", "mcp__agents__list_bots", { builtin: "agents" })).toMatch(/^provider-tool:claude:agents:list_bots:/);
     expect(providerToolAllowKey("", "mcp__linear__list_issues", config)).toBeNull();

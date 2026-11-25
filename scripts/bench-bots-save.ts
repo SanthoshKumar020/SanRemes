@@ -12,12 +12,12 @@ const TURNS_TOGETHER = 34;
 console.log(JSON.stringify({ benchmark: "bots-save", node: process.version, platform: platform(), arch: arch(),
   scope: "Real Store and bots.json with fsync, synthetic bots and threads. A round is what 34 later turns (engine and session already named) write to bots.json, one turn per pass of the event loop, batched as the server batches it." }));
 for (const [bots, threads] of shapes.length ? shapes : [[34, 200], [100, 200], [200, 200]]) {
-  const directory = mkdtempSync(join(tmpdir(), "omb-bots-save-"));
+  const directory = mkdtempSync(join(tmpdir(), "sanremes-bots-save-"));
   // Each shape runs in its own process: the store binds its data directory when first imported.
-  if (process.env.OMB_BENCH_SHAPE !== `${bots}x${threads}`) {
+  if (process.env.SANREMES_BENCH_SHAPE !== `${bots}x${threads}`) {
     const { spawnSync } = await import("node:child_process");
     const child = spawnSync(process.execPath, ["--experimental-strip-types", fileURLToPath(import.meta.url), `${bots}x${threads}`],
-      { env: { ...process.env, OMB_DATA_DIR: directory, OMB_BENCH_SHAPE: `${bots}x${threads}` }, encoding: "utf8" });
+      { env: { ...process.env, SANREMES_DATA_DIR: directory, SANREMES_BENCH_SHAPE: `${bots}x${threads}` }, encoding: "utf8" });
     process.stdout.write(child.stdout.split("\n").filter((line) => line.includes('"bots":')).join("\n") + "\n");
     if (child.status !== 0) process.stderr.write(child.stderr);
     rmSync(directory, { recursive: true, force: true });
@@ -28,7 +28,7 @@ for (const [bots, threads] of shapes.length ? shapes : [[34, 200], [100, 200], [
   const selection = () => ({ instanceId: "claude", model: "synthetic" });
   const seed = new Store(selection);
   const first = seed.createBot({ name: "Bench 0" }, { seedMessages: false });
-  const file = join(process.env.OMB_DATA_DIR!, "bots.json");
+  const file = join(process.env.SANREMES_DATA_DIR!, "bots.json");
   const template = JSON.parse(JSON.stringify(seed.bot(first.id)));
   const rows = Array.from({ length: bots }, (_, b) => ({ ...template, id: randomUUID(), threadId: `thread-${b}-0`, name: `Bench ${b}`,
     tasks: Array.from({ length: threads }, (_, t) => ({ ...template.tasks[0], id: randomUUID(), threadId: `thread-${b}-${t}`,

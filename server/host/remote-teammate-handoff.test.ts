@@ -156,7 +156,7 @@ describe("remote teammate hand-off: the teammate's turn", () => {
     expect(send).toHaveBeenCalledTimes(1);
     const [teammate, sent] = send.mock.calls[0]! as unknown as [RemoteTeammate, { message: string; wait: number }];
     expect(teammate.id).toBe(ADA.id);
-    expect(sent.message).toContain("Chief, a bot on another OpenMausBot server, hands you this work");
+    expect(sent.message).toContain("Chief, a bot on another SanRemes server, hands you this work");
     expect(sent.message).toContain("Check the staging site");
     expect(sent.wait).toBe(50);
   });
@@ -168,7 +168,7 @@ describe("remote teammate hand-off: the teammate's turn", () => {
     await run(s, { ...node, text: "x".repeat(25_000) });
     const [, sent] = send.mock.calls[0]! as unknown as [RemoteTeammate, { message: string }];
     expect(sent.message.length).toBeLessThanOrEqual(20_000);
-    expect(sent.message).toContain("Chief, a bot on another OpenMausBot server");
+    expect(sent.message).toContain("Chief, a bot on another SanRemes server");
   });
 
   it("never sends a secret the brief carries to the other server", async () => {

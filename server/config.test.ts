@@ -219,9 +219,9 @@ describe("configuration boundaries", () => {
     }
     expect(parseConfigPatch({ imageGen: { primary: { provider: "openrouter", model: "openai/gpt-image-2" } } }).imageGen).toEqual({ primary: { provider: "openrouter", model: "openai/gpt-image-2" } });
     expect(() => parseConfigPatch({ imageGen: { customUrl: "https://user:secret@router.example/v1" } })).toThrow("customUrl");
-    const childEnv = { OMB_CUSTOM_IMAGE_KEY: "must-not-reach-bot" };
+    const childEnv = { SANREMES_CUSTOM_IMAGE_KEY: "must-not-reach-bot" };
     stripWorkspaceCredentialEnv(childEnv);
-    expect(childEnv).not.toHaveProperty("OMB_CUSTOM_IMAGE_KEY");
+    expect(childEnv).not.toHaveProperty("SANREMES_CUSTOM_IMAGE_KEY");
   });
   it("persists a custom domain but excludes it from generic config patches", () => {
     expect(parseStoredConfig({ customDomain: "https://bots.example.com" })).toEqual({ customDomain: "https://bots.example.com" });
@@ -659,8 +659,8 @@ describe("configuration boundaries", () => {
     expect(parseConfigPatch({ features: { browser: false } })).toEqual({ features: { browser: false } });
     expect(builtInBrowserEnabled({ features: { browser: false } })).toBe(false);
     expect(builtInBrowserEnabled({ features: { browser: true } })).toBe(true);
-    const cloudHome = { OMB_CLOUD_ROLE: "home", OMB_CLOUD_MACHINE_ID: "3f9c2a4e-8b1d-4c6e-9a7f-2d5e8c1b0a93" };
-    expect(builtInBrowserEnabled({}, { OMB_PUBLIC_URL: "https://selfhosted.example.test" })).toBe(true);
+    const cloudHome = { SANREMES_CLOUD_ROLE: "home", SANREMES_CLOUD_MACHINE_ID: "3f9c2a4e-8b1d-4c6e-9a7f-2d5e8c1b0a93" };
+    expect(builtInBrowserEnabled({}, { SANREMES_PUBLIC_URL: "https://selfhosted.example.test" })).toBe(true);
     expect(builtInBrowserEnabled({}, cloudHome)).toBe(true);
     expect(builtInBrowserEnabled({ features: { browser: false } }, cloudHome)).toBe(false);
     expect(parseConfigPatch({ browserProfiles: [{ id: "work", name: " Work " }] })).toEqual({
@@ -964,7 +964,7 @@ describe("default fleet", () => {
 
   it("accepts clearing a Groq key and removes it from child environments", () => {
     expect(parseConfigPatch({ groq: { key: "" } })).toEqual({ groq: { key: "" } });
-    const env = { OMB_GROQ_API_KEY: "groq-fixture", KEEP: "yes" };
+    const env = { SANREMES_GROQ_API_KEY: "groq-fixture", KEEP: "yes" };
     stripWorkspaceCredentialEnv(env);
     expect(env).toEqual({ KEEP: "yes" });
   });
@@ -1001,7 +1001,7 @@ describe("default fleet", () => {
 
   it("accepts clearing a DeepSeek key and removes it from child environments", () => {
     expect(parseConfigPatch({ deepseek: { key: "" } })).toEqual({ deepseek: { key: "" } });
-    const env = { OMB_DEEPSEEK_API_KEY: "ds-fixture", DEEPSEEK_API_KEY: "ds-ambient", KEEP: "yes" };
+    const env = { SANREMES_DEEPSEEK_API_KEY: "ds-fixture", DEEPSEEK_API_KEY: "ds-ambient", KEEP: "yes" };
     stripWorkspaceCredentialEnv(env);
     expect(env).toEqual({ DEEPSEEK_API_KEY: "ds-ambient", KEEP: "yes" });
     expect(PROVIDER_CREDENTIAL_ENV).toContain("DEEPSEEK_API_KEY");
@@ -1009,7 +1009,7 @@ describe("default fleet", () => {
 
   it("accepts clearing a Meta key and removes it from child environments", () => {
     expect(parseConfigPatch({ meta: { key: "" } })).toEqual({ meta: { key: "" } });
-    const env = { OMB_META_API_KEY: "meta-fixture", META_API_KEY: "muse-code-login", KEEP: "yes" };
+    const env = { SANREMES_META_API_KEY: "meta-fixture", META_API_KEY: "muse-code-login", KEEP: "yes" };
     stripWorkspaceCredentialEnv(env);
     expect(env).toEqual({ META_API_KEY: "muse-code-login", KEEP: "yes" });
   });
@@ -1128,8 +1128,8 @@ describe("default fleet", () => {
   });
 
   it.each([
-    ["openai", "OMB_OPENAI_API_KEY", "https://api.openai.com/v1"],
-    ["openrouter", "OMB_OPENROUTER_API_KEY", "https://openrouter.ai/api/v1"],
+    ["openai", "SANREMES_OPENAI_API_KEY", "https://api.openai.com/v1"],
+    ["openrouter", "SANREMES_OPENROUTER_API_KEY", "https://openrouter.ai/api/v1"],
   ])("respects same-driver endpoint and credential overrides for %s", (id, keyEnv, defaultUrl) => {
     const workspace = { openai: { key: "openai-WORKSPACE" }, openrouter: { key: "openrouter-WORKSPACE" } };
     for (const config of [
@@ -1363,7 +1363,7 @@ describe("OpenCode Go configuration", () => {
     const stored = parseStoredConfig({
       profile: { name: "Ada" },
       opencodeGo: { providerKeys: {
-        VENICE_API_KEY: "venice-secret", venice_api_key: "lower", OPENCODE_API_KEY: "shadow", OMB_CLOUD_BOAT_TOKEN: "relay",
+        VENICE_API_KEY: "venice-secret", venice_api_key: "lower", OPENCODE_API_KEY: "shadow", SANREMES_CLOUD_BOAT_TOKEN: "relay",
         BOX_TOKEN: "boat", NODE_OPTIONS: "--require x", GROQ_API_KEY: "has space",
         DEEPSEEK_API_KEY: 42, TOGETHER_API_KEY: null, FIREWORKS_API_KEY: { key: "nested" },
       } },
@@ -1410,7 +1410,7 @@ describe("saving OpenCode provider keys", () => {
       expect(refused(name)).toContain("such as VENICE_API_KEY");
     }
     expect(refused("OPENCODE_API_KEY")).toContain("OpenCode API key box");
-    for (const name of ["OPENCODE_SERVER_KEY", "OMB_CLOUD_BOAT_TOKEN", "OMB_LICENSE_KEY", "BOX_TOKEN", "COMPOSIO_API_KEY",
+    for (const name of ["OPENCODE_SERVER_KEY", "SANREMES_CLOUD_BOAT_TOKEN", "SANREMES_LICENSE_KEY", "BOX_TOKEN", "COMPOSIO_API_KEY",
       "OPENAI_COMPAT_API_KEY", "XAI_API_KEY", "MISTRAL_API_KEY", "CURSOR_API_KEY", "FACTORY_API_KEY"]) {
       expect(refused(name)).toBe(`OpenMaus keeps ${name} for itself, so OpenCode can't be given it here. Put this key in opencode.json instead.`);
     }
@@ -1475,11 +1475,11 @@ describe("credential env narrowing", () => {
       openaiCompat: { key: "SECRET-COMPAT", url: "https://api.groq.com/openai/v1", model: "llama" },
     };
     const instances = instanceConfigs(cfg);
-    expect(instances.openai.environment).toEqual({ OMB_OPENAI_API_KEY: "SECRET-OPENAI" });
-    expect(instances.openrouter.environment).toEqual({ OMB_OPENROUTER_API_KEY: "SECRET-OPENROUTER" });
+    expect(instances.openai.environment).toEqual({ SANREMES_OPENAI_API_KEY: "SECRET-OPENAI" });
+    expect(instances.openrouter.environment).toEqual({ SANREMES_OPENROUTER_API_KEY: "SECRET-OPENROUTER" });
     expect(instances.openaiCompat.environment).toEqual({ OPENAI_COMPAT_API_KEY: "SECRET-COMPAT", OPENAI_COMPAT_URL: "https://api.groq.com/openai/v1" });
-    expect(instances.openai.config).toEqual({ url: "https://api.openai.com/v1", apiKeyEnv: "OMB_OPENAI_API_KEY", catalog: "openai" });
-    expect(instances.openrouter.config).toEqual({ url: "https://openrouter.ai/api/v1", apiKeyEnv: "OMB_OPENROUTER_API_KEY" });
+    expect(instances.openai.config).toEqual({ url: "https://api.openai.com/v1", apiKeyEnv: "SANREMES_OPENAI_API_KEY", catalog: "openai" });
+    expect(instances.openrouter.config).toEqual({ url: "https://openrouter.ai/api/v1", apiKeyEnv: "SANREMES_OPENROUTER_API_KEY" });
     expect(instances.openai.access).toBe("api");
   });
 
@@ -1502,7 +1502,7 @@ describe("credential env narrowing", () => {
       openaiCompat: { key: "SECRET-COMPAT", url: "https://api.groq.com/openai/v1" },
       instances: { claude: { driver: "claudeAgent" }, openai: { driver: "openai-compat", displayName: "OpenAI" } },
     });
-    expect(instances.openai.config).toEqual({ url: "https://api.openai.com/v1", apiKeyEnv: "OMB_OPENAI_API_KEY", catalog: "openai" });
+    expect(instances.openai.config).toEqual({ url: "https://api.openai.com/v1", apiKeyEnv: "SANREMES_OPENAI_API_KEY", catalog: "openai" });
     expect(instances.openai.environment).toEqual({});
   });
 
@@ -1583,17 +1583,17 @@ describe("legacy feature flag migration", () => {
 describe("credential env preference", () => {
   const VARS = [
     "XAI_API_KEY",
-    "OMB_GROQ_API_KEY",
-    "OMB_META_API_KEY",
+    "SANREMES_GROQ_API_KEY",
+    "SANREMES_META_API_KEY",
     "OPENAI_COMPAT_API_KEY",
     "OPENAI_COMPAT_URL",
     "OPENAI_COMPAT_MODEL",
     "OPENAI_COMPAT_PROVIDER",
     "BOX_TOKEN",
     "OPENCODE_API_KEY",
-    "OMB_TTS_KEY",
-    "OMB_FISH_AUDIO_API_KEY",
-    "OMB_OPENAI_IMAGE_KEY",
+    "SANREMES_TTS_KEY",
+    "SANREMES_FISH_AUDIO_API_KEY",
+    "SANREMES_OPENAI_IMAGE_KEY",
     "COMPOSIO_API_KEY",
   ] as const;
   let saved: Record<string, string | undefined>;
@@ -1627,9 +1627,9 @@ describe("credential env preference", () => {
     process.env.XAI_API_KEY = "env-xai";
     process.env.BOX_TOKEN = "env-box";
     process.env.OPENCODE_API_KEY = "env-ocg";
-    process.env.OMB_TTS_KEY = "env-tts";
-    process.env.OMB_FISH_AUDIO_API_KEY = "env-fish";
-    process.env.OMB_OPENAI_IMAGE_KEY = "env-image";
+    process.env.SANREMES_TTS_KEY = "env-tts";
+    process.env.SANREMES_FISH_AUDIO_API_KEY = "env-fish";
+    process.env.SANREMES_OPENAI_IMAGE_KEY = "env-image";
     const cfg = loadConfig();
     expect(cfg.xai).toEqual({ key: "env-xai", url: "https://api.example.test/v1" });
     expect(cfg.box).toEqual({ token: "env-box" });
@@ -1639,7 +1639,7 @@ describe("credential env preference", () => {
   });
 
   it("uses a preset voice only when the person has not chosen one or another provider", () => {
-    process.env.OMB_TTS_DEFAULT_VOICE = " preset-voice ";
+    process.env.SANREMES_TTS_DEFAULT_VOICE = " preset-voice ";
     expect(loadConfig().tts?.voice).toBe("preset-voice");
     writeFileSync(join(DATA_DIR, "config.json"), JSON.stringify({ tts: { voice: "chosen" } }));
     expect(loadConfig().tts?.voice).toBe("chosen");
@@ -1651,12 +1651,12 @@ describe("credential env preference", () => {
 
   it("never takes Cloud Pro's included tokens for the person's own keys, in config or an engine's environment", () => {
     const included = {
-      OMB_CLOUD_BOAT_URL: "https://cloud.example.test/api/cloud/services/boat/api/box/v1",
-      OMB_CLOUD_BOAT_TOKEN: "box_omb_included-relay-token",
-      OMB_CLOUD_VOICE_URL: "https://cloud.example.test/api/cloud/services/voice/v1",
-      OMB_CLOUD_VOICE_TOKEN: "omb_voice_included-relay-token",
-      OMB_CLOUD_DECIDER_URL: "https://cloud.example.test/api/cloud/services/decider",
-      OMB_CLOUD_DECIDER_TOKEN: "omb_decide_included-relay-token",
+      SANREMES_CLOUD_BOAT_URL: "https://cloud.example.test/api/cloud/services/boat/api/box/v1",
+      SANREMES_CLOUD_BOAT_TOKEN: "box_omb_included-relay-token",
+      SANREMES_CLOUD_VOICE_URL: "https://cloud.example.test/api/cloud/services/voice/v1",
+      SANREMES_CLOUD_VOICE_TOKEN: "omb_voice_included-relay-token",
+      SANREMES_CLOUD_DECIDER_URL: "https://cloud.example.test/api/cloud/services/decider",
+      SANREMES_CLOUD_DECIDER_TOKEN: "omb_decide_included-relay-token",
     };
     for (const [name, value] of Object.entries(included)) vi.stubEnv(name, value);
     try {
@@ -1670,12 +1670,12 @@ describe("credential env preference", () => {
       saveConfig({ tts: { voice: "chosen" }, box: { token: "" }, decider: { enabled: true, jobs: { roomRouting: true } } });
       const disk = readFileSync(join(DATA_DIR, "config.json"), "utf8");
       const runtime = JSON.stringify([loadConfig(), instanceConfigs(loadConfig()), persistableInstanceConfigs(loadConfig())]);
-      for (const token of [included.OMB_CLOUD_BOAT_TOKEN, included.OMB_CLOUD_VOICE_TOKEN, included.OMB_CLOUD_DECIDER_TOKEN]) {
+      for (const token of [included.SANREMES_CLOUD_BOAT_TOKEN, included.SANREMES_CLOUD_VOICE_TOKEN, included.SANREMES_CLOUD_DECIDER_TOKEN]) {
         expect(disk).not.toContain(token);
         expect(runtime).not.toContain(token);
       }
       process.env.BOX_TOKEN = "box_own";
-      process.env.OMB_TTS_KEY = "sk-own";
+      process.env.SANREMES_TTS_KEY = "sk-own";
       expect(loadConfig()).toMatchObject({ box: { token: "box_own" }, tts: { key: "sk-own" } });
       expect(JSON.stringify(instanceConfigs(loadConfig()))).not.toContain("box_own");
     } finally {
@@ -1946,8 +1946,8 @@ describe("credential env preference", () => {
     expect(process.env.XAI_API_KEY).toBe("just-saved");
     expect(process.env.COMPOSIO_API_KEY).toBe("ak_just_saved");
     expect(process.env.BOX_TOKEN).toBeUndefined();
-    expect(process.env.OMB_TTS_KEY).toBeUndefined();
-    expect(process.env.OMB_FISH_AUDIO_API_KEY).toBeUndefined();
+    expect(process.env.SANREMES_TTS_KEY).toBeUndefined();
+    expect(process.env.SANREMES_FISH_AUDIO_API_KEY).toBeUndefined();
   });
 
   it("saves and clears the built-in Groq key without changing an operator's Groq key", () => {
@@ -1984,11 +1984,11 @@ describe("credential env preference", () => {
   });
 
   it("syncCredentialEnv updates Fish Audio without replacing ElevenLabs", () => {
-    process.env.OMB_TTS_KEY = "eleven-kept";
-    process.env.OMB_FISH_AUDIO_API_KEY = "fish-old";
+    process.env.SANREMES_TTS_KEY = "eleven-kept";
+    process.env.SANREMES_FISH_AUDIO_API_KEY = "fish-old";
     syncCredentialEnv({ tts: { fishKey: "fish-new" } });
-    expect(process.env.OMB_TTS_KEY).toBe("eleven-kept");
-    expect(process.env.OMB_FISH_AUDIO_API_KEY).toBe("fish-new");
+    expect(process.env.SANREMES_TTS_KEY).toBe("eleven-kept");
+    expect(process.env.SANREMES_FISH_AUDIO_API_KEY).toBe("fish-new");
   });
 
   it("syncCredentialEnv keeps model and provider env in step with a save", () => {
@@ -2030,18 +2030,18 @@ describe("workspace credential env strip", () => {
   });
 
   it("keeps a hosted tenant's control-plane secrets out of every child env, and only those", () => {
-    // What a hosting control plane and a fleet put in the server's env; OMB_CLOUD_FUTURE_SECRET stands for a name added later.
+    // What a hosting control plane and a fleet put in the server's env; SANREMES_CLOUD_FUTURE_SECRET stands for a name added later.
     const operator = {
-      OMB_CLOUD_READY_TOKEN: "ready", OMB_CLOUD_BOOTSTRAP: "bootstrap", OMB_CLOUD_GATEWAY_TOKEN: "gateway",
-      OMB_CLOUD_MODELS: "models", OMB_CLOUD_REVISION: "revision", OMB_CLOUD_FUTURE_SECRET: "later",
-      OMB_LICENSE_KEY: "license", OMB_INSTALLATION_CREDENTIAL: "fleet", omb_cloud_ready_token: "windows-spelling",
+      SANREMES_CLOUD_READY_TOKEN: "ready", SANREMES_CLOUD_BOOTSTRAP: "bootstrap", SANREMES_CLOUD_GATEWAY_TOKEN: "gateway",
+      SANREMES_CLOUD_MODELS: "models", SANREMES_CLOUD_REVISION: "revision", SANREMES_CLOUD_FUTURE_SECRET: "later",
+      SANREMES_LICENSE_KEY: "license", SANREMES_INSTALLATION_CREDENTIAL: "fleet", omb_cloud_ready_token: "windows-spelling",
     };
     // What an engine deliberately receives (the hosted model token as its provider key), plus look-alike names.
     const engine = {
       PATH: "/usr/bin", ANTHROPIC_API_KEY: "hosted-token", ANTHROPIC_AUTH_TOKEN: "hosted-token",
-      ANTHROPIC_BASE_URL: "https://admin.example.test/api/gateway/w/anthropic", OPENMAUSBOT_COMPANY_API_KEY: "hosted-token",
-      OMB_MANAGED_CODEX_TOKEN: "hosted-token", CODEX_HOME: "/data/codex", OMB_HOOK_TOKEN_FILE: "/data/hook-tokens/a.token",
-      OMB_CLOUDFLARED_PATH: "/usr/local/bin/cloudflared", OMB_CLOUD: "not-prefixed", MY_OMB_CLOUD_NOTE: "user",
+      ANTHROPIC_BASE_URL: "https://admin.example.test/api/gateway/w/anthropic", OPENSANREMES_COMPANY_API_KEY: "hosted-token",
+      SANREMES_MANAGED_CODEX_TOKEN: "hosted-token", CODEX_HOME: "/data/codex", SANREMES_HOOK_TOKEN_FILE: "/data/hook-tokens/a.token",
+      SANREMES_CLOUDFLARED_PATH: "/usr/local/bin/cloudflared", SANREMES_CLOUD: "not-prefixed", MY_SANREMES_CLOUD_NOTE: "user",
     };
     for (const strip of [stripControlPlaneEnv, stripWorkspaceCredentialEnv]) {
       const env: Record<string, string | undefined> = { ...operator, ...engine };
@@ -2052,15 +2052,15 @@ describe("workspace credential env strip", () => {
 
   it("covers in-process secrets and private app-state paths", () => {
     expect(WORKSPACE_CREDENTIAL_ENV).toContain("BOX_TOKEN");
-    expect(WORKSPACE_CREDENTIAL_ENV).toContain("OMB_TTS_KEY");
-    expect(WORKSPACE_CREDENTIAL_ENV).toContain("OMB_CLOUD_BOAT_TOKEN");
-    expect(WORKSPACE_CREDENTIAL_ENV).toContain("OMB_CLOUD_VOICE_TOKEN");
-    expect(WORKSPACE_CREDENTIAL_ENV).toContain("OMB_CLOUD_DECIDER_TOKEN");
-    expect(WORKSPACE_CREDENTIAL_ENV).toContain("OMB_CLOUD_AI_TOKEN");
-    expect(WORKSPACE_CREDENTIAL_ENV).toContain("OMB_FISH_AUDIO_API_KEY");
-    expect(WORKSPACE_CREDENTIAL_ENV).toContain("OMB_OPENAI_IMAGE_KEY");
-    expect(WORKSPACE_CREDENTIAL_ENV).toContain("OMB_BROWSER_CONNECTION");
-    expect(WORKSPACE_CREDENTIAL_ENV).toContain("OMB_USER_DATA");
+    expect(WORKSPACE_CREDENTIAL_ENV).toContain("SANREMES_TTS_KEY");
+    expect(WORKSPACE_CREDENTIAL_ENV).toContain("SANREMES_CLOUD_BOAT_TOKEN");
+    expect(WORKSPACE_CREDENTIAL_ENV).toContain("SANREMES_CLOUD_VOICE_TOKEN");
+    expect(WORKSPACE_CREDENTIAL_ENV).toContain("SANREMES_CLOUD_DECIDER_TOKEN");
+    expect(WORKSPACE_CREDENTIAL_ENV).toContain("SANREMES_CLOUD_AI_TOKEN");
+    expect(WORKSPACE_CREDENTIAL_ENV).toContain("SANREMES_FISH_AUDIO_API_KEY");
+    expect(WORKSPACE_CREDENTIAL_ENV).toContain("SANREMES_OPENAI_IMAGE_KEY");
+    expect(WORKSPACE_CREDENTIAL_ENV).toContain("SANREMES_BROWSER_CONNECTION");
+    expect(WORKSPACE_CREDENTIAL_ENV).toContain("SANREMES_USER_DATA");
   });
 });
 
@@ -2165,7 +2165,7 @@ describe("changedInstanceIds", () => {
     const fleet = instanceConfigs({});
     const compat = (env: Record<string, string>) => changedInstanceIds(engineLaunches(fleet, {}), engineLaunches(fleet, env));
     expect(compat({ OPENAI_COMPAT_URL: "https://compat.example/v1" })).toEqual(["openaiCompat"]);
-    expect(compat({ OMB_OPENAI_API_KEY: "o" })).toEqual(["openai"]);
+    expect(compat({ SANREMES_OPENAI_API_KEY: "o" })).toEqual(["openai"]);
     expect(compat({ BOX_TOKEN: "boat", COMPOSIO_API_KEY: "c" })).toEqual([]);
   });
   it("names an engine that was added or removed", () => {
@@ -2205,14 +2205,14 @@ describe("live settings", () => {
     const path = join(DATA_DIR, "config.json");
     let envKey: string | undefined;
     beforeEach(() => {
-      envKey = process.env.OMB_OPENAI_LIVE_KEY;
-      delete process.env.OMB_OPENAI_LIVE_KEY;
+      envKey = process.env.SANREMES_OPENAI_LIVE_KEY;
+      delete process.env.SANREMES_OPENAI_LIVE_KEY;
       mkdirSync(DATA_DIR, { recursive: true });
       rmSync(path, { force: true });
     });
     afterEach(() => {
-      if (envKey === undefined) delete process.env.OMB_OPENAI_LIVE_KEY;
-      else process.env.OMB_OPENAI_LIVE_KEY = envKey;
+      if (envKey === undefined) delete process.env.SANREMES_OPENAI_LIVE_KEY;
+      else process.env.SANREMES_OPENAI_LIVE_KEY = envKey;
       rmSync(path, { force: true });
     });
 
@@ -2225,7 +2225,7 @@ describe("live settings", () => {
     it("keeps a key from the desktop credential store, which reaches the harness as env", () => {
       // the desktop leaves an empty tombstone in the file and hands the key over as env
       saveConfig({ live: { key: "" } });
-      process.env.OMB_OPENAI_LIVE_KEY = "sk-from-keychain";
+      process.env.SANREMES_OPENAI_LIVE_KEY = "sk-from-keychain";
       saveConfig({ live: { readTypedReplies: false, voice: "cedar" } });
       expect(loadConfig().live).toEqual({ key: "sk-from-keychain", readTypedReplies: false, voice: "cedar" });
       expect(JSON.parse(readFileSync(path, "utf8")).live).toEqual({ key: "", readTypedReplies: false, voice: "cedar" });
@@ -2431,17 +2431,17 @@ describe("X research's included relay token", () => {
   });
 
   it("keeps the plan's research token and the person's own treg key as workspace credentials that never reach an engine", () => {
-    expect(WORKSPACE_CREDENTIAL_ENV).toContain("OMB_CLOUD_X_TOKEN");
-    expect(WORKSPACE_CREDENTIAL_ENV).toContain("OMB_TREG_KEY");
+    expect(WORKSPACE_CREDENTIAL_ENV).toContain("SANREMES_CLOUD_X_TOKEN");
+    expect(WORKSPACE_CREDENTIAL_ENV).toContain("SANREMES_TREG_KEY");
   });
 });
 
 describe("DATA_DIR outside the suite's throwaway home", () => {
   function childDataDir(env: NodeJS.ProcessEnv): string {
-    const script = "const m = await import(process.env.OMB_CONFIG_URL); process.stdout.write(m.DATA_DIR);";
-    const { OMB_DATA_DIR: _dataDir, VITEST: _vitest, NODE_ENV: _nodeEnv, ...inherited } = process.env;
+    const script = "const m = await import(process.env.SANREMES_CONFIG_URL); process.stdout.write(m.DATA_DIR);";
+    const { SANREMES_DATA_DIR: _dataDir, VITEST: _vitest, NODE_ENV: _nodeEnv, ...inherited } = process.env;
     return execFileSync(process.execPath, ["--experimental-strip-types", "--no-warnings", "--input-type=module", "-e", script], {
-      env: { ...inherited, OMB_CONFIG_URL: pathToFileURL(join(import.meta.dirname, "config.ts")).href, ...env }, encoding: "utf8",
+      env: { ...inherited, SANREMES_CONFIG_URL: pathToFileURL(join(import.meta.dirname, "config.ts")).href, ...env }, encoding: "utf8",
     });
   }
 
@@ -2449,30 +2449,30 @@ describe("DATA_DIR outside the suite's throwaway home", () => {
     const realHome = userInfo().homedir;
     const dataDir = childDataDir({ HOME: realHome, USERPROFILE: realHome, VITEST: "true" });
     try {
-      expect(dataDir).not.toBe(join(realHome, ".openmausbot"));
+      expect(dataDir).not.toBe(join(realHome, ".sanremes"));
       expect(dataDir.startsWith(tmpdir())).toBe(true);
     } finally {
       // Only ever a throwaway folder: a broken guard would hand back the real home here.
       const throwaway = dirname(dataDir);
-      if (throwaway.startsWith(join(realpathSync(tmpdir()), "omb-test-home-")) || throwaway.startsWith(join(tmpdir(), "omb-test-home-"))) {
+      if (throwaway.startsWith(join(realpathSync(tmpdir()), "sanremes-test-home-")) || throwaway.startsWith(join(tmpdir(), "sanremes-test-home-"))) {
         rmSync(throwaway, { recursive: true, force: true });
       }
     }
   });
 
-  it("treats an empty OMB_DATA_DIR as unset", () => {
-    const home = mkdtempSync(join(tmpdir(), "omb-config-home-"));
+  it("treats an empty SANREMES_DATA_DIR as unset", () => {
+    const home = mkdtempSync(join(tmpdir(), "sanremes-config-home-"));
     try {
-      expect(childDataDir({ HOME: home, USERPROFILE: home, OMB_DATA_DIR: "" })).toBe(join(home, ".openmausbot"));
+      expect(childDataDir({ HOME: home, USERPROFILE: home, SANREMES_DATA_DIR: "" })).toBe(join(home, ".sanremes"));
     } finally {
       rmSync(home, { recursive: true, force: true });
     }
   });
 
   it("keeps the home folder outside tests", () => {
-    const home = mkdtempSync(join(tmpdir(), "omb-config-home-"));
+    const home = mkdtempSync(join(tmpdir(), "sanremes-config-home-"));
     try {
-      expect(childDataDir({ HOME: home, USERPROFILE: home })).toBe(join(home, ".openmausbot"));
+      expect(childDataDir({ HOME: home, USERPROFILE: home })).toBe(join(home, ".sanremes"));
     } finally {
       rmSync(home, { recursive: true, force: true });
     }
@@ -2483,15 +2483,15 @@ describe("a key the desktop app hands the server as an environment variable", ()
   afterEach(() => vi.unstubAllEnvs());
 
   it.each([
-    ["OMB_OPENAI_API_KEY", "openai", "OMB_OPENAI_API_KEY"],
-    ["OMB_ANTHROPIC_API_KEY", "claudeApi", "ANTHROPIC_API_KEY"],
-    ["OMB_OPENROUTER_API_KEY", "openrouter", "OMB_OPENROUTER_API_KEY"],
+    ["SANREMES_OPENAI_API_KEY", "openai", "SANREMES_OPENAI_API_KEY"],
+    ["SANREMES_ANTHROPIC_API_KEY", "claudeApi", "ANTHROPIC_API_KEY"],
+    ["SANREMES_OPENROUTER_API_KEY", "openrouter", "SANREMES_OPENROUTER_API_KEY"],
     ["MISTRAL_API_KEY", "mistral", "MISTRAL_API_KEY"],
     ["CEREBRAS_API_KEY", "cerebras", "CEREBRAS_API_KEY"],
-    ["OMB_GROQ_API_KEY", "groq", "GROQ_API_KEY"],
-    ["OMB_GREENFERENCE_API_KEY", "greenference", "GREENFERENCE_API_KEY"],
-    ["OMB_META_API_KEY", "meta", "META_API_KEY"],
-    ["OMB_DEEPSEEK_API_KEY", "deepseek", "DEEPSEEK_API_KEY"],
+    ["SANREMES_GROQ_API_KEY", "groq", "GROQ_API_KEY"],
+    ["SANREMES_GREENFERENCE_API_KEY", "greenference", "GREENFERENCE_API_KEY"],
+    ["SANREMES_META_API_KEY", "meta", "META_API_KEY"],
+    ["SANREMES_DEEPSEEK_API_KEY", "deepseek", "DEEPSEEK_API_KEY"],
     ["OPENAI_COMPAT_API_KEY", "openaiCompat", "OPENAI_COMPAT_API_KEY"],
   ])("reaches its engine: %s", (variable, instanceId, engineEnv) => {
     vi.stubEnv(variable, `fixture-${variable}`);

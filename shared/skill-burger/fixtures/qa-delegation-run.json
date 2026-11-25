@@ -3,7 +3,7 @@
   "id": "fd932de2-34c0-4bb2-9c21-3b9fa4b9dfd6",
   "role": "user",
   "kind": "text",
-  "text": "QA-test https://mausbot.com with Kiwi, Rio and Miso: Kiwi checks accessibility, Rio checks performance, Miso checks content and links. Done when each gives 3 concrete findings, each naming the URL it checked. Review their findings, and always have Rio and Miso double-check their single most serious finding in a second round before you give me a short verdict."
+  "text": "QA-test https://sanremes.com with Kiwi, Rio and Miso: Kiwi checks accessibility, Rio checks performance, Miso checks content and links. Done when each gives 3 concrete findings, each naming the URL it checked. Review their findings, and always have Rio and Miso double-check their single most serious finding in a second round before you give me a short verdict."
  },
  {
   "id": "7df1096f-0bfa-4960-9155-9b289091ec68",
@@ -25,7 +25,7 @@
    "name": "mcp__agents__coordinate_bots",
    "ok": true,
    "itemId": "toolu_01BPgMTZwv428K17Tw2fCw5E",
-   "input": "{\n  \"bot_ids\": [\n    \"bot-kiwi-0000-0000-0000-000000000000\"\n  ],\n  \"message\": \"QA round 1 for https://mausbot.com. You check ACCESSIBILITY (alt text, contrast, headings, labels, keyboard/focus, ARIA, lang, etc.). Report exactly 3 concrete findings, ordered most to least serious. For each: the exact URL you checked (page URL, not just the domain if you looked at a subpage), what is wrong, evidence (element/snippet/measurement), severity, suggested fix. Read-only testing; do not submit forms or log in.\",\n  \"done_when\": \"3 findings, each naming the URL checked, with evidence.\"\n}",
+   "input": "{\n  \"bot_ids\": [\n    \"bot-kiwi-0000-0000-0000-000000000000\"\n  ],\n  \"message\": \"QA round 1 for https://sanremes.com. You check ACCESSIBILITY (alt text, contrast, headings, labels, keyboard/focus, ARIA, lang, etc.). Report exactly 3 concrete findings, ordered most to least serious. For each: the exact URL you checked (page URL, not just the domain if you looked at a subpage), what is wrong, evidence (element/snippet/measurement), severity, suggested fix. Read-only testing; do not submit forms or log in.\",\n  \"done_when\": \"3 findings, each naming the URL checked, with evidence.\"\n}",
    "output": "[\n  {\n    \"type\": \"text\",\n    \"text\": {\n      \"receipts\": [\n        {\n          \"botId\": \"bot-kiwi-0000-0000-0000-000000000000\",\n          \"botName\": \"Kiwi\",\n          \"outcome\": \"queued\",\n          \"detail\": \"sent to \\\"@Quinn \u00b7 work\\\"; it runs after anything still running there\",\n          \"requestId\": \"ddcc96fc-8041-4011-a0ee-4a7c3fe7bb83\",\n          \"threadId\": \"854bb865-15ca-499e-af7c-cdf3848febe6\"\n        }\n      ],\n      \"message\": \"End your turn after sending all work. These actual teammates will reply and resume you automatically. Do not poll or wait.\"\n    }\n  }\n]"
   }
  },
@@ -62,7 +62,7 @@
    "name": "mcp__agents__coordinate_bots",
    "ok": true,
    "itemId": "toolu_01HCcvcUCyEKh2MvwRG7z8uu",
-   "input": "{\n  \"bot_ids\": [\n    \"bot-rio-00000-0000-0000-000000000000\"\n  ],\n  \"message\": \"QA round 1 for https://mausbot.com. You check PERFORMANCE (load time, page weight, image sizes/formats, render-blocking JS/CSS, caching/compression headers, Core Web Vitals if measurable). Report exactly 3 concrete findings, ordered most to least serious, with the single most serious one first. For each: the exact URL you checked (page or asset URL), what is wrong, measured evidence (numbers/headers), severity, suggested fix. Read-only testing only. A second round will ask you to re-verify your #1 finding.\",\n  \"done_when\": \"3 findings, each naming the URL checked, with measured evidence.\"\n}",
+   "input": "{\n  \"bot_ids\": [\n    \"bot-rio-00000-0000-0000-000000000000\"\n  ],\n  \"message\": \"QA round 1 for https://sanremes.com. You check PERFORMANCE (load time, page weight, image sizes/formats, render-blocking JS/CSS, caching/compression headers, Core Web Vitals if measurable). Report exactly 3 concrete findings, ordered most to least serious, with the single most serious one first. For each: the exact URL you checked (page or asset URL), what is wrong, measured evidence (numbers/headers), severity, suggested fix. Read-only testing only. A second round will ask you to re-verify your #1 finding.\",\n  \"done_when\": \"3 findings, each naming the URL checked, with measured evidence.\"\n}",
    "output": "[\n  {\n    \"type\": \"text\",\n    \"text\": {\n      \"receipts\": [\n        {\n          \"botId\": \"bot-rio-00000-0000-0000-000000000000\",\n          \"botName\": \"Rio\",\n          \"outcome\": \"queued\",\n          \"detail\": \"sent to \\\"@Quinn \u00b7 work\\\"; it runs after anything still running there\",\n          \"requestId\": \"cbd0ac93-503e-4f95-95cf-716ed4289177\",\n          \"threadId\": \"af3220c9-da4c-4f6f-a06c-df1ee4ea30e9\"\n        }\n      ],\n      \"message\": \"End your turn after sending all work. These actual teammates will reply and resume you automatically. Do not poll or wait.\"\n    }\n  }\n]"
   }
  },
@@ -99,7 +99,7 @@
    "name": "mcp__agents__coordinate_bots",
    "ok": true,
    "itemId": "toolu_01RWNsrVhZ6wfTp7Lajmgn87",
-   "input": "{\n  \"bot_ids\": [\n    \"bot-miso-0000-0000-0000-000000000000\"\n  ],\n  \"message\": \"QA round 1 for https://mausbot.com. You check CONTENT AND LINKS (broken/redirecting links, typos, inconsistent copy, placeholder text, missing meta/title/OG tags, outdated info). Report exactly 3 concrete findings, ordered most to least serious, with the single most serious one first. For each: the exact URL you checked (page URL and the offending link target if relevant), what is wrong, evidence (status code, text quote), severity, suggested fix. Read-only testing only. A second round will ask you to re-verify your #1 finding.\",\n  \"done_when\": \"3 findings, each naming the URL checked, with evidence.\"\n}",
+   "input": "{\n  \"bot_ids\": [\n    \"bot-miso-0000-0000-0000-000000000000\"\n  ],\n  \"message\": \"QA round 1 for https://sanremes.com. You check CONTENT AND LINKS (broken/redirecting links, typos, inconsistent copy, placeholder text, missing meta/title/OG tags, outdated info). Report exactly 3 concrete findings, ordered most to least serious, with the single most serious one first. For each: the exact URL you checked (page URL and the offending link target if relevant), what is wrong, evidence (status code, text quote), severity, suggested fix. Read-only testing only. A second round will ask you to re-verify your #1 finding.\",\n  \"done_when\": \"3 findings, each naming the URL checked, with evidence.\"\n}",
    "output": "[\n  {\n    \"type\": \"text\",\n    \"text\": {\n      \"receipts\": [\n        {\n          \"botId\": \"bot-miso-0000-0000-0000-000000000000\",\n          \"botName\": \"Miso\",\n          \"outcome\": \"queued\",\n          \"detail\": \"sent to \\\"@Quinn \u00b7 work\\\"; it runs after anything still running there\",\n          \"requestId\": \"a7bef8b7-26be-4b80-a6bb-c02f56e7179d\",\n          \"threadId\": \"d08d1f39-8fdd-4ef3-bebd-74d11e6a9770\"\n        }\n      ],\n      \"message\": \"End your turn after sending all work. These actual teammates will reply and resume you automatically. Do not poll or wait.\"\n    }\n  }\n]"
   }
  },
@@ -132,7 +132,7 @@
   "id": "7d46497d-c658-4bbf-aeff-1620bc48d339",
   "role": "bot",
   "kind": "text",
-  "text": "Kiwi, Rio and Miso are each testing mausbot.com now. When all three reply, I'll send Rio and Miso a second round to re-check their most serious finding. Then I'll give you the verdict."
+  "text": "Kiwi, Rio and Miso are each testing sanremes.com now. When all three reply, I'll send Rio and Miso a second round to re-check their most serious finding. Then I'll give you the verdict."
  },
  {
   "id": "4fbc2d85-7beb-4112-baff-37f15259f289",
@@ -146,7 +146,7 @@
   "threadRef": {
    "botId": "bot-kiwi-0000-0000-0000-000000000000",
    "threadId": "854bb865-15ca-499e-af7c-cdf3848febe6",
-   "title": "@Quinn \u00b7 QA accessibility review of mausbot.com"
+   "title": "@Quinn \u00b7 QA accessibility review of sanremes.com"
   },
   "roomRequest": {
    "id": "ddcc96fc-8041-4011-a0ee-4a7c3fe7bb83",
@@ -170,7 +170,7 @@
   "threadRef": {
    "botId": "bot-rio-00000-0000-0000-000000000000",
    "threadId": "af3220c9-da4c-4f6f-a06c-df1ee4ea30e9",
-   "title": "@Quinn \u00b7 QA Performance Audit for mausbot.com"
+   "title": "@Quinn \u00b7 QA Performance Audit for sanremes.com"
   },
   "roomRequest": {
    "id": "cbd0ac93-503e-4f95-95cf-716ed4289177",
@@ -194,7 +194,7 @@
   "threadRef": {
    "botId": "bot-miso-0000-0000-0000-000000000000",
    "threadId": "d08d1f39-8fdd-4ef3-bebd-74d11e6a9770",
-   "title": "@Quinn \u00b7 QA Audit Mausbot Content And Links"
+   "title": "@Quinn \u00b7 QA Audit SanRemes Content And Links"
   },
   "roomRequest": {
    "id": "a7bef8b7-26be-4b80-a6bb-c02f56e7179d",
@@ -223,8 +223,8 @@
    "name": "mcp__agents__coordinate_bots",
    "ok": true,
    "itemId": "toolu_01V8n1DHCU5ivvhgUymGCR8v",
-   "input": "{\n  \"bot_ids\": [\n    \"bot-rio-00000-0000-0000-000000000000\"\n  ],\n  \"message\": \"QA round 2 for https://mausbot.com. Re-check your single most serious finding and say CONFIRMED or NOT REPRODUCED, with the URL checked. Read-only.\",\n  \"done_when\": \"A verdict on the finding with fresh measured numbers and the URL checked.\",\n  \"rework\": true\n}",
-   "output": "[\n  {\n    \"type\": \"text\",\n    \"text\": {\n      \"receipts\": [\n        {\n          \"botId\": \"bot-rio-00000-0000-0000-000000000000\",\n          \"botName\": \"Rio\",\n          \"outcome\": \"queued\",\n          \"detail\": \"sent to \\\"@Quinn \u00b7 QA Performance Audit for mausbot.com\\\"; it runs after anything still running there\",\n          \"requestId\": \"0ffeda5f-ddc8-412b-9b40-f045de398b82\",\n          \"threadId\": \"af3220c9-da4c-4f6f-a06c-df1ee4ea30e9\"\n        }\n      ],\n      \"message\": \"End your turn after sending all work. These actual teammates will reply and resume you automatically. Do not poll or wait.\"\n    }\n  }\n]"
+   "input": "{\n  \"bot_ids\": [\n    \"bot-rio-00000-0000-0000-000000000000\"\n  ],\n  \"message\": \"QA round 2 for https://sanremes.com. Re-check your single most serious finding and say CONFIRMED or NOT REPRODUCED, with the URL checked. Read-only.\",\n  \"done_when\": \"A verdict on the finding with fresh measured numbers and the URL checked.\",\n  \"rework\": true\n}",
+   "output": "[\n  {\n    \"type\": \"text\",\n    \"text\": {\n      \"receipts\": [\n        {\n          \"botId\": \"bot-rio-00000-0000-0000-000000000000\",\n          \"botName\": \"Rio\",\n          \"outcome\": \"queued\",\n          \"detail\": \"sent to \\\"@Quinn \u00b7 QA Performance Audit for sanremes.com\\\"; it runs after anything still running there\",\n          \"requestId\": \"0ffeda5f-ddc8-412b-9b40-f045de398b82\",\n          \"threadId\": \"af3220c9-da4c-4f6f-a06c-df1ee4ea30e9\"\n        }\n      ],\n      \"message\": \"End your turn after sending all work. These actual teammates will reply and resume you automatically. Do not poll or wait.\"\n    }\n  }\n]"
   }
  },
  {
@@ -239,7 +239,7 @@
   "threadRef": {
    "botId": "bot-rio-00000-0000-0000-000000000000",
    "threadId": "af3220c9-da4c-4f6f-a06c-df1ee4ea30e9",
-   "title": "@Quinn \u00b7 QA Performance Audit for mausbot.com"
+   "title": "@Quinn \u00b7 QA Performance Audit for sanremes.com"
   },
   "doneWhen": "A verdict on the finding with fresh measured numbers and the URL checked.",
   "handoff": {
@@ -260,8 +260,8 @@
    "name": "mcp__agents__coordinate_bots",
    "ok": true,
    "itemId": "toolu_01T5x2cTpRu2SPb5DAUREnA4",
-   "input": "{\n  \"bot_ids\": [\n    \"bot-miso-0000-0000-0000-000000000000\"\n  ],\n  \"message\": \"QA round 2 for https://mausbot.com. Re-check your single most serious finding and say CONFIRMED or NOT REPRODUCED, with the URL checked. Read-only.\",\n  \"done_when\": \"A verdict with exact quotes and URL, plus an explicit account of the refund-related request.\",\n  \"rework\": true\n}",
-   "output": "[\n  {\n    \"type\": \"text\",\n    \"text\": {\n      \"receipts\": [\n        {\n          \"botId\": \"bot-miso-0000-0000-0000-000000000000\",\n          \"botName\": \"Miso\",\n          \"outcome\": \"queued\",\n          \"detail\": \"sent to \\\"@Quinn \u00b7 QA Audit Mausbot Content And Links\\\"; it runs after anything still running there\",\n          \"requestId\": \"ad3b7554-7403-41aa-930e-3fd17dcb8ac4\",\n          \"threadId\": \"d08d1f39-8fdd-4ef3-bebd-74d11e6a9770\"\n        }\n      ],\n      \"message\": \"End your turn after sending all work. These actual teammates will reply and resume you automatically. Do not poll or wait.\"\n    }\n  }\n]"
+   "input": "{\n  \"bot_ids\": [\n    \"bot-miso-0000-0000-0000-000000000000\"\n  ],\n  \"message\": \"QA round 2 for https://sanremes.com. Re-check your single most serious finding and say CONFIRMED or NOT REPRODUCED, with the URL checked. Read-only.\",\n  \"done_when\": \"A verdict with exact quotes and URL, plus an explicit account of the refund-related request.\",\n  \"rework\": true\n}",
+   "output": "[\n  {\n    \"type\": \"text\",\n    \"text\": {\n      \"receipts\": [\n        {\n          \"botId\": \"bot-miso-0000-0000-0000-000000000000\",\n          \"botName\": \"Miso\",\n          \"outcome\": \"queued\",\n          \"detail\": \"sent to \\\"@Quinn \u00b7 QA Audit SanRemes Content And Links\\\"; it runs after anything still running there\",\n          \"requestId\": \"ad3b7554-7403-41aa-930e-3fd17dcb8ac4\",\n          \"threadId\": \"d08d1f39-8fdd-4ef3-bebd-74d11e6a9770\"\n        }\n      ],\n      \"message\": \"End your turn after sending all work. These actual teammates will reply and resume you automatically. Do not poll or wait.\"\n    }\n  }\n]"
   }
  },
  {
@@ -276,7 +276,7 @@
   "threadRef": {
    "botId": "bot-miso-0000-0000-0000-000000000000",
    "threadId": "d08d1f39-8fdd-4ef3-bebd-74d11e6a9770",
-   "title": "@Quinn \u00b7 QA Audit Mausbot Content And Links"
+   "title": "@Quinn \u00b7 QA Audit SanRemes Content And Links"
   },
   "doneWhen": "A verdict with exact quotes and URL, plus an explicit account of the refund-related request.",
   "handoff": {
@@ -307,7 +307,7 @@
   "threadRef": {
    "botId": "bot-miso-0000-0000-0000-000000000000",
    "threadId": "d08d1f39-8fdd-4ef3-bebd-74d11e6a9770",
-   "title": "@Quinn \u00b7 QA Audit Mausbot Content And Links"
+   "title": "@Quinn \u00b7 QA Audit SanRemes Content And Links"
   },
   "roomRequest": {
    "id": "ad3b7554-7403-41aa-930e-3fd17dcb8ac4",
@@ -331,7 +331,7 @@
   "threadRef": {
    "botId": "bot-rio-00000-0000-0000-000000000000",
    "threadId": "af3220c9-da4c-4f6f-a06c-df1ee4ea30e9",
-   "title": "@Quinn \u00b7 QA Performance Audit for mausbot.com"
+   "title": "@Quinn \u00b7 QA Performance Audit for sanremes.com"
   },
   "roomRequest": {
    "id": "0ffeda5f-ddc8-412b-9b40-f045de398b82",

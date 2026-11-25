@@ -13,7 +13,7 @@ import { WorkspaceBackupRestartNotice, type BackupStatus } from "./WorkspaceBack
 export { WorkspaceBackupRecovery, WorkspaceBackupRestartNotice } from "./WorkspaceBackupRecovery";
 
 const validPassword = (value: string) => value.length >= 12 && value.length <= 1024;
-const EXPORT_REQUEST = "omb-backup-export-request";
+const EXPORT_REQUEST = "sanremes-backup-export-request";
 const exportJobPath = (id: string) => `/api/workspace-backup/export-jobs/${encodeURIComponent(id)}`;
 const downloadPath = (id: string) => `/api/workspace-backup/download/${encodeURIComponent(id)}`;
 

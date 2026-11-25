@@ -77,7 +77,7 @@ describe("waking from a sleep", () => {
     vi.useFakeTimers();
     const start = Date.UTC(2026, 10, 7, 9);
     vi.setSystemTime(start);
-    const scratch = mkdtempSync(join(tmpdir(), "omb-engine-updates-"));
+    const scratch = mkdtempSync(join(tmpdir(), "sanremes-engine-updates-"));
     let passes = 0;
     const updater = createEngineUpdater({
       plans: [], baseDir: scratch, statePath: join(scratch, "state.json"), turnRunning: () => false,
@@ -112,7 +112,7 @@ describe.skipIf(process.platform === "win32")("updating the app's engine copies"
   let live: string[][] = [];
 
   beforeEach(() => {
-    scratch = mkdtempSync(join(tmpdir(), "omb-engine-updates-"));
+    scratch = mkdtempSync(join(tmpdir(), "sanremes-engine-updates-"));
     base = join(scratch, "data");
     const fakePath = join(scratch, "fake-path");
     mkdirSync(fakePath);
@@ -327,7 +327,7 @@ describe.skipIf(process.platform === "win32")("updating the app's engine copies"
 
 describe("a runtime the app manages itself", () => {
   it("installs the pinned runtime beside an older one, and leaves one it never installed alone", async () => {
-    const scratch = mkdtempSync(join(tmpdir(), "omb-engine-updates-"));
+    const scratch = mkdtempSync(join(tmpdir(), "sanremes-engine-updates-"));
     try {
       const install = vi.fn(async () => {});
       const lines: string[] = [];
@@ -350,7 +350,7 @@ describe("a runtime the app manages itself", () => {
   });
 
   it("names the version a runtime really moved to, and counts an install that changed nothing as failed", async () => {
-    const scratch = mkdtempSync(join(tmpdir(), "omb-engine-updates-"));
+    const scratch = mkdtempSync(join(tmpdir(), "sanremes-engine-updates-"));
     try {
       const lines: string[] = [];
       let installs: string | void = "1.5.8";
@@ -374,7 +374,7 @@ describe("a runtime the app manages itself", () => {
 
 describe("a runtime with more than one release channel", () => {
   const setup = (older: Array<string | { version: string; channel: string } | null>, install: (channel?: string) => Promise<string | void>) => {
-    const scratch = mkdtempSync(join(tmpdir(), "omb-engine-updates-"));
+    const scratch = mkdtempSync(join(tmpdir(), "sanremes-engine-updates-"));
     const lines: string[] = [];
     const queue = [...older];
     const managed = { older: async () => queue.shift() ?? null, install, folder: join(scratch, "runtimes") };
@@ -425,7 +425,7 @@ describe("a runtime with more than one release channel", () => {
   });
 
   it("keeps the first channel's update and comes back in minutes for the second when a turn starts in between", async () => {
-    const scratch = mkdtempSync(join(tmpdir(), "omb-engine-updates-"));
+    const scratch = mkdtempSync(join(tmpdir(), "sanremes-engine-updates-"));
     try {
       const lines: string[] = [];
       let busy = false;
@@ -452,7 +452,7 @@ describe("a runtime with more than one release channel", () => {
   });
 
   it("comes back in minutes for a channel a turn kept it from, even after the first channel failed", async () => {
-    const scratch = mkdtempSync(join(tmpdir(), "omb-engine-updates-"));
+    const scratch = mkdtempSync(join(tmpdir(), "sanremes-engine-updates-"));
     try {
       let busy = false;
       const queue: Array<{ version: string; channel: string }> = [{ version: "1.5.7", channel: "native" }, { version: "1.1.1", channel: "pinned" }];
@@ -519,7 +519,7 @@ describe("a runtime with more than one release channel", () => {
 
 describe.skipIf(process.platform === "win32")("the ACP handshake", () => {
   let scratch = "";
-  beforeEach(() => { scratch = mkdtempSync(join(tmpdir(), "omb-handshake-")); });
+  beforeEach(() => { scratch = mkdtempSync(join(tmpdir(), "sanremes-handshake-")); });
   afterEach(async () => { await removeTempDir(scratch); });
   const agent = (body: string) => {
     const path = join(scratch, `agent-${Math.random().toString(36).slice(2)}`);

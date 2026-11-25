@@ -1,10 +1,10 @@
-// Voice notes on OpenMausBot's own chat runtime (an API-key provider): a loopback provider scripts the model, and a
+// Voice notes on SanRemes's own chat runtime (an API-key provider): a loopback provider scripts the model, and a
 // loopback speech stub stands in for the voice provider, so no external service is reached.
 import { createServer, type Server } from "node:http";
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { lastNonReceipt } from "../src/lib/receipts.ts";
 
 const MP3 = Buffer.from("ID3 fake mp3 for the chat voice note fixture");

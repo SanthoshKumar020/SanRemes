@@ -41,7 +41,7 @@ const posixOnly = process.platform !== "win32";
 const gitAvailable = (() => { try { execFileSync("git", ["--version"], { stdio: "ignore" }); return true; } catch { return false; } })();
 
 function fixture(over: Partial<FolderCleanupDeps> = {}) {
-  const sandbox = mkdtempSync(join(tmpdir(), "omb-folder-cleanup-"));
+  const sandbox = mkdtempSync(join(tmpdir(), "sanremes-folder-cleanup-"));
   made.push(sandbox);
   const dataDir = join(sandbox, "data");
   const outside = join(sandbox, "outside");
@@ -107,13 +107,13 @@ async function deleteAndWait(f: Fixture, ...threads: string[]) {
 }
 
 describe("the switch", () => {
-  it("is off unless a Cloud home sets OMB_CONVERSATION_FOLDER_CLEANUP=on", () => {
+  it("is off unless a Cloud home sets SANREMES_CONVERSATION_FOLDER_CLEANUP=on", () => {
     const make = () => "cleanup";
     expect(deleteTimeCleanup({}, true, make)).toBeUndefined();
-    expect(deleteTimeCleanup({ OMB_CONVERSATION_FOLDER_CLEANUP: "off" }, true, make)).toBeUndefined();
-    expect(deleteTimeCleanup({ OMB_CONVERSATION_FOLDER_CLEANUP: "yes" }, true, make)).toBeUndefined();
-    expect(deleteTimeCleanup({ OMB_CONVERSATION_FOLDER_CLEANUP: "on" }, false, make)).toBeUndefined();
-    expect(deleteTimeCleanup({ OMB_CONVERSATION_FOLDER_CLEANUP: " On " }, true, make)).toBe("cleanup");
+    expect(deleteTimeCleanup({ SANREMES_CONVERSATION_FOLDER_CLEANUP: "off" }, true, make)).toBeUndefined();
+    expect(deleteTimeCleanup({ SANREMES_CONVERSATION_FOLDER_CLEANUP: "yes" }, true, make)).toBeUndefined();
+    expect(deleteTimeCleanup({ SANREMES_CONVERSATION_FOLDER_CLEANUP: "on" }, false, make)).toBeUndefined();
+    expect(deleteTimeCleanup({ SANREMES_CONVERSATION_FOLDER_CLEANUP: " On " }, true, make)).toBe("cleanup");
   });
 });
 

@@ -1,5 +1,5 @@
 // A Bot API key the owner marked as acting for them, on a real server with the scripted engine: the thread it opens runs
-// at the bot's own level, unconfined and with OpenMausBot's tools, as the owner's request; the never-list still denies
+// at the bot's own level, unconfined and with SanRemes's tools, as the owner's request; the never-list still denies
 // what it names; once the mark is taken off the key can't go on in that thread; and a second admin switches it off.
 import { randomUUID } from "node:crypto";
 import { readFileSync, rmSync } from "node:fs";
@@ -7,7 +7,7 @@ import { connect, type Socket } from "node:net";
 import { join } from "node:path";
 import { afterEach, expect, it } from "vitest";
 
-import { launchVerificationServer, runControlOmb, type VerificationServer } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb, type VerificationServer } from "../scripts/control-sanremes.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
 
 let fixture: VerificationServer | undefined;
@@ -64,7 +64,7 @@ it("runs a marked key's thread at the bot's level as the owner's work, keeps the
   const dumped = () => { try { return JSON.parse(readFileSync(dump, "utf8")); } catch { return null; } };
   await expect.poll(() => JSON.stringify(dumped()?.prompt ?? "").includes("Tidy the build folder"), { timeout: hostTimeout(30_000) }).toBe(true);
   const launch = dumped();
-  // The bot's own level, unconfined, with OpenMausBot's tools; the words are the owner's request through the API.
+  // The bot's own level, unconfined, with SanRemes's tools; the words are the owner's request through the API.
   expect(launch.argv[launch.argv.indexOf("--permission-mode") + 1]).not.toBe("default");
   expect(launch.argv).not.toContain("--restricted");
   expect(Object.keys(launch.mcpConfig.mcpServers).length).toBeGreaterThan(1);

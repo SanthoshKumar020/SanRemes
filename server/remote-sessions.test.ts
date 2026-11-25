@@ -118,13 +118,13 @@ async function pairingCode(scopes?: string[]): Promise<{ code: string; credentia
 }
 
 beforeAll(async () => {
-  home = mkdtempSync(join(tmpdir(), "omb-remote-test-"));
+  home = mkdtempSync(join(tmpdir(), "sanremes-remote-test-"));
   const staticDir = join(home, "static");
-  mkdirSync(join(home, ".openmausbot"), { recursive: true });
+  mkdirSync(join(home, ".sanremes"), { recursive: true });
   mkdirSync(join(staticDir, "assets"), { recursive: true });
   writeFileSync(join(staticDir, "index.html"), "<!doctype html><title>Served UI</title>");
   // Avoid probing whatever agent CLIs the test machine has installed.
-  writeFileSync(join(home, ".openmausbot", "config.json"), JSON.stringify({
+  writeFileSync(join(home, ".sanremes", "config.json"), JSON.stringify({
     instances: { fixture: { driver: "remote-session-test-shadow" } },
     profile: { name: "Security fixture", email: "private@example.invalid" },
     vps: { sshAlias: "fixture-private-host" },
@@ -138,15 +138,15 @@ beforeAll(async () => {
       ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}),
       HOME: home,
       USERPROFILE: home,
-      OMB_PORT: String(PORT),
-      OMB_WEBHOOK_PORT: String(WEBHOOK_PORT),
-      OMB_STATIC_DIR: staticDir,
-      OMB_PUBLIC_URL: `${PUBLIC_URL}/`,
-      OMB_APP_VERSION: "9.9.9-test",
-      OMB_ENVIRONMENT_LABEL: "cab mini",
-      OMB_BROWSER_CONNECTION: join(home, "browser-test-connection.json"),
+      SANREMES_PORT: String(PORT),
+      SANREMES_WEBHOOK_PORT: String(WEBHOOK_PORT),
+      SANREMES_STATIC_DIR: staticDir,
+      SANREMES_PUBLIC_URL: `${PUBLIC_URL}/`,
+      SANREMES_APP_VERSION: "9.9.9-test",
+      SANREMES_ENVIRONMENT_LABEL: "cab mini",
+      SANREMES_BROWSER_CONNECTION: join(home, "browser-test-connection.json"),
       // Slow heartbeat: the revocation test must prove the revoke itself ends the stream.
-      OMB_SSE_HEARTBEAT_MS: "4000",
+      SANREMES_SSE_HEARTBEAT_MS: "4000",
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -175,12 +175,12 @@ describe("before pairing", () => {
     expect(response.body).toEqual({ error: "invalid request URL" });
     const health = await call("/api/health");
     expect(health.status).toBe(200);
-    expect(health.body).toMatchObject({ app: "openmausbot", pid: child.pid });
+    expect(health.body).toMatchObject({ app: "sanremes", pid: child.pid });
     expect(child.exitCode).toBeNull();
   });
 
   it("describes itself to anyone, but serves nothing else off-machine", async () => {
-    const descriptor = await call("/.well-known/openmausbot/environment", { headers: remote("10.0.0.1") });
+    const descriptor = await call("/.well-known/sanremes/environment", { headers: remote("10.0.0.1") });
     expect(descriptor.status).toBe(200);
     expect(descriptor.body.environmentId).toMatch(/^[0-9a-f-]{36}$/);
     expect(descriptor.body.label).toBe("cab mini");
@@ -392,7 +392,7 @@ describe("pairing", () => {
     expect(opened.inviteUrl).not.toBeNull();
     const invite = new URL(opened.inviteUrl!);
     // Android's PairingInvite.parse accepts only this exact scheme and host (android/core Connection.kt).
-    expect(invite.protocol).toBe("openmausbot:");
+    expect(invite.protocol).toBe("sanremes:");
     expect(invite.host).toBe("pair");
     expect(invite.searchParams.get("address")).toBe(PUBLIC_URL);
     expect(invite.searchParams.get("token")).toBe(opened.credential);

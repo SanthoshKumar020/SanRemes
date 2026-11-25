@@ -55,7 +55,7 @@ function install(tailscaleProblem?: CompanionState["tailscaleProblem"]) {
   saved = [
     { id: "local", kind: "local", name: "This computer" },
     { id: "home", kind: "remote", name: "Ada’s Cloud", origin: "https://ada.mausbot.cloud", home: true },
-    { id: "vps", kind: "remote", name: "Hetzner box", origin: "https://maus.example.com" },
+    { id: "vps", kind: "remote", name: "Hetzner box", origin: "https://sanremes.example.com" },
   ];
   environments = {
     state: vi.fn(async () => ({ localOrigin: "http://127.0.0.1:8799", remote: false, packaged: true, activeId: "local", environments: [...saved] })),
@@ -195,7 +195,7 @@ describe("the Devices page", () => {
   it("names a phone's way in only while that way is on", async () => {
     companion = { ...companion, routes: { wifi: off, relay: { on: true, since: NOW }, tailscale: off, https: off } };
     await render();
-    expect($("[data-device-row='phone:iphone'] [data-device-route]")?.textContent).toBe("Anywhere, through MausBot");
+    expect($("[data-device-row='phone:iphone'] [data-device-route]")?.textContent).toBe("Anywhere, through SanRemes");
   });
 
   it("names no way for a phone kept to home whose ways are off, while Anywhere is on, and asks nothing of the person", async () => {
@@ -351,7 +351,7 @@ describe("the Devices page", () => {
     botRows = [
       { botId: "b1", kind: "local", computerId: "local", name: null, state: "ready", stateAt: NOW },
       { botId: "b2", kind: "cloud", computerId: "cloud:b2", name: null, state: "asleep", stateAt: NOW },
-      { botId: "b3", kind: "vps", computerId: "vps:gpu/omb-b3", name: "GPU box", state: "ready", stateAt: NOW, vps: { serverId: "vps:gpu", alias: "gpu", container: "omb-b3" } },
+      { botId: "b3", kind: "vps", computerId: "vps:gpu/sanremes-b3", name: "GPU box", state: "ready", stateAt: NOW, vps: { serverId: "vps:gpu", alias: "gpu", container: "sanremes-b3" } },
     ];
     await render();
     expect(requests).toContain("GET /api/computers/bots");
@@ -667,21 +667,21 @@ describe("Add a device, in the page", () => {
     await click("[data-add-device]");
     await click("[data-add-kind=server]");
     expect([...document.querySelectorAll("[data-server-command]")].map((line) => line.textContent)).toEqual([
-      "npx openmausbot account login && npx openmausbot serve --tunnel", "npx openmausbot serve --tailscale",
+      "npx sanremes account login && npx sanremes serve --tunnel", "npx sanremes serve --tailscale",
     ]);
     const why = $("[data-add-server-why]")!;
-    expect(why.textContent).toBe("These start MausBot on that machine. They need Node.js 24 or later; a terminal is the window where you type commands.");
+    expect(why.textContent).toBe("These start SanRemes on that machine. They need Node.js 24 or later; a terminal is the window where you type commands.");
     expect(why.compareDocumentPosition($("[data-server-command]")!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect($("[data-add-panel] [data-place-add=own-server]")).not.toBeNull();
     expect(layers()).toBe(0);
-    await type("[data-own-server-link]", "https://maus.example.org/pair#code=7KQ2-M9XD-H4TP");
+    await type("[data-own-server-link]", "https://sanremes.example.org/pair#code=7KQ2-M9XD-H4TP");
     await wait(500);
     expect($("[data-connect-found]")?.textContent).toContain("Garage NUC");
     expect($("[data-lend-add]")?.getAttribute("data-lend-add")).toBe("off");
     await click("[data-lend-add] [role=switch]");
-    expect(lendWish).toHaveBeenLastCalledWith("https://maus.example.org/pair#code=7KQ2-M9XD-H4TP", true);
+    expect(lendWish).toHaveBeenLastCalledWith("https://sanremes.example.org/pair#code=7KQ2-M9XD-H4TP", true);
     await click("[data-own-server-connect]");
-    expect(workspaces.add).toHaveBeenCalledWith("link", "https://maus.example.org/pair#code=7KQ2-M9XD-H4TP", "");
+    expect(workspaces.add).toHaveBeenCalledWith("link", "https://sanremes.example.org/pair#code=7KQ2-M9XD-H4TP", "");
     expect($("[data-add-connected='place:nuc']")?.textContent).toContain("Garage NUC is connected");
   });
 
@@ -1124,7 +1124,7 @@ describe("Add a computer's words", () => {
     await click("[data-network-action]");
     await click("[data-add-group=computers]");
     expect([...document.querySelectorAll("[data-step]")].map((step) => step.getAttribute("data-step-state"))).toEqual(["done", "now", "now"]);
-    expect($("[data-step='2']")?.textContent).toContain("On the other computer, install MausBot and Tailscale");
+    expect($("[data-step='2']")?.textContent).toContain("On the other computer, install SanRemes and Tailscale");
     expect($("[data-add-install-why]")?.textContent).toContain("another computer reaches this one only through Tailscale");
     expect($("[data-add-network-why]")).toBeNull();
     expect($("[data-step='3'] [data-copy-link]")?.className).toContain("ui-button-primary");
@@ -1136,8 +1136,8 @@ describe("the inline server form's one error", () => {
   const openForm = async () => { await render(); await click("[data-add-device]"); await click("[data-add-kind=server]"); };
   it("puts an address problem under the address, with no code field until the server is found", async () => {
     await openForm();
-    workspaces.probe.mockImplementation(async () => ({ outcome: "problem", problem: "unreachable", host: "maus.example.org" }));
-    await type("[data-own-server-link]", "https://maus.example.org");
+    workspaces.probe.mockImplementation(async () => ({ outcome: "problem", problem: "unreachable", host: "sanremes.example.org" }));
+    await type("[data-own-server-link]", "https://sanremes.example.org");
     await wait(500);
     const problem = $("[data-connect-problem]")!;
     expect(problem.getAttribute("data-connect-problem")).toBe("address");
@@ -1153,9 +1153,9 @@ describe("the inline server form's one error", () => {
   it("asks for the code once the server is found, and puts a code problem under the code", async () => {
     await openForm();
     workspaces.probe.mockImplementation(async (_address: string, code: string) => (code
-      ? { outcome: "problem", problem: "oldCode", host: "maus.example.org" }
+      ? { outcome: "problem", problem: "oldCode", host: "sanremes.example.org" }
       : { outcome: "found", label: "Garage NUC", version: "0.1.180", transport: "https" }));
-    await type("[data-own-server-link]", "https://maus.example.org");
+    await type("[data-own-server-link]", "https://sanremes.example.org");
     await wait(500);
     expect($("[data-own-server-code]")).not.toBeNull();
     await type("[data-own-server-code]", "123456");

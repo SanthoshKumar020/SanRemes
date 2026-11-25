@@ -1,10 +1,10 @@
 // One relay URL + token pair per included service:
-//   OMB_CLOUD_BOAT_URL    + OMB_CLOUD_BOAT_TOKEN     the Boat relay, ending in /api/box/v1
-//   OMB_CLOUD_VOICE_URL   + OMB_CLOUD_VOICE_TOKEN    the ElevenLabs relay, ending in /v1
-//   OMB_CLOUD_DECIDER_URL + OMB_CLOUD_DECIDER_TOKEN  the Jev relay, a Jev base URL
-//   OMB_CLOUD_AI_URL      + OMB_CLOUD_AI_TOKEN       the trial's Claude credit, an OpenAI-compatible base URL
-//   OMB_CLOUD_X_URL       + OMB_CLOUD_X_TOKEN        the X research relay (a desktop gets its own over the parent port)
-//   OMB_CLOUD_HOSTING_URL + OMB_CLOUD_HOSTING_TOKEN  the app hosting relay, ending in /api/cloud/services/hosting/v1
+//   SANREMES_CLOUD_BOAT_URL    + SANREMES_CLOUD_BOAT_TOKEN     the Boat relay, ending in /api/box/v1
+//   SANREMES_CLOUD_VOICE_URL   + SANREMES_CLOUD_VOICE_TOKEN    the ElevenLabs relay, ending in /v1
+//   SANREMES_CLOUD_DECIDER_URL + SANREMES_CLOUD_DECIDER_TOKEN  the Jev relay, a Jev base URL
+//   SANREMES_CLOUD_AI_URL      + SANREMES_CLOUD_AI_TOKEN       the trial's Claude credit, an OpenAI-compatible base URL
+//   SANREMES_CLOUD_X_URL       + SANREMES_CLOUD_X_TOKEN        the X research relay (a desktop gets its own over the parent port)
+//   SANREMES_CLOUD_HOSTING_URL + SANREMES_CLOUD_HOSTING_TOKEN  the app hosting relay, ending in /api/cloud/services/hosting/v1
 // The person's own key always wins and is resolved per request; an included token goes only to its relay and is never
 // written to config.json or reported to a client.
 import { JEV_DEFAULT_BASE_URL } from "./decider/jev.ts";
@@ -12,7 +12,7 @@ import { JEV_DEFAULT_BASE_URL } from "./decider/jev.ts";
 export const BOAT_API_DEFAULT = "https://boat.dev/api/v1";
 export const ELEVENLABS_API_DEFAULT = "https://api.elevenlabs.io/v1";
 /** Must also be on WORKSPACE_CREDENTIAL_ENV. */
-export const INCLUDED_TOKEN_ENV = ["OMB_CLOUD_BOAT_TOKEN", "OMB_CLOUD_VOICE_TOKEN", "OMB_CLOUD_DECIDER_TOKEN", "OMB_CLOUD_AI_TOKEN", "OMB_CLOUD_X_TOKEN", "OMB_CLOUD_HOSTING_TOKEN"] as const;
+export const INCLUDED_TOKEN_ENV = ["SANREMES_CLOUD_BOAT_TOKEN", "SANREMES_CLOUD_VOICE_TOKEN", "SANREMES_CLOUD_DECIDER_TOKEN", "SANREMES_CLOUD_AI_TOKEN", "SANREMES_CLOUD_X_TOKEN", "SANREMES_CLOUD_HOSTING_TOKEN"] as const;
 
 export interface ServiceCredential {
   token: string;
@@ -37,12 +37,12 @@ function includedService(url: string | undefined, token: string | undefined): Se
 }
 
 const includedFrom = (env: NodeJS.ProcessEnv): Included => ({
-  boat: includedService(env.OMB_CLOUD_BOAT_URL, env.OMB_CLOUD_BOAT_TOKEN),
-  voice: includedService(env.OMB_CLOUD_VOICE_URL, env.OMB_CLOUD_VOICE_TOKEN),
-  decider: includedService(env.OMB_CLOUD_DECIDER_URL, env.OMB_CLOUD_DECIDER_TOKEN),
-  ai: trialCreditService(env.OMB_CLOUD_AI_URL, env.OMB_CLOUD_AI_TOKEN),
-  x: includedService(env.OMB_CLOUD_X_URL, env.OMB_CLOUD_X_TOKEN),
-  hosting: relayOnlyService(env.OMB_CLOUD_HOSTING_URL, env.OMB_CLOUD_HOSTING_TOKEN),
+  boat: includedService(env.SANREMES_CLOUD_BOAT_URL, env.SANREMES_CLOUD_BOAT_TOKEN),
+  voice: includedService(env.SANREMES_CLOUD_VOICE_URL, env.SANREMES_CLOUD_VOICE_TOKEN),
+  decider: includedService(env.SANREMES_CLOUD_DECIDER_URL, env.SANREMES_CLOUD_DECIDER_TOKEN),
+  ai: trialCreditService(env.SANREMES_CLOUD_AI_URL, env.SANREMES_CLOUD_AI_TOKEN),
+  x: includedService(env.SANREMES_CLOUD_X_URL, env.SANREMES_CLOUD_X_TOKEN),
+  hosting: relayOnlyService(env.SANREMES_CLOUD_HOSTING_URL, env.SANREMES_CLOUD_HOSTING_TOKEN),
 });
 
 /** Security: the token is sent to this address, so it must be HTTPS (loopback for tests) with nothing else in it. */
@@ -81,9 +81,9 @@ function resolve(own: string | undefined, providerApi: string, included: Service
   return included;
 }
 
-export const boatProviderApi = (env: NodeJS.ProcessEnv = process.env): string => env.OMB_BOAT_API || BOAT_API_DEFAULT;
+export const boatProviderApi = (env: NodeJS.ProcessEnv = process.env): string => env.SANREMES_BOAT_API || BOAT_API_DEFAULT;
 export const elevenLabsProviderApi = (env: NodeJS.ProcessEnv = process.env): string =>
-  env.OMB_ELEVENLABS_API || ELEVENLABS_API_DEFAULT;
+  env.SANREMES_ELEVENLABS_API || ELEVENLABS_API_DEFAULT;
 
 export function boatCredential(own: string | undefined, env: NodeJS.ProcessEnv = process.env): ServiceCredential | null {
   return resolve(own, boatProviderApi(env), (held ?? includedFrom(env)).boat);
@@ -111,7 +111,7 @@ export function deciderCredential(
 }
 
 /** X research's relay token on a signed-in desktop: the desktop's main process
- * fetches it with its MausBot Cloud sign-in while the plan is paid
+ * fetches it with its SanRemes Cloud sign-in while the plan is paid
  * (electron/main.mjs) and hands it over on the private parent port. Held in
  * memory only, never written to config. */
 let desktopX: ServiceCredential | null = null;
@@ -120,11 +120,11 @@ let desktopXRefused = false;
 
 const LOOPBACK = new Set(["127.0.0.1", "localhost", "[::1]"]);
 
-/** `{ type: "openmausbot:included-x", access: { url, token } | null }` from
+/** `{ type: "sanremes:included-x", access: { url, token } | null }` from
  * the desktop's main process. True when it was one (then applied), false for
  * any other message; a malformed one throws and changes nothing. */
 export function applyIncludedXMessage(message: unknown): boolean {
-  if (!message || typeof message !== "object" || (message as { type?: unknown }).type !== "openmausbot:included-x") return false;
+  if (!message || typeof message !== "object" || (message as { type?: unknown }).type !== "sanremes:included-x") return false;
   const access = (message as { access?: unknown }).access;
   if (access === null) {
     desktopX = null;
@@ -162,7 +162,7 @@ export function xCredential(env: NodeJS.ProcessEnv = process.env): ServiceCreden
 export const TREG_API_DEFAULT = "https://treg.to";
 /** Security: the person's treg key goes only to treg (https), or to a loopback stand-in in development and tests. */
 export function tregProviderApi(env: NodeJS.ProcessEnv = process.env): string {
-  const configured = env.OMB_TREG_URL?.trim().replace(/\/+$/, "");
+  const configured = env.SANREMES_TREG_URL?.trim().replace(/\/+$/, "");
   if (!configured) return TREG_API_DEFAULT;
   try {
     const parsed = new URL(configured);

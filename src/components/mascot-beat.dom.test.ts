@@ -2,16 +2,16 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import type { MausMotion } from "@/lib/mascot";
+import type { SanRemesMotion } from "@/lib/mascot";
 import { MOTION_BEAT_MS, useMotionBeat } from "./mascot-beat";
 
 let container: HTMLDivElement, root: Root;
 const seen: boolean[] = [];
-function Probe({ motion, motionKey }: { motion: MausMotion | undefined; motionKey: number }) {
+function Probe({ motion, motionKey }: { motion: SanRemesMotion | undefined; motionKey: number }) {
   seen.push(useMotionBeat(motion, motionKey));
   return null;
 }
-const show = (motion: MausMotion | undefined, motionKey: number) => act(async () => root.render(createElement(Probe, { motion, motionKey })));
+const show = (motion: SanRemesMotion | undefined, motionKey: number) => act(async () => root.render(createElement(Probe, { motion, motionKey })));
 const wait = (ms: number) => act(async () => { vi.advanceTimersByTime(ms); });
 const playing = () => seen.at(-1);
 

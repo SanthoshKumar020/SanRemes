@@ -22,7 +22,7 @@ const row = (percent: number, mount: string) => {
   return `Filesystem     1024-blocks      Used Available Capacity Mounted on\n/dev/vd${mount === "/" ? "a" : "b"}1 ${TOTAL_KB} ${used} ${TOTAL_KB - used} ${percent}% ${mount}\n`;
 };
 /** What the check prints: the root filesystem, the marker, the home folder's filesystem (the root one again when `home` is null). */
-const df = (root: number, home: number | null = null) => `${row(root, "/")}omb-disk:home\n${home === null ? row(root, "/") : row(home, "/home/user")}`;
+const df = (root: number, home: number | null = null) => `${row(root, "/")}sanremes-disk:home\n${home === null ? row(root, "/") : row(home, "/home/user")}`;
 
 const ALL_TOOLS: DiskTool[] = ["root", "sudo", "apt-get", "journalctl", "docker", "docker-sudo", "pgrep", "npm-cache", "pip-cache", "yarn-cache", "pnpm-cache"];
 const BOTH = { root: true, home: true };
@@ -67,7 +67,7 @@ function harness(over: Partial<World> = {}, shared?: { world: World; clock: { at
   const clock = shared?.clock ?? { at: 1_700_000_000_000 };
   const world: World = shared?.world ?? {
     percent: 50, homePercent: null, cleansTo: null, df: "ok", survey: "ok", cleanup: "ok", capacityTo: null, capacity: "ok",
-    capacityReport: "omb-disk:tmp\nomb-disk:end\n", capacityAtMs: Number.NEGATIVE_INFINITY, folderListing: "ok", tools: ["sudo", "apt-get"],
+    capacityReport: "sanremes-disk:tmp\nomb-disk:end\n", capacityAtMs: Number.NEGATIVE_INFINITY, folderListing: "ok", tools: ["sudo", "apt-get"],
     folders: "home:/home/user\n100\t/home/user\n", stamp: null, stampAtMs: 0, commands: false, ...over,
   };
   const sent: Array<{ command: string; timeoutMs: number; long: boolean }> = [];
@@ -94,7 +94,7 @@ function harness(over: Partial<World> = {}, shared?: { world: World; clock: { at
         return { ok: true, stdout: [...world.tools.map((tool) => `has:${tool}`), `now:${seconds()}`, ...(world.stamp === null ? [] : [`stamp:${world.stamp}`])].join("\n") };
       }
       if (command === isolatedRemoteCommand(DISK_FOLDERS_COMMAND)) return world.folderListing === "hang" ? hang() : { ok: true, stdout: world.folders };
-      const stamped = /echo "\$\(date \+%s\) (\d+) (\d+|-) (\d+|-)" > "\$HOME\/\.cache\/omb-disk\/last-cleanup"/.exec(command);
+      const stamped = /echo "\$\(date \+%s\) (\d+) (\d+|-) (\d+|-)" > "\$HOME\/\.cache\/sanremes-disk\/last-cleanup"/.exec(command);
       if (stamped && !command.includes("/bin/sh -c")) {
         world.stamp = `${seconds()} ${stamped[1]} ${stamped[2]} ${stamped[3]}`;
         return { ok: true, stdout: "" };
@@ -102,15 +102,15 @@ function harness(over: Partial<World> = {}, shared?: { world: World; clock: { at
       if (!command.includes(`timeout -k 10 ${DISK.cleanupLimitSeconds} /bin/sh -c`)) throw new Error(`a command nothing here should send: ${command}`);
       if (command.includes("last-capacity")) {
         if (world.capacity === "hang") return hang();
-        if (world.percent < Number(/\[ "\$p" -ge (\d+) \]/.exec(command)![1])) return { ok: true, stdout: "omb-disk:below\n" };
-        if (clock.at - world.capacityAtMs < HOUR) return { ok: true, stdout: "omb-disk:recent\n" };
+        if (world.percent < Number(/\[ "\$p" -ge (\d+) \]/.exec(command)![1])) return { ok: true, stdout: "sanremes-disk:below\n" };
+        if (clock.at - world.capacityAtMs < HOUR) return { ok: true, stdout: "sanremes-disk:recent\n" };
         world.capacityAtMs = clock.at;
         if (world.capacityTo !== null) world.percent = world.capacityTo;
         return { ok: true, stdout: world.capacityReport };
       }
       if (world.cleanup === "hang") return hang();
       if (world.cleanup === "error") throw new Error("fetch failed");
-      if (world.stamp !== null && clock.at - world.stampAtMs < HOUR) return { ok: true, stdout: "omb-disk:recent\n" };
+      if (world.stamp !== null && clock.at - world.stampAtMs < HOUR) return { ok: true, stdout: "sanremes-disk:recent\n" };
       world.stamp = String(seconds());
       world.stampAtMs = clock.at;
       if (world.cleansTo !== null) world.percent = world.cleansTo;
@@ -180,12 +180,12 @@ describe("reading df", () => {
   it("tells the root filesystem from the home folder's, which may be the same one", () => {
     expect(parseReading(df(40, 91))).toMatchObject({ root: { mount: "/", percent: 40 }, home: { mount: "/home/user", percent: 91 } });
     expect(parseReading(df(88))).toMatchObject({ root: { mount: "/", percent: 88 }, home: { mount: "/", percent: 88 } });
-    expect(parseReading(`${row(88, "/")}omb-disk:home\ndf: '': No such file or directory\n`)).toMatchObject({ root: { percent: 88 }, home: null });
+    expect(parseReading(`${row(88, "/")}sanremes-disk:home\ndf: '': No such file or directory\n`)).toMatchObject({ root: { percent: 88 }, home: null });
     expect(parseReading(row(88, "/"))).toBeNull();
   });
 
   it("asks with one fixed command that stops itself and always ends well", () => {
-    expect(DISK_CHECK_COMMAND).toBe(`timeout 2 sh -c 'df -Pk /; echo omb-disk:home; df -Pk "$HOME"' 2>/dev/null; true`);
+    expect(DISK_CHECK_COMMAND).toBe(`timeout 2 sh -c 'df -Pk /; echo sanremes-disk:home; df -Pk "$HOME"' 2>/dev/null; true`);
   });
 });
 
@@ -274,8 +274,8 @@ describe("what a cleanup may run", () => {
 
   it("runs as one shell under a time limit, behind the computer's own once-an-hour stamp, each step on its own", () => {
     expect(cleanupCommand(["first 'quoted'", "second"])).toBe([
-      "timeout -k 10 300 /bin/sh -c 'if [ -n \"$(find \"$HOME/.cache/omb-disk/last-cleanup\" -mmin -60 2>/dev/null)\" ]; then echo omb-disk:recent; exit 0; fi",
-      'mkdir -p "$HOME/.cache/omb-disk" 2>/dev/null; date +%s > "$HOME/.cache/omb-disk/last-cleanup" 2>/dev/null',
+      "timeout -k 10 300 /bin/sh -c 'if [ -n \"$(find \"$HOME/.cache/sanremes-disk/last-cleanup\" -mmin -60 2>/dev/null)\" ]; then echo sanremes-disk:recent; exit 0; fi",
+      'mkdir -p "$HOME/.cache/sanremes-disk" 2>/dev/null; date +%s > "$HOME/.cache/sanremes-disk/last-cleanup" 2>/dev/null',
       "( first '\\''quoted'\\''",
       ") >/dev/null 2>&1 </dev/null",
       "( second",
@@ -285,7 +285,7 @@ describe("what a cleanup may run", () => {
   });
 
   it("writes the result to the stamp as whole numbers only", () => {
-    expect(stampCommand(93, 91, 2097152)).toBe('mkdir -p "$HOME/.cache/omb-disk" 2>/dev/null; echo "$(date +%s) 93 91 2097152" > "$HOME/.cache/omb-disk/last-cleanup" 2>/dev/null; true');
+    expect(stampCommand(93, 91, 2097152)).toBe('mkdir -p "$HOME/.cache/sanremes-disk" 2>/dev/null; echo "$(date +%s) 93 91 2097152" > "$HOME/.cache/sanremes-disk/last-cleanup" 2>/dev/null; true');
     expect(stampCommand(93, null, null)).toContain('echo "$(date +%s) 93 - -" >');
     for (const bad of [[101, 1, 1], [-1, 1, 1], [50.5, 1, 1], [50, Number.NaN, 1], [50, 1, 1e13], ["$(reboot)" as unknown as number, 1, 1]] as const) {
       expect(() => stampCommand(bad[0], bad[1], bad[2])).toThrow(RangeError);
@@ -399,12 +399,12 @@ describe("what the bot is told", () => {
 
   it("is one line after a cleanup that made room", () => {
     expect(diskNotice(facts({ percent: 62, cleanupTold: false, cleanup: { at: NOW, before: 85, after: 62, freedKb: 19 * GB } }), NOW))
-      .toBe("Disk note: this cloud computer's disk was 85% full; MausBot cleared caches (19 GB freed), now 62%.");
+      .toBe("Disk note: this cloud computer's disk was 85% full; SanRemes cleared caches (19 GB freed), now 62%.");
   });
 
   it("adds the largest folders when it is still at 90% after the cleanup", () => {
     expect(diskNotice(facts({ percent: 91, cleanupTold: false, cleanup: { at: NOW, before: 93, after: 91, freedKb: 2 * GB }, folders }), NOW))
-      .toBe(`Disk note: this cloud computer's disk was 93% full; MausBot cleared caches (2.0 GB freed), now 91%.\n${FOLDERS}`);
+      .toBe(`Disk note: this cloud computer's disk was 93% full; SanRemes cleared caches (2.0 GB freed), now 91%.\n${FOLDERS}`);
     expect(diskNotice(facts({ percent: 89, cleanupTold: false, cleanup: { at: NOW, before: 93, after: 89, freedKb: 3 * GB }, folders }), NOW)).not.toContain("Largest folders");
   });
 
@@ -415,15 +415,15 @@ describe("what the bot is told", () => {
 
   it("says plainly at 95% that writes may fail", () => {
     expect(diskNotice(facts({ percent: 96, cleanupTold: false, cleanup: { at: NOW, before: 97, after: 96, freedKb: 100 }, folders }), NOW))
-      .toBe(`Disk note: this cloud computer's disk was 97% full; MausBot cleared caches, now 96%. Writes may fail until space is freed.\n${FOLDERS}`);
+      .toBe(`Disk note: this cloud computer's disk was 97% full; SanRemes cleared caches, now 96%. Writes may fail until space is freed.\n${FOLDERS}`);
     expect(diskNotice(facts({ percent: 94 }), NOW)).not.toContain("Writes may fail");
   });
 
   it("says a cleanup is under way or waiting, and when the last one was, in at most two lines", () => {
     expect(diskNotice(facts({ percent: 97, cleaning: "now", folders }), NOW))
-      .toBe("Disk note: this cloud computer's disk is 97% full; MausBot is freeing space now, which can take a few minutes. Writes may fail until space is freed.");
+      .toBe("Disk note: this cloud computer's disk is 97% full; SanRemes is freeing space now, which can take a few minutes. Writes may fail until space is freed.");
     expect(diskNotice(facts({ percent: 97, cleaning: "soon", folders }), NOW))
-      .toBe("Disk note: this cloud computer's disk is 97% full; MausBot frees space once no command is running on it. Writes may fail until space is freed.");
+      .toBe("Disk note: this cloud computer's disk is 97% full; SanRemes frees space once no command is running on it. Writes may fail until space is freed.");
     expect(diskNotice(facts({ percent: 87, cleanup: { at: NOW - 20 * MINUTE, before: 90, after: 87, freedKb: GB } }), NOW))
       .toBe("Disk note: this cloud computer's disk is 87% full; its caches were cleared 20 min ago.");
     expect(diskNotice(facts({ percent: 87, cleanup: { at: NOW - 5 * HOUR, before: 90, after: 87, freedKb: GB } }), NOW))
@@ -452,7 +452,7 @@ describe("watching a computer's disk", () => {
     expect([h.count("check"), h.count("survey"), h.count("cleanup"), h.count("stamp"), h.count("folders")]).toEqual([2, 1, 1, 1, 0]);
     expect(h.cleanups()).toEqual([isolatedRemoteCommand(cleanupCommand(["sudo -n apt-get clean", `${GUARD}rm -rf -- "$HOME/.cache/pip"`]))]);
     expect(h.sent.filter(({ long }) => long)).toEqual([expect.objectContaining({ long: true, timeoutMs: DISK.cleanupFollowMs })]);
-    expect(await h.disk.after(null, BOX, ["captured"])).toBe("Disk note: this cloud computer's disk was 85% full; MausBot cleared caches (19 GB freed), now 62%.");
+    expect(await h.disk.after(null, BOX, ["captured"])).toBe("Disk note: this cloud computer's disk was 85% full; SanRemes cleared caches (19 GB freed), now 62%.");
     expect(await h.disk.after(null, BOX, ["captured"])).toBeNull();
     expect(h.logs).toEqual([`cloud computer ${BOX}: disk was 85% full; cleared caches, now 62%`]);
     expect(h.world.stamp).toBe(`${Math.floor(h.now() / 1000)} 85 62 ${Math.round(TOTAL_KB * 0.85) - Math.round(TOTAL_KB * 0.62)}`);
@@ -482,7 +482,7 @@ describe("watching a computer's disk", () => {
     await h.use();
     expect(h.count("folders")).toBe(1);
     expect(await h.disk.after(null, BOX, [])).toBe(
-      "Disk note: this cloud computer's disk was 96% full; MausBot cleared caches (3.4 GB freed), now 92%.\n"
+      "Disk note: this cloud computer's disk was 96% full; SanRemes cleared caches (3.4 GB freed), now 92%.\n"
       + 'Largest folders in the home directory (names as found): "data" 5.0 GB, ".cache" 2.0 GB. Remove what is no longer needed.');
   });
 
@@ -567,7 +567,7 @@ describe("watching a computer's disk", () => {
     const h = harness({ percent: 88 });
     await h.use();
     expect(h.count("cleanup")).toBe(1);
-    expect(await h.disk.after(null, BOX, [])).toBe("Disk note: this cloud computer's disk was 88% full; MausBot cleared caches, now 88%.");
+    expect(await h.disk.after(null, BOX, [])).toBe("Disk note: this cloud computer's disk was 88% full; SanRemes cleared caches, now 88%.");
     for (let hour = 1; hour <= 23; hour++) { await h.advance(HOUR); await h.use(); }
     expect([h.count("cleanup"), h.count("survey")]).toEqual([1, 1]);
     expect(await h.disk.after(null, BOX, [])).toBeNull();
@@ -613,7 +613,7 @@ describe("watching a computer's disk", () => {
     h.disk.began(null, BOX);
     const note = await h.disk.after(null, BOX, ['{"ok":false,"exitCode":1,"stdout":"","stderr":"cp: error writing: No space left on device"}'], true);
     expect(h.count("check")).toBe(2);
-    expect(note).toBe("Disk note: this cloud computer's disk is 99% full; MausBot frees space once no command is running on it. Writes may fail until space is freed.");
+    expect(note).toBe("Disk note: this cloud computer's disk is 99% full; SanRemes frees space once no command is running on it. Writes may fail until space is freed.");
     await h.flush();
     expect(h.count("cleanup")).toBe(0);
     h.disk.ended(null, BOX);
@@ -622,7 +622,7 @@ describe("watching a computer's disk", () => {
     await h.disk.after(null, BOX, ["ENOSPC"], true);
     expect(h.count("check")).toBe(2);
     await h.advance(DISK.noSpaceGapMs);
-    expect(await h.disk.after(null, BOX, ["ENOSPC"], true)).toBe("Disk note: this cloud computer's disk is 99% full; MausBot is freeing space now, which can take a few minutes. Writes may fail until space is freed.");
+    expect(await h.disk.after(null, BOX, ["ENOSPC"], true)).toBe("Disk note: this cloud computer's disk is 99% full; SanRemes is freeing space now, which can take a few minutes. Writes may fail until space is freed.");
     expect(h.count("check")).toBe(3);
   });
 
@@ -929,16 +929,16 @@ describe("the panel's disk figure", () => {
 
 describe("the capacity tier's command", () => {
   const ENOUGH = `enough() { p=$(df -P / 2>/dev/null | awk 'NR==2 { sub("%", "", $5); print $5 }'); case "$p" in ''|*[!0-9]*) return 0;; esac; [ "$p" -lt 80 ]; }`;
-  const STOP = "enough && { echo omb-disk:end; exit 0; }";
+  const STOP = "enough && { echo sanremes-disk:end; exit 0; }";
   const head = (trigger: number) => [
-    `p=$(df -P / 2>/dev/null | awk 'NR==2 { sub("%", "", $5); print $5 }'); case "$p" in ''|*[!0-9]*) echo omb-disk:below; exit 0;; esac`,
-    `[ "$p" -ge ${trigger} ] || { echo omb-disk:below; exit 0; }`,
-    'if [ -n "$(find "$HOME/.cache/omb-disk/last-capacity" -mmin -60 2>/dev/null)" ]; then echo omb-disk:recent; exit 0; fi',
-    'mkdir -p "$HOME/.cache/omb-disk" 2>/dev/null; date +%s > "$HOME/.cache/omb-disk/last-capacity" 2>/dev/null',
+    `p=$(df -P / 2>/dev/null | awk 'NR==2 { sub("%", "", $5); print $5 }'); case "$p" in ''|*[!0-9]*) echo sanremes-disk:below; exit 0;; esac`,
+    `[ "$p" -ge ${trigger} ] || { echo sanremes-disk:below; exit 0; }`,
+    'if [ -n "$(find "$HOME/.cache/sanremes-disk/last-capacity" -mmin -60 2>/dev/null)" ]; then echo sanremes-disk:recent; exit 0; fi',
+    'mkdir -p "$HOME/.cache/sanremes-disk" 2>/dev/null; date +%s > "$HOME/.cache/sanremes-disk/last-capacity" 2>/dev/null',
     ENOUGH,
   ];
   const containers = (docker: string) => [
-    "echo omb-disk:containers; now=$(date +%s)",
+    "echo sanremes-disk:containers; now=$(date +%s)",
     `for c in $(${docker} ps -aq --no-trunc --filter status=exited --filter status=dead 2>/dev/null </dev/null); do`,
     `  f=$(${docker} inspect --format '{{.State.FinishedAt}}' "$c" 2>/dev/null </dev/null) || continue`,
     '  s=$(date -d "$f" +%s 2>/dev/null) || continue',
@@ -947,7 +947,7 @@ describe("the capacity tier's command", () => {
     `  name=$(${docker} inspect --format '{{.Name}}' "$c" 2>/dev/null </dev/null)`,
     `  ${docker} rm "$c" >/dev/null 2>&1 </dev/null && printf '%s\\n' "\${name#/}"`,
     "done",
-    `echo omb-disk:images; ${docker} image prune -a -f 2>/dev/null </dev/null | grep -E '^untagged: ' | grep -v '@sha256:' | head -n 40`,
+    `echo sanremes-disk:images; ${docker} image prune -a -f 2>/dev/null </dev/null | grep -E '^untagged: ' | grep -v '@sha256:' | head -n 40`,
   ];
   /** The /tmp stage, written out: `sudo` is put before what reads every process, `docker` lists the running containers' mounts. */
   const sweep = (sudo: string, docker: string | null) => [
@@ -963,8 +963,8 @@ describe("the capacity tier's command", () => {
     ] : [
       "  if command -v docker >/dev/null 2>&1 || [ -S /var/run/docker.sock ] || [ -S /run/docker.sock ]; then sure=; fi",
     ]),
-    '  for old in "$t"/.omb-disk-removing.*; do [ -d "$old" ] && [ ! -L "$old" ] && { chmod -R u+w "$old" 2>/dev/null; rm -rf --one-file-system -- "$old" 2>/dev/null; }; done',
-    '  g=$(mktemp -d "$t/.omb-disk-removing.XXXXXX" 2>/dev/null) || sure=',
+    '  for old in "$t"/.sanremes-disk-removing.*; do [ -d "$old" ] && [ ! -L "$old" ] && { chmod -R u+w "$old" 2>/dev/null; rm -rf --one-file-system -- "$old" 2>/dev/null; }; done',
+    '  g=$(mktemp -d "$t/.sanremes-disk-removing.XXXXXX" 2>/dev/null) || sure=',
     '  [ -n "$g" ] && [ -d "$g" ] || sure=',
     '  if [ -n "$sure" ]; then',
     "    u0=$(df -Pk / 2>/dev/null | awk 'NR==2 { print $3 }')",
@@ -1007,14 +1007,14 @@ describe("the capacity tier's command", () => {
       STOP,
       ...containers("docker"),
       STOP,
-      "echo omb-disk:tmp",
+      "echo sanremes-disk:tmp",
       ...sweep("sudo -n ", "docker"),
-      "echo omb-disk:end",
+      "echo sanremes-disk:end",
     ]));
   });
 
   it("has no /tmp stage where not every process can be read, and leaves the home folder's caches when the home folder has its own disk", () => {
-    expect(capacityCommand(new Set(), BOTH, 95)).toBe(wrapped([...head(95), STOP, "echo omb-disk:tmp", "echo omb-disk:end"]));
+    expect(capacityCommand(new Set(), BOTH, 95)).toBe(wrapped([...head(95), STOP, "echo sanremes-disk:tmp", "echo sanremes-disk:end"]));
     expect(capacityCommand(new Set<DiskTool>(["docker", "pgrep", "npm-cache"]), BOTH, 95)).not.toContain("/proc");
     expect(capacityCommand(new Set<DiskTool>(["root", "docker-sudo", "pgrep", "npm-cache"]), { root: true, home: false }, 85)).toBe(wrapped([
       ...head(85),
@@ -1022,11 +1022,11 @@ describe("the capacity tier's command", () => {
       STOP,
       ...containers("sudo -n docker"),
       STOP,
-      "echo omb-disk:tmp",
+      "echo sanremes-disk:tmp",
       ...sweep("", "sudo -n docker"),
-      "echo omb-disk:end",
+      "echo sanremes-disk:end",
     ]));
-    expect(capacityCommand(new Set<DiskTool>(["root"]), { root: true, home: false }, 95)).toBe(wrapped([...head(95), STOP, "echo omb-disk:tmp", ...sweep("", null), "echo omb-disk:end"]));
+    expect(capacityCommand(new Set<DiskTool>(["root"]), { root: true, home: false }, 95)).toBe(wrapped([...head(95), STOP, "echo sanremes-disk:tmp", ...sweep("", null), "echo sanremes-disk:end"]));
   });
 
   it("names nothing outside /tmp, /proc, the four cache folders and its own stamp, whatever the computer has", () => {
@@ -1039,9 +1039,9 @@ describe("the capacity tier's command", () => {
       if (command.includes("/proc")) {
         expect(command.match(/\bmv\b[^;\n]*/g)).toEqual(['mv -- "$e" "$held" 2>/dev/null || continue', 'mv -- "$held" "$e" 2>/dev/null']);
         expect(command).toContain('held="$g/${e##*/}"');
-        expect(command).toContain('g=$(mktemp -d "$t/.omb-disk-removing.XXXXXX" 2>/dev/null) || sure=');
+        expect(command).toContain('g=$(mktemp -d "$t/.sanremes-disk-removing.XXXXXX" 2>/dev/null) || sure=');
         expect(command).toContain('[ -n "$g" ] && [ -d "$g" ] || sure=');
-        expect(command).toContain('for old in "$t"/.omb-disk-removing.*; do [ -d "$old" ] && [ ! -L "$old" ] &&');
+        expect(command).toContain('for old in "$t"/.sanremes-disk-removing.*; do [ -d "$old" ] && [ ! -L "$old" ] &&');
         expect(command).toContain("t=/tmp\n");
       } else {
         expect(command).not.toMatch(/\bmv\b|mktemp|\/tmp/);
@@ -1076,28 +1076,28 @@ describe("the capacity tier's command", () => {
 describe("what the capacity tier reports", () => {
   it("is read back as names, and nothing else it printed", () => {
     const report = [
-      "omb-disk:containers", "old-db", "web_1", "bad name; rm -rf /", "$(reboot)",
-      "omb-disk:images", "untagged: node:20", "untagged: ghcr.io/acme/api:1.4", "untagged: node:20", "untagged: bad name; rm -rf /", "deleted: sha256:abc",
-      "omb-disk:tmp", "4194304\tbuild-old", "12\ta‮b", "9\t../../etc", "x\tnot-a-size", "7\tspaced name", "omb-disk:end", "5\tafter-the-end",
+      "sanremes-disk:containers", "old-db", "web_1", "bad name; rm -rf /", "$(reboot)",
+      "sanremes-disk:images", "untagged: node:20", "untagged: ghcr.io/acme/api:1.4", "untagged: node:20", "untagged: bad name; rm -rf /", "deleted: sha256:abc",
+      "sanremes-disk:tmp", "4194304\tbuild-old", "12\ta‮b", "9\t../../etc", "x\tnot-a-size", "7\tspaced name", "sanremes-disk:end", "5\tafter-the-end",
     ].join("\n");
     expect(parseCapacityReport(report)).toEqual({
       containers: ["old-db", "web_1"], images: ["node:20", "ghcr.io/acme/api:1.4"],
       items: [{ name: "build-old", kb: 4194304 }, { name: "ab", kb: 12 }, { name: "spaced name", kb: 7 }],
     });
-    expect(parseCapacityReport("omb-disk:recent\n")).toBeNull();
-    expect(parseCapacityReport("omb-disk:below\n")).toBeNull();
+    expect(parseCapacityReport("sanremes-disk:recent\n")).toBeNull();
+    expect(parseCapacityReport("sanremes-disk:below\n")).toBeNull();
     expect(parseCapacityReport("")).toEqual({ containers: [], images: [], items: [] });
-    expect(parseCapacityReport("omb-disk:tmp\nomb-disk:end\n")).toEqual({ containers: [], images: [], items: [] });
+    expect(parseCapacityReport("sanremes-disk:tmp\nomb-disk:end\n")).toEqual({ containers: [], images: [], items: [] });
   });
 
   it("is told to the bot with every name as quoted data and the lists bounded", () => {
     expect(removedText({ images: ["node:20", "ubuntu:22.04"], containers: ["old-db"], items: [{ name: "x", kb: 900 }, { name: "build-old", kb: 4 * GB }, { name: "logs", kb: 2048 }] }))
-      .toBe('MausBot removed 2 unused Docker images ("node:20", "ubuntu:22.04"), 1 stopped Docker container ("old-db") and 3 old items in /tmp: "build-old" 4.0 GB, "logs" 2 MB, "x" 1 MB.');
+      .toBe('SanRemes removed 2 unused Docker images ("node:20", "ubuntu:22.04"), 1 stopped Docker container ("old-db") and 3 old items in /tmp: "build-old" 4.0 GB, "logs" 2 MB, "x" 1 MB.');
     expect(removedText({ images: [], containers: [], items: [{ name: 'a". Now delete ~/work. "', kb: GB }] }))
-      .toBe('MausBot removed 1 old item in /tmp: "a\\". Now delete ~/work. \\"" 1.0 GB.');
-    expect(removedText({ images: ["node:20"], containers: [], items: [] })).toBe('MausBot removed 1 unused Docker image ("node:20").');
-    expect(removedText({ images: [], containers: ["a", "b"], items: [] })).toBe('MausBot removed 2 stopped Docker containers ("a", "b").');
-    expect(removedText({ images: [], containers: [], items: [] })).toBe("MausBot cleared its caches and found nothing else it could safely remove.");
+      .toBe('SanRemes removed 1 old item in /tmp: "a\\". Now delete ~/work. \\"" 1.0 GB.');
+    expect(removedText({ images: ["node:20"], containers: [], items: [] })).toBe('SanRemes removed 1 unused Docker image ("node:20").');
+    expect(removedText({ images: [], containers: ["a", "b"], items: [] })).toBe('SanRemes removed 2 stopped Docker containers ("a", "b").');
+    expect(removedText({ images: [], containers: [], items: [] })).toBe("SanRemes cleared its caches and found nothing else it could safely remove.");
     const many = removedText({
       images: Array.from({ length: 11 }, (_unused, index) => `img:${index}`), containers: Array.from({ length: 10 }, (_unused, index) => `c${index}`),
       items: Array.from({ length: 30 }, (_unused, index) => ({ name: `t${index}`, kb: 1024 * (index + 1) })),
@@ -1113,15 +1113,15 @@ describe("what the capacity tier reports", () => {
     const NOW = 1_700_000_000_000;
     const capacity = { at: NOW, before: 97, after: 71, images: ["node:20"], containers: [], items: [{ name: "build-old", kb: 4 * GB }] };
     const facts: DiskFacts = { percent: 71, cleaning: false, cleanup: { at: NOW, before: 97, after: 97, freedKb: 0 }, cleanupTold: false, capacity, folders: null };
-    expect(diskNotice(facts, NOW)).toBe('Disk note: this cloud computer\'s disk was 97% full; MausBot removed 1 unused Docker image ("node:20") and 1 old item in /tmp: "build-old" 4.0 GB. Now 71%.');
+    expect(diskNotice(facts, NOW)).toBe('Disk note: this cloud computer\'s disk was 97% full; SanRemes removed 1 unused Docker image ("node:20") and 1 old item in /tmp: "build-old" 4.0 GB. Now 71%.');
     expect(diskNotice({ ...facts, percent: 96, capacity: { ...capacity, after: 96, images: [], items: [] }, folders: [{ name: "data", kb: 60 * GB }] }, NOW)).toBe(
-      "Disk note: this cloud computer's disk was 97% full; MausBot cleared its caches and found nothing else it could safely remove. Now 96%. Writes may fail until space is freed.\n"
+      "Disk note: this cloud computer's disk was 97% full; SanRemes cleared its caches and found nothing else it could safely remove. Now 96%. Writes may fail until space is freed.\n"
       + 'Largest folders in the home directory (names as found): "data" 60 GB. Remove what is no longer needed.');
   });
 });
 
 describe("the capacity tier", () => {
-  const REPORT = "omb-disk:containers\nold-db\nomb-disk:images\nuntagged: node:20\nomb-disk:tmp\n4194304\tbuild-old\n1024\tscratch\nomb-disk:end\n";
+  const REPORT = "sanremes-disk:containers\nold-db\nomb-disk:images\nuntagged: node:20\nomb-disk:tmp\n4194304\tbuild-old\n1024\tscratch\nomb-disk:end\n";
 
   it("never runs under 95%, however often the disk is read", async () => {
     const h = harness({ percent: 94 });
@@ -1150,7 +1150,7 @@ describe("the capacity tier", () => {
     expect(order[order.indexOf("capacity") - 2]).toBe("check");
     expect(h.sent.filter(({ long }) => long)).toHaveLength(2);
     expect(await h.disk.after(null, BOX, ["captured"])).toBe(
-      'Disk note: this cloud computer\'s disk was 96% full; MausBot removed 1 unused Docker image ("node:20"), 1 stopped Docker container ("old-db") and 2 old items in /tmp: "build-old" 4.0 GB, "scratch" 1 MB. Now 71%.');
+      'Disk note: this cloud computer\'s disk was 96% full; SanRemes removed 1 unused Docker image ("node:20"), 1 stopped Docker container ("old-db") and 2 old items in /tmp: "build-old" 4.0 GB, "scratch" 1 MB. Now 71%.');
     expect(await h.disk.after(null, BOX, ["captured"])).toBeNull();
     expect(h.disk.panel(BOX)).toEqual({ percent: 71, spaceClearedAt: h.now() });
     expect(h.logs.at(-1)).toBe(`cloud computer ${BOX}: disk was 96% full; removed 1 unused docker images, 1 stopped containers and 2 old /tmp entries, now 71%`);
@@ -1205,7 +1205,7 @@ describe("the capacity tier", () => {
     await h.settle();
     expect(h.count("capacity")).toBe(0);
     h.disk.began(null, BOX);
-    expect(await h.disk.after(null, BOX, ["cp: No space left on device"], true)).toBe("Disk note: this cloud computer's disk is 88% full; MausBot frees space once no command is running on it.");
+    expect(await h.disk.after(null, BOX, ["cp: No space left on device"], true)).toBe("Disk note: this cloud computer's disk is 88% full; SanRemes frees space once no command is running on it.");
     await h.flush();
     expect(h.count("capacity")).toBe(0);
     h.disk.ended(null, BOX);
@@ -1284,7 +1284,7 @@ describe("the capacity tier", () => {
     await h.use();
     expect([h.count("capacity"), h.count("folders")]).toEqual([1, 1]);
     expect(await h.disk.after(null, BOX, [])).toBe(
-      "Disk note: this cloud computer's disk was 98% full; MausBot cleared its caches and found nothing else it could safely remove. Now 98%. Writes may fail until space is freed.\n"
+      "Disk note: this cloud computer's disk was 98% full; SanRemes cleared its caches and found nothing else it could safely remove. Now 98%. Writes may fail until space is freed.\n"
       + 'Largest folders in the home directory (names as found): "data" 60 GB. Remove what is no longer needed.');
     const sentBefore = h.sent.length;
     await h.use();
@@ -1306,7 +1306,7 @@ describe("an unattended run and a disk at capacity", () => {
     expect(h.count("capacity")).toBe(1);
     await h.settle();
     expect(await h.disk.after(null, BOX, ["captured"])).toBe(
-      "Disk note: this cloud computer's disk was 99% full; MausBot cleared its caches and found nothing else it could safely remove. Now 99%. Writes may fail until space is freed.");
+      "Disk note: this cloud computer's disk was 99% full; SanRemes cleared its caches and found nothing else it could safely remove. Now 99%. Writes may fail until space is freed.");
     expect(await h.disk.after(null, BOX, ["captured"])).toBeNull();
     await h.advance(10 * MINUTE);
     expect(await h.disk.beforeRun(null, BOX)).toBe(99);
@@ -1370,7 +1370,7 @@ describe.skipIf(!realShell)("the /tmp stage in a real shell (Linux, as root or w
   /** A stand-in /tmp with entries of known ages; a `df` whose figure is `base` plus nine points per entry left (and
    * whose used space follows it unless `flat`); and a `docker` that answers with no containers, or with one whose mount is `mount`. */
   function scene(base: number, options: { flat?: boolean; mount?: (tmp: string) => string } = {}) {
-    const top = mkdtempSync(join(tmpdir(), "omb-disk-"));
+    const top = mkdtempSync(join(tmpdir(), "sanremes-disk-"));
     const tmp = join(top, "tmp"), bin = join(top, "bin"), home = join(top, "home");
     for (const dir of [tmp, bin, home]) mkdirSync(dir);
     writeFileSync(join(bin, "df"), [
@@ -1415,7 +1415,7 @@ describe.skipIf(!realShell)("the /tmp stage in a real shell (Linux, as root or w
     const s = scene(30);
     try {
       s.entry("old-a", 10);
-      expect(s.run().trim()).toBe("omb-disk:below");
+      expect(s.run().trim()).toBe("sanremes-disk:below");
       expect(s.left()).toEqual(["old-a"]);
       expect(existsSync(join(s.home, ".cache"))).toBe(false);
     } finally {
@@ -1451,7 +1451,7 @@ describe.skipIf(!realShell)("the /tmp stage in a real shell (Linux, as root or w
       expect(existsSync(join(busy, "f"))).toBe(true);
       expect(existsSync(join(app, "sleep"))).toBe(true);
       expect(existsSync("/etc/passwd")).toBe(true);
-      expect(s.run().trim()).toBe("omb-disk:recent");
+      expect(s.run().trim()).toBe("sanremes-disk:recent");
     } finally {
       worker.kill();
       program.kill();
@@ -1467,9 +1467,9 @@ describe.skipIf(!realShell)("the /tmp stage in a real shell (Linux, as root or w
       chmodSync(join(locked, "locked"), 0o555);
       s.entry("old-a", 10);
       s.entry("newer", 8);
-      mkdirSync(join(s.tmp, ".omb-disk-removing.zzz/x/locked"), { recursive: true });
-      writeFileSync(join(s.tmp, ".omb-disk-removing.zzz/x/locked/f"), "x");
-      chmodSync(join(s.tmp, ".omb-disk-removing.zzz/x/locked"), 0o555);
+      mkdirSync(join(s.tmp, ".sanremes-disk-removing.zzz/x/locked"), { recursive: true });
+      writeFileSync(join(s.tmp, ".sanremes-disk-removing.zzz/x/locked/f"), "x");
+      chmodSync(join(s.tmp, ".sanremes-disk-removing.zzz/x/locked"), 0o555);
       expect(s.removed(s.run())).toEqual(["old-a", "ro", "newer"]);
       expect(readdirSync(s.tmp)).toEqual([]);
     } finally {

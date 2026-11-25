@@ -5,7 +5,7 @@ import { afterAll, describe, expect, it } from "vitest";
 
 import { safeAttachmentName, saveAttachment } from "./client.ts";
 
-const root = mkdtempSync(join(tmpdir(), "omb-mail-names-"));
+const root = mkdtempSync(join(tmpdir(), "sanremes-mail-names-"));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
 
 describe("attachment filenames on disk", () => {

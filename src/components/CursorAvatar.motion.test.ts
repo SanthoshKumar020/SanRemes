@@ -3,7 +3,7 @@ import { act, createElement, createRef } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { MausAvatar, type MausAvatarHandle, type MausAvatarProps } from "./Avatar";
+import { SanRemesAvatar, type SanRemesAvatarHandle, type SanRemesAvatarProps } from "./Avatar";
 import { mascotClock } from "./mascot-clock";
 import { BLINK_MS, MOTION, PoseBlend, REST_POSE, blinkOpenness, bodyPose, criticalSpring, loopSeed } from "./mascot-motion";
 
@@ -48,8 +48,8 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-const render = (avatars: Array<Partial<MausAvatarProps> & { ref?: React.Ref<MausAvatarHandle> }>) =>
-  act(() => root.render(avatars.map((props, key) => createElement(MausAvatar, { key, color: "green", ...props }))));
+const render = (avatars: Array<Partial<SanRemesAvatarProps> & { ref?: React.Ref<SanRemesAvatarHandle> }>) =>
+  act(() => root.render(avatars.map((props, key) => createElement(SanRemesAvatar, { key, color: "green", ...props }))));
 const run = (ms: number) => act(() => { vi.advanceTimersByTime(ms); });
 const svgs = () => [...host.querySelectorAll("svg")];
 const bodyOf = (svg: SVGSVGElement) => svg.querySelector(":scope > g > g:nth-child(2)")!;
@@ -231,7 +231,7 @@ describe("CursorAvatar at rest and under the pointer", () => {
   });
 
   it("rewrites only the eye heights through a blink", () => {
-    const ref = createRef<MausAvatarHandle>();
+    const ref = createRef<SanRemesAvatarHandle>();
     render([{ state: "idle", size: 60, animated: false, ref }]);
     run(300);
     const changes = watch();
@@ -283,7 +283,7 @@ describe("CursorAvatar at rest and under the pointer", () => {
   it("follows from anywhere in its row and lets go when the pointer leaves the row", () => {
     const adds = vi.spyOn(document, "addEventListener");
     const removes = vi.spyOn(document, "removeEventListener");
-    act(() => root.render(createElement("button", { type: "button" }, createElement(MausAvatar, { color: "green", state: "idle", size: 36, animated: false }))));
+    act(() => root.render(createElement("button", { type: "button" }, createElement(SanRemesAvatar, { color: "green", state: "idle", size: 36, animated: false }))));
     run(200);
     const svg = svgs()[0]!;
     placeAt(svg, 36);
@@ -324,7 +324,7 @@ describe("CursorAvatar at rest and under the pointer", () => {
   });
 
   it("plays a festival body's beats and spins when nothing animates it, and never sticks wide-eyed", () => {
-    const ref = createRef<MausAvatarHandle>();
+    const ref = createRef<SanRemesAvatarHandle>();
     render([{ state: "idle", size: 44, bodyId: "pumpkin", ref }]);
     run(1000);
     const smile = host.querySelector("[data-carved-body] path[stroke]") as SVGPathElement;

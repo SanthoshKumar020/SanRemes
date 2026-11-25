@@ -196,7 +196,7 @@ describe("GET /api/computers/bots", () => {
 });
 
 describe("who may read it", () => {
-  const dir = mkdtempSync(join(tmpdir(), "omb-bot-computers-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-bot-computers-"));
   afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
   it("is an admin's, like every computer route: a member's or a chat-only session is refused at the gate", () => {

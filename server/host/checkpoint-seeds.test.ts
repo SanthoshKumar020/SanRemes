@@ -13,7 +13,7 @@ afterAll(async () => {
 });
 
 function folder(kind: "project" | "plain"): string {
-  const dir = mkdtempSync(join(tmpdir(), "omb-seed-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-seed-"));
   scratch.push(dir);
   if (kind === "project") mkdirSync(join(dir, ".git"));
   return dir;

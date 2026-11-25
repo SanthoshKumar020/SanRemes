@@ -1,4 +1,4 @@
-import "../testing/scrub-ambient-omb-env.ts";
+import "../testing/scrub-ambient-sanremes-env.ts";
 
 import { getEventListeners } from "node:events";
 import { afterEach, describe, expect, it, vi } from "vitest";

@@ -83,13 +83,13 @@ describe("row memoization in BotConversations and BotListItem", () => {
       })),
     ];
     const bot: Bot = {
-      id: "maus", threadId: "open", name: "Maus", title: "", description: "", notifications: true,
+      id: "sanremes", threadId: "open", name: "SanRemes", title: "", description: "", notifications: true,
       color: "green", unread: false, messages: [{ id: "m-1", role: "bot", kind: "text", text: "Hello", at: 1_000 }],
       modelSelection: { instanceId: "fake", model: "test" },
       tasks,
     };
 
-    showAllConversations("maus");
+    showAllConversations("sanremes");
     await act(async () => {
       root.render(createElement(StoreProvider, null, createElement(BotConversations, { bot })));
       await flushMicrotasks();
@@ -152,7 +152,7 @@ describe("row memoization in BotConversations and BotListItem", () => {
       pendingQueued: { "main-0": queuedForZero },
       routineRuns: [{
         id: "run-1", routineId: "rt-1", routineName: "Digest", target: "bot",
-        botId: "bot-1", runOn: "maus", scheduledFor: 20, status: "running",
+        botId: "bot-1", runOn: "sanremes", scheduledFor: 20, status: "running",
         manual: false, threadId: "sub-1", createdAt: 20,
       }],
     };

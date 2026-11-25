@@ -5,8 +5,8 @@ import { createConfigRoutes, type ConfigRouteDeps } from "./config.ts";
 
 const desktop: RequestAuth = { kind: "loopback", scopes: ["admin", "client"] };
 // With the desktop's token the companion's phone is a verified device; the standalone companion only marks its requests.
-const viaDesktop = { auth: { ...desktop, companionDevice: "phone-1" }, headers: { "x-openmausbot-companion": "1", "x-openmausbot-companion-device": "phone-1" } };
-const standalone = { auth: desktop, headers: { "x-openmausbot-companion": "1", "x-openmausbot-companion-device": "phone-1" } };
+const viaDesktop = { auth: { ...desktop, companionDevice: "phone-1" }, headers: { "x-sanremes-companion": "1", "x-sanremes-companion-device": "phone-1" } };
+const standalone = { auth: desktop, headers: { "x-sanremes-companion": "1", "x-sanremes-companion-device": "phone-1" } };
 
 async function put(from: { auth: RequestAuth; headers: Record<string, string> }, body: unknown, method = "PUT") {
   const replies: Array<{ status: number; body: unknown }> = [];

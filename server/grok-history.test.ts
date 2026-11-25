@@ -10,7 +10,7 @@ const sent = (seq: number, message: Record<string, unknown>, extra: Record<strin
   ({ kind: "send-message", seq, id: `t${seq}s1`, message, timestampMs: at(seq), ...extra });
 const shown = (entries: unknown[]) => grokChatMessages(entries).map(({ role, text }) => [role, text]);
 
-describe("a Grok Bot chat as a MausBot conversation", () => {
+describe("a Grok Bot chat as a SanRemes conversation", () => {
   it("is one linear thread in Grok Bot's order, with Grok Bot's times, even when entries come shuffled or skip numbers", () => {
     const messages = grokChatMessages([
       sent(7, { type: "text", content: "Booked for Friday." }),

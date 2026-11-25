@@ -11,7 +11,7 @@ vi.mock("../settings-shell", () => ({ useSettingsShell: () => ({
   ctx: { desktop: true, advanced, client: false, home: false, here: true, cloud: false },
   place: { kind: "server", name: "hetzner-1", color: null, named: true }, go: vi.fn(),
 }) }));
-vi.mock("../settings-context", () => ({ useOtherPlaces: () => [], versionLine: () => "MausBot 0.1.178" }));
+vi.mock("../settings-context", () => ({ useOtherPlaces: () => [], versionLine: () => "SanRemes 0.1.178" }));
 vi.mock("../inert", () => ({ useSwitchToComputer: () => ({ name: "This computer" }), InertRow: ({ title }: { title: string }) => createElement("div", { "data-inert": title }) }));
 vi.mock("@/state/store-select", () => ({ useStoreDispatch: () => vi.fn() }));
 vi.mock("../../ConnectedWorkspacesSettings", () => ({ ConnectedWorkspacesSettings: ({ label }: { label: string }) => createElement("section", { "data-your-computers": label }) }));

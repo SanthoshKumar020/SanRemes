@@ -92,7 +92,7 @@ async function screenCalls(server: AgentsIntegration, count: number): Promise<Ar
   const calls: Array<{ ms: number; state: unknown }> = [];
   for (let call = 0; call < count; call += 1) {
     const at = Date.now();
-    const response = await fetch(server.env.OMB_CONTROL_URL!, { headers: { authorization: `Bearer ${server.env.OMB_CONTROL_TOKEN}` } });
+    const response = await fetch(server.env.SANREMES_CONTROL_URL!, { headers: { authorization: `Bearer ${server.env.SANREMES_CONTROL_TOKEN}` } });
     calls.push({ ms: Date.now() - at, state: response.ok ? await response.json() : { status: response.status } });
   }
   return calls;
@@ -107,12 +107,12 @@ export async function runRoomHandoffAgent(argv: string[], planPath: string, prom
   progress?: (text: string) => void, steered: () => readonly string[] = () => []): Promise<string> {
   const arg = (flag: string) => argv[argv.indexOf(flag) + 1];
   const mounted = launch ? [] : Object.values(JSON.parse(readAtLaunch(arg("--mcp-config"))).mcpServers as Record<string, AgentsIntegration>);
-  // With a tool selection every server sits behind the gate, which names its upstream in OMB_GATE_UPSTREAM.
+  // With a tool selection every server sits behind the gate, which names its upstream in SANREMES_GATE_UPSTREAM.
   const agentEnv = (server: AgentsIntegration): Record<string, string> => {
-    if (server.env?.OMB_COMMS_TOKEN || server.env?.OMB_BOT_ID) return server.env;
-    try { return (JSON.parse(server.env?.OMB_GATE_UPSTREAM ?? "") as AgentsIntegration).env ?? {}; } catch { return {}; }
+    if (server.env?.SANREMES_COMMS_TOKEN || server.env?.SANREMES_BOT_ID) return server.env;
+    try { return (JSON.parse(server.env?.SANREMES_GATE_UPSTREAM ?? "") as AgentsIntegration).env ?? {}; } catch { return {}; }
   };
-  const integration = launch?.integration ?? mounted.find(s => agentEnv(s).OMB_COMMS_TOKEN) ?? mounted.find(s => agentEnv(s).OMB_BOT_ID);
+  const integration = launch?.integration ?? mounted.find(s => agentEnv(s).SANREMES_COMMS_TOKEN) ?? mounted.find(s => agentEnv(s).SANREMES_BOT_ID);
   if (!integration) {
     // `${planPath}.gates.json` [{ promptIncludes, gateFile }] holds a delegated reply until its gate exists.
     const gatesPath = `${planPath}.gates.json`;
@@ -130,7 +130,7 @@ export async function runRoomHandoffAgent(argv: string[], planPath: string, prom
     return `Handled without teammate tools: ${taskText}`;
   }
   const agent = agentEnv(integration);
-  const botId = agent.OMB_BOT_ID;
+  const botId = agent.SANREMES_BOT_ID;
   const launchNote = splitLaunchNote(prompt);
   const changedNote = splitChangedNote(launchNote.prompt);
   prompt = changedNote.prompt;
@@ -153,7 +153,7 @@ export async function runRoomHandoffAgent(argv: string[], planPath: string, prom
   const matches = (entry: ScriptEntry) => entry.match.every(text => own.includes(text));
   const entry = script && (script.find(e => !e.repeat && !used.has(e.key) && matches(e)) ?? script.find(e => e.repeat && matches(e)));
   if (script && !entry) {
-    appendFileSync(`${planPath}.evidence.jsonl`, JSON.stringify({ botId, turnIndex, threadId: agent.OMB_THREAD_ID, unplanned: true, resumed, system, prompt }) + "\n");
+    appendFileSync(`${planPath}.evidence.jsonl`, JSON.stringify({ botId, turnIndex, threadId: agent.SANREMES_THREAD_ID, unplanned: true, resumed, system, prompt }) + "\n");
     throw new Error(`Unplanned fixture turn for ${botId}: ${own.slice(0, 300)}`);
   }
   const plan: any = entry ?? (basePlan.turns ? basePlan.turns[turnIndex] : basePlan);
@@ -230,7 +230,7 @@ export async function runRoomHandoffAgent(argv: string[], planPath: string, prom
         approval = await askPermission(mounted.ogb, plan.approve);
       }
       if (plan.screenCalls) {
-        if (!mounted.computer?.env?.OMB_CONTROL_URL) throw new Error("Scripted screen calls need a mounted computer");
+        if (!mounted.computer?.env?.SANREMES_CONTROL_URL) throw new Error("Scripted screen calls need a mounted computer");
         screen = await screenCalls(mounted.computer, plan.screenCalls);
       }
       if (typeof plan.progress === "string") progress?.(plan.progress);
@@ -259,7 +259,7 @@ export async function runRoomHandoffAgent(argv: string[], planPath: string, prom
     closing = true;
     clearTimeout(timer); clearTimeout(delayTimer); clearInterval(gateTimer); lines.close(); child.stdin.destroy();
     await waitForExit(child, { signal: "SIGTERM", graceMs: 500 });
-    appendFileSync(`${planPath}.evidence.jsonl`, JSON.stringify({ botId, turnIndex, threadId: agent.OMB_THREAD_ID, pid: process.pid,
+    appendFileSync(`${planPath}.evidence.jsonl`, JSON.stringify({ botId, turnIndex, threadId: agent.SANREMES_THREAD_ID, pid: process.pid,
       model: argv.includes("--model") ? arg("--model") : undefined,
       permissionMode: argv.includes("--permission-mode") ? arg("--permission-mode") : undefined,
       restricted: argv.includes("--restricted"), permissionPromptTool: argv.includes("--permission-prompt-tool"),

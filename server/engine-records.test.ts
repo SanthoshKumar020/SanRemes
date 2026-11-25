@@ -21,7 +21,7 @@ afterEach(async () => {
 });
 
 function dataDir(): string {
-  const dir = mkdtempSync(join(tmpdir(), "omb-engine-records-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-engine-records-"));
   folders.push(dir);
   return dir;
 }

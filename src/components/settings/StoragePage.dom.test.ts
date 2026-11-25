@@ -92,8 +92,8 @@ describe("who gets Settings → Storage", () => {
     expect(document.querySelector("[data-storage-summary]")?.getAttribute("data-band")).toBe("near");
     expect(document.querySelector("[data-storage-bot]")?.textContent).toBe("Chief7 GB");
     // Seeing it here is what keeps the sidebar's line for this band away.
-    expect(localStorage.getItem("openmausbot.storageNotice.seen.v1:server:env-a")).toBe("near");
-    expect(localStorage.getItem("openmausbot.storageNotice.seen.v1")).toBeNull();
+    expect(localStorage.getItem("sanremes.storageNotice.seen.v1:server:env-a")).toBe("near");
+    expect(localStorage.getItem("sanremes.storageNotice.seen.v1")).toBeNull();
   });
 
   it("opening Storage reads the report and never starts a measurement", async () => {
@@ -102,11 +102,11 @@ describe("who gets Settings → Storage", () => {
     expect(requests.filter((request) => request.startsWith("POST /api/diagnostics/storage"))).toEqual([]);
   });
 
-  it("a Team Cloud's admin: their own MausBot keeps its name, and a bot the app isn't shown reads as a private bot", async () => {
+  it("a Team Cloud's admin: their own SanRemes keeps its name, and a bot the app isn't shown reads as a private bot", async () => {
     const answers = { ...REPORT, storage: storageReport({ bots: [{ id: "mine", bytes: 7 * GB, files: 1 }, { id: "theirs", bytes: 3 * GB, files: 1 }] }) };
     await openSettings({ storage: answers, section: "storage", config: { ...CONFIG, team: { id: "team-1", name: "Studio" } },
-      bots: [{ id: "mine", name: "MausBot", threadId: "t1", defaultBot: { person: "ada@example.com" } }] });
-    expect([...document.querySelectorAll("[data-storage-bot]")].map((row) => row.textContent)).toEqual(["MausBot7 GB", "Private bot3 GB", "Deleted bots1.5 GB", "Other bots512 MB"]);
+      bots: [{ id: "mine", name: "SanRemes", threadId: "t1", defaultBot: { person: "ada@example.com" } }] });
+    expect([...document.querySelectorAll("[data-storage-bot]")].map((row) => row.textContent)).toEqual(["SanRemes7 GB", "Private bot3 GB", "Deleted bots1.5 GB", "Other bots512 MB"]);
   });
 
   it("a team member who is not an admin: no Storage page, and the route is never asked", async () => {

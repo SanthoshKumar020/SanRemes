@@ -31,14 +31,14 @@ function age(path: string, days: number): void {
 
 describe("a resumed conversation reinstalls", () => {
   it.skipIf(!hasNpm || process.platform === "win32")("sheds an idle conversation's npm install, tells its bot, and npm ci brings it back", async () => {
-    const sandbox = mkdtempSync(join(tmpdir(), "omb-idle-reinstall-"));
+    const sandbox = mkdtempSync(join(tmpdir(), "sanremes-idle-reinstall-"));
     made.push(sandbox);
     const env = { ...process.env, npm_config_cache: join(sandbox, "npm-cache"), npm_config_audit: "false", npm_config_fund: "false", npm_config_update_notifier: "false" };
     const run = (args: string[], cwd: string) => execFileSync(npm, args, { cwd, env, stdio: "pipe" }).toString();
     // A tiny package, packed into a tarball the project depends on.
     const source = join(sandbox, "tiny");
     mkdirSync(source);
-    writeFileSync(join(source, "package.json"), JSON.stringify({ name: "omb-tiny", version: "1.0.0", main: "index.js" }));
+    writeFileSync(join(source, "package.json"), JSON.stringify({ name: "sanremes-tiny", version: "1.0.0", main: "index.js" }));
     writeFileSync(join(source, "index.js"), "module.exports = () => 'tiny works';\n");
     const tarball = join(sandbox, run(["pack", "--silent", "--pack-destination", sandbox], source).trim().split("\n").at(-1)!);
     const dataDir = join(sandbox, "data");
@@ -46,7 +46,7 @@ describe("a resumed conversation reinstalls", () => {
     mkdirSync(project, { recursive: true });
     writeFileSync(join(project, "package.json"), JSON.stringify({ name: "app", version: "1.0.0", private: true }));
     run(["install", "--offline", tarball], project);
-    const check = () => execFileSync(process.execPath, ["-e", "process.stdout.write(require('omb-tiny')())"], { cwd: project }).toString();
+    const check = () => execFileSync(process.execPath, ["-e", "process.stdout.write(require('sanremes-tiny')())"], { cwd: project }).toString();
     expect(check()).toBe("tiny works");
     age(dataDir, 10);
 

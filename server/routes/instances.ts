@@ -136,7 +136,7 @@ export function createInstanceRoutes(deps: InstanceRouteDeps): RouteHandler {
     if (method === "GET" && path === "/api/health/engines") {
       const described = await describeInstances();
       const available = Array.isArray(described) ? described.filter((instance) => Object(Object(instance).snapshot).state === "available").length : 0;
-      return json(res, 200, { app: "openmausbot", engines: available });
+      return json(res, 200, { app: "sanremes", engines: available });
     }
     const companyMutation = /^\/api\/instances\/(company\.[\w.-]+)(?:\/|$)/.exec(path);
     if (hostedModels && path.startsWith("/api/instances/") && method !== "GET") return json(res, 403, { error: HOSTED_PROVIDER_SETTINGS_ERROR });
@@ -318,7 +318,7 @@ export function createInstanceRoutes(deps: InstanceRouteDeps): RouteHandler {
 
     // Each phone has its own sign-in, so it never resumes or reads the computer's, or another phone's.
     const signInOwner = () => auth.kind === "session" ? auth.session.id
-      : fromPairedDevice(req, auth) ? `companion:${String(req.headers["x-openmausbot-companion-device"] ?? "")}` : "loopback";
+      : fromPairedDevice(req, auth) ? `companion:${String(req.headers["x-sanremes-companion-device"] ?? "")}` : "loopback";
     const authStatus = /^\/api\/instances\/([\w.-]+)\/auth\/status$/.exec(path);
     if (method === "GET" && authStatus) {
       res.setHeader("cache-control", "no-store");
@@ -362,7 +362,7 @@ export function createInstanceRoutes(deps: InstanceRouteDeps): RouteHandler {
         }
         if (action === "install") {
           const installed = await registry.installRuntime(instanceId);
-          if (!installed) return json(res, 404, { error: "Installing this engine from Settings is not available on this server. Use the install command on the machine running OpenMausBot." });
+          if (!installed) return json(res, 404, { error: "Installing this engine from Settings is not available on this server. Use the install command on the machine running SanRemes." });
           const usingAppCopy = installed !== true && await useAppCopy(instanceId, installed.useCli);
           return json(res, 200, { instances: await describeInstances(), ...(usingAppCopy ? { usingAppCopy: true } : {}) });
         }
@@ -580,7 +580,7 @@ export function createInstanceRoutes(deps: InstanceRouteDeps): RouteHandler {
         if (providerInUse(instanceId)) {
           return json(res, 409, { error: "Choose another account for the bots and default model using this account before removing it." });
         }
-        // OpenMausBot keeps a ChatGPT account's sign-in in its own data folder: removing the account clears it. An added
+        // SanRemes keeps a ChatGPT account's sign-in in its own data folder: removing the account clears it. An added
         // Antigravity account's sign-in, on either runtime, is in its profile, which is removed below.
         const live = addedChatgpt ? registry.get(instanceId) : undefined;
         if (live?.signOut) {
@@ -593,7 +593,7 @@ export function createInstanceRoutes(deps: InstanceRouteDeps): RouteHandler {
         }
         delete instances[instanceId];
         await persistProviderInstance(instanceId, instances);
-        // An added Antigravity account's Google sign-in lives in OpenMausBot's data folder too: removing the account deletes it.
+        // An added Antigravity account's Google sign-in lives in SanRemes's data folder too: removing the account deletes it.
         if (addedAntigravity) await removeAntigravityProfile(instanceId);
         return json(res, 200, { instances: await describeInstances() });
       } finally {

@@ -22,7 +22,7 @@ import {
 } from "./phone-push.ts";
 
 const CREDENTIAL = `omb_install_${"a".repeat(22)}.${"b".repeat(43)}`;
-const ACCESS = { controlPlane: "https://accounts.openmausbot.test", credential: CREDENTIAL };
+const ACCESS = { controlPlane: "https://accounts.sanremes.test", credential: CREDENTIAL };
 const APNS = "ab".repeat(32);
 const APNS_2 = "cd".repeat(32);
 const FCM = `fcmInstance_1:APA91b${"x".repeat(140)}`;
@@ -53,7 +53,7 @@ let clock: number;
 let timers: Array<{ run: () => void; at: number }>;
 
 beforeEach(() => {
-  dataDir = mkdtempSync(join(tmpdir(), "omb-phone-push-"));
+  dataDir = mkdtempSync(join(tmpdir(), "sanremes-phone-push-"));
   clock = 1_000_000;
   timers = [];
 });
@@ -109,12 +109,12 @@ const notification = (overrides: Record<string, unknown> = {}) => ({
 const everyone = () => true;
 
 describe("phone push switch", () => {
-  it("is off unless config or OMB_PHONE_PUSH turns it on, and the variable wins", () => {
+  it("is off unless config or SANREMES_PHONE_PUSH turns it on, and the variable wins", () => {
     expect(phonePushEnabled({}, {})).toBe(false);
     expect(phonePushEnabled({ features: { phonePush: true } }, {})).toBe(true);
-    expect(phonePushEnabled({ features: { phonePush: true } }, { OMB_PHONE_PUSH: "0" })).toBe(false);
-    expect(phonePushEnabled({}, { OMB_PHONE_PUSH: "1" })).toBe(true);
-    expect(phonePushEnabled({ features: { phonePush: false } }, { OMB_PHONE_PUSH: "yes" })).toBe(false);
+    expect(phonePushEnabled({ features: { phonePush: true } }, { SANREMES_PHONE_PUSH: "0" })).toBe(false);
+    expect(phonePushEnabled({}, { SANREMES_PHONE_PUSH: "1" })).toBe(true);
+    expect(phonePushEnabled({ features: { phonePush: false } }, { SANREMES_PHONE_PUSH: "yes" })).toBe(false);
   });
 
   it("switched off, keeps nothing, sends nothing and says so", async () => {
@@ -203,7 +203,7 @@ describe("offering a notify frame", () => {
     expect(relay.sends()).toEqual([{
       path: "/v1/installations/self/push/send",
       authorization: `Bearer ${CREDENTIAL}`,
-      body: { v: 1, token: APNS, pairing: "pair-tag-0001", collapseId: "openmaus.th_1.42", notification: { kind: "approval", title: "Scout needs approval", botId: "bot_1", botName: "Scout", threadId: "th_1" } },
+      body: { v: 1, token: APNS, pairing: "pair-tag-0001", collapseId: "sanremes.th_1.42", notification: { kind: "approval", title: "Scout needs approval", botId: "bot_1", botName: "Scout", threadId: "th_1" } },
     }]);
     const raw = JSON.stringify(relay.calls);
     for (const secret of ["PRIVATE", "payroll", "sk-live", "API_KEY"]) expect(raw).not.toContain(secret);
@@ -245,7 +245,7 @@ describe("offering a notify frame", () => {
     clock += PUSH_COALESCE_MS;
     push.offer({ notification: notification(), seq: 4 }, everyone);
     await push.flush();
-    expect(relay.sends().map((call) => call.body.collapseId)).toEqual(["openmaus.th_1.1", "openmaus.th_1.3", "openmaus.th_1.4"]);
+    expect(relay.sends().map((call) => call.body.collapseId)).toEqual(["sanremes.th_1.1", "sanremes.th_1.3", "sanremes.th_1.4"]);
   });
 
   it("stops a looping bot buzzing a pocket", async () => {
@@ -268,7 +268,7 @@ describe("the outbox", () => {
     push.offer({ notification: notification(), seq: 2 }, everyone);
     await push.flush();
     for (const wait of PUSH_RETRY_MS) await advance(push, wait);
-    expect(relay.sends().map((call) => call.body.collapseId)).toEqual(["openmaus.th_1.1", "openmaus.th_1.2", "openmaus.th_1.2", "openmaus.th_1.2"]);
+    expect(relay.sends().map((call) => call.body.collapseId)).toEqual(["sanremes.th_1.1", "sanremes.th_1.2", "sanremes.th_1.2", "sanremes.th_1.2"]);
     expect(push.pending()).toBe(0);
   });
 
@@ -325,7 +325,7 @@ describe("the outbox", () => {
     await advance(push, 119_000);
     expect(relay.sends()).toHaveLength(2);
     await advance(push, 1_000);
-    expect(relay.sends().at(-1)!.body.collapseId).toBe("openmaus.th_4.4");
+    expect(relay.sends().at(-1)!.body.collapseId).toBe("sanremes.th_4.4");
   });
 
   it("never throws into the server", async () => {
@@ -337,7 +337,7 @@ describe("the outbox", () => {
 
 describe("the push's identifier and title", () => {
   it("is the stream notification's own identifier when it fits APNs' 64 bytes", () => {
-    expect(phonePushCollapseId("th_1", 9)).toBe("openmaus.th_1.9");
+    expect(phonePushCollapseId("th_1", 9)).toBe("sanremes.th_1.9");
     expect(phonePushCollapseId("t".repeat(60), 9)).toBeUndefined();
     expect(phonePushCollapseId("th_1", -1)).toBeUndefined();
   });
@@ -353,7 +353,7 @@ describe("where the relay credential comes from", () => {
 
   it("prefers the desktop app's message, including its 'none'", () => {
     writeFileSync(tunnelFile(), JSON.stringify({ companionInstallationCredential: CREDENTIAL }));
-    const source = new PhonePushAccessSource({ env: { OMB_PUSH_CREDENTIAL: CREDENTIAL }, tunnelFile: tunnelFile(), defaultControlPlane: "https://accounts.openmausbot.com" });
+    const source = new PhonePushAccessSource({ env: { SANREMES_PUSH_CREDENTIAL: CREDENTIAL }, tunnelFile: tunnelFile(), defaultControlPlane: "https://accounts.openmausbot.com" });
     expect(source.receive({ type: "something-else" })).toBe(false);
     expect(source.receive({ type: PHONE_PUSH_DESKTOP_MESSAGE, access: { controlPlane: "https://accounts.openmausbot.com/", credential: CREDENTIAL } })).toBe(true);
     expect(source.current()).toEqual({ controlPlane: "https://accounts.openmausbot.com", credential: CREDENTIAL });
@@ -363,12 +363,12 @@ describe("where the relay credential comes from", () => {
     expect(source.current()).toBeNull();
   });
 
-  it("then OMB_PUSH_CREDENTIAL, a fleet's credential, then `openmausbot login`'s file", () => {
+  it("then SANREMES_PUSH_CREDENTIAL, a fleet's credential, then `sanremes login`'s file", () => {
     const at = (env: NodeJS.ProcessEnv) => new PhonePushAccessSource({ env, tunnelFile: tunnelFile(), defaultControlPlane: "https://accounts.openmausbot.com" }).current();
     expect(at({})).toBeNull();
     writeFileSync(tunnelFile(), JSON.stringify({ companionInstallationCredential: CREDENTIAL }));
     expect(at({})).toEqual({ controlPlane: "https://accounts.openmausbot.com", credential: CREDENTIAL });
-    expect(at({ OMB_PUSH_CREDENTIAL: "not-a-credential" })).toBeNull();
-    expect(at({ OMB_INSTALLATION_CREDENTIAL: CREDENTIAL, OMB_CONTROL_PLANE_URL: "http://127.0.0.1:8787" })).toEqual({ controlPlane: "http://127.0.0.1:8787", credential: CREDENTIAL });
+    expect(at({ SANREMES_PUSH_CREDENTIAL: "not-a-credential" })).toBeNull();
+    expect(at({ SANREMES_INSTALLATION_CREDENTIAL: CREDENTIAL, SANREMES_CONTROL_PLANE_URL: "http://127.0.0.1:8787" })).toEqual({ controlPlane: "http://127.0.0.1:8787", credential: CREDENTIAL });
   });
 });

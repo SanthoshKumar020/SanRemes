@@ -1,4 +1,4 @@
-// Teammates on other servers: a bot that another OpenMausBot server runs, reached through that server's Bot API
+// Teammates on other servers: a bot that another SanRemes server runs, reached through that server's Bot API
 // (docs/bot-api.md) with the key its owner made there. The key is kept in this file alone (mode 600): it is never listed,
 // logged or sent anywhere but the Bot API address it was saved with.
 import { randomUUID } from "node:crypto";
@@ -112,7 +112,7 @@ export function remoteAddress(address: string, botId?: string): { base: string; 
   try {
     url = new URL(address);
   } catch {
-    throw new RemoteTeammateError("that is not a server address; give it like https://maus.example.com", 400);
+    throw new RemoteTeammateError("that is not a server address; give it like https://sanremes.example.com", 400);
   }
   // A blob: URL's origin is the https one inside it, so the origin check alone would take it.
   if (url.protocol !== "https:" && url.protocol !== "http:") throw new RemoteTeammateError("the address must start with https:// (or http:// on a private network)", 400);
@@ -191,7 +191,7 @@ export class RemoteTeammates {
   }
 
   private assertWritable(): void {
-    if (this.unreadable) throw new RemoteTeammateError("The saved teammates on other servers could not be read. Repair remote-teammates.json and restart OpenMausBot before changing them.", 503);
+    if (this.unreadable) throw new RemoteTeammateError("The saved teammates on other servers could not be read. Repair remote-teammates.json and restart SanRemes before changing them.", 503);
   }
 
   /** Writes `teammates` and only then keeps them, so a failed write leaves the list as the file has it. */
@@ -238,7 +238,7 @@ export function readRemote(teammate: RemoteTeammate, thread: string, options: Re
 /** Whether the other server takes this key, without starting anything there: a read of a thread that can't exist is
  * answered 404 "no such thread" only after the key was accepted. Any other 404 (a proxy, a path with no Bot API) isn't. */
 export async function checkRemote(teammate: RemoteTeammate, options: RemoteCallOptions = {}): Promise<{ ok: true } | Extract<RemoteResult, { ok: false }>> {
-  const result = await callRemote(teammate, `?thread=omb-check-${randomUUID()}`, { method: "GET" }, CHECK_TIMEOUT_MS, options);
+  const result = await callRemote(teammate, `?thread=sanremes-check-${randomUUID()}`, { method: "GET" }, CHECK_TIMEOUT_MS, options);
   if (!result.ok) {
     if (result.problem !== "no_thread") return result;
     return result.detail === "no such thread" ? { ok: true } : { ok: false, problem: "bad_answer", status: 404, ...(result.detail ? { detail: result.detail } : {}) };

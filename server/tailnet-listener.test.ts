@@ -30,12 +30,12 @@ describe("a tailnet share's configuration", () => {
     expect(readTailnetShare({ name: NAME, addresses: ["192.168.1.21"] }, "192.168.1.20")).toBeNull();
   });
 
-  it("reads the environment openmausbot serve --tailscale sets", () => {
+  it("reads the environment sanremes serve --tailscale sets", () => {
     expect(tailnetShareFromEnv({})).toBeNull();
-    expect(tailnetShareFromEnv({ OMB_TAILNET_NAME: NAME, OMB_TAILNET_ADDRESSES: "100.101.102.103, fd7a:115c:a1e0::1" }))
+    expect(tailnetShareFromEnv({ SANREMES_TAILNET_NAME: NAME, SANREMES_TAILNET_ADDRESSES: "100.101.102.103, fd7a:115c:a1e0::1" }))
       .toEqual({ name: NAME, addresses: ["100.101.102.103", "fd7a:115c:a1e0::1"] });
-    expect(tailnetShareFromEnv({ OMB_TAILNET_NAME: NAME })).toEqual({ name: NAME, addresses: "interface" });
-    expect(tailnetShareFromEnv({ OMB_TAILNET_NAME: NAME, OMB_TAILNET_SERVED: `https://${NAME}` })).toEqual({ name: NAME, served: `https://${NAME}` });
+    expect(tailnetShareFromEnv({ SANREMES_TAILNET_NAME: NAME })).toEqual({ name: NAME, addresses: "interface" });
+    expect(tailnetShareFromEnv({ SANREMES_TAILNET_NAME: NAME, SANREMES_TAILNET_SERVED: `https://${NAME}` })).toEqual({ name: NAME, served: `https://${NAME}` });
   });
 });
 
@@ -142,9 +142,9 @@ describe("the listeners", () => {
     share = createTailnetShare({ port: port, handle: async () => {}, attach: () => {} });
     await share.start();
     const answers: object[] = [];
-    expect(share.receive({ type: "openmausbot:other" }, (answer) => answers.push(answer))).toBe(false);
-    const replied = new Promise<object>((resolve) => share!.receive({ type: "openmausbot:tailnet-share", share: { name: NAME, served: `https://${NAME}` } }, resolve));
-    expect(await replied).toEqual({ type: "openmausbot:tailnet-share-state", origin: `https://${NAME}`, listening: [], error: null });
+    expect(share.receive({ type: "sanremes:other" }, (answer) => answers.push(answer))).toBe(false);
+    const replied = new Promise<object>((resolve) => share!.receive({ type: "sanremes:tailnet-share", share: { name: NAME, served: `https://${NAME}` } }, resolve));
+    expect(await replied).toEqual({ type: "sanremes:tailnet-share-state", origin: `https://${NAME}`, listening: [], error: null });
     expect(answers).toEqual([]);
   });
 });

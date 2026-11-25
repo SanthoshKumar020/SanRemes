@@ -21,7 +21,7 @@ afterEach(() => {
 });
 
 function scratchHome(files: Record<string, string>, parent = tmpdir()): string {
-  const home = mkdtempSync(join(parent, "omb-codex-catalog-"));
+  const home = mkdtempSync(join(parent, "sanremes-codex-catalog-"));
   scratchDirs.push(home);
   const root = join(home, ".codex");
   mkdirSync(root, { recursive: true });
@@ -71,13 +71,13 @@ describe("decodeCodexSelection", () => {
 
 describe("readCodexModelCatalog", () => {
   it("returns the static cloud fallback when there is no config or CLI probe", async () => {
-    expect(await readCodexModelCatalog({ HOME: join(tmpdir(), "omb-codex-missing-home") })).toEqual(
+    expect(await readCodexModelCatalog({ HOME: join(tmpdir(), "sanremes-codex-missing-home") })).toEqual(
       STATIC_CODEX_MODELS,
     );
   });
 
   it("lists GPT-6.2 Astra and Sol first when the static cloud fallback is used", async () => {
-    const catalog = await readCodexModelCatalog({ HOME: join(tmpdir(), "omb-codex-missing-home") });
+    const catalog = await readCodexModelCatalog({ HOME: join(tmpdir(), "sanremes-codex-missing-home") });
     expect(catalog.options.slice(0, 2)).toEqual([
       { id: "gpt-6.2-astra", label: "GPT-6.2 Astra (availability unverified)" },
       { id: "gpt-6.2-sol", label: "GPT-6.2 Sol (availability unverified)" },
@@ -88,7 +88,7 @@ describe("readCodexModelCatalog", () => {
   it("uses every visible page from the installed Codex app-server catalog", async () => {
     chmodSync(FAKE_CLI, 0o755);
     const catalog = await readCodexModelCatalog(
-      { HOME: join(tmpdir(), "omb-codex-app-server-models"), PATH: process.env.PATH },
+      { HOME: join(tmpdir(), "sanremes-codex-app-server-models"), PATH: process.env.PATH },
       fetch,
       FAKE_CLI,
     );
@@ -148,7 +148,7 @@ describe("readCodexModelCatalog", () => {
   it("adds a Fast row after each model that offers Fast and does not already run on it", async () => {
     chmodSync(FAKE_CLI, 0o755);
     const catalog = await readCodexModelCatalog(
-      { HOME: join(tmpdir(), "omb-codex-app-server-tiers"), PATH: process.env.PATH, FAKE_CODEX_TIERS: "1" },
+      { HOME: join(tmpdir(), "sanremes-codex-app-server-tiers"), PATH: process.env.PATH, FAKE_CODEX_TIERS: "1" },
       fetch,
       FAKE_CLI,
     );
@@ -166,7 +166,7 @@ describe("readCodexModelCatalog", () => {
   it("reads per-model supportedReasoningEfforts so only supporting models advertise ultra", async () => {
     chmodSync(FAKE_CLI, 0o755);
     const catalog = await readCodexModelCatalog(
-      { HOME: join(tmpdir(), "omb-codex-app-server-efforts"), PATH: process.env.PATH, FAKE_CODEX_TIERS: "1", FAKE_CODEX_EFFORTS: "1" },
+      { HOME: join(tmpdir(), "sanremes-codex-app-server-efforts"), PATH: process.env.PATH, FAKE_CODEX_TIERS: "1", FAKE_CODEX_EFFORTS: "1" },
       fetch,
       FAKE_CLI,
     );
@@ -230,7 +230,7 @@ name = "oMLX"
     chmodSync(FAKE_CLI, 0o755);
     const catalog = await readCodexModelCatalog(
       {
-        HOME: join(tmpdir(), "omb-codex-app-server-ultrafast"),
+        HOME: join(tmpdir(), "sanremes-codex-app-server-ultrafast"),
         PATH: process.env.PATH,
         FAKE_CODEX_TIERS: "1",
         FAKE_CODEX_ULTRAFAST: "1",
@@ -337,7 +337,7 @@ name = "oMLX"
     const ignored = scratchHome({
       "config.toml": `model_provider = "omlx"\nmodel = "ignored"\n`,
     });
-    const parent = mkdtempSync(join(tmpdir(), "omb-codex-home-"));
+    const parent = mkdtempSync(join(tmpdir(), "sanremes-codex-home-"));
     scratchDirs.push(parent);
     const codexHome = join(parent, "codex");
     mkdirSync(codexHome, { recursive: true });

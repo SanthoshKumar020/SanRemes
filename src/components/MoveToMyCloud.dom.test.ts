@@ -126,7 +126,7 @@ it("the folder is lent by default, commands only when turned on, and the choice 
   expect(q('[data-move-choice="folder"]')!.textContent).toBe("Let Ada open and edit ~/code/app");
   expect(toggle("folder")!.getAttribute("aria-checked")).toBe("true");
   expect(toggle("commands")!.getAttribute("aria-checked")).toBe("false");
-  expect(q('[data-move-choice="commands"]')!.textContent).toBe("Let your Clouds run commands on this computerAs you, for the bots on all your own Clouds, while this computer is on. You confirm on this computer and can turn it off from the OpenMausBot icon.");
+  expect(q('[data-move-choice="commands"]')!.textContent).toBe("Let your Clouds run commands on this computerAs you, for the bots on all your own Clouds, while this computer is on. You confirm on this computer and can turn it off from the SanRemes icon.");
   await click(toggle("commands"));
   expect(q("[data-move-change=commands]")).toBeNull();
   await click(toggle("folder"));
@@ -213,7 +213,7 @@ it("the chooser says what changes for the bots ticked, and sends the choice with
 });
 
 it("a bot's menu leaves it out for the helper, a bot on its way, and when My Cloud can't take bots", async () => {
-  await menu({ id: "maus", name: "Maus", defaultBot: { v: 1 } });
+  await menu({ id: "sanremes", name: "SanRemes", defaultBot: { v: 1 } });
   expect(q("[data-item]")).toBeNull();
   await menu({ id: "moving-one", name: "Pip" });
   expect(q("[data-item]")).toBeNull();

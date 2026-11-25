@@ -24,9 +24,9 @@ import type { AntigravityRuntime } from "./antigravity-runtime.ts";
  * this app installed earlier is left where it is and not started. */
 export const ANTIGRAVITY_NATIVE_CLI = true;
 
-export const ANTIGRAVITY_NATIVE_CLI_ENV = "OMB_ANTIGRAVITY_NATIVE_CLI";
+export const ANTIGRAVITY_NATIVE_CLI_ENV = "SANREMES_ANTIGRAVITY_NATIVE_CLI";
 
-/** `OMB_ANTIGRAVITY_NATIVE_CLI=1` in the server's environment, read at start: an account whose CLI path names no runtime
+/** `SANREMES_ANTIGRAVITY_NATIVE_CLI=1` in the server's environment, read at start: an account whose CLI path names no runtime
  * (none, or `agy`) runs the native CLI even where the pinned runtime is installed, and the engine updater installs the
  * CLI there. An account whose path names a runtime keeps it; nothing is removed. Off (the default), such an account
  * keeps the pinned runtime where it is installed, and only a new install takes the CLI. */

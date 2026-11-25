@@ -42,7 +42,7 @@ function importComputerProvidersInChild(dataDir: string): Promise<void> {
       process.execPath,
       ["--experimental-strip-types", "--input-type=module", "--eval", source],
       {
-        env: { ...process.env, OMB_DATA_DIR: dataDir },
+        env: { ...process.env, SANREMES_DATA_DIR: dataDir },
         stdio: ["ignore", "ignore", "pipe"],
       },
     );
@@ -60,13 +60,13 @@ function importComputerProvidersInChild(dataDir: string): Promise<void> {
 
 afterEach(() => {
   for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
-  delete process.env.OMB_APP_VERSION;
-  delete process.env.OMB_ENVIRONMENT_LABEL;
+  delete process.env.SANREMES_APP_VERSION;
+  delete process.env.SANREMES_ENVIRONMENT_LABEL;
 });
 
 describe("environment identity", () => {
   it("creates the id once, owner-only, and keeps it across restarts", () => {
-    const dir = mkdtempSync(join(tmpdir(), "omb-env-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-env-"));
     dirs.push(dir);
     const id = loadEnvironmentId(dir);
     expect(id).toMatch(/^[0-9a-f-]{36}$/);
@@ -75,7 +75,7 @@ describe("environment identity", () => {
   });
 
   it("publishes one complete id when independent processes start together", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "omb-env-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-env-"));
     dirs.push(dir);
 
     const ids = await Promise.all(Array.from({ length: 12 }, () => loadEnvironmentIdInChild(dir)));
@@ -86,7 +86,7 @@ describe("environment identity", () => {
   });
 
   it("fails closed instead of rotating a malformed existing identity", () => {
-    const dir = mkdtempSync(join(tmpdir(), "omb-env-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-env-"));
     dirs.push(dir);
     const file = join(dir, "environment-id");
     writeFileSync(join(dir, "environment-id"), "garbage\n");
@@ -95,19 +95,19 @@ describe("environment identity", () => {
   });
 
   it("rejects UUID-shaped garbage and an unreadable identity path", () => {
-    const malformedDir = mkdtempSync(join(tmpdir(), "omb-env-"));
+    const malformedDir = mkdtempSync(join(tmpdir(), "sanremes-env-"));
     dirs.push(malformedDir);
     writeFileSync(join(malformedDir, "environment-id"), "------------------------------------\n");
     expect(() => loadEnvironmentId(malformedDir)).toThrow(/not a valid UUID/);
 
-    const unreadableDir = mkdtempSync(join(tmpdir(), "omb-env-"));
+    const unreadableDir = mkdtempSync(join(tmpdir(), "sanremes-env-"));
     dirs.push(unreadableDir);
     mkdirSync(join(unreadableDir, "environment-id"));
     expect(() => loadEnvironmentId(unreadableDir)).toThrow(/Cannot read the existing environment identity/);
   });
 
   it("does not create the data directory merely by importing computer providers", async () => {
-    const parent = mkdtempSync(join(tmpdir(), "omb-provider-import-"));
+    const parent = mkdtempSync(join(tmpdir(), "sanremes-provider-import-"));
     dirs.push(parent);
     const dataDir = join(parent, "not-created-yet");
     await importComputerProvidersInChild(dataDir);
@@ -115,8 +115,8 @@ describe("environment identity", () => {
   });
 
   it("describes the server for clients without leaking anything secret", () => {
-    process.env.OMB_APP_VERSION = "0.1.99";
-    process.env.OMB_ENVIRONMENT_LABEL = "cab mini";
+    process.env.SANREMES_APP_VERSION = "0.1.99";
+    process.env.SANREMES_ENVIRONMENT_LABEL = "cab mini";
     const d = environmentDescriptor({ environmentId: "abc", desktopManaged: true });
     expect(d).toEqual({
       environmentId: "abc",
@@ -128,13 +128,13 @@ describe("environment identity", () => {
     expect(environmentDescriptor({ environmentId: "abc", desktopManaged: false }).capabilities.selfUpdate).toBe("operator");
     expect(environmentDescriptor({ environmentId: "abc", desktopManaged: true }).capabilities, "the desktop updates its own server").not.toHaveProperty("install");
     const none = () => false;
-    expect(serverInstall({}, "/home/me/.npm/_npx/1a2b/node_modules/openmausbot/dist-server/index.js", none)).toBe("npx");
-    expect(serverInstall({ OMB_CLI_PREFIX: "docker compose exec omb openmausbot" }, "/app/dist-server/index.js", none)).toBe("docker");
+    expect(serverInstall({}, "/home/me/.npm/_npx/1a2b/node_modules/sanremes/dist-server/index.js", none)).toBe("npx");
+    expect(serverInstall({ SANREMES_CLI_PREFIX: "docker compose exec sanremes sanremes" }, "/app/dist-server/index.js", none)).toBe("docker");
     expect(serverInstall({}, "/app/dist-server/index.js", () => true)).toBe("docker");
     expect(serverInstall({}, "/repo/server/index.ts", none)).toBe("source");
-    expect(serverInstall({}, "/usr/lib/node_modules/openmausbot/dist-server/index.js", none)).toBe("global");
+    expect(serverInstall({}, "/usr/lib/node_modules/sanremes/dist-server/index.js", none)).toBe("global");
     // The rootless Podman service: its unit marks it, whatever its CLI prefix says.
-    expect(serverInstall({ OMB_PODMAN_SERVICE: "~/.local/share/openmausbot", OMB_CLI_PREFIX: "podman exec -it openmausbot openmausbot" }, "/app/dist-server/index.js", none)).toBe("podman-service");
+    expect(serverInstall({ SANREMES_PODMAN_SERVICE: "~/.local/share/sanremes", SANREMES_CLI_PREFIX: "podman exec -it sanremes sanremes" }, "/app/dist-server/index.js", none)).toBe("podman-service");
     expect(environmentDescriptor({ environmentId: "abc", desktopManaged: true, sharedComputers: false }).capabilities)
       .not.toHaveProperty("sharedComputers");
     expect(environmentDescriptor({ environmentId: "abc", desktopManaged: true, sharedComputers: true }).capabilities)
@@ -174,13 +174,13 @@ describe("environment identity", () => {
   });
 
   it("falls back to the checkout's package.json version, then to unknown", () => {
-    delete process.env.OMB_APP_VERSION;
+    delete process.env.SANREMES_APP_VERSION;
     expect(serverVersion()).toMatch(/^\d+\.\d+\.\d+/);
   });
 
   it("reads the version the bundle carries when no package.json sits beside it, as in the Cloud home image", () => {
-    delete process.env.OMB_APP_VERSION;
-    const image = mkdtempSync(join(tmpdir(), "omb-image-"));
+    delete process.env.SANREMES_APP_VERSION;
+    const image = mkdtempSync(join(tmpdir(), "sanremes-image-"));
     dirs.push(image);
     const bundle = join(image, "dist-server");
     mkdirSync(bundle);
@@ -189,14 +189,14 @@ describe("environment identity", () => {
     expect(serverVersion(bundle)).toBe("unknown");
     writeFileSync(join(bundle, "package.json"), '{"type":"module","version":"0.1.117"}\n');
     expect(serverVersion(bundle)).toBe("0.1.117");
-    process.env.OMB_APP_VERSION = "0.1.120";
+    process.env.SANREMES_APP_VERSION = "0.1.120";
     expect(serverVersion(bundle)).toBe("0.1.120");
-    delete process.env.OMB_APP_VERSION;
+    delete process.env.SANREMES_APP_VERSION;
   });
 
   it("reads the version of the self-hosted image, which ships dist-server/package.json and no /app/package.json", () => {
-    delete process.env.OMB_APP_VERSION;
-    const app = mkdtempSync(join(tmpdir(), "omb-app-"));
+    delete process.env.SANREMES_APP_VERSION;
+    const app = mkdtempSync(join(tmpdir(), "sanremes-app-"));
     dirs.push(app);
     const bundle = join(app, "dist-server");
     mkdirSync(bundle);

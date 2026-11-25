@@ -1,6 +1,6 @@
 // The limit a routine run works under when its routine sets no limit of its own: three hours of work for a bot's
 // run, and twelve for a room goal's, which stays running across every member's turn. A server whose routines run
-// longer may raise them (OMB_ROUTINE_RUN_LIMIT_HOURS, OMB_ROUTINE_GOAL_RUN_LIMIT_HOURS); a routine that sets a
+// longer may raise them (SANREMES_ROUTINE_RUN_LIMIT_HOURS, SANREMES_ROUTINE_GOAL_RUN_LIMIT_HOURS); a routine that sets a
 // limit of its own keeps it, so the environment moves only the runs that set none.
 import { ROUTINE_GOAL_RUN_LIMIT_MINUTES, ROUTINE_RUN_LIMIT_MINUTES, type RoutineRunLimits } from "../shared/routines.ts";
 import { envWhole } from "./env-limits.ts";
@@ -15,11 +15,11 @@ const limitHours = (raw: string | undefined, fallback: number): number => {
   return hours <= RUN_LIMIT_HOURS_MAX ? hours : fallback;
 };
 
-/** OMB_ROUTINE_RUN_LIMIT_HOURS and OMB_ROUTINE_GOAL_RUN_LIMIT_HOURS: whole hours from 1 to 24, as a routine's own
+/** SANREMES_ROUTINE_RUN_LIMIT_HOURS and SANREMES_ROUTINE_GOAL_RUN_LIMIT_HOURS: whole hours from 1 to 24, as a routine's own
  * limit may be; anything else leaves the default. */
 export function routineRunLimits(env: NodeJS.ProcessEnv = process.env): RoutineRunLimits {
   return {
-    runMinutes: limitHours(env.OMB_ROUTINE_RUN_LIMIT_HOURS, ROUTINE_RUN_LIMIT_MINUTES / 60) * 60,
-    goalMinutes: limitHours(env.OMB_ROUTINE_GOAL_RUN_LIMIT_HOURS, ROUTINE_GOAL_RUN_LIMIT_MINUTES / 60) * 60,
+    runMinutes: limitHours(env.SANREMES_ROUTINE_RUN_LIMIT_HOURS, ROUTINE_RUN_LIMIT_MINUTES / 60) * 60,
+    goalMinutes: limitHours(env.SANREMES_ROUTINE_GOAL_RUN_LIMIT_HOURS, ROUTINE_GOAL_RUN_LIMIT_MINUTES / 60) * 60,
   };
 }

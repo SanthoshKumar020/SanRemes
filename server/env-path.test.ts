@@ -22,7 +22,7 @@ const posixIt = it.skipIf(process.platform === "win32");
 
 describe("augmentedPath", () => {
   afterEach(() => {
-    delete process.env.OMB_EXTRA_PATH;
+    delete process.env.SANREMES_EXTRA_PATH;
     resetPathCacheForTests();
   });
 
@@ -30,16 +30,16 @@ describe("augmentedPath", () => {
     resetPathCacheForTests();
     const path = augmentedPath();
     const firstExisting = (process.env.PATH ?? "").split(delimiter).filter(Boolean)[0];
-    // OMB_EXTRA_PATH is unset here, so the inherited PATH leads
+    // SANREMES_EXTRA_PATH is unset here, so the inherited PATH leads
     expect(path.split(delimiter)[0]).toBe(firstExisting);
   });
 
-  it("prepends OMB_EXTRA_PATH and dedupes", () => {
-    process.env.OMB_EXTRA_PATH = ["/tmp/omb-extra", "/tmp/omb-extra"].join(delimiter);
+  it("prepends SANREMES_EXTRA_PATH and dedupes", () => {
+    process.env.SANREMES_EXTRA_PATH = ["/tmp/sanremes-extra", "/tmp/sanremes-extra"].join(delimiter);
     resetPathCacheForTests();
     const parts = augmentedPath().split(delimiter);
-    expect(parts[0]).toBe("/tmp/omb-extra");
-    expect(parts.filter((p) => p === "/tmp/omb-extra")).toHaveLength(1);
+    expect(parts[0]).toBe("/tmp/sanremes-extra");
+    expect(parts.filter((p) => p === "/tmp/sanremes-extra")).toHaveLength(1);
   });
 
   posixIt("includes nvm bin dirs from the home dir, newest node first", () => {
@@ -68,14 +68,14 @@ describe("augmentedPath", () => {
   posixIt("makes a CLI in a known install dir spawnable despite a bare PATH", async () => {
     const bin = join(homedir(), ".local", "bin");
     mkdirSync(bin, { recursive: true });
-    const fake = join(bin, "omb-fake-cli");
+    const fake = join(bin, "sanremes-fake-cli");
     writeFileSync(fake, "#!/bin/sh\necho found-me\n");
     chmodSync(fake, 0o755);
     resetPathCacheForTests();
 
     const stdout = await new Promise<string>((resolve, reject) => {
       execFile(
-        "omb-fake-cli",
+        "sanremes-fake-cli",
         [],
         // bare GUI-style PATH + our augmentation — the augmentation must win
         { env: { PATH: augmentedPath() } },
@@ -88,7 +88,7 @@ describe("augmentedPath", () => {
   posixIt("keeps the last login-shell PATH available during a rescan", async () => {
     const shell = join(homedir(), "fake-login-shell");
     const rcOnlyBin = join(homedir(), "rc-only", "bin");
-    writeFileSync(shell, `#!/bin/sh\nprintf '__OMB_PATH__%s__OMB_END__' '${rcOnlyBin}'\n`);
+    writeFileSync(shell, `#!/bin/sh\nprintf '__SANREMES_PATH__%s__SANREMES_END__' '${rcOnlyBin}'\n`);
     chmodSync(shell, 0o755);
 
     const previousShell = process.env.SHELL;
@@ -116,7 +116,7 @@ describe("augmentedPath", () => {
     const shell = join(homedir(), "fake-login-shell");
     const rcOnlyBin = join(homedir(), "rc-only", "bin");
     // Answers only when it leads its own process group, as a detached (setsid) child does; an attached one shares the server's.
-    writeFileSync(shell, `#!/bin/sh\n[ "$(ps -o pgid= -p $$ | tr -d ' ')" = "$$" ] && printf '__OMB_PATH__%s__OMB_END__' '${rcOnlyBin}'\n`);
+    writeFileSync(shell, `#!/bin/sh\n[ "$(ps -o pgid= -p $$ | tr -d ' ')" = "$$" ] && printf '__SANREMES_PATH__%s__SANREMES_END__' '${rcOnlyBin}'\n`);
     chmodSync(shell, 0o755);
 
     const saved = { SHELL: process.env.SHELL, VITEST: process.env.VITEST };
@@ -140,7 +140,7 @@ describe("augmentedPath", () => {
     const shell = join(homedir(), "fake-login-shell");
     const rcOnlyBin = join(homedir(), "rc-only", "bin");
     const jobPid = join(homedir(), "rc-job.pid");
-    writeFileSync(shell, `#!/bin/sh\nprintf '__OMB_PATH__%s__OMB_END__' '${rcOnlyBin}'\nsleep 30 &\necho $! > '${jobPid}'\n`);
+    writeFileSync(shell, `#!/bin/sh\nprintf '__SANREMES_PATH__%s__SANREMES_END__' '${rcOnlyBin}'\nsleep 30 &\necho $! > '${jobPid}'\n`);
     chmodSync(shell, 0o755);
 
     const saved = { SHELL: process.env.SHELL, VITEST: process.env.VITEST };
@@ -172,7 +172,7 @@ describe("augmentedPath", () => {
     const finished = join(homedir(), "flood-finished");
     writeFileSync(
       shell,
-      `#!/bin/sh\necho $$ > '${shellPid}'\nprintf '__OMB_PATH__%s__OMB_END__\\n' '${rcOnlyBin}'\nhead -c 2000000 /dev/zero\n: > '${finished}'\n`,
+      `#!/bin/sh\necho $$ > '${shellPid}'\nprintf '__SANREMES_PATH__%s__SANREMES_END__\\n' '${rcOnlyBin}'\nhead -c 2000000 /dev/zero\n: > '${finished}'\n`,
     );
     chmodSync(shell, 0o755);
     // /proc/<pid>/stat: a killed process its parent has not reaped yet (state Z) still answers kill(pid, 0).
@@ -231,8 +231,8 @@ describe("augmentedPath", () => {
       [
         "#!/bin/sh",
         `echo $$ > '${shellPid}'`,
-        `printf '__OMB_PATH__%s' '${firstBin}'`,
-        `(i=0; while [ ! -e '${go}' ] && [ $i -lt 200 ]; do sleep 0.05; i=$((i+1)); done; printf ':%s__OMB_END__' '${restBin}') &`,
+        `printf '__SANREMES_PATH__%s' '${firstBin}'`,
+        `(i=0; while [ ! -e '${go}' ] && [ $i -lt 200 ]; do sleep 0.05; i=$((i+1)); done; printf ':%s__SANREMES_END__' '${restBin}') &`,
         "",
       ].join("\n"),
     );
@@ -270,7 +270,7 @@ describe("augmentedPath", () => {
     const jobStatus = join(homedir(), "late-job.status");
     writeFileSync(
       shell,
-      `#!/bin/sh\nprintf '__OMB_PATH__%s__OMB_END__' '${rcOnlyBin}'\n(head -c 800000 /dev/zero; echo $? > '${jobStatus}') &\n`,
+      `#!/bin/sh\nprintf '__SANREMES_PATH__%s__SANREMES_END__' '${rcOnlyBin}'\n(head -c 800000 /dev/zero; echo $? > '${jobStatus}') &\n`,
     );
     chmodSync(shell, 0o755);
 
@@ -302,7 +302,7 @@ describe("augmentedPath", () => {
     mkdirSync(knownBin, { recursive: true });
     const shell = join(homedir(), "fake-login-shell");
     const rcOnlyBin = join(homedir(), "rc-only", "bin");
-    writeFileSync(shell, `#!/bin/sh\nprintf '__OMB_PATH__%s__OMB_END__' '${rcOnlyBin}'\n`);
+    writeFileSync(shell, `#!/bin/sh\nprintf '__SANREMES_PATH__%s__SANREMES_END__' '${rcOnlyBin}'\n`);
     chmodSync(shell, 0o755);
 
     const saved = { PATH: process.env.PATH, SHELL: process.env.SHELL, VITEST: process.env.VITEST };
@@ -338,7 +338,7 @@ describe("augmentedPath", () => {
     const shell = join(homedir(), "fake-login-shell");
     const ran = join(homedir(), "login-shell-ran");
     const rcOnlyBin = join(homedir(), "rc-only", "bin");
-    writeFileSync(shell, `#!/bin/sh\n: > '${ran}'\nprintf '__OMB_PATH__%s__OMB_END__' '${rcOnlyBin}'\n`);
+    writeFileSync(shell, `#!/bin/sh\n: > '${ran}'\nprintf '__SANREMES_PATH__%s__SANREMES_END__' '${rcOnlyBin}'\n`);
     chmodSync(shell, 0o755);
 
     const saved = { PATH: process.env.PATH, SHELL: process.env.SHELL, VITEST: process.env.VITEST };
@@ -353,13 +353,13 @@ describe("augmentedPath", () => {
       delete process.env.VITEST;
 
       // Control: unsealed, the product scans both dirs; that is the leak.
-      delete process.env.OMB_TEST_SEALED_PATH;
+      delete process.env.SANREMES_TEST_SEALED_PATH;
       resetPathCacheForTests();
       expect(augmentedPath().split(delimiter)).toEqual(expect.arrayContaining(machineDirs));
       await vi.waitFor(() => expect(augmentedPath().split(delimiter)).toContain(rcOnlyBin));
       rmSync(ran);
 
-      process.env.OMB_TEST_SEALED_PATH = "1";
+      process.env.SANREMES_TEST_SEALED_PATH = "1";
       resetPathCacheForTests();
       const sealed = augmentedPath().split(delimiter);
       for (const dir of machineDirs) expect(sealed).not.toContain(dir);
@@ -369,7 +369,7 @@ describe("augmentedPath", () => {
       expect(existsSync(ran)).toBe(false);
       expect(augmentedPath().split(delimiter)).not.toContain(rcOnlyBin);
     } finally {
-      delete process.env.OMB_TEST_SEALED_PATH;
+      delete process.env.SANREMES_TEST_SEALED_PATH;
       restore("PATH");
       restore("SHELL");
       restore("VITEST");
@@ -386,7 +386,7 @@ describe("augmentedPath", () => {
 
   it.skipIf(process.platform !== "win32")("finds Antigravity installed after launch", () => {
     const previous = process.env.LOCALAPPDATA;
-    const localAppData = mkdtempSync(join(tmpdir(), "omb-localappdata-"));
+    const localAppData = mkdtempSync(join(tmpdir(), "sanremes-localappdata-"));
     try {
       process.env.LOCALAPPDATA = localAppData;
       const agyBin = join(localAppData, "agy", "bin");
@@ -403,7 +403,7 @@ describe("augmentedPath", () => {
 
   it.skipIf(process.platform !== "win32")("finds Docker Desktop's bin dir (#2117)", () => {
     const previous = process.env.ProgramFiles;
-    const programFiles = mkdtempSync(join(tmpdir(), "omb-programfiles-"));
+    const programFiles = mkdtempSync(join(tmpdir(), "sanremes-programfiles-"));
     try {
       process.env.ProgramFiles = programFiles;
       const dockerBin = join(programFiles, "Docker", "Docker", "resources", "bin");
@@ -445,7 +445,7 @@ describe("augmentedPath", () => {
   it("finds Cursor installed after launch on Windows", () => {
     const realPlatform = process.platform;
     const previous = { LOCALAPPDATA: process.env.LOCALAPPDATA, PATHEXT: process.env.PATHEXT };
-    const localAppData = mkdtempSync(join(tmpdir(), "omb-localappdata-"));
+    const localAppData = mkdtempSync(join(tmpdir(), "sanremes-localappdata-"));
     try {
       Object.defineProperty(process, "platform", { value: "win32" });
       process.env.LOCALAPPDATA = localAppData;
@@ -472,7 +472,7 @@ describe("augmentedPath", () => {
   it("finds Podman installed after launch on Windows", () => {
     const realPlatform = process.platform;
     const previous = { ProgramFiles: process.env.ProgramFiles, PATHEXT: process.env.PATHEXT };
-    const programFiles = mkdtempSync(join(tmpdir(), "omb-programfiles-"));
+    const programFiles = mkdtempSync(join(tmpdir(), "sanremes-programfiles-"));
     try {
       Object.defineProperty(process, "platform", { value: "win32" });
       process.env.ProgramFiles = programFiles;
@@ -620,7 +620,7 @@ describe("resolveCli", () => {
 winOnly("resolveCli (Windows)", () => {
   let dir: string;
   const onPath = () => {
-    process.env.OMB_EXTRA_PATH = dir;
+    process.env.SANREMES_EXTRA_PATH = dir;
     resetPathCacheForTests();
   };
   const shimWith = (name: string, body: string, target: string, targetBody: string) => {
@@ -630,10 +630,10 @@ winOnly("resolveCli (Windows)", () => {
   };
 
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), "omb-shim-"));
+    dir = mkdtempSync(join(tmpdir(), "sanremes-shim-"));
   });
   afterEach(async () => {
-    delete process.env.OMB_EXTRA_PATH;
+    delete process.env.SANREMES_EXTRA_PATH;
     resetPathCacheForTests();
     // These tests spawn the shims out of this directory; a just-exited one can
     // still be holding it for a beat after the call returns.
@@ -772,11 +772,11 @@ winOnly("resolveCli (Windows)", () => {
   });
 
   it("leaves a non-sibling or -Command PowerShell launcher as the .cmd", () => {
-    const outside = join(dir, "..", "omb-outside.ps1");
+    const outside = join(dir, "..", "sanremes-outside.ps1");
     const escaped = join(dir, "escaped.cmd");
     const commanded = join(dir, "commanded.cmd");
     writeFileSync(outside, "Write-Output no\r\n");
-    writeFileSync(escaped, '%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -File "%SCRIPT_DIR%\\..\\omb-outside.ps1" %*\r\n');
+    writeFileSync(escaped, '%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -File "%SCRIPT_DIR%\\..\\sanremes-outside.ps1" %*\r\n');
     writeFileSync(commanded, 'powershell.exe -Command "Write-Output hi"\r\n');
     writeFileSync(join(dir, "ok.ps1"), "Write-Output ok\r\n");
     const mixedCommand = join(dir, "mixed-command.cmd");
@@ -880,7 +880,7 @@ describe("resolveCli with wrapper commands", () => {
     const bin = join(homedir(), ".local", "bin");
     mkdirSync(bin, { recursive: true });
     // simulate "/Applications/My Tools/claude": a real file at a spaced path
-    const spacedDir = join(bin, "omb space dir");
+    const spacedDir = join(bin, "sanremes space dir");
     mkdirSync(spacedDir, { recursive: true });
     const spaced = join(spacedDir, "myclaude");
     writeFileSync(spaced, "#!/bin/sh\n");
@@ -890,7 +890,7 @@ describe("resolveCli with wrapper commands", () => {
     });
     // a NONEXISTENT spaced string still splits (wrapper interpretation)
     expect(resolveCli(join(spacedDir, "nope two words"), ["--version"])).toEqual({
-      command: join(bin, "omb"),
+      command: join(bin, "sanremes"),
       args: ["space", "dir/nope", "two", "words", "--version"],
     });
   });
@@ -900,7 +900,7 @@ describe("registerPathDir", () => {
   afterEach(() => resetPathCacheForTests());
 
   it("puts an app-managed directory ahead of PATH once it exists, and survives a rescan", () => {
-    const dir = mkdtempSync(join(tmpdir(), "omb-registered-path-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-registered-path-"));
     const missing = join(dir, "not-yet");
     try {
       registerPathDir(missing);
@@ -924,7 +924,7 @@ describe("registerFallbackPathDir", () => {
   });
 
   posixIt("keeps an app-installed directory last even when the inherited PATH already lists it first", () => {
-    const dir = mkdtempSync(join(tmpdir(), "omb-fallback-path-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-fallback-path-"));
     originalPath = process.env.PATH;
     try {
       const own = join(dir, "own-bin");
@@ -944,7 +944,7 @@ describe("registerFallbackPathDir", () => {
   });
 
   posixIt("puts an app-installed directory after PATH and the vendors' own folders, so a person's copy wins", () => {
-    const dir = mkdtempSync(join(tmpdir(), "omb-fallback-path-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-fallback-path-"));
     originalPath = process.env.PATH;
     try {
       const own = join(dir, "own-bin");

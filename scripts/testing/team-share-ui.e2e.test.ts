@@ -4,16 +4,16 @@ import { fileURLToPath } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
 import { resolveAgentBrowserBinary } from "../../server/browser-engine.ts";
 import { waitForExit } from "../../server/testing/cleanup.ts";
-import { runControlOmb } from "../control-omb.ts";
+import { runControlOmb } from "../control-sanremes.ts";
 import { request } from "../mcp-server.ts";
-import { UI_TOOLS_DIR } from "./control-omb-ui.ts";
+import { UI_TOOLS_DIR } from "./control-sanremes-ui.ts";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const binary = resolveAgentBrowserBinary({ dataDir: UI_TOOLS_DIR, env: process.env });
-const forced = process.env.OMB_UI_E2E === "1";
+const forced = process.env.SANREMES_UI_E2E === "1";
 const enabled = forced || Boolean(binary);
 const launchTimeout = forced && !binary ? 600_000 : 180_000;
-if (!enabled) console.log("skipping share-team UI e2e: set OMB_UI_E2E=1 to install the pinned browser");
+if (!enabled) console.log("skipping share-team UI e2e: set SANREMES_UI_E2E=1 to install the pinned browser");
 
 describe("Share a department in the real renderer", () => {
   let child: ChildProcess | undefined;
@@ -23,7 +23,7 @@ describe("Share a department in the real renderer", () => {
     let stdout = "";
     let stderr = "";
     let info: { ui: string; url: string; botId: string; logPath: string };
-    child = spawn(process.execPath, ["--experimental-strip-types", join(ROOT, "scripts/control-omb.ts"), "ui", "launch"], {
+    child = spawn(process.execPath, ["--experimental-strip-types", join(ROOT, "scripts/control-sanremes.ts"), "ui", "launch"], {
       cwd: ROOT, env: process.env, stdio: ["ignore", "pipe", "pipe"],
     });
     child.stdout!.on("data", (chunk: Buffer) => { stdout += String(chunk); });
@@ -58,7 +58,7 @@ describe("Share a department in the real renderer", () => {
     for (const line of ["Share Sales desk", "Publishing isn't available here", "Upload on GitHub", "Save folder…"]) expect(dialog).toContain(line);
     expect(dialog, "shared instructions are not the card's line").not.toContain("Quote list prices only.");
     expect(await evaluate("document.querySelector('[data-share-department]').closest('[role=dialog]').querySelectorAll('input, textarea, select, [role=checkbox]').length")).toBe(0);
-    await ui("screenshot", "--out", join(ROOT, ".omb-scratch", "verify-evidence", "share-department.png"));
+    await ui("screenshot", "--out", join(ROOT, ".sanremes-scratch", "verify-evidence", "share-department.png"));
     await click("Save folder…");
     await expect.poll(() => evaluate("window.__shareDownload ?? null"), { timeout: 10_000 }).toBe("Sales desk.zip");
     await evaluate("window.__shareBlob.arrayBuffer().then((buffer) => { window.__shareText = new TextDecoder('latin1').decode(buffer); }); true");

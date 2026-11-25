@@ -2,7 +2,7 @@ import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, unlinkSync,
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { request } from "../scripts/mcp-server.ts";
 
 it("a bot template carries its skills, which arrive disabled; originals stay; a failed install rolls back", async () => {
@@ -15,7 +15,7 @@ it("a bot template carries its skills, which arrive disabled; originals stay; a 
   const sharedText = instructions("source-check", "SHARED_SKILL_FIXTURE_MARKER");
   const privateText = instructions("private-notes", "PRIVATE_SKILL_FIXTURE_MARKER");
   const document = {
-    format: "openmaus.package", version: 1,
+    format: "sanremes.package", version: 1,
     package: {
       id: "skill-transfer", release: "1.0.0", name: "Skill transfer probe",
       tagline: "Isolated skill transfer.", summary: "Review imported skills before enabling.",
@@ -53,7 +53,7 @@ it("a bot template carries its skills, which arrive disabled; originals stay; a 
     }, url);
     const card = await post("/api/share/export", { botId: source.id });
     expect(card).toMatchObject({ scope: "bot", status: "draft", counts: { bots: 1, skills: 2 } });
-    const savedTo = mkdtempSync(join(tmpdir(), "omb-skill-template-"));
+    const savedTo = mkdtempSync(join(tmpdir(), "sanremes-skill-template-"));
     let copied;
     try {
       const saved = await post(`/api/share/${card.id}/save`, { path: savedTo });

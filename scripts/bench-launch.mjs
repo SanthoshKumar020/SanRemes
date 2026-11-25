@@ -3,7 +3,7 @@
 // run in packaged mode on this checkout's Electron, the bundled server (dist-server) and the built pages (dist), a
 // seeded workspace, and one reused profile. Prints one JSON object, so a change can show before/after.
 //   pnpm build && pnpm build:server
-//   node scripts/bench-launch.mjs --root /tmp/openmausbot-bench-launch.XXXXXX [--app CHECKOUT] [--runs 7] [--cold]
+//   node scripts/bench-launch.mjs --root /tmp/sanremes-bench-launch.XXXXXX [--app CHECKOUT] [--runs 7] [--cold]
 //     [--seed 30,60,300] [--label NAME] [--out FILE] [--no-asar] [--dev] [--server-prof DIR [--server-prof-tail MS]] [--quiet-ms 1500]
 // --app: the checkout whose electron/, dist/ and dist-server/ are measured (this one by default), so two checkouts run
 //   under the same bench. --cold: the page cache, its code cache and the server's compile cache are emptied before each
@@ -34,7 +34,7 @@ const { values } = parseArgs({ options: {
   seed: { type: "string", default: "30,60,300" }, label: { type: "string", default: "launch" }, out: { type: "string" }, "no-asar": { type: "boolean", default: false }, dev: { type: "boolean", default: false }, "server-prof": { type: "string" }, "quiet-ms": { type: "string", default: "1500" }, "server-prof-tail": { type: "string", default: "0" },
 } });
 const log = (line) => process.stderr.write(`bench-launch: ${line}\n`);
-if (!values.root || !values.root.includes("openmausbot-bench-")) throw new Error("--root must be a folder made for this bench (its name holds openmausbot-bench-)");
+if (!values.root || !values.root.includes("sanremes-bench-")) throw new Error("--root must be a folder made for this bench (its name holds sanremes-bench-)");
 mkdirSync(values.root, { recursive: true });
 const root = realpathSync(values.root);
 const appRoot = resolve(values.app);
@@ -55,7 +55,7 @@ function stage() {
   mkdirSync(join(appDir, "src", "locales"), { recursive: true });
   for (const file of readdirSync(join(appRoot, "src", "locales"))) if (file.endsWith(".json") && file !== "source-hashes.json") cpSync(join(appRoot, "src", "locales", file), join(appDir, "src", "locales", file));
   const manifest = JSON.parse(readFileSync(join(appRoot, "package.json"), "utf8"));
-  writeFileSync(join(appDir, "package.json"), JSON.stringify({ name: "openmausbot-bench-launch", productName: "OpenMausBot Bench", version: manifest.version, type: "module", main: "bench-launch-entry.mjs" }));
+  writeFileSync(join(appDir, "package.json"), JSON.stringify({ name: "sanremes-bench-launch", productName: "SanRemes Bench", version: manifest.version, type: "module", main: "bench-launch-entry.mjs" }));
   cpSync(join(HERE, "testing", "bench-launch-entry.mjs"), join(appDir, "bench-launch-entry.mjs"));
   // The installed app owns the real ports; a measured launch never knocks on them.
   const portsFile = join(appDir, "electron", "desktop-ports.mjs");
@@ -84,7 +84,7 @@ function seed() {
   mkdirSync(join(paths.data, "tmp"), { recursive: true });
   const out = execFileSync(process.execPath, ["--experimental-strip-types", join(appRoot, "scripts", "testing", "bench-desktop-seed.ts"), bots, threads, messages], {
     cwd: appRoot, encoding: "utf8", maxBuffer: 16 * 1024 * 1024,
-    env: { PATH: dirname(process.execPath), HOME: paths.data, OMB_DATA_DIR: paths.data, TMPDIR: join(paths.data, "tmp") },
+    env: { PATH: dirname(process.execPath), HOME: paths.data, SANREMES_DATA_DIR: paths.data, TMPDIR: join(paths.data, "tmp") },
   });
   const seeded = JSON.parse(out.trim().split("\n").at(-1));
   writeFileSync(join(paths.data, "config.json"), JSON.stringify({
@@ -95,18 +95,18 @@ function seed() {
   return seeded;
 }
 
-const STORAGE = { "omb-analytics-opt-out": "1", "omb-email-gate": "skipped", "omb-simple-mode-prompt": "1", "grok-move-2026-11": "1", "teams-2026-11b": "1", "modelgo-offer-2026-11": "1", "omb-advanced-mode": "0" };
+const STORAGE = { "sanremes-analytics-opt-out": "1", "sanremes-email-gate": "skipped", "sanremes-simple-mode-prompt": "1", "grok-move-2026-11": "1", "teams-2026-11b": "1", "modelgo-offer-2026-11": "1", "sanremes-advanced-mode": "0" };
 const electron = require("electron");
 const DEV_PAGE_PORT = BENCH_PORTS[0] - 3600;
 const fixtureEnv = () => ({
   PATH: dirname(process.execPath), HOME: paths.home, CFFIXED_USER_HOME: paths.home, TMPDIR: paths.tmp, LANG: process.env.LANG ?? "en_US.UTF-8",
-  OMB_DATA_DIR: paths.data, OMB_WEBHOOK_PORT: String(BENCH_PORTS[0] + 1), OMB_TEST_SEALED_PATH: "1", OMB_DISABLE_ANNOUNCEMENTS: "1", FAKE_CLAUDE_MODE: "happy",
-  OMB_BENCH_EGRESS_LOG: paths.egress, ...(values["server-prof"] ? { OMB_BENCH_SERVER_PROF: resolve(values["server-prof"]), OMB_BENCH_SERVER_PROF_TAIL_MS: values["server-prof-tail"] } : {}),
+  SANREMES_DATA_DIR: paths.data, SANREMES_WEBHOOK_PORT: String(BENCH_PORTS[0] + 1), SANREMES_TEST_SEALED_PATH: "1", SANREMES_DISABLE_ANNOUNCEMENTS: "1", FAKE_CLAUDE_MODE: "happy",
+  SANREMES_BENCH_EGRESS_LOG: paths.egress, ...(values["server-prof"] ? { SANREMES_BENCH_SERVER_PROF: resolve(values["server-prof"]), SANREMES_BENCH_SERVER_PROF_TAIL_MS: values["server-prof-tail"] } : {}),
 });
 const answers = (url) => new Promise((done) => { const request = httpGet(url, (response) => { response.resume(); done(response.statusCode < 500); }); request.on("error", () => done(false)); request.setTimeout(2000, () => request.destroy()); });
 const devChildren = [];
 async function startDevServers() {
-  const env = { ...fixtureEnv(), OMB_PORT: String(BENCH_PORTS[0]), OMB_UI_PORT: String(DEV_PAGE_PORT) };
+  const env = { ...fixtureEnv(), SANREMES_PORT: String(BENCH_PORTS[0]), SANREMES_UI_PORT: String(DEV_PAGE_PORT) };
   devChildren.push(spawn(process.execPath, ["--require", staged.blocker, "--experimental-strip-types", join(appRoot, "server", "dev-server.ts")], { cwd: appRoot, env, stdio: "ignore" }));
   devChildren.push(spawn(process.execPath, [join(appRoot, "node_modules", "vite", "bin", "vite.js"), "--strictPort"], { cwd: appRoot, env, stdio: "ignore" }));
   for (const url of [`http://127.0.0.1:${BENCH_PORTS[0]}/api/health`, `http://127.0.0.1:${DEV_PAGE_PORT}/`]) {
@@ -130,7 +130,7 @@ function launch(name, { prime = false, screenshot = false } = {}) {
     ...(screenshot ? { screenshot: join(paths.results, `${values.label}-${name}.png`) } : {}),
   };
   const env = {
-    ...fixtureEnv(), OMB_BENCH_LAUNCH: JSON.stringify(config), NODE_OPTIONS: `--require ${staged.blocker}`,
+    ...fixtureEnv(), SANREMES_BENCH_LAUNCH: JSON.stringify(config), NODE_OPTIONS: `--require ${staged.blocker}`,
     ...(values.dev ? { ELECTRON_START_URL: `http://127.0.0.1:${DEV_PAGE_PORT}` } : {}),
   };
   const args = [staged.entry, "--use-mock-keychain", "--host-resolver-rules=MAP * ~NOTFOUND , EXCLUDE 127.0.0.1 , EXCLUDE localhost", `--user-data-dir=${paths.userData}`];
@@ -172,7 +172,7 @@ function phases(run) {
     entry: first("entry"), mainImported: first("main-import:end"), ready: first("ready"),
     splashCreated: first("window-created", (entry) => entry.id === windowIds[0]), splashShown: shows[0]?.t,
     credentialsRead: first("credentials-decrypt:end"), proxyRead: first("resolveProxy:end"),
-    fork: first("fork"), forkSpawned: first("fork-spawned"), serverListening: logAt(/\[out\].*openmausbot server on /),
+    fork: first("fork"), forkSpawned: first("fork-spawned"), serverListening: logAt(/\[out\].*sanremes server on /),
     mainWindowCreated: first("window-created", (entry) => entry.id === windowIds[1]), pageNavStart: mainNav?.t,
     pageResponse: at(page.nav?.responseStart), domContentLoaded: at(page.nav?.dcl), rootFilled: page.seen?.root,
     mainWindowShown: shows.find((entry) => entry.id === windowIds[1])?.t, firstContentfulPaint: at(page.paints?.["first-contentful-paint"]),

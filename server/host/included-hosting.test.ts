@@ -25,11 +25,11 @@ const hosting = (fetcher?: typeof fetch, api = fake.url) => createIncludedHostin
 describe("the home's included hosting credential", () => {
   it("is held only with both the relay's address and the token, over https or loopback", () => {
     const url = "https://cloud.example.test/api/cloud/services/hosting/v1";
-    expect(hostingCredential({ OMB_CLOUD_HOSTING_URL: `${url}/`, OMB_CLOUD_HOSTING_TOKEN: TOKEN })).toEqual({ token: TOKEN, api: url, included: true });
-    expect(hostingCredential({ OMB_CLOUD_HOSTING_URL: "http://127.0.0.1:4100/api/cloud/services/hosting/v1", OMB_CLOUD_HOSTING_TOKEN: TOKEN })?.api).toBe("http://127.0.0.1:4100/api/cloud/services/hosting/v1");
-    for (const env of [{}, { OMB_CLOUD_HOSTING_URL: url }, { OMB_CLOUD_HOSTING_TOKEN: TOKEN }, { OMB_CLOUD_HOSTING_URL: "http://cloud.example.test/v1", OMB_CLOUD_HOSTING_TOKEN: TOKEN },
-      { OMB_CLOUD_HOSTING_URL: "https://user:pass@cloud.example.test/v1", OMB_CLOUD_HOSTING_TOKEN: TOKEN }, { OMB_CLOUD_HOSTING_URL: "https://cloud.example.test/v1?to=elsewhere", OMB_CLOUD_HOSTING_TOKEN: TOKEN },
-      { OMB_CLOUD_HOSTING_URL: "not a url", OMB_CLOUD_HOSTING_TOKEN: TOKEN }]) {
+    expect(hostingCredential({ SANREMES_CLOUD_HOSTING_URL: `${url}/`, SANREMES_CLOUD_HOSTING_TOKEN: TOKEN })).toEqual({ token: TOKEN, api: url, included: true });
+    expect(hostingCredential({ SANREMES_CLOUD_HOSTING_URL: "http://127.0.0.1:4100/api/cloud/services/hosting/v1", SANREMES_CLOUD_HOSTING_TOKEN: TOKEN })?.api).toBe("http://127.0.0.1:4100/api/cloud/services/hosting/v1");
+    for (const env of [{}, { SANREMES_CLOUD_HOSTING_URL: url }, { SANREMES_CLOUD_HOSTING_TOKEN: TOKEN }, { SANREMES_CLOUD_HOSTING_URL: "http://cloud.example.test/v1", SANREMES_CLOUD_HOSTING_TOKEN: TOKEN },
+      { SANREMES_CLOUD_HOSTING_URL: "https://user:pass@cloud.example.test/v1", SANREMES_CLOUD_HOSTING_TOKEN: TOKEN }, { SANREMES_CLOUD_HOSTING_URL: "https://cloud.example.test/v1?to=elsewhere", SANREMES_CLOUD_HOSTING_TOKEN: TOKEN },
+      { SANREMES_CLOUD_HOSTING_URL: "not a url", SANREMES_CLOUD_HOSTING_TOKEN: TOKEN }]) {
       expect(hostingCredential(env), JSON.stringify(env)).toBeNull();
     }
   });

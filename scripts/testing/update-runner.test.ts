@@ -35,20 +35,20 @@ afterEach(() => {
 function install(options: { stable?: Image; running?: Image; updater?: "real" | "recorder"; earlierCopy?: boolean; runnerCopy?: boolean; freeKb?: number } = {}) {
   const running = options.running ?? OLD;
   const stable = options.stable ?? NEW;
-  const root = mkdtempSync(join(tmpdir(), "omb-update-runner-"));
+  const root = mkdtempSync(join(tmpdir(), "sanremes-update-runner-"));
   dirs.push(root);
   const deploy = join(root, "deploy");
   const state = join(root, "state");
   const fake = join(root, "fake");
   const bin = join(root, "bin");
   const data = join(fake, "volumes", "deploy_data");
-  for (const dir of [bin, deploy, join(data, ".openmausbot"), join(state, "request"), join(state, "status")]) mkdirSync(dir, { recursive: true });
-  writeFileSync(join(data, ".openmausbot", "bots.json"), '[{"name":"Mira"}]');
+  for (const dir of [bin, deploy, join(data, ".sanremes"), join(state, "request"), join(state, "status")]) mkdirSync(dir, { recursive: true });
+  writeFileSync(join(data, ".sanremes", "bots.json"), '[{"name":"Mira"}]');
   writeFileSync(join(deploy, "docker-compose.yml"), "services: {}\n");
-  writeFileSync(join(deploy, ".env"), "DOMAIN=maus.example.test\n");
+  writeFileSync(join(deploy, ".env"), "DOMAIN=sanremes.example.test\n");
   const argv = join(root, "update-sh-argv");
   // A stand-in that says what a plain run would take, and notes every real run's arguments.
-  const recorder = `[ "\${3:-}" = --print-target ] && { echo "${NEW.refs[0]} 0.1.151"; exit 0; }\nprintf '%s\\n' "$#:$*:\${OMB_UPDATE_BY_RUNNER:-}" >> "${argv}"\n`;
+  const recorder = `[ "\${3:-}" = --print-target ] && { echo "${NEW.refs[0]} 0.1.151"; exit 0; }\nprintf '%s\\n' "$#:$*:\${SANREMES_UPDATE_BY_RUNNER:-}" >> "${argv}"\n`;
   // Root's copy and the install's own are the same file, as --install leaves them.
   for (const where of [deploy, state]) {
     if (options.updater === "recorder") writeFileSync(join(where, "update.sh"), recorder);
@@ -73,17 +73,17 @@ exec /usr/bin/stat "$@"
   if (options.earlierCopy) {
     mkdirSync(join(fake, "volumes", EARLIER_COPY), { recursive: true });
     writeFileSync(join(fake, "volumes", EARLIER_COPY, "the-last-good-data.txt"), "good");
-    labels[EARLIER_COPY] = ["com.mausbot.role=update-backup", "com.mausbot.project=deploy", "com.mausbot.data=deploy_data", `com.mausbot.image=${running.id}`];
+    labels[EARLIER_COPY] = ["com.sanremes.role=update-backup", "com.sanremes.project=deploy", "com.sanremes.data=deploy_data", `com.sanremes.image=${running.id}`];
   }
   if (options.runnerCopy) {
     mkdirSync(join(fake, "volumes", RUNNER_COPY), { recursive: true });
     writeFileSync(join(fake, "volumes", RUNNER_COPY, "the-last-good-data.txt"), "good");
-    labels[RUNNER_COPY] = ["com.mausbot.role=update-backup", "com.mausbot.project=deploy", "com.mausbot.data=deploy_data", `com.mausbot.image=${running.id}`, "com.mausbot.by=runner"];
+    labels[RUNNER_COPY] = ["com.sanremes.role=update-backup", "com.sanremes.project=deploy", "com.sanremes.data=deploy_data", `com.sanremes.image=${running.id}`, "com.sanremes.by=runner"];
   }
   writeFileSync(join(fake, "state.json"), JSON.stringify({
     serial: 1, composeReadsPin: true, defaultImage: `${REPO}:latest`, dataVolume: "deploy_data", images, volumeLabels: labels,
     ...(options.freeKb === undefined ? {} : { freeKb: options.freeKb }),
-    containers: { omb: { id: "omb-1", image: running.id, status: "running", restarts: 0, started: "start-1" }, caddy: { id: "caddy-1", status: "running" } },
+    containers: { sanremes: { id: "sanremes-1", image: running.id, status: "running", restarts: 0, started: "start-1" }, caddy: { id: "caddy-1", status: "running" } },
   }));
   const setStable = (image: Image) => writeFileSync(join(root, "stable.json"), JSON.stringify({ channel: "stable", version: image.version, image: image.refs.find((ref) => ref.includes("@sha256:")) }));
   setStable(stable);
@@ -97,9 +97,9 @@ exec /usr/bin/stat "$@"
     encoding: "utf8", timeout: 60_000,
     env: {
       // The unit's own environment, as --install writes it, and nothing from the request.
-      PATH: `${bin}:/usr/bin:/bin:/usr/sbin:/sbin`, HOME: root, FAKE_DOCKER_DIR: fake, OMB_INSTALL_DIR: deploy, OMB_UPDATE_STATE_DIR: state,
-      OMB_UPDATE_POLICY: policy, OMB_STABLE_URL: `file://${join(root, "stable.json")}`, OMB_NEWEST_URL: `file://${join(root, "newest.json")}`,
-      OMB_UPDATE_POLL_S: "0", OMB_UPDATE_WAIT_S: "120", OMB_UPDATE_ENGINE_WAIT_S: "1", OMB_RUNNER_QUIET_S: "0", OMB_RUNNER_IDLE_S: "0", ...env,
+      PATH: `${bin}:/usr/bin:/bin:/usr/sbin:/sbin`, HOME: root, FAKE_DOCKER_DIR: fake, SANREMES_INSTALL_DIR: deploy, SANREMES_UPDATE_STATE_DIR: state,
+      SANREMES_UPDATE_POLICY: policy, SANREMES_STABLE_URL: `file://${join(root, "stable.json")}`, SANREMES_NEWEST_URL: `file://${join(root, "newest.json")}`,
+      SANREMES_UPDATE_POLL_S: "0", SANREMES_UPDATE_WAIT_S: "120", SANREMES_UPDATE_ENGINE_WAIT_S: "1", SANREMES_RUNNER_QUIET_S: "0", SANREMES_RUNNER_IDLE_S: "0", ...env,
     },
   });
   const fakeState = () => JSON.parse(readFileSync(join(fake, "state.json"), "utf8"));
@@ -120,15 +120,15 @@ exec /usr/bin/stat "$@"
     personRun: (env: Record<string, string> = {}) => spawnSync("bash", [join(deploy, "update.sh"), "--dir", deploy], {
       encoding: "utf8", input: "", timeout: 60_000,
       env: {
-        PATH: `${bin}:/usr/bin:/bin:/usr/sbin:/sbin`, HOME: root, FAKE_DOCKER_DIR: fake, OMB_UPDATE_STATE_DIR: state, OMB_STABLE_URL: `file://${join(root, "stable.json")}`,
-        OMB_UPDATE_POLL_S: "0", OMB_UPDATE_WAIT_S: "120", OMB_UPDATE_ENGINE_WAIT_S: "1", ...env,
+        PATH: `${bin}:/usr/bin:/bin:/usr/sbin:/sbin`, HOME: root, FAKE_DOCKER_DIR: fake, SANREMES_UPDATE_STATE_DIR: state, SANREMES_STABLE_URL: `file://${join(root, "stable.json")}`,
+        SANREMES_UPDATE_POLL_S: "0", SANREMES_UPDATE_WAIT_S: "120", SANREMES_UPDATE_ENGINE_WAIT_S: "1", ...env,
       },
     }),
   };
 }
 
 /** What a server that wants more than "update now" might leave: flags, another image, an older version, a path. */
-const GREEDY = `--rollback\n--allow-older\n--version 0.1.100\n--image ${EVIL}\nimage=${EVIL}\nversion=0.1.100\n--dir /etc\n$(touch /tmp/omb-pwned)\n`;
+const GREEDY = `--rollback\n--allow-older\n--version 0.1.100\n--image ${EVIL}\nimage=${EVIL}\nversion=0.1.100\n--dir /etc\n$(touch /tmp/sanremes-pwned)\n`;
 
 /** Root's tools without root: `id` says 0, `install` notes its owners and leaves them alone, `systemctl` notes what it is asked. */
 function rootTools(root: string) {
@@ -176,8 +176,8 @@ describe.skipIf(!posix)("deploy/update-runner.sh", { timeout: hostTimeout(60_000
     expect(done.status, done.stdout + done.stderr).toBe(0);
     expect(existsSync(box.request)).toBe(false);
     expect(box.last()).toEqual({ run: 1, state: "done", result: "updated", at: expect.any(Number), version: "0.1.151" });
-    expect(box.fakeState().containers.omb).toMatchObject({ image: NEW.id, status: "running" });
-    expect(box.env()).toContain(`OMB_IMAGE=${NEW.refs[0]}`);
+    expect(box.fakeState().containers.sanremes).toMatchObject({ image: NEW.id, status: "running" });
+    expect(box.env()).toContain(`SANREMES_IMAGE=${NEW.refs[0]}`);
     expect(box.calls().some((call) => call.includes("--entrypoint cp"))).toBe(true);
     expect(done.stdout).toContain("Updated from 0.1.150 to 0.1.151.");
   });
@@ -187,9 +187,9 @@ describe.skipIf(!posix)("deploy/update-runner.sh", { timeout: hostTimeout(60_000
     writeFileSync(real.request, GREEDY);
     expect(real.run().status).toBe(0);
     expect(real.last()?.result).toBe("updated");
-    expect(real.fakeState().containers.omb.image).toBe(NEW.id);
+    expect(real.fakeState().containers.sanremes.image).toBe(NEW.id);
     expect(real.calls().filter((call) => call.includes(EVIL) || call.includes("0.1.100"))).toEqual([]);
-    expect(existsSync("/tmp/omb-pwned")).toBe(false);
+    expect(existsSync("/tmp/sanremes-pwned")).toBe(false);
 
     const recorded = install({ updater: "recorder" });
     writeFileSync(recorded.request, GREEDY);
@@ -235,13 +235,13 @@ describe.skipIf(!posix)("deploy/update-runner.sh", { timeout: hostTimeout(60_000
     const liar = install({ running: { ...NEXT, local: true, serves: "0.1.100" } });
     liar.ask();
     expect(liar.last()?.result).toBe("refused");
-    expect(liar.fakeState().containers.omb.image).toBe(NEXT.id);
+    expect(liar.fakeState().containers.sanremes.image).toBe(NEXT.id);
     expect(liar.copies()).toEqual([]);
     // Telling the truth, it is newer than stable, and nothing changes either.
     const newer = install({ running: { ...NEXT, local: true } });
     newer.ask();
     expect(newer.last()?.result).toBe("older");
-    expect(newer.fakeState().containers.omb.image).toBe(NEXT.id);
+    expect(newer.fakeState().containers.sanremes.image).toBe(NEXT.id);
     // A server that says it is newer than its image is not trusted for that either.
     const boaster = install({ running: { ...OLD, serves: "0.1.160" } });
     boaster.ask();
@@ -256,13 +256,13 @@ describe.skipIf(!posix)("deploy/update-runner.sh", { timeout: hostTimeout(60_000
     expect(box.last()?.result).toBe("updated");
     const made = box.copies().filter((name) => name !== EARLIER_COPY && name !== RUNNER_COPY);
     expect(made).toHaveLength(1);
-    expect(box.fakeState().volumeLabels[made[0]!]).toContain("com.mausbot.by=runner");
+    expect(box.fakeState().volumeLabels[made[0]!]).toContain("com.sanremes.by=runner");
     expect(readFileSync(join(box.fake, "volumes", made[0]!, "the-last-good-data.txt"), "utf8")).toBe("DAMAGED");
     // The good copy made before it survives this update, and the person's own copy any number of them.
     for (const kept of [RUNNER_COPY, EARLIER_COPY]) expect(readFileSync(join(box.fake, "volumes", kept, "the-last-good-data.txt"), "utf8"), kept).toBe("good");
     // One more: now two newer runner copies exist, so the oldest of the runner's goes. The person's stays.
     box.setStable(NEXT);
-    box.ask({ OMB_RUNNER_GAP_S: "0" });
+    box.ask({ SANREMES_RUNNER_GAP_S: "0" });
     expect(box.last()?.result).toBe("updated");
     expect(box.copies()).not.toContain(RUNNER_COPY);
     expect(box.copies()).toContain(EARLIER_COPY);
@@ -272,37 +272,37 @@ describe.skipIf(!posix)("deploy/update-runner.sh", { timeout: hostTimeout(60_000
   it("never tries a stable image again after it rolled back from it, until a person runs update.sh or another is out", () => {
     const failing = { ...NEW, behaviour: "crashes", lastWords: "Error: cannot read the data" };
     const box = install({ stable: failing });
-    box.ask({ OMB_RUNNER_GAP_S: "0" });
+    box.ask({ SANREMES_RUNNER_GAP_S: "0" });
     expect(box.last()?.result).toBe("rolled-back");
     expect(box.copies()).toHaveLength(1);
     const pulls = box.calls().filter((call) => call.startsWith("pull")).length;
     for (let again = 0; again < 3; again += 1) {
-      box.ask({ OMB_RUNNER_GAP_S: "0" });
+      box.ask({ SANREMES_RUNNER_GAP_S: "0" });
       expect(box.last()).toMatchObject({ result: "not-retried", version: "0.1.151" });
     }
     // No more stops, copies or downloads: the server is left as the rollback left it.
     expect(box.copies()).toHaveLength(1);
     expect(box.calls().filter((call) => call.startsWith("pull")).length).toBe(pulls);
-    expect(box.fakeState().containers.omb.image).toBe(OLD.id);
+    expect(box.fakeState().containers.sanremes.image).toBe(OLD.id);
     // A person's own run lets the button try that version again.
     expect(box.blocked()).toBe(true);
     box.personRun();
     expect(box.blocked()).toBe(false);
     // Another stable image is tried at once.
     const fresh = install({ stable: failing });
-    fresh.ask({ OMB_RUNNER_GAP_S: "0" });
+    fresh.ask({ SANREMES_RUNNER_GAP_S: "0" });
     fresh.setStable(NEXT);
-    fresh.ask({ OMB_RUNNER_GAP_S: "0" });
+    fresh.ask({ SANREMES_RUNNER_GAP_S: "0" });
     expect(fresh.last()?.result).toBe("updated");
-    expect(fresh.fakeState().containers.omb.image).toBe(NEXT.id);
+    expect(fresh.fakeState().containers.sanremes.image).toBe(NEXT.id);
     expect(fresh.blocked()).toBe(false);
   });
 
   it("answers a repeated request with nothing to do from its own record, without asking GitHub or the registry", () => {
     const box = install({ stable: OLD });
-    box.ask({ OMB_RUNNER_IDLE_S: "300" });
+    box.ask({ SANREMES_RUNNER_IDLE_S: "300" });
     const before = box.calls().filter((call) => call.startsWith("pull")).length;
-    for (let again = 0; again < 3; again += 1) box.ask({ OMB_RUNNER_IDLE_S: "300" });
+    for (let again = 0; again < 3; again += 1) box.ask({ SANREMES_RUNNER_IDLE_S: "300" });
     expect(box.last()).toMatchObject({ run: 4, result: "updated" });
     expect(box.calls().filter((call) => call.startsWith("pull")).length).toBe(before);
   });
@@ -317,19 +317,19 @@ describe.skipIf(!posix)("deploy/update-runner.sh", { timeout: hostTimeout(60_000
 
   it("lets a person's own run use links in the install's folder, as before", () => {
     const box = install();
-    writeFileSync(join(box.root, "env-real"), "DOMAIN=maus.example.test\n");
+    writeFileSync(join(box.root, "env-real"), "DOMAIN=sanremes.example.test\n");
     rmSync(join(box.deploy, ".env"));
     symlinkSync(join(box.root, "env-real"), join(box.deploy, ".env"));
     const done = box.personRun();
     expect(done.status, done.stdout + done.stderr).toBe(0);
-    expect(box.fakeState().containers.omb.image).toBe(NEW.id);
+    expect(box.fakeState().containers.sanremes.image).toBe(NEW.id);
     // The same link stops a run the server asked for.
     const asked = install();
     rmSync(join(asked.deploy, ".env"));
     symlinkSync(join(box.root, "env-real"), join(asked.deploy, ".env"));
     asked.ask();
     expect(asked.last()?.result).toBe("refused");
-    expect(asked.fakeState().containers.omb.image).toBe(OLD.id);
+    expect(asked.fakeState().containers.sanremes.image).toBe(OLD.id);
   });
 
   it("runs nothing when the install's folder, or one above it, can be changed by others, and names that folder", () => {
@@ -377,29 +377,29 @@ describe.skipIf(!posix)("deploy/update-runner.sh", { timeout: hostTimeout(60_000
     const box = install({ freeKb: 1024 });
     box.ask();
     expect(box.last()?.result).toBe("no-room");
-    expect(box.fakeState().containers.omb.image).toBe(OLD.id);
+    expect(box.fakeState().containers.sanremes.image).toBe(OLD.id);
   });
 
 
   it("checks a remembered answer again when the server knows of a newer version, asking only GitHub", () => {
     const box = install({ stable: OLD });
-    box.ask({ OMB_RUNNER_IDLE_S: "300" });
+    box.ask({ SANREMES_RUNNER_IDLE_S: "300" });
     const pulls = () => box.calls().filter((call) => call.startsWith("pull")).length;
     const before = pulls();
     // Still the same stable image: the remembered answer stands, nothing is pulled.
     writeFileSync(join(box.state, "request", "fresh"), "");
-    box.ask({ OMB_RUNNER_IDLE_S: "300" });
+    box.ask({ SANREMES_RUNNER_IDLE_S: "300" });
     expect(box.last()).toMatchObject({ result: "updated", version: "0.1.150" });
     expect(pulls()).toBe(before);
     expect(existsSync(join(box.state, "request", "fresh"))).toBe(false);
     // A newer one is out: it is taken at once.
     box.setStable(NEW);
-    box.ask({ OMB_RUNNER_IDLE_S: "300" });
+    box.ask({ SANREMES_RUNNER_IDLE_S: "300" });
     expect(box.last()?.result).toBe("updated");
-    expect(box.fakeState().containers.omb.image).toBe(OLD.id);
+    expect(box.fakeState().containers.sanremes.image).toBe(OLD.id);
     writeFileSync(join(box.state, "request", "fresh"), "");
-    box.ask({ OMB_RUNNER_IDLE_S: "300" });
-    expect(box.fakeState().containers.omb.image).toBe(NEW.id);
+    box.ask({ SANREMES_RUNNER_IDLE_S: "300" });
+    expect(box.fakeState().containers.sanremes.image).toBe(NEW.id);
   });
 
   it("writes nothing through a .update that is a link", () => {
@@ -411,7 +411,7 @@ describe.skipIf(!posix)("deploy/update-runner.sh", { timeout: hostTimeout(60_000
     expect(box.last()?.result).toBe("refused");
     expect(readdirSync(elsewhere)).toEqual([]);
     expect(statSync(elsewhere).mode & 0o777).toBe(0o755);
-    expect(box.fakeState().containers.omb.image).toBe(OLD.id);
+    expect(box.fakeState().containers.sanremes.image).toBe(OLD.id);
   });
 
   it("lets runs that change nothing pass freely, and keeps updates that change something four minutes apart", () => {
@@ -422,34 +422,34 @@ describe.skipIf(!posix)("deploy/update-runner.sh", { timeout: hostTimeout(60_000
       box.ask();
       expect(box.last()).toMatchObject({ run: at, result: "updated" });
     }
-    expect(box.fakeState().containers.omb.id).toBe("omb-1");
+    expect(box.fakeState().containers.sanremes.id).toBe("sanremes-1");
     box.setStable(NEW);
     box.ask();
     expect(box.last()).toMatchObject({ run: 3, result: "updated" });
-    expect(box.fakeState().containers.omb.image).toBe(NEW.id);
+    expect(box.fakeState().containers.sanremes.image).toBe(NEW.id);
     // The run that changed something counts: the next one with something to change waits for the gap.
     box.setStable(NEXT);
     box.ask();
     expect(box.last()).toMatchObject({ run: 4, result: "too-soon" });
-    expect(box.fakeState().containers.omb.image).toBe(NEW.id);
+    expect(box.fakeState().containers.sanremes.image).toBe(NEW.id);
     // Four minutes by the runner's own record, not by waiting: that update dated 230 seconds back still waits, 250 back
     // goes ahead (the seconds either side leave room for the clock to tick between here and the run).
     const ranAgo = (seconds: number) => writeFileSync(join(box.state, "status", "last"), box.lastText().replace(/^ran=\d+$/m, `ran=${Math.floor(Date.now() / 1000) - seconds}`));
     ranAgo(230);
     box.ask();
     expect(box.last()).toMatchObject({ run: 5, result: "too-soon" });
-    expect(box.fakeState().containers.omb.image).toBe(NEW.id);
+    expect(box.fakeState().containers.sanremes.image).toBe(NEW.id);
     ranAgo(250);
     box.ask();
     expect(box.last()).toMatchObject({ run: 6, result: "updated" });
-    expect(box.fakeState().containers.omb.image).toBe(NEXT.id);
+    expect(box.fakeState().containers.sanremes.image).toBe(NEXT.id);
   });
 
   it("spaces even cheap runs QUIET_S apart, waiting rather than refusing", () => {
     const box = install({ updater: "recorder" });
-    box.ask({ OMB_RUNNER_QUIET_S: "2" });
+    box.ask({ SANREMES_RUNNER_QUIET_S: "2" });
     const started = Date.now();
-    box.ask({ OMB_RUNNER_QUIET_S: "2", OMB_RUNNER_GAP_S: "0" });
+    box.ask({ SANREMES_RUNNER_QUIET_S: "2", SANREMES_RUNNER_GAP_S: "0" });
     expect(Date.now() - started).toBeGreaterThanOrEqual(900);
     expect(box.argv()).toHaveLength(2);
   });
@@ -458,7 +458,7 @@ describe.skipIf(!posix)("deploy/update-runner.sh", { timeout: hostTimeout(60_000
     const box = install({ stable: { ...NEW, behaviour: "crashes", lastWords: "Error: cannot read the data" } });
     box.ask();
     expect(box.last()?.result).toBe("rolled-back");
-    expect(box.fakeState().containers.omb).toMatchObject({ image: OLD.id, status: "running" });
+    expect(box.fakeState().containers.sanremes).toMatchObject({ image: OLD.id, status: "running" });
   });
 
   it("does nothing while the owner's policy holds updates, and says the hold again whenever systemd runs it", () => {
@@ -494,9 +494,9 @@ describe.skipIf(!posix)("deploy/update-runner.sh", { timeout: hostTimeout(60_000
     writeFileSync(victim, "untouched");
     symlinkSync(victim, join(box.deploy, "docker-compose.override.yml.tmp"));
     const env = {
-      PATH: `${tools.fakes}:${join(box.root, "bin")}:/usr/bin:/bin:/usr/sbin:/sbin`, FAKE_DOCKER_DIR: box.fake, OMB_SBIN_DIR: sbin, OMB_SYSTEMD_DIR: systemd,
-      OMB_UPDATE_STATE_DIR: box.state, OMB_UPDATE_POLICY: box.policy, OMB_STABLE_URL: "file:///srv/stable.json", OMB_UPDATE_WAIT_S: "300; rm -rf /",
-      OMB_NEWEST_URL: "https://example.test/%2e%2e",
+      PATH: `${tools.fakes}:${join(box.root, "bin")}:/usr/bin:/bin:/usr/sbin:/sbin`, FAKE_DOCKER_DIR: box.fake, SANREMES_SBIN_DIR: sbin, SANREMES_SYSTEMD_DIR: systemd,
+      SANREMES_UPDATE_STATE_DIR: box.state, SANREMES_UPDATE_POLICY: box.policy, SANREMES_STABLE_URL: "file:///srv/stable.json", SANREMES_UPDATE_WAIT_S: "300; rm -rf /",
+      SANREMES_NEWEST_URL: "https://example.test/%2e%2e",
     };
     // Its folder is the test's user's, who cannot run Docker: refused unless asked, said why.
     const refused = spawnSync("sh", [RUNNER, "--install", "--dir", box.deploy, "--no-restart"], { encoding: "utf8", env, timeout: 30_000 });
@@ -522,13 +522,13 @@ describe.skipIf(!posix)("deploy/update-runner.sh", { timeout: hostTimeout(60_000
     expect(mode(join(box.state, "update.sh"))).toBe(0o755);
     expect(readFileSync(join(box.state, "update.sh"), "utf8")).toBe(readFileSync(join(DEPLOY, "update.sh"), "utf8"));
     expect(readFileSync(victim, "utf8")).toBe("untouched");
-    expect(readFileSync(join(systemd, "openmausbot-update.path"), "utf8")).toContain(`PathExists=${box.state}/request/request\nPathChanged=${box.policy}\nPathChanged=${box.deploy}/.env\n`);
-    const service = readFileSync(join(systemd, "openmausbot-update.service"), "utf8");
-    expect(service).toContain(`ExecStart=${sbin}/openmausbot-update-runner`);
+    expect(readFileSync(join(systemd, "sanremes-update.path"), "utf8")).toContain(`PathExists=${box.state}/request/request\nPathChanged=${box.policy}\nPathChanged=${box.deploy}/.env\n`);
+    const service = readFileSync(join(systemd, "sanremes-update.service"), "utf8");
+    expect(service).toContain(`ExecStart=${sbin}/sanremes-update-runner`);
     // Root's settings at the install, and only plain values: one that is not is left out, `%` included (systemd expands it).
-    expect(service).toContain(`Environment=HOME=/root OMB_INSTALL_DIR=${box.deploy} OMB_STABLE_URL=file:///srv/stable.json\n`);
-    expect(readFileSync(join(sbin, "openmausbot-update-runner"), "utf8")).toBe(readFileSync(RUNNER, "utf8"));
-    expect(tools.log()).toContain("systemctl enable --now openmausbot-update.path");
+    expect(service).toContain(`Environment=HOME=/root SANREMES_INSTALL_DIR=${box.deploy} SANREMES_STABLE_URL=file:///srv/stable.json\n`);
+    expect(readFileSync(join(sbin, "sanremes-update-runner"), "utf8")).toBe(readFileSync(RUNNER, "utf8"));
+    expect(tools.log()).toContain("systemctl enable --now sanremes-update.path");
     expect(box.runnerInfo()).toEqual({ layout: "compose", dir: box.deploy, held: false, release: true });
     // One install per server: another folder is refused while this one has the button.
     const other = join(box.root, "other");
@@ -539,8 +539,8 @@ describe.skipIf(!posix)("deploy/update-runner.sh", { timeout: hostTimeout(60_000
     expect(second.status).toBe(1);
     expect(second.stderr).toContain(`already updates ${box.deploy}: one install per server`);
     const override = readFileSync(join(box.deploy, "docker-compose.override.yml"), "utf8");
-    expect(override).toContain(`- ${box.state}/request:/run/omb-update/request\n`);
-    expect(override).toContain(`- ${box.state}/status:/run/omb-update/status:ro\n`);
+    expect(override).toContain(`- ${box.state}/request:/run/sanremes-update/request\n`);
+    expect(override).toContain(`- ${box.state}/status:/run/sanremes-update/status:ro\n`);
     expect(readFileSync(join(box.deploy, "docker-compose.yml"), "utf8")).toBe("services: {}\n");
 
     // --remove for another folder takes nothing away.
@@ -548,10 +548,10 @@ describe.skipIf(!posix)("deploy/update-runner.sh", { timeout: hostTimeout(60_000
     expect(elsewhere.status).toBe(1);
     expect(elsewhere.stderr).toContain(`updates ${box.deploy}, not ${other}, so nothing was removed`);
     expect(existsSync(join(box.state, "update.sh"))).toBe(true);
-    expect(existsSync(join(systemd, "openmausbot-update.path"))).toBe(true);
+    expect(existsSync(join(systemd, "sanremes-update.path"))).toBe(true);
     const removed = spawnSync("sh", [RUNNER, "--remove", "--dir", box.deploy], { encoding: "utf8", env, timeout: 30_000 });
     expect(removed.status, removed.stdout + removed.stderr).toBe(0);
-    for (const gone of [join(systemd, "openmausbot-update.path"), join(systemd, "openmausbot-update.service"), join(sbin, "openmausbot-update-runner"),
+    for (const gone of [join(systemd, "sanremes-update.path"), join(systemd, "sanremes-update.service"), join(sbin, "sanremes-update-runner"),
       join(box.deploy, "docker-compose.override.yml"), box.state]) expect(existsSync(gone), gone).toBe(false);
     expect(existsSync(join(box.deploy, "update.sh"))).toBe(true);
   });
@@ -561,8 +561,8 @@ describe.skipIf(!posix)("deploy/update-runner.sh", { timeout: hostTimeout(60_000
     const tools = rootTools(box.root);
     mkdirSync(join(box.root, "systemd"));
     const env = {
-      PATH: `${tools.fakes}:/usr/bin:/bin:/usr/sbin:/sbin`, OMB_SBIN_DIR: join(box.root, "sbin"), OMB_SYSTEMD_DIR: join(box.root, "systemd"),
-      OMB_UPDATE_STATE_DIR: box.state, OMB_UPDATE_POLICY: box.policy,
+      PATH: `${tools.fakes}:/usr/bin:/bin:/usr/sbin:/sbin`, SANREMES_SBIN_DIR: join(box.root, "sbin"), SANREMES_SYSTEMD_DIR: join(box.root, "systemd"),
+      SANREMES_UPDATE_STATE_DIR: box.state, SANREMES_UPDATE_POLICY: box.policy,
     };
     const installRunner = () => spawnSync("sh", [RUNNER, "--install", "--dir", box.deploy, "--user", "1000:1000", "--no-restart", "--trust-folder-owner"], { encoding: "utf8", env, timeout: 30_000 });
     const victim = join(box.root, "victim.txt");
@@ -574,11 +574,11 @@ describe.skipIf(!posix)("deploy/update-runner.sh", { timeout: hostTimeout(60_000
     expect(readFileSync(victim, "utf8")).toBe("untouched");
 
     rmSync(join(box.deploy, "docker-compose.override.yml"));
-    writeFileSync(join(box.deploy, "docker-compose.override.yml"), "services:\n  omb:\n    environment:\n      MINE: 1\n");
+    writeFileSync(join(box.deploy, "docker-compose.override.yml"), "services:\n  sanremes:\n    environment:\n      MINE: 1\n");
     const mine = installRunner();
     expect(mine.status).toBe(1);
     expect(mine.stderr).toContain("is yours, so it was left alone");
-    expect(mine.stderr).toContain(`- ${box.state}/request:/run/omb-update/request`);
+    expect(mine.stderr).toContain(`- ${box.state}/request:/run/sanremes-update/request`);
     expect(readFileSync(join(box.deploy, "docker-compose.override.yml"), "utf8")).toContain("MINE: 1");
   });
 });

@@ -153,5 +153,5 @@ export function nothingRan(rows: readonly Message[], since: number, turnId: stri
 /** Security invariant: the server log gets the failure's class and HTTP status, never the provider's words, which can name the account. */
 export function logFailedTurn(event: { threadId: string; turnId?: string; message: string }): void {
   const status = httpStatusOf(event.message);
-  console.warn(`[omb-turn] thread=${event.threadId} turn=${event.turnId ?? "none"} failed: ${classifyError({ text: event.message }).reason}${status ? ` HTTP ${status}` : ""}`);
+  console.warn(`[sanremes-turn] thread=${event.threadId} turn=${event.turnId ?? "none"} failed: ${classifyError({ text: event.message }).reason}${status ? ` HTTP ${status}` : ""}`);
 }

@@ -66,7 +66,7 @@ export function codexDeveloperInstructions(config: unknown, botInstructions: str
   // Native rules go last, keeping their precedence over the bot's.
   const trailing = [sandboxNote, configured].filter((part): part is string => Boolean(part)).join("\n\n");
   return trailing
-    ? `${botInstructions || "No OpenMausBot bot-specific instructions remain."}\n\n${trailing}`
+    ? `${botInstructions || "No SanRemes bot-specific instructions remain."}\n\n${trailing}`
     : botInstructions;
 }
 
@@ -101,8 +101,8 @@ export async function syncCodexInstructions(
           role: "developer",
           content: [{
             type: "input_text",
-            text: "The following replaces the previous developer instruction block supplied by OpenMausBot, including its native configured rules and bot-specific instructions. Other Codex instructions and permissions still apply.\n\n"
-              + (instructions || "No OpenMausBot bot-specific instructions remain."),
+            text: "The following replaces the previous developer instruction block supplied by SanRemes, including its native configured rules and bot-specific instructions. Other Codex instructions and permissions still apply.\n\n"
+              + (instructions || "No SanRemes bot-specific instructions remain."),
           }],
         }],
       });

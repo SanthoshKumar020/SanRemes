@@ -56,7 +56,7 @@ const scratch: string[] = [];
 const instances: ProviderInstance[] = [];
 
 function profile(): { directory: string; conversations: string } {
-  const directory = mkdtempSync(join(tmpdir(), "omb-antigravity-outcome-"));
+  const directory = mkdtempSync(join(tmpdir(), "sanremes-antigravity-outcome-"));
   scratch.push(directory);
   const conversations = join(directory, "antigravity-acp", "conversations");
   mkdirSync(conversations, { recursive: true });
@@ -231,7 +231,7 @@ describe("an Antigravity turn whose reply was an upstream failure", () => {
 
   async function instance(instanceId: string, steps: Array<[number, string]> | null) {
     ensureDirs();
-    const directory = mkdtempSync(join(tmpdir(), "omb-antigravity-outcome-"));
+    const directory = mkdtempSync(join(tmpdir(), "sanremes-antigravity-outcome-"));
     scratch.push(directory);
     const executable = join(directory, "fake-antigravity.ts");
     const harness = join(directory, process.platform === "win32" ? "localharness_external.exe" : "localharness_external");

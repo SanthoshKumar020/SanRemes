@@ -23,10 +23,10 @@ afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: tru
 
 /** A computer: one folder for its disk, and a log each run of the user's command appends to. */
 function computer() {
-  const root = mkdtempSync(join(tmpdir(), "omb-once-"));
+  const root = mkdtempSync(join(tmpdir(), "sanremes-once-"));
   dirs.push(root);
   const log = join(root, "ran.log");
-  const claims = { disk: join(root, "disk", "omb-once"), memory: join(root, "shm", "omb-once") };
+  const claims = { disk: join(root, "disk", "sanremes-once"), memory: join(root, "shm", "sanremes-once") };
   const sh = (script: string) => {
     try {
       return { exitCode: 0, stdout: execFileSync("/bin/sh", ["-c", script], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }) };
@@ -43,8 +43,8 @@ function computer() {
 }
 
 type Answer = { exitCode: number; stdout: string };
-const TAKEN = (key: string): Answer => ({ exitCode: 75, stdout: `omb-once:${key}:taken\n` });
-const UNCLAIMED = (key: string): Answer => ({ exitCode: 76, stdout: `omb-once:${key}:unclaimed\n` });
+const TAKEN = (key: string): Answer => ({ exitCode: 75, stdout: `sanremes-once:${key}:taken\n` });
+const UNCLAIMED = (key: string): Answer => ({ exitCode: 76, stdout: `sanremes-once:${key}:unclaimed\n` });
 
 /** What the claim script does on the computer, in memory: who may run, by key, by whether a claim can be made, and by
  * whether this copy is a first send or a resend. `claimable: false` is a disk and a /dev/shm that both refuse. */
@@ -56,7 +56,7 @@ function modelComputer(options: { claimable?: boolean; exitCode?: number } = {})
     sh(script: string): Answer {
       const key = /^k=([0-9a-f]{16});/.exec(script)?.[1];
       if (!key) throw new Error("not a claim script");
-      const resend = script.includes(`echo omb-once:${key}:unclaimed; exit 76`);
+      const resend = script.includes(`echo sanremes-once:${key}:unclaimed; exit 76`);
       if (claimed.has(key)) return TAKEN(key);
       if (options.claimable === false) { if (resend) return UNCLAIMED(key); } else claimed.add(key);
       runs += 1;
@@ -70,7 +70,7 @@ describe("the script a call is sent as", () => {
 
   it("claims the call's key on the disk, then in memory, before the command, which comes last and unchanged", () => {
     const script = lines(onceCommand(KEY, 1, "exec make all"));
-    expect(script[0]).toBe(`k=${KEY}; a="\${HOME:-/tmp}/.cache/omb-once"; b="/dev/shm/omb-once"`);
+    expect(script[0]).toBe(`k=${KEY}; a="\${HOME:-/tmp}/.cache/sanremes-once"; b="/dev/shm/sanremes-once"`);
     expect(script.at(-1)).toBe("exec make all");
     const claimDisk = script.indexOf('if ! mkdir "$a/$k" 2>/dev/null; then'), claimMemory = script.indexOf('  if ! mkdir "$b/$k" 2>/dev/null; then');
     expect(claimDisk).toBeGreaterThan(0);
@@ -80,7 +80,7 @@ describe("the script a call is sent as", () => {
 
   it("stops with its own mark and exit code 75 wherever it finds the key already claimed", () => {
     const script = onceCommand(KEY, 1, "true");
-    expect(script).toContain(`taken() { echo omb-once:${KEY}:taken; exit 75; }`);
+    expect(script).toContain(`taken() { echo sanremes-once:${KEY}:taken; exit 75; }`);
     expect(script).toContain('if [ -d "$a/$k" ] || [ -d "$b/$k" ]; then taken; fi');
     expect(script).toContain('  if [ -d "$a/$k" ]; then taken; fi');
     expect(script).toContain('    if [ -d "$b/$k" ]; then taken; fi');
@@ -88,13 +88,13 @@ describe("the script a call is sent as", () => {
 
   it("lets a first send run with no claim, and makes a resend that cannot claim stop with exit code 76", () => {
     expect(onceCommand(KEY, 1, "true")).not.toContain("exit 76");
-    for (const attempt of [2, 3, 4]) expect(onceCommand(KEY, attempt, "true")).toContain(`    echo omb-once:${KEY}:unclaimed; exit 76`);
+    for (const attempt of [2, 3, 4]) expect(onceCommand(KEY, attempt, "true")).toContain(`    echo sanremes-once:${KEY}:unclaimed; exit 76`);
   });
 
   it("records the shell's process id beside the claim, and the stop script signals only that process and what it started", () => {
     expect(onceCommand(KEY, 1, "true")).toContain('echo $$ > "$a/$k/pid" 2>/dev/null || echo $$ > "$b/$k/pid" 2>/dev/null');
     const stop = stopCommand(KEY);
-    expect(stop).toContain(`k=${KEY}; p=; for d in "\${HOME:-/tmp}/.cache/omb-once" "/dev/shm/omb-once"; do if [ -f "$d/$k/pid" ]`);
+    expect(stop).toContain(`k=${KEY}; p=; for d in "\${HOME:-/tmp}/.cache/sanremes-once" "/dev/shm/sanremes-once"; do if [ -f "$d/$k/pid" ]`);
     expect(stop).toContain('stop() { for c in $(pgrep -P "$1" 2>/dev/null); do stop "$c"; done; kill -TERM "$1" 2>/dev/null; }');
     expect(stop).not.toMatch(/kill[^\n]* -- -|kill -9|pkill/);
   });
@@ -148,7 +148,7 @@ describe.skipIf(!POSIX_SH)(`a call's claim on the computer ${ONLY_POSIX}`, () =>
     expect(first).toEqual({ exitCode: 0, stdout: "done\n" });
     const late = pc.sh(onceCommand(KEY, 1, pc.command, pc.claims));
     const resent = pc.sh(onceCommand(KEY, 2, pc.command, pc.claims));
-    expect(late).toEqual({ exitCode: 75, stdout: `omb-once:${KEY}:taken\n` });
+    expect(late).toEqual({ exitCode: 75, stdout: `sanremes-once:${KEY}:taken\n` });
     expect(resent).toEqual(late);
     expect(pc.runs()).toBe(1);
   });
@@ -172,7 +172,7 @@ describe.skipIf(!POSIX_SH)(`a call's claim on the computer ${ONLY_POSIX}`, () =>
     const pc = computer();
     writeFileSync(join(pc.root, "disk"), "");
     writeFileSync(join(pc.root, "shm"), "");
-    expect(pc.sh(onceCommand(KEY, 2, pc.command, pc.claims))).toEqual({ exitCode: 76, stdout: `omb-once:${KEY}:unclaimed\n` });
+    expect(pc.sh(onceCommand(KEY, 2, pc.command, pc.claims))).toEqual({ exitCode: 76, stdout: `sanremes-once:${KEY}:unclaimed\n` });
     expect(pc.runs()).toBe(0);
     expect(pc.sh(onceCommand(KEY, 1, pc.command, pc.claims)).exitCode).toBe(0);
     expect(pc.runs()).toBe(1);
@@ -378,7 +378,7 @@ describe.skipIf(!POSIX_SH)(`a call sent again, against the real shell ${ONLY_POS
   /** The script as it reaches the computer, with the test's own claim folders in place of the real ones. */
   const onDisk = (pc: ReturnType<typeof computer>) => ({
     runs: pc.runs,
-    sh: (script: string) => pc.sh(script.replace('a="${HOME:-/tmp}/.cache/omb-once"; b="/dev/shm/omb-once"', `a="${pc.claims.disk}"; b="${pc.claims.memory}"`).replace(/\nmake$/, `\n${pc.command}`)),
+    sh: (script: string) => pc.sh(script.replace('a="${HOME:-/tmp}/.cache/sanremes-once"; b="/dev/shm/sanremes-once"', `a="${pc.claims.disk}"; b="${pc.claims.memory}"`).replace(/\nmake$/, `\n${pc.command}`)),
   });
 
   it("runs the command once when the first copy never arrived", async () => {

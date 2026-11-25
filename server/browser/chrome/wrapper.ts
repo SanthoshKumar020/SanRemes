@@ -133,7 +133,7 @@ export async function primaryScreen(platform: NodeJS.Platform, env: NodeJS.Proce
     const match = SIZE.exec(output);
     return match ? { width: Math.round(Number(match[1])), height: Math.round(Number(match[2])) } : null;
   };
-  const named = parse(env.OMB_BROWSER_SCREEN?.trim() ?? "");
+  const named = parse(env.SANREMES_BROWSER_SCREEN?.trim() ?? "");
   if (named) return named;
   try {
     if (platform === "darwin") return parse(await runCommand("osascript", ["-l", "JavaScript", "-e", MAC_SCREEN], 5_000)) ?? SERVER_SCREEN;
@@ -146,9 +146,9 @@ export async function primaryScreen(platform: NodeJS.Platform, env: NodeJS.Proce
   return SERVER_SCREEN;
 }
 
-/** Explicit OMB_BROWSER_LANG, app language, then the POSIX locale; "C" and "POSIX" name no language. */
+/** Explicit SANREMES_BROWSER_LANG, app language, then the POSIX locale; "C" and "POSIX" name no language. */
 export function browserLanguage(env: NodeJS.ProcessEnv, configured?: string): string | undefined {
-  const named = env.OMB_BROWSER_LANG?.trim();
+  const named = env.SANREMES_BROWSER_LANG?.trim();
   if (named && /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/u.test(named)) return named;
   const app = configured?.trim();
   if (app && /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/u.test(app)) {
@@ -175,6 +175,6 @@ export function languageList(language: string | undefined): string {
 
 /** The zone the server runs in, which is also the one each turn's clock shows; Windows Chrome ignores TZ. */
 export function browserTimeZone(env: NodeJS.ProcessEnv, platform: NodeJS.Platform): string | undefined {
-  const zone = env.OMB_BROWSER_TIMEZONE?.trim() || (platform === "win32" ? "" : env.TZ?.trim() || "");
+  const zone = env.SANREMES_BROWSER_TIMEZONE?.trim() || (platform === "win32" ? "" : env.TZ?.trim() || "");
   return /^:?[A-Za-z0-9_+\-./]{1,64}$/u.test(zone) ? zone : undefined;
 }

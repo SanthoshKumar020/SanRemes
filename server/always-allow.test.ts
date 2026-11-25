@@ -27,7 +27,7 @@ describe("adding an Always allow grant", () => {
 describe("recovering a bot's grants from its threads", () => {
   const dirs: string[] = [];
   afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
-  const folder = () => { const dir = mkdtempSync(join(tmpdir(), "omb-always-allow-")); dirs.push(dir); return dir; };
+  const folder = () => { const dir = mkdtempSync(join(tmpdir(), "sanremes-always-allow-")); dirs.push(dir); return dir; };
   const inThreads = Array.from({ length: 30 }, (_, i) => `provider-tool:claude:notes:read_${i}:0123456789abcdef`);
 
   it("adds a thread's tool grants to the bot's own, each once, never its shell grants, and says nothing while there is room", () => {

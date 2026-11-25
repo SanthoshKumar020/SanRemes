@@ -29,10 +29,10 @@ export const TICK_PAUSE_MS = 1_000;
 
 /** The switch: 1, on, true or yes on a Cloud home starts the sweeper and the admin routes; off, nothing is read, started or
  * deleted, and the routes are not there. */
-export const CACHE_SWEEP_SWITCH = "OMB_CACHE_SWEEP";
+export const CACHE_SWEEP_SWITCH = "SANREMES_CACHE_SWEEP";
 /** Cap overrides, in bytes or with a K, M, G or T suffix (powers of 1024). */
-export const TOOL_CAP_ENV = "OMB_CACHE_CAP_TOOLS";
-export const APP_CAP_ENV = "OMB_CACHE_CAP_APP";
+export const TOOL_CAP_ENV = "SANREMES_CACHE_CAP_TOOLS";
+export const APP_CAP_ENV = "SANREMES_CACHE_CAP_APP";
 
 const ON = new Set(["1", "on", "true", "yes"]);
 

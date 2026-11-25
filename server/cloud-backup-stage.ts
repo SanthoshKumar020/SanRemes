@@ -2,7 +2,7 @@
 // control side, off by default). That backup is a tar of the whole volume while the home runs, and a tar reads
 // messages.db and its -wal at different moments: a checkpoint between the two reads leaves an archive that restores a
 // database missing pages, or a corrupt one. So, just before the tar, the server's backup runs
-// `docker exec -u maus omb-home timeout 1800 node /app/dist-server/cloud-backup-db-snapshot.js`, which writes one moment of
+// `docker exec -u sanremes sanremes-home timeout 1800 node /app/dist-server/cloud-backup-db-snapshot.js`, which writes one moment of
 // each database (snapshotDatabase: SQLite's backup API in one step; writers go on meanwhile) into <data>/backup-stage/<name>.
 // The tar packs each copy under its live name and leaves out the live file, its -wal and -shm; it removes the stage after.
 //
@@ -18,7 +18,7 @@ import { join } from "node:path";
 import { renameWithRetry } from "./atomic.ts";
 import { SNAPSHOT_DATABASES, snapshotDatabase } from "./workspace-backup-databases.ts";
 
-/** The stage's folder in the data folder (the boot script reads it at /mnt/omb-data/.openmausbot/backup-stage). */
+/** The stage's folder in the data folder (the boot script reads it at /mnt/sanremes-data/.sanremes/backup-stage). */
 export const BACKUP_STAGE = "backup-stage";
 const GB = 1024 ** 3;
 /** Room a copy must leave free on the disk: the larger of 1 GB and 5% of it. The live WAL grows meanwhile (no checkpoint
@@ -56,7 +56,7 @@ export async function prepareBackupStage(options: PrepareBackupStage): Promise<P
   rmSync(stage, { recursive: true, force: true });
   mkdirSync(stage, { mode: 0o700 });
   const staged: string[] = [], skipped: { name: string; why: string }[] = [];
-  const skip = (name: string, why: string) => { skipped.push({ name, why }); log(`omb backup: ${name} not snapshotted (${why}); the backup packs its live files`); };
+  const skip = (name: string, why: string) => { skipped.push({ name, why }); log(`sanremes backup: ${name} not snapshotted (${why}); the backup packs its live files`); };
   for (const name of Object.keys(SNAPSHOT_DATABASES)) {
     const source = join(dataDir, name);
     if (!existsSync(source)) continue;

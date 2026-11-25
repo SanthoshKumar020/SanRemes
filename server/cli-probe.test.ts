@@ -4,12 +4,12 @@ import { testCliBinary } from "./cli-probe.ts";
 import { MistralVibeAgentDriver } from "./drivers/acp/mistral-vibe.ts";
 import { OpenCodeDriver } from "./drivers/acp/opencode-go.ts";
 
-const FULL_PROCESS_TABLE_CLI = "omb-eagain-cli-for-this-test";
+const FULL_PROCESS_TABLE_CLI = "sanremes-eagain-cli-for-this-test";
 
 const PROBED_VERSIONS: Record<string, string> = {
-  "omb-vibe-acp-exe": "vibe-acp.EXE 3.1.2\n",
-  "omb-vibe-acp-upper": "VIBE-ACP.EXE 3.1.2\n",
-  "omb-vibe-acp-other": "other-cli 1.0\n",
+  "sanremes-vibe-acp-exe": "vibe-acp.EXE 3.1.2\n",
+  "sanremes-vibe-acp-upper": "VIBE-ACP.EXE 3.1.2\n",
+  "sanremes-vibe-acp-other": "other-cli 1.0\n",
 };
 
 vi.mock("./procs.ts", async (importOriginal) => {
@@ -24,7 +24,7 @@ vi.mock("./procs.ts", async (importOriginal) => {
 });
 
 it("offers the install steps for a CLI that is missing, without the server-only download pins", async () => {
-  const result = await testCliBinary("omb-missing-cli-for-this-test", OpenCodeDriver);
+  const result = await testCliBinary("sanremes-missing-cli-for-this-test", OpenCodeDriver);
   expect(result.ok).toBe(false);
   expect(result.install?.command).toEqual(OpenCodeDriver.install?.command);
   expect(OpenCodeDriver.install?.standalone).toBeDefined();
@@ -39,14 +39,14 @@ it("offers no install for a CLI that could not start because the machine is out 
 });
 
 it.each([
-  ["omb-vibe-acp-exe", "vibe-acp.EXE 3.1.2"],
-  ["omb-vibe-acp-upper", "VIBE-ACP.EXE 3.1.2"],
+  ["sanremes-vibe-acp-exe", "vibe-acp.EXE 3.1.2"],
+  ["sanremes-vibe-acp-upper", "VIBE-ACP.EXE 3.1.2"],
 ])("accepts %s answering --version as %s (Windows keeps the file name's extension and case)", async (cli, version) => {
   expect(await testCliBinary(cli, MistralVibeAgentDriver)).toEqual({ ok: true, version });
 });
 
 it("still rejects another program answering --version through vibe-acp's path", async () => {
-  const result = await testCliBinary("omb-vibe-acp-other", MistralVibeAgentDriver);
+  const result = await testCliBinary("sanremes-vibe-acp-other", MistralVibeAgentDriver);
   expect(result.ok).toBe(false);
-  expect(result.message).toBe("`omb-vibe-acp-other` is not Mistral (Vibe)'s CLI: it answered --version as another program.");
+  expect(result.message).toBe("`sanremes-vibe-acp-other` is not Mistral (Vibe)'s CLI: it answered --version as another program.");
 });

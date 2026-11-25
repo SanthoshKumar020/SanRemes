@@ -8,7 +8,7 @@ import { buildZip } from "../testing/zip-fixture.ts";
 import { BITWARDEN_CLI_VERSION, BitwardenCliUnavailable, bitwardenCliPath, bitwardenCliPin, bitwardenCliUrl, bitwardenRunner, installBitwardenCli } from "./bitwarden-cli.ts";
 
 const dirs: string[] = [];
-const temp = () => { const dir = mkdtempSync(join(tmpdir(), "omb-bitwarden-cli-")); dirs.push(dir); return dir; };
+const temp = () => { const dir = mkdtempSync(join(tmpdir(), "sanremes-bitwarden-cli-")); dirs.push(dir); return dir; };
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 
 const TOOL = "#!/bin/sh\necho fake bw\n";
@@ -56,15 +56,15 @@ describe("Bitwarden's command line tool, fetched on first use", () => {
   it.skipIf(process.platform === "win32")("hands it the server's CA trust settings so a private-CA Vaultwarden connects, and nothing else", async () => {
     const dir = temp();
     const tool = join(dir, "bw");
-    writeFileSync(tool, `#!/bin/sh\necho "ca=$NODE_EXTRA_CA_CERTS"\necho "file=$SSL_CERT_FILE"\necho "dir=$SSL_CERT_DIR"\necho "proxy=$OMB_FAKE_SERVER_SECRET"\n`, { mode: 0o755 });
+    writeFileSync(tool, `#!/bin/sh\necho "ca=$NODE_EXTRA_CA_CERTS"\necho "file=$SSL_CERT_FILE"\necho "dir=$SSL_CERT_DIR"\necho "proxy=$SANREMES_FAKE_SERVER_SECRET"\n`, { mode: 0o755 });
     const saved = { ca: process.env.NODE_EXTRA_CA_CERTS, file: process.env.SSL_CERT_FILE, dir: process.env.SSL_CERT_DIR };
     process.env.NODE_EXTRA_CA_CERTS = "/etc/private-ca.pem"; process.env.SSL_CERT_FILE = "/etc/ssl/cert.pem"; delete process.env.SSL_CERT_DIR;
-    process.env.OMB_FAKE_SERVER_SECRET = "never-passed";
+    process.env.SANREMES_FAKE_SERVER_SECRET = "never-passed";
     try {
       const result = await bitwardenRunner({ executable: async () => tool, appDataDir: join(dir, "account") })(["status"]);
       expect(result.stdout).toBe("ca=/etc/private-ca.pem\nfile=/etc/ssl/cert.pem\ndir=\nproxy=\n");
     } finally {
-      delete process.env.OMB_FAKE_SERVER_SECRET;
+      delete process.env.SANREMES_FAKE_SERVER_SECRET;
       for (const [key, name] of [["ca", "NODE_EXTRA_CA_CERTS"], ["file", "SSL_CERT_FILE"], ["dir", "SSL_CERT_DIR"]] as const) {
         if (saved[key] === undefined) delete process.env[name]; else process.env[name] = saved[key];
       }
@@ -74,8 +74,8 @@ describe("Bitwarden's command line tool, fetched on first use", () => {
   it.skipIf(process.platform === "win32")("runs it as a separate process with secrets in its environment only, and none of the server's own", async () => {
     const dir = temp();
     const tool = join(dir, "bw");
-    writeFileSync(tool, `#!/bin/sh\necho "args=$*"\necho "secret=$BW_PASSWORD"\necho "dir=$BITWARDENCLI_APPDATA_DIR"\necho "server=$OMB_FAKE_SERVER_SECRET"\nexit 3\n`, { mode: 0o755 });
-    process.env.OMB_FAKE_SERVER_SECRET = "never-passed";
+    writeFileSync(tool, `#!/bin/sh\necho "args=$*"\necho "secret=$BW_PASSWORD"\necho "dir=$BITWARDENCLI_APPDATA_DIR"\necho "server=$SANREMES_FAKE_SERVER_SECRET"\nexit 3\n`, { mode: 0o755 });
+    process.env.SANREMES_FAKE_SERVER_SECRET = "never-passed";
     try {
       const run = bitwardenRunner({ executable: async () => tool, appDataDir: join(dir, "account") });
       const result = await run(["unlock", "--passwordenv", "BW_PASSWORD", "--raw"], { BW_PASSWORD: "fake-master" });
@@ -84,7 +84,7 @@ describe("Bitwarden's command line tool, fetched on first use", () => {
       const missing = bitwardenRunner({ executable: async () => join(dir, "nothing"), appDataDir: join(dir, "account") });
       expect((await missing(["status"])).code).toBe(127);
     } finally {
-      delete process.env.OMB_FAKE_SERVER_SECRET;
+      delete process.env.SANREMES_FAKE_SERVER_SECRET;
     }
   });
 });

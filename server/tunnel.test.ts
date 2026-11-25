@@ -50,7 +50,7 @@ describe("the headless cloudflared connector", () => {
   let marker: string;
   let lines: string[];
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), "omb-tunnel-connector-"));
+    dir = mkdtempSync(join(tmpdir(), "sanremes-tunnel-connector-"));
     here = join(dir, "bundle");
     dataDir = join(dir, "data");
     staged = join(dataDir, "dist-native", "cloudflared", `${process.platform}-${process.arch}`, process.platform === "win32" ? "cloudflared.exe" : "cloudflared");
@@ -87,7 +87,7 @@ describe("the headless cloudflared connector", () => {
     mkdirSync(dirname(staged), { recursive: true });
     writeFileSync(staged, "override");
     expect(await ensureCloudflared({
-      dataDir, here, env: { PATH: "", MARKER: marker, OMB_CLOUDFLARED_PATH: staged }, log: (line) => lines.push(line),
+      dataDir, here, env: { PATH: "", MARKER: marker, SANREMES_CLOUDFLARED_PATH: staged }, log: (line) => lines.push(line),
     })).toBe(staged);
     expect(existsSync(marker)).toBe(false);
     expect(readFileSync(staged, "utf8")).toBe("override");
@@ -130,7 +130,7 @@ describe("the headless cloudflared connector", () => {
 describe("tunnel credentials: a private file, and unreadable is not empty", () => {
   let dir: string;
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), "omb-tunnel-cred-"));
+    dir = mkdtempSync(join(tmpdir(), "sanremes-tunnel-cred-"));
   });
   afterEach(() => removeTempDir(dir));
 
@@ -162,9 +162,9 @@ describe("login and logout against the control plane", () => {
   let dir: string;
   let stub: ControlPlaneStub;
   beforeEach(async () => {
-    dir = mkdtempSync(join(tmpdir(), "omb-tunnel-login-"));
+    dir = mkdtempSync(join(tmpdir(), "sanremes-tunnel-login-"));
     stub = await startControlPlaneStub();
-    vi.stubEnv("OMB_CONTROL_PLANE_URL", stub.url);
+    vi.stubEnv("SANREMES_CONTROL_PLANE_URL", stub.url);
   });
   afterEach(async () => {
     vi.unstubAllEnvs();
@@ -191,7 +191,7 @@ describe("login and logout against the control plane", () => {
 
     const status = fakeIo([]);
     await runStatus(options(dir, { command: "status" }), status.io);
-    expect(status.out.join("\n")).toContain(`MausBot web address: ${stub.endpointUrl}`);
+    expect(status.out.join("\n")).toContain(`SanRemes web address: ${stub.endpointUrl}`);
 
     const bye = fakeIo([]);
     expect(await runLogout(options(dir, { command: "logout" }), bye.io)).toBe(0);
@@ -202,13 +202,13 @@ describe("login and logout against the control plane", () => {
   });
 
   it("tells the control plane the release this server runs, and no version at all when it cannot read one", async () => {
-    vi.stubEnv("OMB_APP_VERSION", "0.1.153");
+    vi.stubEnv("SANREMES_APP_VERSION", "0.1.153");
     expect(await runLogin(options(dir, { email: "milind@example.test" }), fakeIo([stub.otp]).io)).toBe(0);
     expect([...stub.installations.values()][0]?.appVersion).toBe("0.1.153");
 
     expect(await runLogout(options(dir, { command: "logout" }), fakeIo([]).io)).toBe(0);
     stub.installations.clear();
-    vi.stubEnv("OMB_APP_VERSION", "unknown");
+    vi.stubEnv("SANREMES_APP_VERSION", "unknown");
     expect(await runLogin(options(dir, { email: "milind@example.test" }), fakeIo([stub.otp]).io)).toBe(0);
     expect([...stub.installations.values()][0]?.appVersion).toBeNull();
   });
@@ -273,10 +273,10 @@ describe("login and logout against the control plane", () => {
   });
 
   it("an unusable control-plane override is a clear error, not a silent default", async () => {
-    vi.stubEnv("OMB_CONTROL_PLANE_URL", "ftp://nope");
+    vi.stubEnv("SANREMES_CONTROL_PLANE_URL", "ftp://nope");
     const io = fakeIo([]);
     expect(await runLogin(options(dir, { email: "a@b.test" }), io.io)).toBe(1);
-    expect(io.err.join("\n")).toMatch(/OMB_CONTROL_PLANE_URL/);
+    expect(io.err.join("\n")).toMatch(/SANREMES_CONTROL_PLANE_URL/);
   });
 });
 
@@ -285,7 +285,7 @@ describe("where the pieces are", () => {
     expect(platformName("darwin")).toBe("darwin");
     expect(platformName("win32")).toBe("windows");
     expect(platformName("linux")).toBe("linux");
-    const bundled = mkdtempSync(join(tmpdir(), "omb-tunnel-bundled-"));
+    const bundled = mkdtempSync(join(tmpdir(), "sanremes-tunnel-bundled-"));
     try {
       expect(guardianEntry(bundled)).toBeNull();
       writeFileSync(join(bundled, "tunnel-guardian.js"), "");
@@ -311,18 +311,18 @@ describe("where the pieces are", () => {
 
 describe.skipIf(!posix)("startTunnel: guardian, gateway and connector, verified through the gateway", () => {
   it("forwards the public address to the harness socket (no peer address = remote) and tears everything down on stop", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "omb-tunnel-run-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-tunnel-run-"));
     const origin = createTunnelOrigin();
     const pidFile = join(dir, "connector.pid");
     const fake = join(dir, "cloudflared");
     writeFileSync(fake, `#!/bin/sh\necho $$ > "${pidFile}"\nexec sleep 300\n`, { mode: 0o755 });
     const harness = createServer((req, res) => {
       res.writeHead(200, { "content-type": "application/json" });
-      res.end(JSON.stringify({ app: "openmausbot", url: req.url, peer: req.socket.remoteAddress ?? null }));
+      res.end(JSON.stringify({ app: "sanremes", url: req.url, peer: req.socket.remoteAddress ?? null }));
     });
     await new Promise<void>((done) => harness.listen(origin.socketPath, done));
     const originPort = await freePortBlock([0], 29_600);
-    const endpoint = "https://c-stub.openmausbot.invalid";
+    const endpoint = "https://c-stub.sanremes.invalid";
     const guardian = guardianEntry();
     expect(guardian).toBeTruthy();
     const states: string[] = [];
@@ -332,7 +332,7 @@ describe.skipIf(!posix)("startTunnel: guardian, gateway and connector, verified 
       originTarget: { pid: process.pid, socketPath: origin.socketPath },
       binaryPath: fake,
       guardian: guardian ?? "",
-      env: { ...process.env, OMB_TUNNEL_ORIGIN_PORT: String(originPort) },
+      env: { ...process.env, SANREMES_TUNNEL_ORIGIN_PORT: String(originPort) },
       fetchImpl: (input, init) => fetch(String(input).replace(endpoint, `http://127.0.0.1:${originPort}`), init),
       onState: (state) => states.push(state.status),
     });
@@ -340,7 +340,7 @@ describe.skipIf(!posix)("startTunnel: guardian, gateway and connector, verified 
       const settled = await tunnel.started;
       expect(settled.status, states.join(",")).toBe("ready");
       const viaGateway: any = await (await fetch(`http://127.0.0.1:${originPort}/api/health`)).json();
-      expect(viaGateway.app).toBe("openmausbot");
+      expect(viaGateway.app).toBe("sanremes");
       expect(viaGateway.peer).toBeNull();
       // the connector is spawned right after the gateway binds; its shell writes the pid a moment later
       const connectorPidOtherThan = async (previous: number) => {
@@ -377,11 +377,11 @@ describe("a fleet's credential in the environment", () => {
   it("gets the public address with no account file and no emailed code; a rejected credential is a clear error", async () => {
     const stub = await startControlPlaneStub();
     try {
-      const env = { ...process.env, OMB_CONTROL_PLANE_URL: stub.url };
+      const env = { ...process.env, SANREMES_CONTROL_PLANE_URL: stub.url };
       expect(fleetCredential({})).toBeNull();
-      expect(fleetCredential({ OMB_INSTALLATION_CREDENTIAL: "   " })).toBeNull();
+      expect(fleetCredential({ SANREMES_INSTALLATION_CREDENTIAL: "   " })).toBeNull();
       const credential = stub.seedInstallation("boat-1");
-      expect(fleetCredential({ OMB_INSTALLATION_CREDENTIAL: ` ${credential} ` })).toBe(credential);
+      expect(fleetCredential({ SANREMES_INSTALLATION_CREDENTIAL: ` ${credential} ` })).toBe(credential);
       const access = await fleetAccess({ credential, env, version: "9.8.7" });
       expect(access).toEqual({ endpoint: stub.endpointUrl, token: stub.connectorToken });
       expect(stub.calls).toContain("POST /v1/installations/self/endpoint");
@@ -389,7 +389,7 @@ describe("a fleet's credential in the environment", () => {
       expect([...stub.installations.values()].find((inst) => inst.credential === credential)?.appVersion).toBe("9.8.7");
       expect(stub.calls.some((call) => call.includes("/api/auth/"))).toBe(false);
       await expect(fleetAccess({ credential: `omb_install_${"x".repeat(22)}.${"y".repeat(43)}`, env })).rejects.toThrow(/rejected/);
-      await expect(fleetAccess({ credential, env: { ...env, OMB_CONTROL_PLANE_URL: "ftp://nope" } })).rejects.toThrow(/OMB_CONTROL_PLANE_URL/);
+      await expect(fleetAccess({ credential, env: { ...env, SANREMES_CONTROL_PLANE_URL: "ftp://nope" } })).rejects.toThrow(/SANREMES_CONTROL_PLANE_URL/);
     } finally {
       await stub.close();
     }

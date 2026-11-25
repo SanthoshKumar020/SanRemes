@@ -7,7 +7,7 @@ import { CONFIG_BACKUP_KEEP, listConfigBackups, restoreConfigBackup, writeConfig
 const dirs: string[] = [];
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 function fixture() {
-  const dir = mkdtempSync(join(tmpdir(), "omb-backup-clock-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-backup-clock-"));
   dirs.push(dir);
   const path = join(dir, "config.json");
   const names = Array.from({ length: CONFIG_BACKUP_KEEP }, (_, i) => writeConfigBackup(path, JSON.stringify({ saved: i }), new Date(Date.UTC(2099, 0, 1, 0, 0, i)))!);

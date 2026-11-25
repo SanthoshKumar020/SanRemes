@@ -13,7 +13,7 @@ import { execFile, execFileSync, type ChildProcess } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, readlinkSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-export const ENGINE_TAG_ENV = "OMB_ENGINE_TAG";
+export const ENGINE_TAG_ENV = "SANREMES_ENGINE_TAG";
 /** In the data folder; this machine's own, never backed up or moved. */
 export const ENGINE_RUNS_DIR = "engine-runs";
 const TAG = /^[0-9a-f]{32}$/;
@@ -209,7 +209,7 @@ async function sweepRun(dir: string, tag: string, self: SweepSelf & { boot: stri
   let left = await theirs();
   if (left === null) return;
   if (left.length) {
-    log(`Stopping ${left.length} process${left.length === 1 ? "" : "es"} an earlier OpenMausBot server of this data folder started and left running.`);
+    log(`Stopping ${left.length} process${left.length === 1 ? "" : "es"} an earlier SanRemes server of this data folder started and left running.`);
     signal(left, "SIGTERM");
     for (const until = Date.now() + 1_500; Date.now() < until && left.length; ) {
       await new Promise((resolve) => setTimeout(resolve, 100));

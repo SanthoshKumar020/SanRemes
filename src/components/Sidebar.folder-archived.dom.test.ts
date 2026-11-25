@@ -13,7 +13,7 @@ const { BotThreadList, botRowProps } = await import("./Sidebar");
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const makeBot = (tasks: NonNullable<Bot["tasks"]>): Bot => ({
-  id: "maus", threadId: "open-main", name: "Maus", title: "", description: "", notifications: true,
+  id: "sanremes", threadId: "open-main", name: "SanRemes", title: "", description: "", notifications: true,
   color: "green", unread: true, messages: [], modelSelection: { instanceId: "fake", model: "test" },
   projects: [{ id: "taxes", name: "Taxes" }],
   tasks,
@@ -70,11 +70,11 @@ describe("collapsed folder unread badge with archived threads", () => {
       { threadId: "filed-archived", title: "Old receipt", createdAt: 5, projectId: "taxes", unread: true, archivedAt: 20 },
       { threadId: "routine-run", title: "Morning run", createdAt: 6, unread: true, routineRunId: "run-1" },
     ]);
-    const selected = reducer({ ...initialState, bots: [candidate], selectedId: "other" }, { type: "select", id: "maus" });
+    const selected = reducer({ ...initialState, bots: [candidate], selectedId: "other" }, { type: "select", id: "sanremes" });
     expect(selected.bots[0]!.unread).toBe(false);
 
     const switched = reducer(
-      { ...initialState, bots: [{ ...candidate, threadId: "other-thread" }], selectedId: "maus", activeView: "chat" },
+      { ...initialState, bots: [{ ...candidate, threadId: "other-thread" }], selectedId: "sanremes", activeView: "chat" },
       { type: "taskSwitched", bot: candidate },
     );
     expect(switched.bots[0]!.unread).toBe(false);

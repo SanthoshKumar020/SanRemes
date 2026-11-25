@@ -14,7 +14,7 @@ export const TOOL_GROUP_TOKENS: Readonly<Record<ToolGroup, number>> = {
 };
 
 /** The agents server's environment variable that carries `toolsOff`: group ids joined with commas. */
-export const TOOLS_OFF_ENV = "OMB_TOOLS_OFF";
+export const TOOLS_OFF_ENV = "SANREMES_TOOLS_OFF";
 
 export function isToolGroup(value: unknown): value is ToolGroup {
   return typeof value === "string" && (TOOL_GROUPS as readonly string[]).includes(value);
@@ -26,7 +26,7 @@ export function parseToolsOff(value: unknown): ToolGroup[] | null {
   return TOOL_GROUPS.filter((group) => value.includes(group));
 }
 
-/** The groups OMB_TOOLS_OFF names; an unknown name is ignored, so an older proxy never fails a turn. */
+/** The groups SANREMES_TOOLS_OFF names; an unknown name is ignored, so an older proxy never fails a turn. */
 export function toolsOffFromEnv(value: string | undefined): ToolGroup[] {
   const named = (value ?? "").split(",");
   return TOOL_GROUPS.filter((group) => named.includes(group));

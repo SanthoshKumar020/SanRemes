@@ -9,7 +9,7 @@ let instance: DuckDBInstance;
 let connection: DuckDBConnection;
 let directory: string;
 beforeAll(async () => {
-  directory = mkdtempSync(join(tmpdir(), "omb-data-copy-"));
+  directory = mkdtempSync(join(tmpdir(), "sanremes-data-copy-"));
   instance = await DuckDBInstance.create(":memory:");
   connection = await instance.connect();
 });

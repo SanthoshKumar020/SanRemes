@@ -6,7 +6,7 @@ import { LogTail, parseQwenLogLine, classifyQuiet } from "./quiet-status.ts";
 
 const dirs: string[] = [];
 function fixture(contents: string) {
-  const dir = mkdtempSync(join(tmpdir(), "omb-quiet-rotation-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-quiet-rotation-"));
   dirs.push(dir);
   const file = join(dir, "agent.log");
   writeFileSync(file, contents);

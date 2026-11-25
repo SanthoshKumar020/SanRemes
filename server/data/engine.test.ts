@@ -1,4 +1,4 @@
-// Loaded the way the packaged app loads it: from a tree outside node_modules named by OMB_DUCKDB_DIR.
+// Loaded the way the packaged app loads it: from a tree outside node_modules named by SANREMES_DUCKDB_DIR.
 import { cpSync, existsSync, mkdirSync, mkdtempSync, realpathSync, writeFileSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import { createRequire } from "node:module";
@@ -14,7 +14,7 @@ import { DataFailure, type BotDatabase, type DataEngine } from "./types.ts";
 import { DataSheetStore } from "./sheet.ts";
 import { planLoad } from "./tools.ts";
 
-const root = mkdtempSync(join(tmpdir(), "omb-data-engine-"));
+const root = mkdtempSync(join(tmpdir(), "sanremes-data-engine-"));
 const outOfTree = join(root, "duckdb-resources");
 const nodeApi = realpathSync(join(process.cwd(), "node_modules", "@duckdb", "node-api"));
 const bindings = realpathSync(join(nodeApi, "..", "node-bindings"));
@@ -30,7 +30,7 @@ function engine(overrides: Partial<DataEngineOptions> = {}): DataEngine {
   const created = createDataEngine({
     botFolder: (botId) => join(root, "bots", botId),
     dataDir: join(root, "data"),
-    env: { ...process.env, OMB_DUCKDB_DIR: outOfTree, OMB_RESOURCES_PATH: undefined },
+    env: { ...process.env, SANREMES_DUCKDB_DIR: outOfTree, SANREMES_RESOURCES_PATH: undefined },
     ...overrides,
   });
   engines.push(created);
@@ -76,12 +76,12 @@ describe("closing", () => {
 });
 
 describe("loading the binding", () => {
-  it("prefers OMB_DUCKDB_DIR, then a staged resources tree, then node_modules", () => {
+  it("prefers SANREMES_DUCKDB_DIR, then a staged resources tree, then node_modules", () => {
     const staged = join(root, "resources");
     mkdirSync(join(staged, "duckdb"), { recursive: true });
-    expect(duckdbDirectory({ OMB_DUCKDB_DIR: "/x", OMB_RESOURCES_PATH: staged })).toBe("/x");
-    expect(duckdbDirectory({ OMB_RESOURCES_PATH: staged })).toBe(join(staged, "duckdb"));
-    expect(duckdbDirectory({ OMB_RESOURCES_PATH: join(root, "nowhere") })).toBeNull();
+    expect(duckdbDirectory({ SANREMES_DUCKDB_DIR: "/x", SANREMES_RESOURCES_PATH: staged })).toBe("/x");
+    expect(duckdbDirectory({ SANREMES_RESOURCES_PATH: staged })).toBe(join(staged, "duckdb"));
+    expect(duckdbDirectory({ SANREMES_RESOURCES_PATH: join(root, "nowhere") })).toBeNull();
     expect(duckdbDirectory({})).toBeNull();
   });
 
@@ -97,10 +97,10 @@ describe("loading the binding", () => {
 
   it("names the directory and an action when the binding is missing, in one line, without throwing", async () => {
     const missing = join(root, "no-binding-here");
-    const e = engine({ env: { ...process.env, OMB_DUCKDB_DIR: missing } });
+    const e = engine({ env: { ...process.env, SANREMES_DUCKDB_DIR: missing } });
     const reason = e.unavailable();
     expect(reason).toContain(missing);
-    expect(reason).toMatch(/OMB_DUCKDB_DIR/);
+    expect(reason).toMatch(/SANREMES_DUCKDB_DIR/);
     expect(reason).not.toContain("\n");
     const error = await failure(e.forBot("x"));
     expect(error.error.code).toBe("engine_unavailable");
@@ -112,14 +112,14 @@ describe("loading the binding", () => {
     const fresh = join(root, "duckdb-status");
     cpSync(outOfTree, fresh, { recursive: true });
     const changed = vi.fn();
-    const e = engine({ env: { ...process.env, OMB_DUCKDB_DIR: fresh }, confirmInstalledMs: 0 });
+    const e = engine({ env: { ...process.env, SANREMES_DUCKDB_DIR: fresh }, confirmInstalledMs: 0 });
     e.onInstalledChange(changed);
     expect(e.installed()).toBe(true);
     expect(loadedFrom(fresh)).toEqual([]);
     await vi.waitFor(() => expect(loadedFrom(fresh).some((file) => file.endsWith("duckdb.node"))).toBe(true));
     expect(e.installed()).toBe(true);
     expect(changed).not.toHaveBeenCalled();
-    expect(engine({ env: { ...process.env, OMB_DUCKDB_DIR: join(root, "no-binding-here") } }).installed()).toBe(false);
+    expect(engine({ env: { ...process.env, SANREMES_DUCKDB_DIR: join(root, "no-binding-here") } }).installed()).toBe(false);
   });
 
   it("tells its listeners when files that looked right do not load", async () => {
@@ -127,7 +127,7 @@ describe("loading the binding", () => {
     cpSync(outOfTree, broken, { recursive: true });
     writeFileSync(join(broken, "node_modules", "@duckdb", `node-bindings-${process.platform}-${process.arch}`, "duckdb.node"), "not a library");
     const changed = vi.fn();
-    const e = engine({ env: { ...process.env, OMB_DUCKDB_DIR: broken }, confirmInstalledMs: 0 });
+    const e = engine({ env: { ...process.env, SANREMES_DUCKDB_DIR: broken }, confirmInstalledMs: 0 });
     e.onInstalledChange(changed);
     expect(e.installed()).toBe(true);
     await vi.waitFor(() => expect(changed).toHaveBeenCalledTimes(1));
@@ -168,7 +168,7 @@ describe("instance settings", () => {
     expect(settings.autoinstall_known_extensions).toBe("false");
     expect(settings.autoload_known_extensions).toBe("true");
     expect(settings.preserve_insertion_order).toBe("false");
-    expect(instanceSettings("/b", "/d", "v1", { OMB_DUCKDB_MEMORY_LIMIT: "3GB", OMB_DUCKDB_MAX_TEMP_SIZE: "1GB" })).toMatchObject({ memory_limit: "3GB", max_temp_directory_size: "1GB" });
+    expect(instanceSettings("/b", "/d", "v1", { SANREMES_DUCKDB_MEMORY_LIMIT: "3GB", SANREMES_DUCKDB_MAX_TEMP_SIZE: "1GB" })).toMatchObject({ memory_limit: "3GB", max_temp_directory_size: "1GB" });
   });
 
   it("sizes threads and memory from the container's limits, not the host's", () => {
@@ -179,7 +179,7 @@ describe("instance settings", () => {
   });
 
   it("applies them to the opened database", async () => {
-    const e = engine({ env: { ...process.env, OMB_DUCKDB_DIR: outOfTree, OMB_DUCKDB_MEMORY_LIMIT: "300MiB" } });
+    const e = engine({ env: { ...process.env, SANREMES_DUCKDB_DIR: outOfTree, SANREMES_DUCKDB_MEMORY_LIMIT: "300MiB" } });
     const db = await e.forBot("settings");
     const names = ["memory_limit", "threads", "temp_directory", "extension_directory", "allow_persistent_secrets", "preserve_insertion_order", "autoinstall_known_extensions", "autoload_known_extensions"];
     const result = await db.run(`SELECT ${names.map((name) => `current_setting('${name}')`).join(", ")}`, bot);

@@ -171,7 +171,7 @@ describe("the sidebar's storage line", () => {
     fixture.room = { id: "offer-9", cause: { kind: "disk" } };
     await launch();
     expect(line()).toBeNull();
-    localStorage.setItem("openmausbot.roomCard.hidden.v1", "offer-9");
+    localStorage.setItem("sanremes.roomCard.hidden.v1", "offer-9");
     await relaunch();
     expect(line()?.dataset.storageNotice).toBe("full");
     // Amber, not red, even at 90%: the avatar's red dot sits right under this line.

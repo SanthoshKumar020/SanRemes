@@ -61,7 +61,7 @@ export function stageAntigravitySkills(turn: SendTurnInput, profile: string): Se
     if (directoryEntryState(profile) === "missing") mkdirSync(profile, { recursive: true, mode: 0o700 });
     if (directoryEntryState(profile) !== "directory") throw new Error("Antigravity profile must be a real directory.");
     // The native form, as resolveAcpClientPath reads it: on Windows the JS form keeps 8.3 names (C:\Users\RUNNER~1).
-    const root = join(realpathSync.native(profile), "omb-skills");
+    const root = join(realpathSync.native(profile), "sanremes-skills");
     if (directoryEntryState(root) === "missing") mkdirSync(root, { recursive: true, mode: 0o700 });
     if (directoryEntryState(root) !== "directory") throw new Error("Antigravity staging path must be a real directory.");
     const target = join(root, hash);

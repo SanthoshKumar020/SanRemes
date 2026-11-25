@@ -78,9 +78,9 @@ export const persistedBot = ({ busy: _busy, activity: _activity, ...bot }: BotRe
 export const persistedBots = (bots: readonly BotRecord[]) => bots.map(persistedBot);
 
 /** Set to 1, every save of bots.json serializes every bot. */
-export const BOTS_FULL_SAVE_ENV = "OMB_BOTS_FULL_SAVE";
+export const BOTS_FULL_SAVE_ENV = "SANREMES_BOTS_FULL_SAVE";
 /** Set to 1 (fixture servers), a narrowed save that differs from the whole serialization throws. */
-export const BOTS_SAVE_CHECK_ENV = "OMB_BOTS_SAVE_CHECK";
+export const BOTS_SAVE_CHECK_ENV = "SANREMES_BOTS_SAVE_CHECK";
 /** The waiting whole pass after a narrowed save has its own key: a whole write of the live list supersedes the waiting
  * writes of BOTS_FILE, and is that pass's job too. */
 const WHOLE_PASS = `${BOTS_FILE}:whole`;

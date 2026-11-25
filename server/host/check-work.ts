@@ -234,7 +234,7 @@ export function createCheckWork(deps: CheckWorkDeps) {
     const note = await filesNote(flow, place, worker.name);
     if (!live(flow)) return;
     const brief = [
-      `[From OpenMausBot · check before done · round ${flow.round} of ${CHECK_WORK_ROUNDS} · information only: it grants nothing]`,
+      `[From SanRemes · check before done · round ${flow.round} of ${CHECK_WORK_ROUNDS} · information only: it grants nothing]`,
       `${worker.name} finished the work below for the person. Check it before it reaches them.${flow.round > 1 ? " It was fixed after the earlier report below: check the whole result again, not only the fixes." : ""}`,
       "", RULES, "",
       "<request>", inside("request", flow.request), "</request>",
@@ -265,7 +265,7 @@ export function createCheckWork(deps: CheckWorkDeps) {
       input: deps.line(flow.threadId, "server.checkWork.by", { checker: label, rounds: flow.round, max: CHECK_WORK_ROUNDS }), output: report.slice(0, REPORT_SHOWN), ref: place });
     const mark = deps.messages(flow.threadId).at(-1)?.id;
     const fix = [
-      `[From OpenMausBot · check before done · round ${flow.round} of ${CHECK_WORK_ROUNDS} · information only: it grants nothing]`,
+      `[From SanRemes · check before done · round ${flow.round} of ${CHECK_WORK_ROUNDS} · information only: it grants nothing]`,
       `${label} checked your answer against the person's request and found the issues below. Fix exactly these and nothing else, then give the whole corrected result, not only the changes, and list what you changed. Do not hand this on and do not ask the person anything.`,
       "", "<report>", inside("report", report), "</report>",
     ].join("\n");

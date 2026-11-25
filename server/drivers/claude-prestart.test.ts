@@ -91,7 +91,7 @@ describe("ClaudeDriver: a process started before the first message (fake CLI)", 
   beforeEach(async () => {
     ensureDirs();
     chmodSync(FAKE_CLI, 0o755);
-    scratch = mkdtempSync(join(tmpdir(), "omb-prestart-test-"));
+    scratch = mkdtempSync(join(tmpdir(), "sanremes-prestart-test-"));
     launches = join(scratch, "launches.jsonl"); prompts = join(scratch, "prompts.jsonl"); relists = join(scratch, "relists.jsonl");
     process.env.FAKE_CLAUDE_LAUNCHES = launches;
     process.env.FAKE_CLAUDE_PROMPTS = prompts;

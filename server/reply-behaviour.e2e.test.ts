@@ -4,7 +4,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "no
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { CAPTURE_MARKER } from "./memory-capture.ts";
 import { TIDY_MARKER } from "./memory-tidy.ts";
 import { REPLY_HABITS_PROMPT } from "./reply-habits.ts";
@@ -13,7 +13,7 @@ import { REMEMBER_AND_FORGET } from "./workspace.ts";
 type Step = { tool: string; arguments: Record<string, unknown> };
 
 it("remembers at once, learns only what the person said, forgets everywhere, and words a routine plainly", async () => {
-  const scratch = mkdtempSync(join(tmpdir(), "omb-reply-behaviour-"));
+  const scratch = mkdtempSync(join(tmpdir(), "sanremes-reply-behaviour-"));
   const routes = join(scratch, "routes.json");
   const learnerLog = join(scratch, "learner.jsonl");
   writeFileSync(routes, JSON.stringify({

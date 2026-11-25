@@ -1,6 +1,6 @@
 // The Chrome agent-browser starts for the bots, prepared once per binary: found or downloaded, its identity read, and a
 // launcher written that gives it that identity. The engine's own browser stays when nothing here applies, or with
-// OMB_BROWSER_LEGACY_SHELL=1; once a machine's choice is made it is not switched while the server runs.
+// SANREMES_BROWSER_LEGACY_SHELL=1; once a machine's choice is made it is not switched while the server runs.
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 import { userInfo } from "node:os";
@@ -30,7 +30,7 @@ type LaunchSpec = { command: string; env?: Record<string, string | undefined> };
 const SOURCES: Record<FoundChrome["source"], string> = {
   installed: "installed",
   downloaded: "downloaded",
-  named: "named by OMB_CHROME_PATH or AGENT_BROWSER_EXECUTABLE_PATH",
+  named: "named by SANREMES_CHROME_PATH or AGENT_BROWSER_EXECUTABLE_PATH",
   "agent-browser": "installed by agent-browser",
 };
 
@@ -55,7 +55,7 @@ export function runsLauncher(path: string, env: NodeJS.ProcessEnv, timeoutMs = 1
 export interface ChromeLauncherOptions {
   dataDir: string;
   env?: NodeJS.ProcessEnv;
-  /** Current application language, used after OMB_BROWSER_LANG and before the host locale. */
+  /** Current application language, used after SANREMES_BROWSER_LANG and before the host locale. */
   language?: () => string | undefined;
   platform?: NodeJS.Platform;
   arch?: string;
@@ -68,7 +68,7 @@ export interface ChromeLauncherOptions {
   sidecars?: IdentitySidecars;
   readyWaitMs?: number;
   log?: (line: string) => void;
-  /** False for OpenMausBot's own driver, which needs the binary and its identity but no launcher for agent-browser. */
+  /** False for SanRemes's own driver, which needs the binary and its identity but no launcher for agent-browser. */
   wrapper?: boolean;
   /** Chrome's sandbox while its identity is read; by default off only where agent-browser turns it off. */
   sandbox?: boolean;
@@ -309,7 +309,7 @@ export class ChromeLauncher implements BrowserLaunch {
     return (await loadOrCalibrateIdentity(this.options.dataDir, options, calibrate)).identity;
   }
 
-  /** The Chrome and its identity for OpenMausBot's own driver: found or downloaded once, and read once per version. */
+  /** The Chrome and its identity for SanRemes's own driver: found or downloaded once, and read once per version. */
   async binary(): Promise<{ path: string; identity: ChromeIdentity; product: string; source: FoundChrome["source"] }> {
     const plan = this.plan();
     if (plan.kind === "legacy") throw new Error(`no Chrome to run here (${plan.reason})`);
@@ -338,7 +338,7 @@ export class ChromeLauncher implements BrowserLaunch {
   private engineBrowser(): string {
     const named = this.options.env.AGENT_BROWSER_EXECUTABLE_PATH?.trim();
     if (named) return named;
-    return this.options.env.OMB_RESOURCES_PATH ? "the bundled Chromium headless shell" : "agent-browser's own browser";
+    return this.options.env.SANREMES_RESOURCES_PATH ? "the bundled Chromium headless shell" : "agent-browser's own browser";
   }
 
   private log(line: string): void {

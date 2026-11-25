@@ -1,9 +1,9 @@
-// A Cloud home's engine session history: the Claude Code and Codex sessions MausBot itself started that no conversation
+// A Cloud home's engine session history: the Claude Code and Codex sessions SanRemes itself started that no conversation
 // can resume any more, and the Claude CLI's own MCP logs, go once they have been untouched for a week.
 //
 // The app resumes a conversation by its engine cursor alone (bots.json resumeCursors, through resume-plan.ts; a room
 // keeps its session in memory for minutes): a session that is no conversation's cursor and no conversation's handed
-// state is never resumed again. It is a session MausBot started when a session.started line in a remaining
+// state is never resumed again. It is a session SanRemes started when a session.started line in a remaining
 // conversation's events log names it. A session no log names (the person's own, a bot's own `claude` run in a shell,
 // one from before these logs) is never touched. A deleted conversation's sessions are delete-leftovers.ts's.
 //
@@ -62,9 +62,9 @@ const CHUNK = 1024 * 1024;
 const MAX_LINE = 16 * 1024 * 1024;
 const MEASURE_ENTRIES = 50_000;
 
-/** OMB_ENGINE_SESSION_SWEEP: `report` (or `dry-run`) counts and changes nothing; `on` removes; anything else is off. */
+/** SANREMES_ENGINE_SESSION_SWEEP: `report` (or `dry-run`) counts and changes nothing; `on` removes; anything else is off. */
 export function engineSessionSweepMode(env: NodeJS.ProcessEnv): EngineSessionSweepMode {
-  const raw = env.OMB_ENGINE_SESSION_SWEEP?.trim().toLowerCase();
+  const raw = env.SANREMES_ENGINE_SESSION_SWEEP?.trim().toLowerCase();
   if (raw === "report" || raw === "dry-run") return "report";
   return raw === "on" ? "on" : "off";
 }
@@ -142,7 +142,7 @@ async function measure(path: string): Promise<{ bytes: number; newest: number; w
 }
 
 /**
- * Session ids the conversations' events logs say MausBot started, read on from where the last pass stopped. A log
+ * Session ids the conversations' events logs say SanRemes started, read on from where the last pass stopped. A log
  * rewritten (a new inode, or shorter) is read again from its start.
  */
 export function createLoggedSessions(eventsDir: string) {
@@ -520,7 +520,7 @@ export async function engineSessionPass(deps: EngineSessionPassDeps): Promise<En
   });
 }
 
-/** Cloud homes only, and only with OMB_ENGINE_SESSION_SWEEP set: a pass when due, at the earliest FIRST_PASS_MS after start. */
+/** Cloud homes only, and only with SANREMES_ENGINE_SESSION_SWEEP set: a pass when due, at the earliest FIRST_PASS_MS after start. */
 export function startEngineSessionSweep(deps: StartEngineSessionSweepDeps): boolean {
   const mode = engineSessionSweepMode(deps.env);
   if (!deps.cloudHome || mode === "off") return false;

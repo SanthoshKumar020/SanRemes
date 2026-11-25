@@ -28,13 +28,13 @@ const extractor = (config: AppConfig, fetchImpl: FetchMock) => createExtractor({
 const sent = (fetchImpl: FetchMock, index = 0) => {
   const [url, init] = fetchImpl.mock.calls[index]!;
   const headers = init!.headers as Record<string, string>;
-  return { url: String(url), auth: headers.authorization, body: JSON.parse(String(init!.body)), ...(headers["x-omb-seam"] ? { seam: headers["x-omb-seam"] } : {}) };
+  return { url: String(url), auth: headers.authorization, body: JSON.parse(String(init!.body)), ...(headers["x-sanremes-seam"] ? { seam: headers["x-sanremes-seam"] } : {}) };
 };
 /** Answers like Workers AI, by model, from the fixture. */
 const workersAi = () => vi.fn<typeof fetch>(async (url) => json(String(url).endsWith("/clairic") ? workersFixture.clairic.response : workersFixture.clef.response));
 const cloud = () => {
-  vi.stubEnv("OMB_CLOUD_DECIDER_URL", RELAY);
-  vi.stubEnv("OMB_CLOUD_DECIDER_TOKEN", INCLUDED);
+  vi.stubEnv("SANREMES_CLOUD_DECIDER_URL", RELAY);
+  vi.stubEnv("SANREMES_CLOUD_DECIDER_TOKEN", INCLUDED);
 };
 
 afterEach(() => {

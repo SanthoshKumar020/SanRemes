@@ -41,7 +41,7 @@ export const CONTROL_NOT_READY =
   `${CONTROL_NOT_READY_OPENING}, so this call was NOT performed. It may still be starting or being prepared; no screen or app state was checked. ` +
   `To keep waiting, take a screenshot (each computer call waits up to ${WAIT_WORDS}).`;
 export const CONTROL_UNCONFIRMED =
-  "OpenMausBot could not confirm that this computer is free, so this call was NOT performed and nothing happened on the screen. " +
+  "SanRemes could not confirm that this computer is free, so this call was NOT performed and nothing happened on the screen. " +
   "Retry in a few seconds.";
 /** The gate no longer accepts this call's turn capability (401: the turn settled, or its computer was switched or taken back), so no retry can succeed. */
 export const CONTROL_TURN_ENDED =
@@ -77,8 +77,8 @@ export function createControlClient(options?: {
   timeoutMs?: number;
   fetchImpl?: typeof fetch;
 }): ControlClient {
-  const url = options?.url ?? process.env.OMB_CONTROL_URL ?? "";
-  const token = options?.token ?? process.env.OMB_CONTROL_TOKEN ?? "";
+  const url = options?.url ?? process.env.SANREMES_CONTROL_URL ?? "";
+  const token = options?.token ?? process.env.SANREMES_CONTROL_TOKEN ?? "";
   const cacheMs = options?.cacheMs ?? 750;
   const timeoutMs = options?.timeoutMs ?? READ_TIMEOUT_MS;
   const fetchImpl = options?.fetchImpl ?? fetch;

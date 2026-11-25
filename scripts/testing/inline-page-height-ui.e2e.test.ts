@@ -1,6 +1,6 @@
-// Bot pages in the real <App/> through `control-omb ui`: a page drawn to its window keeps a page's height in the chat,
+// Bot pages in the real <App/> through `control-sanremes ui`: a page drawn to its window keeps a page's height in the chat,
 // and a page that flows keeps sizing to its content. Needs the pinned agent-browser binary: runs when one resolves or
-// OMB_UI_E2E=1 asks for the verified download; otherwise skipped.
+// SANREMES_UI_E2E=1 asks for the verified download; otherwise skipped.
 import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -10,18 +10,18 @@ import { afterAll, expect, it } from "vitest";
 
 import { resolveAgentBrowserBinary } from "../../server/browser-engine.ts";
 import { removeTempDir, waitForExit } from "../../server/testing/cleanup.ts";
-import { runControlOmb } from "../control-omb.ts";
-import { UI_TOOLS_DIR, agentBrowser, sessionEnv, type UiHandle } from "./control-omb-ui.ts";
+import { runControlOmb } from "../control-sanremes.ts";
+import { UI_TOOLS_DIR, agentBrowser, sessionEnv, type UiHandle } from "./control-sanremes-ui.ts";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
-const forced = process.env.OMB_UI_E2E === "1";
+const forced = process.env.SANREMES_UI_E2E === "1";
 const enabled = forced || Boolean(resolveAgentBrowserBinary({ dataDir: UI_TOOLS_DIR, env: process.env }));
-if (!enabled) console.log("skipping inline page height UI e2e: set OMB_UI_E2E=1 to install the pinned browser");
+if (!enabled) console.log("skipping inline page height UI e2e: set SANREMES_UI_E2E=1 to install the pinned browser");
 const LAUNCH_TIMEOUT_MS = forced ? 600_000 : 180_000;
-const evidenceDir = process.env.OMB_UI_EVIDENCE_DIR
-  ? join(resolve(ROOT, process.env.OMB_UI_EVIDENCE_DIR), "inline-page-height")
-  : mkdtempSync(join(tmpdir(), "omb-page-height-"));
-const ownsEvidenceDir = !process.env.OMB_UI_EVIDENCE_DIR;
+const evidenceDir = process.env.SANREMES_UI_EVIDENCE_DIR
+  ? join(resolve(ROOT, process.env.SANREMES_UI_EVIDENCE_DIR), "inline-page-height")
+  : mkdtempSync(join(tmpdir(), "sanremes-page-height-"));
+const ownsEvidenceDir = !process.env.SANREMES_UI_EVIDENCE_DIR;
 
 const SIZE_LABEL = "c.fillStyle='#1d3557';c.font='bold 13px sans-serif';c.fillText('frame '+w+' x '+h,w-150,22);";
 
@@ -81,7 +81,7 @@ afterAll(async () => {
 (enabled ? it : it.skip)("shows every page in a fixed preview card, the page inside at its own height", async () => {
   mkdirSync(evidenceDir, { recursive: true });
   const calls = join(evidenceDir, "tool-calls.json");
-  child = spawn(process.execPath, ["--experimental-strip-types", join(ROOT, "scripts/control-omb.ts"), "ui", "launch"], {
+  child = spawn(process.execPath, ["--experimental-strip-types", join(ROOT, "scripts/control-sanremes.ts"), "ui", "launch"], {
     cwd: ROOT, env: { ...process.env, FAKE_CLAUDE_TOOL_CALLS_FILE: calls }, stdio: ["ignore", "pipe", "pipe"],
   });
   let stdout = "", stderr = "";

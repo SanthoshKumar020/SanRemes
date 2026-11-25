@@ -9,7 +9,7 @@ import { createWorker } from "../src/index";
 import { forgetTunnelRelease, releaseTunnels } from "../src/tunnel-release";
 import { forgetRelayAdoption, importSigningSeed, mintRelayToken, orderNodes, RELAY_TOKEN_LIMIT, rolloutBucket } from "../src/relay";
 
-const BASE_URL = "https://auth.openmausbot.test";
+const BASE_URL = "https://auth.sanremes.test";
 const hex = (text: string) => Uint8Array.from(text.match(/../g)!.map((pair) => Number.parseInt(pair, 16)));
 const b64u = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 const fromB64u = (text: string) => Uint8Array.from(atob(text.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - (text.length % 4)) % 4)), (c) => c.charCodeAt(0));
@@ -271,7 +271,7 @@ describe("a Worker deployed before migration 0012", () => {
     const health = await call(oldEnv, "/healthz", { method: "GET" });
     expect(health.status).toBe(200);
     const body = await health.json<Record<string, unknown>>();
-    expect(body).toMatchObject({ ok: true, service: "openmausbot-control-plane" });
+    expect(body).toMatchObject({ ok: true, service: "sanremes-control-plane" });
     expect(body).not.toHaveProperty("relayAdoption");
 
     const token = await ask(oldEnv, credential);
@@ -326,7 +326,7 @@ describe("a Worker deployed before migration 0015", () => {
     const release = env.TEST_MIGRATIONS.findIndex((migration) => migration.name.startsWith("0015_"));
     expect(release).toBeGreaterThan(0);
     await applyD1Migrations(db, env.TEST_MIGRATIONS.slice(0, release));
-    const oldEnv = { ...relayEnv({ RELAY_TUNNEL_RELEASE_PERCENT: "100", TUNNEL_LEGACY_PHONE_CUTOFF_PERCENT: "100", OMB_TUNNEL_RECLAIM_PREVIEW_DAYS: "1" }), DB: db } as unknown as Env;
+    const oldEnv = { ...relayEnv({ RELAY_TUNNEL_RELEASE_PERCENT: "100", TUNNEL_LEGACY_PHONE_CUTOFF_PERCENT: "100", SANREMES_TUNNEL_RECLAIM_PREVIEW_DAYS: "1" }), DB: db } as unknown as Env;
     const now = Date.now();
     const lookup = b64u(crypto.getRandomValues(new Uint8Array(16)));
     const credential = `omb_install_${lookup}.${b64u(crypto.getRandomValues(new Uint8Array(32)))}`;

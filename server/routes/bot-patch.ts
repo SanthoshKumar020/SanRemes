@@ -8,7 +8,7 @@ import { normalizePhoneApps } from "../../shared/phone-apps.ts";
 import { parseToolScope, toolScopeWidens } from "../../shared/tool-scope.ts";
 import type { MemoryModelSelection } from "../../shared/memory-model.ts";
 import { parseToolsOff, TOOL_GROUPS } from "../../shared/tool-groups.ts";
-import { isMausColor, MAUS_COLOR_NAMES, type BotUpdateResponse, type WireBot, type WireGroup } from "../../shared/wire.ts";
+import { isSanRemesColor, MAUS_COLOR_NAMES, type BotUpdateResponse, type WireBot, type WireGroup } from "../../shared/wire.ts";
 import { dropRemovedGrants, MAX_ALWAYS_ALLOW } from "../always-allow.ts";
 import { checkBrowserProfileChange, settleBrowserChange } from "../bot-browser-profile.ts";
 import { validateBotCwd } from "../bot-cwd.ts";
@@ -116,7 +116,7 @@ export function createBotPatchRoutes(deps: BotPatchRouteDeps): RouteHandler {
       if (!body || typeof body !== "object" || Array.isArray(body)) {
         return json(res, 400, { error: "body must be a JSON object" });
       }
-      const pairedDevice = req.headers["x-openmausbot-companion"] === "1";
+      const pairedDevice = req.headers["x-sanremes-companion"] === "1";
       if ((auth.kind === "session" && !auth.scopes.includes("admin")) || pairedDevice) {
         const session = auth.kind === "session" ? auth.session : undefined;
         const level = pairedDevice ? "chat" : deps.levelOf(auth, m[1]);
@@ -131,7 +131,7 @@ export function createBotPatchRoutes(deps: BotPatchRouteDeps): RouteHandler {
           });
         }
       }
-      if (body.color !== undefined && !isMausColor(body.color)) {
+      if (body.color !== undefined && !isSanRemesColor(body.color)) {
         return json(res, 400, { error: `color must be ${MAUS_COLOR_NAMES.slice(0, -1).join(", ")}, or ${MAUS_COLOR_NAMES.at(-1)}` });
       }
       if (body.mascotExpression !== undefined && body.mascotExpression !== null &&
@@ -212,7 +212,7 @@ export function createBotPatchRoutes(deps: BotPatchRouteDeps): RouteHandler {
       for (const key of ["unread", "cloudBackend", "color", "mascotExpression", "mascotBody", "pinned", "hidden", "sidebarHidden", "welcomed"] as const) {
         if (body[key] !== undefined) patch[key] = body[key];
       }
-      // null clears the default-bot mark, demoting the bot to a regular (deletable) one. MausBot's Show switch goes
+      // null clears the default-bot mark, demoting the bot to a regular (deletable) one. SanRemes's Show switch goes
       // with it: a regular bot is never hidden this way, and has no switch to show it again.
       if (body.defaultBot === null && existingBot?.defaultBot) Object.assign(patch, { defaultBot: undefined, sidebarHidden: undefined });
       const computerSpecified = Object.prototype.hasOwnProperty.call(body, "computer");

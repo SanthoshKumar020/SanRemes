@@ -14,12 +14,12 @@ const reply = (id: string, at: number, text: string): Message => ({ id, role: "b
 
 describe("allLibraryItems", () => {
   it("puts the open conversation's loaded items with the other conversations', newest first, each thing once", () => {
-    const open = bot([live("m1", 20, "https://one.mausbot.page/"), reply("m2", 30, "[plan](/work/plan.md)")]);
+    const open = bot([live("m1", 20, "https://one.sanremes.page/"), reply("m2", 30, "[plan](/work/plan.md)")]);
     const remote: BotLibrary = {
       pages: [
-        { threadId: "t2", messageId: "p2", at: 50, title: "Two", url: "https://two.mausbot.page/" },
+        { threadId: "t2", messageId: "p2", at: 50, title: "Two", url: "https://two.sanremes.page/" },
         // The same page shown again in an older conversation: listed once, newest first.
-        { threadId: "t3", messageId: "p3", at: 5, title: "One again", url: "https://one.mausbot.page/" },
+        { threadId: "t3", messageId: "p3", at: 5, title: "One again", url: "https://one.sanremes.page/" },
       ],
       apps: [
         { threadId: "t3", messageId: "a3", at: 1, title: "Archived app" },
@@ -38,10 +38,10 @@ describe("allLibraryItems", () => {
   });
 
   it("trusts the open conversation's loaded messages over the server's answer about them, and has only them without one", () => {
-    const open = bot([{ ...live("m1", 20, "https://one.mausbot.page/"), publishedPage: { state: "unpublished", title: "m1", url: "https://one.mausbot.page/" } } as Message]);
-    const remote: BotLibrary = { pages: [{ threadId: "t1", messageId: "m1", at: 20, title: "m1", url: "https://one.mausbot.page/" }], apps: [], files: [] };
+    const open = bot([{ ...live("m1", 20, "https://one.sanremes.page/"), publishedPage: { state: "unpublished", title: "m1", url: "https://one.sanremes.page/" } } as Message]);
+    const remote: BotLibrary = { pages: [{ threadId: "t1", messageId: "m1", at: 20, title: "m1", url: "https://one.sanremes.page/" }], apps: [], files: [] };
     expect(allLibraryItems(open, libraryItems(open), remote).pages).toEqual([]);
-    const local = libraryItems(bot([live("m5", 5, "https://five.mausbot.page/")]));
+    const local = libraryItems(bot([live("m5", 5, "https://five.sanremes.page/")]));
     expect(allLibraryItems(bot([]), local, null)).toBe(local);
   });
 });

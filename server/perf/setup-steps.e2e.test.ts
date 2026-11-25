@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { launchVerificationServer } from "../../scripts/control-omb.ts";
+import { launchVerificationServer } from "../../scripts/control-sanremes.ts";
 
 it("a direct turn's setup shows in the diagnostics: its total over the hour and on the turn's own line", async () => {
   const fixture = await launchVerificationServer();

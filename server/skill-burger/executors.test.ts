@@ -34,11 +34,11 @@ describe("where a Skill Burger's steps run", () => {
     expect(await exec.file({ path: "out/escape.md", content: "x", signal: signal() })).toMatchObject({ ok: false });
   });
 
-  it.skipIf(process.platform === "win32")("runs a command as the bot, reading its inputs from OMB_ARG_ variables, and stops one that says too much", async () => {
+  it.skipIf(process.platform === "win32")("runs a command as the bot, reading its inputs from SANREMES_ARG_ variables, and stops one that says too much", async () => {
     const cwd = folder();
     const exec = createExecutors({ botId: "b", cwd, internal: async () => ({ ok: false, body: {} }) });
     const value = "it's $(rm -rf /) `x`";
-    const ran = await exec.shell({ command: 'printf %s "$OMB_ARG_NOTE"', env: { OMB_ARG_NOTE: value }, where: "bot", tool: "shell", signal: signal(), maxBytes: 1_000 });
+    const ran = await exec.shell({ command: 'printf %s "$SANREMES_ARG_NOTE"', env: { SANREMES_ARG_NOTE: value }, where: "bot", tool: "shell", signal: signal(), maxBytes: 1_000 });
     expect(ran).toEqual({ ok: true, output: value });
     expect(await exec.shell({ command: "exit 3", env: {}, where: "bot", tool: "shell", signal: signal(), maxBytes: 1_000 })).toMatchObject({ ok: false });
     expect(await exec.shell({ command: "yes | head -c 5000", env: {}, where: "bot", tool: "shell", signal: signal(), maxBytes: 1_000 })).toMatchObject({ ok: false, tooLarge: true });

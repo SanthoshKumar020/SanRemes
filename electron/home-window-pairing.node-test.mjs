@@ -176,7 +176,7 @@ test("the screen names the address only when the page fails to connect again a m
   w.cloud.down = false;
   assert.notEqual(await until(w, () => w.pairs >= 2), null);
   w.home.failed(w.url, -102); await w.later(0);
-  assert.deepEqual(w.home.view(), { screen: "offline", cause: "network", host: "omb-t-1.fly.dev" });
+  assert.deepEqual(w.home.view(), { screen: "offline", cause: "network", host: "sanremes-t-1.fly.dev" });
   // It answers again, while the Admin refuses its code: the screen stays, without the address.
   w.cloud.pairError = refused(502);
   assert.notEqual(await until(w, () => w.pairs >= 3), null);

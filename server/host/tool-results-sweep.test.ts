@@ -36,9 +36,9 @@ function seed() {
 describe("the tool results' sweep", () => {
   it("is off unless set", () => {
     expect(toolResultsSweepMode({})).toBe("off");
-    expect(toolResultsSweepMode({ OMB_TOOL_RESULTS_SWEEP: "please" })).toBe("off");
-    expect(toolResultsSweepMode({ OMB_TOOL_RESULTS_SWEEP: "dry-run" })).toBe("report");
-    expect(toolResultsSweepMode({ OMB_TOOL_RESULTS_SWEEP: "on" })).toBe("on");
+    expect(toolResultsSweepMode({ SANREMES_TOOL_RESULTS_SWEEP: "please" })).toBe("off");
+    expect(toolResultsSweepMode({ SANREMES_TOOL_RESULTS_SWEEP: "dry-run" })).toBe("report");
+    expect(toolResultsSweepMode({ SANREMES_TOOL_RESULTS_SWEEP: "on" })).toBe("on");
   });
 
   it("removes every conversation's results older than a day, keeps newer ones and every folder", async () => {
@@ -148,7 +148,7 @@ describe("the tool results' sweep", () => {
     try {
       const files = seed();
       const dataDir = join(base, "data");
-      expect(startToolResultsSweep({ cloudHome: true, env: { OMB_TOOL_RESULTS_SWEEP: "on" }, dataDir, root, paused: () => true, log: () => {} })).toBe(true);
+      expect(startToolResultsSweep({ cloudHome: true, env: { SANREMES_TOOL_RESULTS_SWEEP: "on" }, dataDir, root, paused: () => true, log: () => {} })).toBe(true);
       await vi.advanceTimersByTimeAsync(FIRST_PASS_MS);
       expect(existsSync(files.oldHook)).toBe(true);
       expect(existsSync(join(dataDir, STAMP_FILE))).toBe(false);

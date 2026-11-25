@@ -12,7 +12,7 @@ const page = params.get("page") ?? "storage";
 const state = params.get("state") ?? "normal";
 const USED: Record<string, number> = { first: 41, normal: 50, near: 84, full: 93 };
 const used = USED[state] ?? 50;
-/** A Team Cloud's admin: "bot-x7" is a teammate's own MausBot, which the app never lists for anyone else. */
+/** A Team Cloud's admin: "bot-x7" is a teammate's own SanRemes, which the app never lists for anyone else. */
 const team = params.get("team") === "1";
 
 const report = state === "first"
@@ -67,9 +67,9 @@ class QuietEventSource {
 }
 Object.assign(window, { EventSource: QuietEventSource });
 try {
-  for (const key of Object.keys(localStorage)) if (key.startsWith("openmausbot.storageNotice.seen.v1")) localStorage.removeItem(key);
+  for (const key of Object.keys(localStorage)) if (key.startsWith("sanremes.storageNotice.seen.v1")) localStorage.removeItem(key);
   // Simple mode, the default for a new install, unless ?mode=advanced.
-  localStorage.setItem("omb-advanced-mode", params.get("mode") === "advanced" ? "1" : "0");
+  localStorage.setItem("sanremes-advanced-mode", params.get("mode") === "advanced" ? "1" : "0");
 } catch { /* blocked storage */ }
 
 const [{ StoreProvider }, { useStoreDispatch, useStoreSelector }, { SettingsModal }, { SidebarFooter }, { applySkin, readSkin, SKIN_IDS }, { loadLocale }] = await Promise.all([

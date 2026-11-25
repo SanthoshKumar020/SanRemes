@@ -27,7 +27,7 @@
 // A crash leaves either the whole tree in place or a part of it in .removing, which the next start finishes. Nothing
 // runs on the delete's own call: the work is queued and paced, rm runs at low priority in its own process, and the
 // transcripts are read in a worker, so a tree of hundreds of thousands of files never holds a turn or the event loop.
-// Wired on a Cloud home only, and only with OMB_CONVERSATION_FOLDER_CLEANUP=on (off by default).
+// Wired on a Cloud home only, and only with SANREMES_CONVERSATION_FOLDER_CLEANUP=on (off by default).
 import { execFile } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { chmod, lstat, mkdir, readFile, readdir, readlink, realpath, rename, rmdir, unlink } from "node:fs/promises";
@@ -35,9 +35,9 @@ import { lstatSync, readdirSync, realpathSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
 export const REMOVING_DIR = ".removing";
-export const FOLDER_CLEANUP_ENV = "OMB_CONVERSATION_FOLDER_CLEANUP";
+export const FOLDER_CLEANUP_ENV = "SANREMES_CONVERSATION_FOLDER_CLEANUP";
 
-/** The delete-time cleanup, on a Cloud home with OMB_CONVERSATION_FOLDER_CLEANUP=on only (off by default, so a delete
+/** The delete-time cleanup, on a Cloud home with SANREMES_CONVERSATION_FOLDER_CLEANUP=on only (off by default, so a delete
  * behaves as before until it has been proven on a test Cloud); undefined otherwise. */
 export function deleteTimeCleanup<T>(env: NodeJS.ProcessEnv, cloudHome: boolean, make: () => T): T | undefined {
   return cloudHome && env[FOLDER_CLEANUP_ENV]?.trim().toLowerCase() === "on" ? make() : undefined;

@@ -1,7 +1,7 @@
 // Page health and recorded browser steps against the pinned agent-browser and
 // its Chrome, through the real BrowserRuntime, relay, observer and store. Runs
-// when agent-browser resolves (tools directory, OMB_AGENT_BROWSER_PATH or PATH)
-// or OMB_UI_E2E=1 asks for the download; otherwise skipped. Chrome for Testing
+// when agent-browser resolves (tools directory, SANREMES_AGENT_BROWSER_PATH or PATH)
+// or SANREMES_UI_E2E=1 asks for the download; otherwise skipped. Chrome for Testing
 // starts the page at 1280x577, so the size checks are real.
 import { execFileSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
@@ -19,13 +19,13 @@ import { BrowserSteps, type StepContext } from "../../server/browser-steps.ts";
 import { openGate, type EgressGate } from "../../server/browser/egress/gate.ts";
 import { refusalFor } from "../../server/browser/egress/policy.ts";
 import { removeTempDir } from "../../server/testing/cleanup.ts";
-import { launchVerificationServer, runControlOmb } from "../control-omb.ts";
-import { ensureUiBrowser, UI_TOOLS_DIR } from "./control-omb-ui.ts";
+import { launchVerificationServer, runControlOmb } from "../control-sanremes.ts";
+import { ensureUiBrowser, UI_TOOLS_DIR } from "./control-sanremes-ui.ts";
 
-const forced = process.env.OMB_UI_E2E === "1";
+const forced = process.env.SANREMES_UI_E2E === "1";
 const enabled = forced || Boolean(resolveAgentBrowserBinary({ dataDir: UI_TOOLS_DIR, env: process.env }));
 if (!enabled) {
-  console.log(`skipping browser evidence e2e: no agent-browser binary resolves (looked in ${UI_TOOLS_DIR}, OMB_AGENT_BROWSER_PATH and PATH); set OMB_UI_E2E=1 to install the pinned release`);
+  console.log(`skipping browser evidence e2e: no agent-browser binary resolves (looked in ${UI_TOOLS_DIR}, SANREMES_AGENT_BROWSER_PATH and PATH); set SANREMES_UI_E2E=1 to install the pinned release`);
 }
 const run = enabled ? it : it.skip;
 const posix = process.platform !== "win32";
@@ -72,7 +72,7 @@ describe("page health and browser steps on the real engine", () => {
   let chrome = "";
   let gate: EgressGate | undefined;
   const timings: BrowserTiming[] = [];
-  const session = `omb-ev-${randomBytes(3).toString("hex")}`;
+  const session = `sanremes-ev-${randomBytes(3).toString("hex")}`;
 
   beforeAll(async () => {
     if (!enabled) return;
@@ -85,9 +85,9 @@ describe("page health and browser steps on the real engine", () => {
     });
     await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
     base = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
-    home = mkdtempSync(join(tmpdir(), "omb-evidence-e2e-"));
+    home = mkdtempSync(join(tmpdir(), "sanremes-evidence-e2e-"));
     // Unix socket paths must stay short (macOS temp paths are long).
-    sockets = mkdtempSync(join(posix ? "/tmp" : tmpdir(), "omb-ev-"));
+    sockets = mkdtempSync(join(posix ? "/tmp" : tmpdir(), "sanremes-ev-"));
     mkdirSync(join(home, "tmp"), { recursive: true });
     // Desktop rules: the fixture page is a local dev server.
     gate = await openGate({ decide: (destination, addresses) => refusalFor(destination, addresses, {

@@ -8,7 +8,7 @@ import { memberBot, VisibleSet } from "./bot-visibility.ts";
 let home: string | undefined;
 
 async function freshStore() {
-  home = mkdtempSync(join(tmpdir(), "omb-archived-unread-"));
+  home = mkdtempSync(join(tmpdir(), "sanremes-archived-unread-"));
   vi.resetModules();
   vi.stubEnv("HOME", home);
   vi.stubEnv("USERPROFILE", home);

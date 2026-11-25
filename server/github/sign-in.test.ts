@@ -111,7 +111,7 @@ const settle = () => new Promise<void>((resolve) => setImmediate(resolve));
 let dataDir: string;
 let clock: number;
 beforeEach(() => {
-  dataDir = mkdtempSync(join(tmpdir(), "omb-github-"));
+  dataDir = mkdtempSync(join(tmpdir(), "sanremes-github-"));
   clock = 1_000_000;
 });
 afterEach(() => {
@@ -158,7 +158,7 @@ describe("GitHub sign-in with GitHub CLI's device code", () => {
 
     child.approve();
     await settle();
-    expect(await fake.signIn.status("owner")).toEqual({ state: "signed-in", login: "octo-fixture", source: "mausbot", scopes: ["gist", "read:org", "repo"], orgs: ["acme", "widgets"], checkedAt: clock });
+    expect(await fake.signIn.status("owner")).toEqual({ state: "signed-in", login: "octo-fixture", source: "sanremes", scopes: ["gist", "read:org", "repo"], orgs: ["acme", "widgets"], checkedAt: clock });
     expect(await fake.signIn.token()).toBe(TOKEN);
     expect(fake.remembered).toEqual([TOKEN]);
     // Cached: asking again does not ask GitHub, until someone asks for a check or a git action reports a refusal.
@@ -170,7 +170,7 @@ describe("GitHub sign-in with GitHub CLI's device code", () => {
     expect(statusCalls()).toBe(before + 1);
     fake.set.ownStatus = ok(fixture("2.103.3/status-json-invalid.stdout.txt"));
     fake.signIn.reportAuthFailure("owner");
-    expect(await fake.signIn.status("owner")).toMatchObject({ state: "invalid", login: "octo-fixture", source: "mausbot" });
+    expect(await fake.signIn.status("owner")).toMatchObject({ state: "invalid", login: "octo-fixture", source: "sanremes" });
   });
 
   it("reports an expired code when gh gives up, and when the code's time passed while gh still waits", async () => {
@@ -282,7 +282,7 @@ describe("the person's own GitHub CLI on This computer", () => {
     expect(text.children).toHaveLength(0);
   });
 
-  it("a sign-in of theirs that GitHub refuses (401) shows as such, and OpenMausBot's own sign-in may then start", async () => {
+  it("a sign-in of theirs that GitHub refuses (401) shows as such, and SanRemes's own sign-in may then start", async () => {
     const fake = setup();
     fake.set.personal = "/usr/local/bin/gh";
     fake.set.version = [2, 40, 1];
@@ -316,7 +316,7 @@ describe("the person's own GitHub CLI on This computer", () => {
     child.approve();
     await settle();
     fake.set.ownStatus = ok(fixture("2.103.3/status-json-offline.stdout.txt"));
-    expect(await fake.signIn.status("owner")).toMatchObject({ state: "signed-in", login: "octo-fixture", source: "mausbot", checkedAt: null });
+    expect(await fake.signIn.status("owner")).toMatchObject({ state: "signed-in", login: "octo-fixture", source: "sanremes", checkedAt: null });
     fake.set.ownStatus = { code: 1, stdout: "", stderr: "" };
     expect(await fake.signIn.status("owner", { check: true })).toMatchObject({ state: "signed-in", login: "octo-fixture", checkedAt: null });
   });
@@ -339,7 +339,7 @@ describe("a pasted token, sign out, and whose sign-in is whose", () => {
     return Response.json({ login }, { headers: { "x-oauth-scopes": "" } });
   }) as unknown as typeof fetch;
 
-  it("keeps a pasted token in the Vault, never in an answer, and replaces OpenMausBot's own gh sign-in", async () => {
+  it("keeps a pasted token in the Vault, never in an answer, and replaces SanRemes's own gh sign-in", async () => {
     const fake = setup({ fetchImpl: github("octo-fixture") });
     const child = await showCode(fake);
     child.approve();
@@ -425,7 +425,7 @@ describe("the accessor for server-side callers", () => {
       expect(await githubToken()).toBeNull();
       reportGithubAuthFailure(MEMBER);
       fake.set.ownStatus = ok(fixture("2.103.3/status-json-invalid.stdout.txt"));
-      expect(await fake.signIn.status(MEMBER)).toMatchObject({ state: "invalid", source: "mausbot" });
+      expect(await fake.signIn.status(MEMBER)).toMatchObject({ state: "invalid", source: "sanremes" });
     } finally {
       provideGithubSignIn(null);
     }
@@ -479,7 +479,7 @@ describe("only Start downloads, and overlapping asks share one answer", () => {
     fake.set.pinned = null;
     fake.set.onDisk = false;
     const fresh = createGithubSignIn({ dataDir, team: false, tools: fake.tools, vault: fakeVault(), now: () => clock });
-    expect(await fresh.status("owner", { check: true })).toMatchObject({ state: "signed-in", login: "octo-fixture", source: "mausbot", checkedAt: null });
+    expect(await fresh.status("owner", { check: true })).toMatchObject({ state: "signed-in", login: "octo-fixture", source: "sanremes", checkedAt: null });
     expect(await fresh.token()).toBe(TOKEN);
     expect(fake.installs()).toBe(0);
   });
@@ -521,7 +521,7 @@ describe("Windows: Credential Manager is one store, so only a positive none lets
     refused.set.personal = "C:\\Program Files\\GitHub CLI\\gh.exe";
     refused.set.personalStatus = ok(fixture("2.103.3/status-json-invalid.stdout.txt"));
     await expect(refused.signIn.start("owner")).rejects.toMatchObject({ status: 409 });
-    // Elsewhere a refused sign-in of theirs lets OpenMausBot's own start.
+    // Elsewhere a refused sign-in of theirs lets SanRemes's own start.
     const linux = setup({ platform: "linux" });
     linux.set.personal = "/usr/bin/gh";
     linux.set.personalStatus = ok(fixture("2.103.3/status-json-invalid.stdout.txt"));

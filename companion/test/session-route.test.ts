@@ -108,8 +108,8 @@ function send(stream: Duplex | null, port: number | null, method: string, path: 
 
 const FORGED = {
   cookie: "omb_session=owner-cookie",
-  "x-openmausbot-companion-auth": "forged",
-  "x-openmausbot-desktop-owner": "forged-owner",
+  "x-sanremes-companion-auth": "forged",
+  "x-sanremes-desktop-owner": "forged-owner",
   "x-forwarded-for": "127.0.0.1",
   "x-real-ip": "127.0.0.1",
   forwarded: "for=127.0.0.1",
@@ -128,7 +128,7 @@ it("carries a web server session over the encrypted route as a remote request, t
   expect(seen.headers.authorization).toBe("Bearer omb_sess_abc");
   expect(seen.headers.host).toBe("companion-relay.invalid");
   expect(seen.headers["x-forwarded-for"]).toBe("relay-web-1");
-  for (const name of ["cookie", "origin", "x-real-ip", "forwarded", "x-openmausbot-companion-auth", "x-openmausbot-desktop-owner", "x-openmausbot-companion-device"]) {
+  for (const name of ["cookie", "origin", "x-real-ip", "forwarded", "x-sanremes-companion-auth", "x-sanremes-desktop-owner", "x-sanremes-companion-device"]) {
     expect(seen.headers[name], name).toBeUndefined();
   }
 });
@@ -154,7 +154,7 @@ it("keeps the phone app's surface for everyone else", async () => {
   // The phone app's own allowed route still gets the companion's capability, never the session route's marking.
   await send(await origin.connect(DEVICE), null, "POST", "/api/bots/b/read", { authorization: "Bearer phone-token" });
   expect(received).toHaveLength(1);
-  expect(received[0].headers["x-openmausbot-companion-auth"]).toBe("private-relay-secret");
+  expect(received[0].headers["x-sanremes-companion-auth"]).toBe("private-relay-secret");
   expect(received[0].headers["x-forwarded-for"]).toBeUndefined();
 });
 
@@ -184,11 +184,11 @@ it("closes the server's request when the device leaves before the reply", async 
   await pending;
 });
 
-it("says so when OpenMausBot is not running, for requests and live sockets", async () => {
+it("says so when SanRemes is not running, for requests and live sockets", async () => {
   const { origin } = await rig(await closedPort());
   const res = await send(await origin.connect(DEVICE), null, "GET", "/api/bots", { authorization: "Bearer omb_sess_abc" });
   expect(res.status).toBe(502);
-  expect(JSON.parse(res.body)).toEqual({ error: "OpenMausBot is not running on this computer" });
+  expect(JSON.parse(res.body)).toEqual({ error: "SanRemes is not running on this computer" });
   const stream = await origin.connect(DEVICE);
   const ws = new WebSocket("ws://desktop.invalid/api/events", { headers: { authorization: "Bearer omb_sess_abc" }, createConnection: () => stream as never });
   ws.once("error", () => {});

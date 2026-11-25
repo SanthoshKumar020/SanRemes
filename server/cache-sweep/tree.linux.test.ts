@@ -25,7 +25,7 @@ const dirs: string[] = [];
 afterEach(() => { after.lstat = null; for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 
 function scene() {
-  const base = realpathSync(mkdtempSync(join(tmpdir(), "omb-cache-tree-")));
+  const base = realpathSync(mkdtempSync(join(tmpdir(), "sanremes-cache-tree-")));
   dirs.push(base);
   const root = join(base, "cache"), precious = join(base, "precious");
   mkdirSync(join(root, "uv", "d1"), { recursive: true });
@@ -88,7 +88,7 @@ describe.skipIf(process.platform !== "linux")("a swap between the walk's look an
       if (!path.endsWith("/f0")) return;
       after.lstat = null;
       // It was renamed on its way out: the swap names that.
-      const trash = readdirSync(root).find((name) => name.startsWith(".omb-trash-"))!;
+      const trash = readdirSync(root).find((name) => name.startsWith(".sanremes-trash-"))!;
       renameSync(join(root, trash), join(root, "uv-moved"));
       symlinkSync(precious, join(root, trash));
     };

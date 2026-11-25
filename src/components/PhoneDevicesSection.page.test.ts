@@ -95,7 +95,7 @@ describe("Keep this computer awake", () => {
 
 describe("the HTTPS address row", () => {
   const current = { renewPairing: async () => state() };
-  const held = { available: true, status: "ready", endpoint: "https://c-0123456789abcdef0123456789abcdef.mausbot.si" };
+  const held = { available: true, status: "ready", endpoint: "https://c-0123456789abcdef0123456789abcdef.sanremes.si" };
 
   it("is hidden on a build with the encrypted connection that holds no web address, whether or not the phone link is running", () => {
     expect(showHttpsAddressRow({ routes: routes({ wifi: true }) }, null, current)).toBe(false);
@@ -127,7 +127,7 @@ describe("the HTTPS address row", () => {
     f.state = state({ routes: routes({ https: true }), endpoints: [{ url: held.endpoint, kind: "hosted", priority: 0 }] });
     const html = page(true);
     expect(html).toMatch(/HTTPS address[\s\S]*?data-route-row="https"[\s\S]*?>Turn off</);
-    expect(html).toContain("On · c-0123456789abcdef0123456789abcdef.mausbot.si");
+    expect(html).toContain("On · c-0123456789abcdef0123456789abcdef.sanremes.si");
   });
 });
 
@@ -143,7 +143,7 @@ describe("Add a phone's steps", () => {
     expect(input("wifi")).toContain('checked=""');
     expect(input("relay"), "signed out: Anywhere can't be picked yet, and says why").toContain('disabled=""');
     expect(input("relay")).not.toContain('checked=""');
-    expect(html).toContain("Needs a free MausBot sign-in.");
+    expect(html).toContain("Needs a free SanRemes sign-in.");
     expect(html).not.toContain('type="radio"');
     expect(html).toContain(">Turn on and show code<");
     expect(html).toContain("You can turn these off any time in Devices.");
@@ -161,7 +161,7 @@ describe("route words", () => {
     expect(routeStateText(off, 0)).toBe("Off");
     expect(routeStateText({ on: true, since: NOV_7 }, 0)).toBe("On · waiting for a paired device");
     expect(reachLine({ routes: routes() })).toBe("No way in is on yet.");
-    expect(reachLine({ routes: routes({ tailscale: true, relay: true }) })).toBe("Reaches this computer on your private network and anywhere through MausBot.");
+    expect(reachLine({ routes: routes({ tailscale: true, relay: true }) })).toBe("Reaches this computer on your private network and anywhere through SanRemes.");
     expect(reachLine({ routes: routes({ wifi: true }) })).toBe("Reaches this computer on the same Wi-Fi.");
   });
 });

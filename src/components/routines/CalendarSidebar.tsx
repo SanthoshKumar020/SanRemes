@@ -5,7 +5,7 @@ import type { BotApartFromTurns } from "@/state/apart-from-turns";
 import { MiniMonth } from "./MiniMonth";
 import { t } from "@/lib/i18n";
 
-export const BOT_CALENDAR_DRAG_TYPE = "application/x-openmaus-bot";
+export const BOT_CALENDAR_DRAG_TYPE = "application/x-sanremes-bot";
 
 export interface CalendarSidebarProps {
   bots: readonly BotApartFromTurns[];

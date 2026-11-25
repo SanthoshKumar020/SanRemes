@@ -5,11 +5,11 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vites
 
 // attachments.ts and workspace.ts read DATA_DIR at import time.
 // The form the code itself compares in: on Windows the temp folder is otherwise an 8.3 short name.
-const ROOT = realpathSync.native(mkdtempSync(join(tmpdir(), "omb-handoff-files-")));
+const ROOT = realpathSync.native(mkdtempSync(join(tmpdir(), "sanremes-handoff-files-")));
 /** A folder link as a bot without special rights can make one on Windows: a junction; an ordinary link elsewhere. */
 const linkFolder = (target: string, path: string) => symlinkSync(target, path, "junction");
 const DATA = join(ROOT, "data");
-process.env.OMB_DATA_DIR = DATA;
+process.env.SANREMES_DATA_DIR = DATA;
 const { ATTACHMENTS_DIR, deleteAttachment } = await import("../attachments.ts");
 const { saveBotAttachment } = await import("../bot-attachment.ts");
 const { planBox, boxUploadsDir } = await import("../bot-box/plan.ts");

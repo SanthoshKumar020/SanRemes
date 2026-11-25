@@ -4,10 +4,10 @@
 // was evicted, and nothing that could act ran any more (Nov 2026). Under a cgroup v2 `memory.max` the kernel reclaims and,
 // at the limit, kills inside the browsers' group alone: the server, the edge and the engines keep their pages.
 //
-// Off unless OMB_BROWSER_MEMORY_MAX turns it on ("auto" or a number of MB): until then the supervisor only looks, without
+// Off unless SANREMES_BROWSER_MEMORY_MAX turns it on ("auto" or a number of MB): until then the supervisor only looks, without
 // writing anything, and logs whether it could be set here. On, the root supervisor (cloud-home-start.ts) makes
-// `<its cgroup>/omb/{server,browsers}`, puts the server in `server` and gives `maus` the right to move its own processes
-// between the two (cgroup.procs of `omb` and of both leaves). Each Chrome
+// `<its cgroup>/sanremes/{server,browsers}`, puts the server in `server` and gives `sanremes` the right to move its own processes
+// between the two (cgroup.procs of `sanremes` and of both leaves). Each Chrome
 // moves itself into `browsers` before it starts: the generated launcher's first line (chrome/wrapper.ts). Anything missing
 // (cgroup v1, a read-only cgroup tree, a container whose own cgroup holds its processes, as Docker's does) leaves things
 // as they were, with one line in the log saying why. Nothing is moved out of a container's cgroup to make room: that would
@@ -16,9 +16,9 @@ import { accessSync, chownSync, constants, existsSync, mkdirSync, readFileSync, 
 import { posix } from "node:path";
 
 /** Read by the root supervisor only: unset or "off" (or 0) for no limit, "auto" for the default size, or a number of MB. */
-export const BROWSER_MEMORY_MAX_ENV = "OMB_BROWSER_MEMORY_MAX";
+export const BROWSER_MEMORY_MAX_ENV = "SANREMES_BROWSER_MEMORY_MAX";
 /** Handed by the supervisor to the server: the browsers' cgroup folder, which every bot Chrome joins as it starts. */
-export const BROWSER_CGROUP_ENV = "OMB_BROWSER_CGROUP";
+export const BROWSER_CGROUP_ENV = "SANREMES_BROWSER_CGROUP";
 
 const MB = 1_048_576;
 /** What the browsers together leave the server, the edge and the engines: 30% of the machine, at least 900 MB. */
@@ -35,7 +35,7 @@ export function defaultBrowserMemoryMax(memoryBytes: number): number | null {
 
 export type BrowserMemorySetting = { on: false } | { on: true; bytes: number | null };
 
-/** OMB_BROWSER_MEMORY_MAX: off unless "auto" (the default size) or a number of MB. */
+/** SANREMES_BROWSER_MEMORY_MAX: off unless "auto" (the default size) or a number of MB. */
 export function browserMemoryMax(env: NodeJS.ProcessEnv, memoryBytes: number, warn: (line: string) => void = () => undefined): BrowserMemorySetting {
   const raw = env[BROWSER_MEMORY_MAX_ENV]?.trim().toLowerCase() ?? "";
   if (/^\d+$/.test(raw) && !/^0+$/.test(raw)) return { on: true, bytes: Math.max(SMALLEST_BYTES, Number(raw) * MB) };
@@ -111,7 +111,7 @@ export function setUpBrowserCgroup(options: { base: string; limitBytes: number; 
         : `the memory controller could not be turned on at ${base} (${code(error)})` };
     }
   }
-  const root = `${base}/omb`, server = `${root}/server`, browsers = `${root}/browsers`;
+  const root = `${base}/sanremes`, server = `${root}/server`, browsers = `${root}/browsers`;
   try {
     for (const dir of [root, server, browsers]) fs.mkdir(dir);
     fs.write(`${root}/cgroup.subtree_control`, "+memory");
@@ -156,7 +156,7 @@ export function prepareBrowserCgroup(env: NodeJS.ProcessEnv, memoryBytes: number
   if (!setting.on) {
     const problem = own === null ? "this process is in no cgroup v2" : browserCgroupProblem(own, deps.fs ?? realFs);
     const size = would === null ? "" : `, ${Math.round(would / MB)} MB`;
-    return { group: null, line: `${lead}: off (${BROWSER_MEMORY_MAX_ENV}=auto turns it on); ${problem ? `it could not be set here: ${problem}` : `it could be set here, in ${own}/omb/browsers${size}`} (looked in ${(now() - started).toFixed(1)} ms)` };
+    return { group: null, line: `${lead}: off (${BROWSER_MEMORY_MAX_ENV}=auto turns it on); ${problem ? `it could not be set here: ${problem}` : `it could be set here, in ${own}/sanremes/browsers${size}`} (looked in ${(now() - started).toFixed(1)} ms)` };
   }
   if (setting.bytes === null) return { group: null, line: `${lead}: not set (this machine's memory is too small for one)` };
   if (own === null) return { group: null, line: `${lead}: not set (this process is in no cgroup v2)` };

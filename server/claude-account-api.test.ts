@@ -65,8 +65,8 @@ async function idle(id: string) {
 }
 
 beforeAll(async () => {
-  home = mkdtempSync(join(tmpdir(), "omb-claude-account-api-"));
-  dataDir = join(home, ".openmausbot");
+  home = mkdtempSync(join(tmpdir(), "sanremes-claude-account-api-"));
+  dataDir = join(home, ".sanremes");
   mkdirSync(dataDir, { recursive: true });
   cli = join(home, "fixture-claude.mjs");
   // The official-style auth probe stays synthetic; turns reuse the repository
@@ -116,8 +116,8 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
       PATH: process.env.PATH,
       ...(process.env.PATHEXT ? { PATHEXT: process.env.PATHEXT } : {}),
       ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}),
-      HOME: home, USERPROFILE: home, OMB_DATA_DIR: dataDir,
-      OMB_PORT: String(port), OMB_WEBHOOK_PORT: String(port + 1), OMB_SSE_HEARTBEAT_MS: "50",
+      HOME: home, USERPROFILE: home, SANREMES_DATA_DIR: dataDir,
+      SANREMES_PORT: String(port), SANREMES_WEBHOOK_PORT: String(port + 1), SANREMES_SSE_HEARTBEAT_MS: "50",
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -225,7 +225,7 @@ describe("Claude account HTTP API", () => {
     expect(instance.authentication).toBeUndefined();
     expect(JSON.stringify(created.body)).not.toContain(fields.token);
     expect(saved().instances[id].environment.CODEX_HOME).toContain(id);
-    expect(saved().instances[id].environment.OPENMAUSBOT_CODEX_API_KEY).toBe(fields.token);
+    expect(saved().instances[id].environment.OPENSANREMES_CODEX_API_KEY).toBe(fields.token);
     expect((await api("POST", `/api/instances/${id}/auth/start`)).status).not.toBe(200);
     expect((await api("PATCH", `/api/instances/${id}/codex-endpoint`, { baseUrl: "https://other.example/v1" })).status).toBe(400);
     expect((await api("PATCH", `/api/instances/${id}/codex-endpoint`, { model: "another-model" })).status).toBe(200);

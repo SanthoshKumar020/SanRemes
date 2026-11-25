@@ -25,11 +25,11 @@ export const CHECKPOINTS_DIR = join(DATA_DIR, "checkpoints");
 const COMMIT_HASH = /^[0-9a-f]{40}$/;
 
 // What a checkpoint never carries, so a digest never lists it; categories follow Roo-Code's checkpoint excludes.
-const EXCLUDES = `# OpenMausBot checkpoint excludes — never snapshotted
+const EXCLUDES = `# SanRemes checkpoint excludes — never snapshotted
 .git/
 .svn/
 .hg/
-.openmausbot-secrets/
+.sanremes-secrets/
 node_modules/
 bower_components/
 .pnpm-store/
@@ -192,7 +192,7 @@ function shadowDir(botId: string, cwd: string): string {
 }
 
 // The index file a shadow's git calls use: `index`, or the one leaveLockedIndex() moved it to.
-const INDEX_POINTER = "omb-index";
+const INDEX_POINTER = "sanremes-index";
 const INDEX_NAME = /^index(-[a-z0-9]{1,16})?$/;
 const indexNames = new Map<string, string>();
 function indexName(shadow: string): string {
@@ -220,10 +220,10 @@ function gitEnv(shadow: string, cwd: string): NodeJS.ProcessEnv {
   env.GIT_INDEX_FILE = join(shadow, ".git", indexName(shadow));
   env.GIT_CONFIG_GLOBAL = join(shadow, "gitconfig");
   env.GIT_CONFIG_SYSTEM = join(shadow, "gitconfig_empty");
-  env.GIT_AUTHOR_NAME = "OpenMausBot Checkpoint";
-  env.GIT_AUTHOR_EMAIL = "checkpoint@openmausbot.local";
-  env.GIT_COMMITTER_NAME = "OpenMausBot Checkpoint";
-  env.GIT_COMMITTER_EMAIL = "checkpoint@openmausbot.local";
+  env.GIT_AUTHOR_NAME = "SanRemes Checkpoint";
+  env.GIT_AUTHOR_EMAIL = "checkpoint@sanremes.local";
+  env.GIT_COMMITTER_NAME = "SanRemes Checkpoint";
+  env.GIT_COMMITTER_EMAIL = "checkpoint@sanremes.local";
   return env;
 }
 
@@ -276,7 +276,7 @@ function serialize<T>(key: string, fn: () => Promise<T>): Promise<T> {
 }
 
 // A pin keeps a running turn's pre-turn commit reachable until release(): a collection after a sibling's snapshot would discard it.
-const LIVE_REFS = "refs/omb-live/";
+const LIVE_REFS = "refs/sanremes-live/";
 function liveRef(pin: string): string {
   return LIVE_REFS + createHash("sha256").update(pin).digest("hex").slice(0, 16);
 }
@@ -318,7 +318,7 @@ async function clearStaleLocks(shadow: string, staleMs = STALE_LOCK_MS): Promise
 
 /** While a collection runs, the second it prunes up to. A collection outlives a server that dies, and what the next
  * server writes must be newer than that second, or the collection would prune it as it is written. */
-const COLLECTING = "omb-collecting";
+const COLLECTING = "sanremes-collecting";
 
 async function outlastCollection(shadow: string): Promise<void> {
   const marker = join(shadow, ".git", COLLECTING);

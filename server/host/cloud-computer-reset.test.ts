@@ -13,7 +13,7 @@ const { resetBotCloudComputer } = await import("./cloud-computer-reset.ts");
 const cfg = { box: { token: "box_test" } } as any;
 const owners = [{ botId: "bot-a", name: "Ada", inUse: false }, { botId: "bot-b", name: "Bea", inUse: false }];
 const instance = (boxId: string, ownerBotId: string | null) => ({
-  boxId, name: `omb-${boxId}`, state: "starting", ownerBotId, ownerName: null, orphaned: ownerBotId === null, inUse: false,
+  boxId, name: `sanremes-${boxId}`, state: "starting", ownerBotId, ownerName: null, orphaned: ownerBotId === null, inUse: false,
 });
 
 describe("resetting a bot's cloud computer", () => {
@@ -30,7 +30,7 @@ describe("resetting a bot's cloud computer", () => {
     const claim = vi.fn();
     await expect(resetBotCloudComputer(cfg, "bot-a", owners, claim)).resolves.toEqual({ ok: true });
     expect(deleteManagedBoat).toHaveBeenCalledTimes(1);
-    expect(deleteManagedBoat).toHaveBeenCalledWith(cfg, owners, "bx_mine", "omb-bx_mine", claim);
+    expect(deleteManagedBoat).toHaveBeenCalledWith(cfg, owners, "bx_mine", "sanremes-bx_mine", claim);
   });
 
   it("has nothing to delete when the bot has no computer yet", async () => {
@@ -59,7 +59,7 @@ describe("resetting a bot's cloud computer", () => {
     listManagedBoats.mockResolvedValue({ configured: true, available: true, problem: null, instances: [instance("bx_mine", "bot-a")] });
     const claim = vi.fn();
     await expect(resetBotCloudComputer(cfg, "bot-a", owners, claim, "bx_mine")).resolves.toEqual({ ok: true });
-    expect(deleteManagedBoat).toHaveBeenCalledWith(cfg, owners, "bx_mine", "omb-bx_mine", claim);
+    expect(deleteManagedBoat).toHaveBeenCalledWith(cfg, owners, "bx_mine", "sanremes-bx_mine", claim);
     listManagedBoats.mockResolvedValue({ configured: true, available: true, problem: null, instances: [] });
     await expect(resetBotCloudComputer(cfg, "bot-a", owners, vi.fn(), "bx_mine")).resolves.toEqual({ ok: true, missing: true });
   });

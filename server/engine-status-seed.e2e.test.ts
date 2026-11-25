@@ -3,7 +3,7 @@ import { existsSync, openSync, closeSync, readFileSync, writeFileSync } from "no
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
-import { launchVerificationServer, verificationServerArgs, verificationServerEnvironment } from "../scripts/control-omb.ts";
+import { launchVerificationServer, verificationServerArgs, verificationServerEnvironment } from "../scripts/control-sanremes.ts";
 import { engineStatusFile, flushEngineStatusFiles } from "./harness/engine-status-file.ts";
 import { waitForExit } from "./testing/cleanup.ts";
 import { freePortBlock } from "./testing/ports.ts";

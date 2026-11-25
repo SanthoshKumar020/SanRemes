@@ -26,7 +26,7 @@ afterEach(async () => {
 });
 
 async function serve(overrides: Partial<DataRouteDeps> = {}) {
-  const dir = mkdtempSync(join(tmpdir(), "omb-data-routes-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-data-routes-"));
   dirs.push(dir);
   const database = new FakeDataDatabase("bot-1");
   database.tables.set("orders", { columns: [{ name: "id", type: "INTEGER" }, { name: "total", type: "DOUBLE" }], rows: [[1, 9.5], [2, 3.25], [3, 7]] });
@@ -128,7 +128,7 @@ describe("the Data routes", () => {
   });
 
   it("pages column-filtered results through real DuckDB and rejects stale column names even with no text", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "omb-data-column-filter-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-data-column-filter-"));
     dirs.push(dir);
     const engine = createDataEngine({ dataDir: dir, botFolder: (id) => join(dir, id) });
     try {
@@ -200,7 +200,7 @@ describe("the Data routes", () => {
   });
 
   it("cancels superseded native queries and disconnected edits while preserving the last committed result", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "omb-data-live-native-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-data-live-native-"));
     dirs.push(dir);
     const engine = createDataEngine({ dataDir: dir, botFolder: (id) => join(dir, id) });
     try {

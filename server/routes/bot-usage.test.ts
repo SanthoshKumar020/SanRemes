@@ -11,7 +11,7 @@ import { createBotUsageRoute } from "./bot-usage.ts";
 
 const now = new Date("2026-11-18T14:00:00Z");
 let dataDir: string;
-beforeEach(() => { dataDir = mkdtempSync(join(tmpdir(), "omb-bot-usage-")); });
+beforeEach(() => { dataDir = mkdtempSync(join(tmpdir(), "sanremes-bot-usage-")); });
 afterEach(() => removeTempDir(dataDir));
 
 const row = (fields: Partial<UsageRow> = {}): UsageRow => ({

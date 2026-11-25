@@ -20,7 +20,7 @@ function followUpLine(label: string, followUp: string, retried?: "restarted" | "
     enqueue: (input) => { queued = input.prompt ?? ""; return { id: "run" }; },
   });
   host.followUp!({ id: "wait-1", botId: "bot", threadId: "thread", label, followUp } as never);
-  const first = composeExecutionPrompt({ id: "wait:wait-1", name: label, trigger: "webhook", runOn: "maus" }, queued, undefined);
+  const first = composeExecutionPrompt({ id: "wait:wait-1", name: label, trigger: "webhook", runOn: "sanremes" }, queued, undefined);
   return startPrompt({ retried }, queued, first, () => said);
 }
 
@@ -139,6 +139,6 @@ describe("automationNote", () => {
     expect(lastLine({} as Bot, [card, asked, wait], [], false)).toBe("Following up on the wait: the report");
     setLocale("pt-br");
     expect(automationNoteTitle(automationNote(wait, knownWaits([card]))!)).toBe("Continuação da espera: the report");
-    expect(automationNoteTitle(automationNote(line(continueNote("restarted")))!)).toBe("Retomada depois que o OpenMausBot reiniciou");
+    expect(automationNoteTitle(automationNote(line(continueNote("restarted")))!)).toBe("Retomada depois que o SanRemes reiniciou");
   });
 });

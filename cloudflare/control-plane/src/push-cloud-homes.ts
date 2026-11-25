@@ -19,7 +19,7 @@ import {
 } from "./push";
 import { activitySchema, planActivity } from "./push-activity";
 
-/** `POST /v1/cloud-homes/<machine id>/push/<action>`. The machine id is the Admin's (`OMB_CLOUD_MACHINE_ID` on the home). */
+/** `POST /v1/cloud-homes/<machine id>/push/<action>`. The machine id is the Admin's (`SANREMES_CLOUD_MACHINE_ID` on the home). */
 export const CLOUD_HOME_PUSH_ROUTE = /^\/v1\/cloud-homes\/([A-Za-z0-9][A-Za-z0-9_-]{2,127})\/push\/(register|unregister|send|activity|forget)$/;
 /** The Admin's secret, and the one before it while a rotation is under way. */
 export const CLOUD_HOME_PUSH_SECRET_NAMES = ["CLOUD_HOME_PUSH_SECRET", "CLOUD_HOME_PUSH_SECRET_PREVIOUS"] as const;

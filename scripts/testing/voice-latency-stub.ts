@@ -12,10 +12,10 @@ import { SYNTHESIS } from "./voice-latency-corpus.ts";
 /** Labels the run log carries on both sides; the provider module pins the
  * same model string in its synthesize call. */
 export const STUB_MODEL = "eleven_flash_v2_5";
-export const STUB_VOICE = "omb-stub-voice";
+export const STUB_VOICE = "sanremes-stub-voice";
 /** A literal, not a secret: the config schema requires a key and the provider
  * sends one, but it only ever reaches this loopback stub, which ignores it. */
-export const STUB_KEY = "omb-record-stub";
+export const STUB_KEY = "sanremes-record-stub";
 
 /** Modeled synthesis latency: RTF × modeled clip duration, one value per
  * text char. 319 chars → 11,165 ms, the pinned 11.2 s worst case. */

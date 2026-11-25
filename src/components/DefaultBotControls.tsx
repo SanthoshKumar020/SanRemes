@@ -9,7 +9,7 @@ import { SettingRow, Switch } from "./SettingsPrimitives";
 import { useStoreDispatch } from "@/state/store-select";
 import { useBotApartFromTurns } from "@/state/apart-from-turns";
 
-/** Hiding MausBot is the Settings switch turned off: one place says whether it is in the sidebar. */
+/** Hiding SanRemes is the Settings switch turned off: one place says whether it is in the sidebar. */
 export function showDefaultBot(dispatch: (action: Action) => void, bot: Pick<Bot, "id" | "name">, shown: boolean): void {
   dispatch({ type: "updateBot", botId: bot.id, patch: { sidebarHidden: !shown } });
   if (!shown) dispatch({ type: "notice", notice: { kind: "note", botName: null, text: t("defaultBot.hidden", { name: bot.name }) } });
@@ -53,7 +53,7 @@ export function DemoteDefaultBotItem({ bot, onDone, className = "flex w-full ite
   );
 }
 
-/** Settings → General: whether the viewer's own MausBot has a row in the sidebar. */
+/** Settings → General: whether the viewer's own SanRemes has a row in the sidebar. */
 export function DefaultBotSidebarRow({ simple = false }: { simple?: boolean }) {
   const viewer = useViewerEmail(), dispatch = useStoreDispatch();
   const bot = useBotApartFromTurns((bots) => myDefaultBot(bots, viewer));
@@ -71,7 +71,7 @@ export function DefaultBotSidebarRow({ simple = false }: { simple?: boolean }) {
   );
 }
 
-/** Bot settings: MausBot is never deleted, only taken off the sidebar. */
+/** Bot settings: SanRemes is never deleted, only taken off the sidebar. */
 export function DefaultBotHideRow({ bot }: { bot: Bot }) {
   const dispatch = useStoreDispatch();
   if (!bot.defaultBot || bot.sidebarHidden) return null;

@@ -9,11 +9,11 @@ describe("the browser input log", () => {
     const lines: string[] = [];
     let now = Date.UTC(2026, 0, 1);
     const log = createBrowserInputLog((line) => lines.push(line), () => now);
-    log.record({ who: "person", reason: "not_controlling", what: "input_mouse", engine: "agent-browser", transport: "v1", session: "omb-a" });
-    log.record({ who: "bot", reason: "target_not_found", what: "agent_browser_click", engine: "agent-browser", transport: "tools", session: "omb-a" });
+    log.record({ who: "person", reason: "not_controlling", what: "input_mouse", engine: "agent-browser", transport: "v1", session: "sanremes-a" });
+    log.record({ who: "bot", reason: "target_not_found", what: "agent_browser_click", engine: "agent-browser", transport: "tools", session: "sanremes-a" });
     expect(lines).toEqual([
-      "browser input: person input_mouse dropped reason=not_controlling engine=agent-browser transport=v1 session=omb-a",
-      "browser input: bot click dropped reason=target_not_found engine=agent-browser transport=tools session=omb-a",
+      "browser input: person input_mouse dropped reason=not_controlling engine=agent-browser transport=v1 session=sanremes-a",
+      "browser input: bot click dropped reason=target_not_found engine=agent-browser transport=tools session=sanremes-a",
     ]);
     expect(log.lines()).toEqual([
       "person not_controlling input_mouse agent-browser v1: 1; last 2026-01-01T00:00:00.000Z",
@@ -25,13 +25,13 @@ describe("the browser input log", () => {
     const lines: string[] = [];
     let now = 0;
     const log = createBrowserInputLog((line) => lines.push(line), () => now);
-    const drop = (session = "omb-a") => log.record({ who: "person", reason: "not_controlling", what: "input_mouse", engine: "agent-browser", transport: "v1", session });
+    const drop = (session = "sanremes-a") => log.record({ who: "person", reason: "not_controlling", what: "input_mouse", engine: "agent-browser", transport: "v1", session });
     for (let i = 0; i < 40; i++) drop();
-    drop("omb-b");
+    drop("sanremes-b");
     expect(lines).toHaveLength(2);
     now = 5_000;
     drop();
-    expect(lines.at(-1)).toBe("browser input: person input_mouse dropped reason=not_controlling engine=agent-browser transport=v1 session=omb-a times=40");
+    expect(lines.at(-1)).toBe("browser input: person input_mouse dropped reason=not_controlling engine=agent-browser transport=v1 session=sanremes-a times=40");
     expect(log.lines()[0]).toMatch(/^person not_controlling input_mouse agent-browser v1: 42; /);
   });
 
@@ -69,7 +69,7 @@ describe("the browser input log", () => {
     } as unknown as Parameters<typeof buildDevsReport>[0];
     expect(buildDevsReport(input, []).diagnostics).not.toContain("Browser input");
     const log = createBrowserInputLog(() => {}, () => Date.UTC(2026, 10, 21));
-    log.record({ who: "app", reason: "queue_halted", what: "input", engine: "agent-browser", transport: "v1", session: "omb-a", count: 7 });
+    log.record({ who: "app", reason: "queue_halted", what: "input", engine: "agent-browser", transport: "v1", session: "sanremes-a", count: 7 });
     expect(buildDevsReport({ ...input, browserInput: log.lines() }, []).diagnostics)
       .toContain("## Browser input that did not reach the page since the server started\napp queue_halted input agent-browser v1: 7; last 2026-11-21T00:00:00.000Z");
   });

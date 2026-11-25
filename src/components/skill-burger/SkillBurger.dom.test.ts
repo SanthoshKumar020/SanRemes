@@ -130,11 +130,11 @@ it("names what a finished run did on its top bun, keeping the ask until then", a
 
 it("explains a finished delegation run and saves only what the person kept, under the input names they chose", async () => {
   const draft = {
-    goal: "QA-test https://mausbot.com with Kiwi and Rio",
-    inputs: [{ name: "site", value: "https://mausbot.com", label: "site" }],
+    goal: "QA-test https://sanremes.com with Kiwi and Rio",
+    inputs: [{ name: "site", value: "https://sanremes.com", label: "site" }],
     steps: [
       { id: "s1", kind: "delegate", label: "Ask Kiwi and Rio", exact: true, needs: [], who: [{ name: "Kiwi", role: "Accessibility tester" }, { name: "Rio" }],
-        asked: [{ who: "Kiwi", text: "QA-test https://mausbot.com for accessibility" }, { who: "Rio", text: "QA-test https://mausbot.com for speed" }],
+        asked: [{ who: "Kiwi", text: "QA-test https://sanremes.com for accessibility" }, { who: "Rio", text: "QA-test https://sanremes.com for speed" }],
         back: [{ who: "Kiwi", text: "3 findings", ok: true, round: 1 }, { who: "Rio", text: "2 findings", ok: true, round: 1 }, { who: "Rio", text: "3 findings", ok: true, round: 2 }],
         rounds: 2, reviewRounds: 1, doneWhen: "3 findings, each naming the URL" },
       { id: "s2", kind: "ai", label: "Review what came back and report", exact: false, needs: ["s1"] },
@@ -146,11 +146,11 @@ it("explains a finished delegation run and saves only what the person kept, unde
     if (path === "/api/skill-burgers" && init?.method === "POST") return { skill: saved };
     return {};
   });
-  const delegate: RunMessage = { id: "m1", role: "bot", kind: "activity", tool: { name: "mcp__agents__coordinate_bots", ok: true, itemId: "c1", input: JSON.stringify({ bot_ids: ["Kiwi", "Rio"], message: "QA-test https://mausbot.com" }) } };
+  const delegate: RunMessage = { id: "m1", role: "bot", kind: "activity", tool: { name: "mcp__agents__coordinate_bots", ok: true, itemId: "c1", input: JSON.stringify({ bot_ids: ["Kiwi", "Rio"], message: "QA-test https://sanremes.com" }) } };
   const sent: RunMessage = { id: "r1", role: "bot", kind: "activity", tool: { name: "Sent to Kiwi", ok: true }, threadRef: { botId: "kiwi", threadId: "k" } };
   const replied: RunMessage = { id: "r2", role: "bot", kind: "activity", tool: { name: "Kiwi replied", ok: true, output: "3 findings" }, roomRequest: { id: "q1", phase: "result" }, from: { name: "Kiwi" } };
   const verdict: RunMessage = { id: "v1", role: "bot", kind: "text", text: "Verdict: nothing serious." };
-  await render([{ ...ask, text: "QA-test https://mausbot.com with Kiwi and Rio" }, delegate, sent, replied, verdict]);
+  await render([{ ...ask, text: "QA-test https://sanremes.com with Kiwi and Rio" }, delegate, sent, replied, verdict]);
   await act(async () => { await Promise.resolve(); await Promise.resolve(); });
   const rows = [...host.querySelectorAll("[data-burger-layer]")];
   expect(rows.map((row) => row.getAttribute("data-burger-layer"))).toEqual(["delegate", "ai"]);
@@ -162,7 +162,7 @@ it("explains a finished delegation run and saves only what the person kept, unde
   // Open the delegation: what each was asked, what came back, what done meant.
   await act(async () => rows[0]!.querySelector<HTMLButtonElement>("button[aria-expanded]")!.click());
   const detail = rows[0]!.querySelector("[data-burger-detail]")!.textContent!;
-  expect(detail).toContain("QA-test https://mausbot.com for speed");
+  expect(detail).toContain("QA-test https://sanremes.com for speed");
   expect(detail).toContain("Came back this time");
   expect(detail).toContain("Done when: 3 findings, each naming the URL");
   // Leave the review out, and rename the input.

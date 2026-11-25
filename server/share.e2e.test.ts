@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { TEMPLATE_SHARE_MESSAGE } from "../shared/share-card.ts";
 
 const KEY = "sk-ant-api03-SHAREFIXTUREKEY000000000000000000";
@@ -35,7 +35,7 @@ function readTree(dir: string): Record<string, string> {
 }
 
 beforeAll(async () => {
-  work = mkdtempSync(join(tmpdir(), "omb-share-e2e-"));
+  work = mkdtempSync(join(tmpdir(), "sanremes-share-e2e-"));
   calls = join(work, "calls.json");
   toolCalls([]);
   fixture = await launchVerificationServer({ ...process.env, FAKE_CLAUDE_TOOL_CALLS_FILE: calls });
@@ -73,7 +73,7 @@ describe("templates on a throwaway server", () => {
 
   it("a bot shares itself from chat: one card, a folder with no chats, memory or keys, and an equivalent bot when it is added back", async () => {
     const seeded = await api("POST", "/api/teams/import", {
-      format: "openmaus.package", version: 2,
+      format: "sanremes.package", version: 2,
       package: {
         id: "sales-helper", release: "1.0.0", name: "Sales helper", tagline: "Quotes prices.", summary: "Helps with quotes.", category: "Sales",
         author: { name: "Fixture" }, license: "MIT", outcomes: ["Quotes."], setupMinutes: 2, requirements: { apps: [], capabilities: [] },

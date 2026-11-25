@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, expect, it } from "vitest";
 
-import { launchVerificationServer, type VerificationServer } from "../scripts/control-omb.ts";
+import { launchVerificationServer, type VerificationServer } from "../scripts/control-sanremes.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
 
 type Task = { threadId: string; activity?: string; busy?: boolean };
@@ -41,7 +41,7 @@ async function send(botId: string, threadId: string, text: string): Promise<void
 }
 
 beforeAll(async () => {
-  script = mkdtempSync(join(tmpdir(), "omb-setup-recovered-e2e-"));
+  script = mkdtempSync(join(tmpdir(), "sanremes-setup-recovered-e2e-"));
   writeFileSync(join(script, "reply.txt"), "Done.");
   fixture = await launchVerificationServer({
     ...process.env,

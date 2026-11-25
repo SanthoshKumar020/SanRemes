@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { readAdminActivityRange } from "./admin-activity.ts";
 
 it("records tool permission changes through the bot settings API", async () => {

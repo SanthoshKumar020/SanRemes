@@ -24,7 +24,7 @@ import { ServiceIcon, type ToolkitCard } from "./ServiceIcon";
 /** Where the suggestion's Connect stands. */
 export type SuggestionPhase = "checking" | "ready" | "starting" | "waiting" | "stalled" | "failed" | "blocked" | "connected";
 
-const dismissedKey = (messageId: string) => `openmausbot.handoff-suggestion.${messageId}`;
+const dismissedKey = (messageId: string) => `sanremes.handoff-suggestion.${messageId}`;
 function dismissedBefore(messageId: string): boolean {
   try { return sessionStorage.getItem(dismissedKey(messageId)) === "1"; } catch { return false; }
 }

@@ -25,7 +25,7 @@ const alive = (pid: number) => {
 
 beforeEach(() => {
   ensureDirs();
-  scratch = mkdtempSync(join(tmpdir(), "omb-hermes-gateway-"));
+  scratch = mkdtempSync(join(tmpdir(), "sanremes-hermes-gateway-"));
   gatewayFile = join(scratch, "gateway.pid");
 });
 
@@ -43,8 +43,8 @@ afterEach(async () => {
 
 it.runIf(process.platform === "linux")("closing one idle conversation leaves the shared Hermes gateway and another conversation's turn running", async () => {
   // Ten seconds is the shortest idle close there is.
-  vi.stubEnv("OMB_ACP_SESSION_IDLE_MIN_MS", "10000");
-  vi.stubEnv("OMB_ACP_SESSION_IDLE_MS", "10000");
+  vi.stubEnv("SANREMES_ACP_SESSION_IDLE_MIN_MS", "10000");
+  vi.stubEnv("SANREMES_ACP_SESSION_IDLE_MS", "10000");
   const hold = join(scratch, "prompt.hold");
   instance = await HermesAgentDriver.create({
     instanceId: "hermes-gateway",
@@ -54,7 +54,7 @@ it.runIf(process.platform === "linux")("closing one idle conversation leaves the
       HOME: scratch,
       USERPROFILE: scratch,
       HERMES_HOME: join(scratch, ".hermes"),
-      OPENMAUSBOT_PROBE_LOCAL_INJECT: "0",
+      OPENSANREMES_PROBE_LOCAL_INJECT: "0",
       FAKE_ACP_HOLD_FILE: hold,
       FAKE_ACP_GATEWAY_PID_FILE: gatewayFile,
     },

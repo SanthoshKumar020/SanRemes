@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { createInterface } from "node:readline";
 import { expect, it } from "vitest";
 
-import { launchVerificationServer } from "../scripts/control-omb.ts";
+import { launchVerificationServer } from "../scripts/control-sanremes.ts";
 import { startFakeConnectedApps } from "./testing/fake-connected-apps.ts";
 
 type Bridge = { command: string; args: string[]; env: Record<string, string> };
@@ -49,10 +49,10 @@ const acpBridge = (entry: { command: string; args: string[]; env: Array<{ name: 
 it("a bot given Gmail by its app switch reaches gmail.search_emails by name on Claude and on an ACP engine alike", async () => {
   const apps = await startFakeConnectedApps();
   apps.emails.push({ messageId: "m-ada", threadId: "t-ada", messageTimestamp: new Date().toISOString(), subject: "Q3 numbers", sender: "Ada <ada@example.test>", preview: { body: "Here they are" } });
-  const scratch = mkdtempSync(join(tmpdir(), "omb-app-tools-"));
+  const scratch = mkdtempSync(join(tmpdir(), "sanremes-app-tools-"));
   const gate = join(scratch, "finish");
   const fixture = await launchVerificationServer({
-    ...process.env, OMB_COMPOSIO_BROKER_URL: apps.url, OMB_COMPOSIO_BROKER_TOKEN: apps.token,
+    ...process.env, SANREMES_COMPOSIO_BROKER_URL: apps.url, SANREMES_COMPOSIO_BROKER_TOKEN: apps.token,
     FAKE_CLAUDE_MODE: "slow", FAKE_CLAUDE_SLOW_FINISH_GATE: gate, FAKE_ACP_HANG_ON: "Find Ada's mail again",
   }, undefined, undefined, undefined, undefined, undefined, ["cline"]);
   const api = apiOn(fixture.info.url);
@@ -99,10 +99,10 @@ it("a bot given Gmail by its app switch reaches gmail.search_emails by name on C
 it("a bot with HighLevel read only runs HighLevel's reads, which name the resource before the verb, and is refused its writes", async () => {
   const apps = await startFakeConnectedApps();
   apps.connected = { highlevel_mcp: true };
-  const scratch = mkdtempSync(join(tmpdir(), "omb-app-tools-"));
+  const scratch = mkdtempSync(join(tmpdir(), "sanremes-app-tools-"));
   const gate = join(scratch, "finish");
   const fixture = await launchVerificationServer({
-    ...process.env, OMB_COMPOSIO_BROKER_URL: apps.url, OMB_COMPOSIO_BROKER_TOKEN: apps.token, FAKE_CLAUDE_MODE: "slow", FAKE_CLAUDE_SLOW_FINISH_GATE: gate,
+    ...process.env, SANREMES_COMPOSIO_BROKER_URL: apps.url, SANREMES_COMPOSIO_BROKER_TOKEN: apps.token, FAKE_CLAUDE_MODE: "slow", FAKE_CLAUDE_SLOW_FINISH_GATE: gate,
   });
   const api = apiOn(fixture.info.url);
   try {
@@ -136,10 +136,10 @@ it("a bot with HighLevel read only runs HighLevel's reads, which name the resour
 it("a bot's Google Drive upload of a file in its working folder reaches Composio as an uploaded file; another path goes as it is and a hidden file is refused", async () => {
   const apps = await startFakeConnectedApps();
   apps.connected = { googledrive: true };
-  const scratch = mkdtempSync(join(tmpdir(), "omb-app-tools-"));
+  const scratch = mkdtempSync(join(tmpdir(), "sanremes-app-tools-"));
   const gate = join(scratch, "finish");
   const fixture = await launchVerificationServer({
-    ...process.env, OMB_COMPOSIO_BROKER_URL: apps.url, OMB_COMPOSIO_BROKER_TOKEN: apps.token, FAKE_CLAUDE_MODE: "slow", FAKE_CLAUDE_SLOW_FINISH_GATE: gate,
+    ...process.env, SANREMES_COMPOSIO_BROKER_URL: apps.url, SANREMES_COMPOSIO_BROKER_TOKEN: apps.token, FAKE_CLAUDE_MODE: "slow", FAKE_CLAUDE_SLOW_FINISH_GATE: gate,
   });
   const api = apiOn(fixture.info.url);
   try {

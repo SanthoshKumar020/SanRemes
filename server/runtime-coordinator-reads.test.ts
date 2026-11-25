@@ -23,7 +23,7 @@ describe("the reads a finished turn makes", () => {
   });
 
   function seeded(): Coordinator {
-    dir = mkdtempSync(join(tmpdir(), "omb-coordinator-reads-"));
+    dir = mkdtempSync(join(tmpdir(), "sanremes-coordinator-reads-"));
     let now = 1_000;
     coordinator = createCoordinator({ dataDir: dir, host, now: () => now, log: () => {} });
     for (let turn = 0; turn < 6; turn++) for (const bot of ["a", "b", "c"]) {

@@ -16,7 +16,7 @@ export interface BrandStatus {
 }
 
 export const DEFAULT_BRAND: Brand = { name: "SanRemes" };
-/** The product's name wherever a person reads it. SanRemes is this fork's name; OpenMausBot names the upstream open-source project and its repository. */
+/** The product's name wherever a person reads it. */
 export const PRODUCT_NAME = "SanRemes";
 
 let current: BrandStatus = { brand: DEFAULT_BRAND, source: "default", file: "" };

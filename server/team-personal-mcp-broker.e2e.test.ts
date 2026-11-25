@@ -32,7 +32,7 @@ describe.skipIf(process.platform === "win32")("a member's own MCP server and the
   let mounted: Record<string, McpServerSpec> = {};
 
   beforeAll(async () => {
-    dir = mkdtempSync(join(tmpdir(), "omb-team-box-mcp-"));
+    dir = mkdtempSync(join(tmpdir(), "sanremes-team-box-mcp-"));
     own = await startFakeHttpMcp({ exactPath: true, tools: [{ name: "plan_seating" }], requireHeader: { name: "Authorization", value: ADA_KEY } });
     gateway = await startFakeHttpMcp({
       exactPath: true, tools: [{ name: "lookup_order" }],

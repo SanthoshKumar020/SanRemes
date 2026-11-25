@@ -1,4 +1,4 @@
-// A secret a member types into a bot's card in her own private chat is hers, on a real Team Cloud (OMB_CLOUD_ROLE=team)
+// A secret a member types into a bot's card in her own private chat is hers, on a real Team Cloud (SANREMES_CLOUD_ROLE=team)
 // with the synthetic Claude CLI, tried as the people it must hold against: the same bot in another member's private chat,
 // in its shared chat, in a group chat and in a routine run for that other member asks with a card, as if nothing were
 // saved; no Admin or Owner lists, changes or deletes it; she lists and deletes hers; leaving deletes it. A secret an Admin
@@ -155,7 +155,7 @@ it("she deletes hers, and leaving deletes the rest of hers from the disk", async
 
   const left = await team.signed("POST", "/api/cloud/team/member-left", { email: ADA.email });
   expect(left.status, JSON.stringify(left.body)).toBeLessThan(300);
-  const dataDir = join(team.home, ".openmausbot");
+  const dataDir = join(team.home, ".sanremes");
   const key = readFileSync(join(dataDir, LOGINS_KEY_FILE), "utf8").trim();
   const kept = JSON.parse(decryptBrowserState(readFileSync(join(dataDir, MEMBER_SECRETS_FILE)), key)) as { secrets: Array<{ id: string; person: string }> };
   expect(kept.secrets.filter((one) => one.person === personKey({ id: "", email: ADA.email })).map((one) => one.id), "hers, sealed on the disk").toEqual([]);

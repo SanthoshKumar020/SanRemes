@@ -3,7 +3,7 @@ name: Server installer
 # The self-hosted server's installer (deploy/install.sh) on a stock ubuntu-24.04 runner, as a person runs it on a fresh
 # server: shellcheck, its checks against made-up servers, then the checks and a real install of the published image
 # (deploy/e2e/run.sh). It talks to no production service and needs no secret of its own: only the workflow's own
-# GITHUB_TOKEN, read-only, for the installer's lookup of the newest release (OMB_INSTALL_GITHUB_TOKEN).
+# GITHUB_TOKEN, read-only, for the installer's lookup of the newest release (SANREMES_INSTALL_GITHUB_TOKEN).
 on:
   pull_request:
     paths:
@@ -63,22 +63,22 @@ jobs:
         id: image
         run: |
           set -euo pipefail
-          if ! grep -q 'OMB_IMAGE=server' Dockerfile; then
+          if ! grep -q 'SANREMES_IMAGE=server' Dockerfile; then
             echo "this checkout's image has no hardened profile; installing the published release"
             exit 0
           fi
           docker run -d --name installer-registry -p 127.0.0.1:5000:5000 registry:2 >/dev/null
-          docker build -q -t localhost:5000/openmausbot:e2e .
-          docker push -q localhost:5000/openmausbot:e2e
-          docker image rm localhost:5000/openmausbot:e2e >/dev/null
-          echo "image=localhost:5000/openmausbot:e2e" >> "$GITHUB_OUTPUT"
+          docker build -q -t localhost:5000/sanremes:e2e .
+          docker push -q localhost:5000/sanremes:e2e
+          docker image rm localhost:5000/sanremes:e2e >/dev/null
+          echo "image=localhost:5000/sanremes:e2e" >> "$GITHUB_OUTPUT"
       - name: Check, install, run again and uninstall
         env:
           OUT: ${{ runner.temp }}/server-installer
-          OMB_INSTALL_IMAGE: ${{ steps.image.outputs.image }}
+          SANREMES_INSTALL_IMAGE: ${{ steps.image.outputs.image }}
           # The installer's lookup of the newest release, authenticated: unauthenticated, api.github.com refuses this
           # runner's shared address once others have used up its hourly reads. A person's install sends no token.
-          OMB_INSTALL_GITHUB_TOKEN: ${{ github.token }}
+          SANREMES_INSTALL_GITHUB_TOKEN: ${{ github.token }}
         run: bash deploy/e2e/run.sh
       - name: Keep the evidence
         if: always()

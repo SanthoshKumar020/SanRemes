@@ -177,7 +177,7 @@ describe("reviewed Chief team setup", () => {
   it("accepts a working folder on create only, with the profile path's exact validation copy", () => {
     const h = harness();
     const mira = specialist("Mira", "Work");
-    const folder = mkdtempSync(join(tmpdir(), "omb-team-cwd-"));
+    const folder = mkdtempSync(join(tmpdir(), "sanremes-team-cwd-"));
     const withFolder = h.propose([{ ...mira, fields: { ...mira.fields, cwd: folder } }]);
     expect(withFolder.detail).toContain(`Working folder: "${folder}"`);
     expect(() => h.propose([{ ...mira, fields: { ...mira.fields, cwd: "relative/path" } }]))
@@ -719,39 +719,39 @@ describe("team setup below Full access", () => {
   });
 });
 
-describe("MausBot's Chief-level team setup", () => {
+describe("SanRemes's Chief-level team setup", () => {
   const plan = (operations: unknown[]) => ({ reason: "Requested specialist setup", operations, newTeams: [] });
 
-  it("lets the person's MausBot add a specialist like a Chief, without making it the Chief", () => {
+  it("lets the person's SanRemes add a specialist like a Chief, without making it the Chief", () => {
     const h = harness();
-    const maus = h.bot("Maus", { defaultBot: {} });
-    const request = h.service.propose({ botId: maus.id, threadId: maus.threadId, plan: plan([specialist("Scout", "Work")]) });
+    const sanremes = h.bot("SanRemes", { defaultBot: {} });
+    const request = h.service.propose({ botId: sanremes.id, threadId: sanremes.threadId, plan: plan([specialist("Scout", "Work")]) });
     expect(request.detail).toContain("Scout");
-    expect(maus.chiefOfStaff).toBeUndefined();
+    expect(sanremes.chiefOfStaff).toBeUndefined();
     expect(h.chief.chiefOfStaff).toBe(true);
   });
 
-  it("never lets MausBot change who the Chief is", () => {
+  it("never lets SanRemes change who the Chief is", () => {
     const h = harness();
-    const maus = h.bot("Maus", { defaultBot: {} });
-    for (const target of [maus.id, h.peer.id, h.chief.id]) {
-      expect(() => h.service.propose({ botId: maus.id, threadId: maus.threadId,
+    const sanremes = h.bot("SanRemes", { defaultBot: {} });
+    for (const target of [sanremes.id, h.peer.id, h.chief.id]) {
+      expect(() => h.service.propose({ botId: sanremes.id, threadId: sanremes.threadId,
         plan: plan([{ action: "update", botId: target, fields: { chiefOfStaff: target !== h.chief.id } }]) })).toThrow(/Only the Chief of Staff changes who the Chief is/);
     }
   });
 
-  it("refuses a Team Cloud User's MausBot, which holds no more than its member", () => {
+  it("refuses a Team Cloud User's SanRemes, which holds no more than its member", () => {
     const h = harness();
-    const maus = h.bot("Maus", { defaultBot: { person: "user@example.com" } });
-    expect(() => h.service.propose({ botId: maus.id, threadId: maus.threadId, plan: plan([specialist("Scout", "Work")]) }))
+    const sanremes = h.bot("SanRemes", { defaultBot: { person: "user@example.com" } });
+    expect(() => h.service.propose({ botId: sanremes.id, threadId: sanremes.threadId, plan: plan([specialist("Scout", "Work")]) }))
       .toThrow(/Only an active Chief of Staff can propose team setup/);
   });
 
-  it("never lets a Chief delete MausBot", () => {
+  it("never lets a Chief delete SanRemes", () => {
     const h = harness();
-    const maus = h.bot("Maus", { defaultBot: {} });
-    expect(() => h.service.proposeDeletion({ botId: h.chief.id, threadId: h.chief.threadId, targetBotId: maus.id, reason: "remove" }))
-      .toThrow(/Maus can't be deleted or archived/);
+    const sanremes = h.bot("SanRemes", { defaultBot: {} });
+    expect(() => h.service.proposeDeletion({ botId: h.chief.id, threadId: h.chief.threadId, targetBotId: sanremes.id, reason: "remove" }))
+      .toThrow(/SanRemes can't be deleted or archived/);
   });
 });
 

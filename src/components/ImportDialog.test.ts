@@ -165,7 +165,7 @@ describe("a department's Share", () => {
     let connected = false;
     api.mockImplementation(async (path: string) => path === "/api/share/export" ? card
       : path === "/api/share/github" ? (connected ? { connected: true } : { connected: false, reason: "not_connected", error: "Connect GitHub in Apps first." })
-      : { kind: "pull_request", url: "https://github.com/acme/playbooks/pull/3", link: "https://github.com/acme/playbooks/tree/mausbot-sales-desk-abc123/sales-desk", branch: "mausbot-sales-desk-abc123" });
+      : { kind: "pull_request", url: "https://github.com/acme/playbooks/pull/3", link: "https://github.com/acme/playbooks/tree/sanremes-sales-desk-abc123/sales-desk", branch: "sanremes-sales-desk-abc123" });
     const view = mount(createElement(ShareDepartmentDialog, { department: "Sales desk", onClose: vi.fn() }));
     try {
       await vi.waitFor(() => expect(button("Your GitHub repo…")).toBeTruthy());
@@ -183,7 +183,7 @@ describe("a department's Share", () => {
       typeInto(folder!, "templates");
       await vi.waitFor(() => expect(button("Open pull request")!.disabled).toBe(false));
       button("Open pull request")!.click();
-      await vi.waitFor(() => expect(document.body.textContent).toContain("Pull request opened from the branch mausbot-sales-desk-abc123."));
+      await vi.waitFor(() => expect(document.body.textContent).toContain("Pull request opened from the branch sanremes-sales-desk-abc123."));
       expect(api).toHaveBeenCalledWith("/api/share/tpl2/publish-repo", { method: "POST", body: JSON.stringify({ repo: "acme/playbooks", folder: "templates", direct: false }) });
       [...document.querySelectorAll("button")].find((each) => each.textContent?.includes("View pull request") && each.closest("footer"))!.click();
       expect(openLink).toHaveBeenCalledWith("https://github.com/acme/playbooks/pull/3");

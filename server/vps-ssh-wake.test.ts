@@ -11,7 +11,7 @@ afterEach(() => {
 
 /** A host that refuses SSH until something creates its `awake` file, as a box paused when idle does until resumed. */
 function pausedHost() {
-  const root = mkdtempSync(join(tmpdir(), "omb-vps-wake-"));
+  const root = mkdtempSync(join(tmpdir(), "sanremes-vps-wake-"));
   roots.push(root);
   const bin = join(root, "bin");
   const data = join(root, "data");

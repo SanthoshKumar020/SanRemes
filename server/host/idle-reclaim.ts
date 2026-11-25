@@ -1,6 +1,6 @@
 // When a Cloud home's volume fills, the installs of conversations nobody has used for days go first: a node_modules or
 // a Python venv a package manager makes again from the project's own lockfile, and the pnpm store that a conversation
-// folder holds for them, never the project's own files. Behind OMB_IDLE_RECLAIM, off unless set: "report" says what a
+// folder holds for them, never the project's own files. Behind SANREMES_IDLE_RECLAIM, off unless set: "report" says what a
 // pass would shed and the bytes, and changes nothing; "remove" sheds it. Cloud homes only (index.ts starts it beside
 // the orphan sweep). Modelled on the disk budget of an open-source agent server, which sheds the git-ignored folders of
 // stopped conversations, least recently active first, while its filesystem is past a share of its size.
@@ -39,7 +39,7 @@ import { inside, linuxProcessPaths, type ConversationFolderCleanup, type FoundTr
 
 export { linuxProcessPaths };
 
-export const IDLE_RECLAIM_ENV = "OMB_IDLE_RECLAIM";
+export const IDLE_RECLAIM_ENV = "SANREMES_IDLE_RECLAIM";
 export type IdleReclaimMode = "off" | "report" | "remove";
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** Every number of the policy, in one place. None is a setting. */
@@ -206,7 +206,7 @@ export function idleReclaimNote(dataDir: string, threadId: string, now = Date.no
   const named = note.paths.map((path) => (path ? path.split(sep).join("/") : ".")).filter((path) => SHOWN_NAME.test(path));
   const shown = named.slice(0, IDLE_RECLAIM.notePaths);
   const more = note.paths.length > shown.length ? (shown.length ? " and more" : "some folders") : "";
-  return `\n\n[From OpenMausBot, not the person: to free disk space while this conversation was idle, its installed dependencies were removed (${shown.join(", ")}${more}). The project's own files, lockfiles and git history are unchanged. Before you run the project again, reinstall from its lockfile (npm ci, pnpm install, yarn install, bun install, uv sync or pip install -r requirements.txt); do not mention this unless it matters to the person.]`;
+  return `\n\n[From SanRemes, not the person: to free disk space while this conversation was idle, its installed dependencies were removed (${shown.join(", ")}${more}). The project's own files, lockfiles and git history are unchanged. Before you run the project again, reinstall from its lockfile (npm ci, pnpm install, yarn install, bun install, uv sync or pip install -r requirements.txt); do not mention this unless it matters to the person.]`;
 }
 
 /** What the storage view may say: the switch, the last pass and what every pass has freed. */

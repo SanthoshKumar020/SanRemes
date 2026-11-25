@@ -100,10 +100,10 @@ describe("a cloud computer goes to sleep after its idle window", () => {
     logs = [];
     busy = false;
     vi.stubEnv("BOX_TOKEN", undefined);
-    vi.stubEnv("OMB_BOAT_API", `${base}/boat/api/v1`);
-    vi.stubEnv("OMB_CLOUD_BOAT_URL", `${base}/relay/api/box/v1`);
-    vi.stubEnv("OMB_CLOUD_BOAT_TOKEN", INCLUDED);
-    vi.stubEnv("OMB_CLOUD_COMPUTER_IDLE_MS", "1000");
+    vi.stubEnv("SANREMES_BOAT_API", `${base}/boat/api/v1`);
+    vi.stubEnv("SANREMES_CLOUD_BOAT_URL", `${base}/relay/api/box/v1`);
+    vi.stubEnv("SANREMES_CLOUD_BOAT_TOKEN", INCLUDED);
+    vi.stubEnv("SANREMES_CLOUD_COMPUTER_IDLE_MS", "1000");
   });
 
   afterEach(() => {

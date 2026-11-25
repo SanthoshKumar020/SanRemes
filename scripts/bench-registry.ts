@@ -39,9 +39,9 @@ const timed = (samples: number, run: (i: number) => void): number[] => {
   return out;
 };
 
-/** One cell, in a child whose OMB_DATA_DIR is already a fresh folder: config reads it at import. */
+/** One cell, in a child whose SANREMES_DATA_DIR is already a fresh folder: config reads it at import. */
 async function runCell(bots: number, threadsPerBot: number): Promise<Result> {
-  const dataDir = process.env.OMB_DATA_DIR!;
+  const dataDir = process.env.SANREMES_DATA_DIR!;
   const { Store } = await import("../server/store.ts");
   const selection = () => ({ instanceId: "claude", model: "claude-sonnet-5" });
 
@@ -125,11 +125,11 @@ function parent(cells: string[]) {
     scope: "Real Store, synthetic bots and threads cloned from records the Store wrote; one room per ten bots. Not a full turn." }));
   const results: Result[] = [];
   for (const cell of cells) {
-    const home = mkdtempSync(join(tmpdir(), "omb-registry-bench-home-"));
-    const data = mkdtempSync(join(tmpdir(), "omb-registry-bench-data-"));
+    const home = mkdtempSync(join(tmpdir(), "sanremes-registry-bench-home-"));
+    const data = mkdtempSync(join(tmpdir(), "sanremes-registry-bench-data-"));
     try {
       const run = spawnSync(process.execPath, ["--experimental-strip-types", "--no-warnings", "--expose-gc", fileURLToPath(import.meta.url), "--cell", cell], {
-        env: { ...process.env, HOME: home, USERPROFILE: home, OMB_DATA_DIR: data, OMB_DISABLE_ANNOUNCEMENTS: "1", OMB_DISABLE_MODEL_MANIFEST_FETCH: "1" },
+        env: { ...process.env, HOME: home, USERPROFILE: home, SANREMES_DATA_DIR: data, SANREMES_DISABLE_ANNOUNCEMENTS: "1", SANREMES_DISABLE_MODEL_MANIFEST_FETCH: "1" },
         encoding: "utf8", maxBuffer: 64 * 1024 * 1024,
       });
       const line = run.stdout.split("\n").find((text) => text.startsWith("{\"bots\""));
@@ -152,7 +152,7 @@ function parent(cells: string[]) {
 const cellFlag = process.argv.indexOf("--cell");
 if (cellFlag !== -1) {
   const [, bots, threads] = CELL.exec(process.argv[cellFlag + 1] ?? "") ?? [];
-  if (!bots || !threads || !process.env.OMB_DATA_DIR) throw new Error("--cell needs BOTSxTHREADS and OMB_DATA_DIR");
+  if (!bots || !threads || !process.env.SANREMES_DATA_DIR) throw new Error("--cell needs BOTSxTHREADS and SANREMES_DATA_DIR");
   console.log(JSON.stringify(await runCell(Number(bots), Number(threads))));
 } else {
   const asked = process.argv.slice(2).filter((arg) => !arg.startsWith("-"));

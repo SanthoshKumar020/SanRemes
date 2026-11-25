@@ -6,7 +6,7 @@ export type ChatWidthId = (typeof CHAT_WIDTH_IDS)[number];
 
 export const DEFAULT_CHAT_WIDTH: ChatWidthId = "standard";
 
-export const CHAT_WIDTH_KEY = "omb-chat-width";
+export const CHAT_WIDTH_KEY = "sanremes-chat-width";
 
 function isChatWidthId(value: unknown): value is ChatWidthId {
   return (CHAT_WIDTH_IDS as readonly unknown[]).includes(value);

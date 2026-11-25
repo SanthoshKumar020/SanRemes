@@ -1,6 +1,6 @@
 // A saved burger: a workflow skill is SKILL.md (numbered steps any bot can follow) plus workflow.json (the exact steps,
 // values and args a runner repeats without the AI). References are JSON values, never text templates: {"$arg": name}
-// and {"$step": id, "path": "a.0.b"}. A shell step reads its args from OMB_ARG_<NAME> environment variables.
+// and {"$step": id, "path": "a.0.b"}. A shell step reads its args from SANREMES_ARG_<NAME> environment variables.
 import { z } from "zod";
 
 import { appMeta } from "./apps.ts";
@@ -158,7 +158,7 @@ function stepLine(step: WorkflowStep, args: Workflow["args"]): string {
   }
   if (step.kind === "decide") return `Decide: ${step.label} (${step.cases.map((one) => `"${one}"`).join(", ")})${step.prompt ? " (your judgement)" : ""}`;
   const where = step.kind === "app" ? appMeta(step.app).label : step.kind === "ai" ? "AI" : step.kind === "shell" ? "Command" : step.kind === "file" ? "File" : "Browser";
-  const used = Object.keys(args).filter((name) => JSON.stringify(step).includes(`"$arg":"${name}"`) || (step.kind === "shell" && step.run.includes(`OMB_ARG_${name.toUpperCase()}`)));
+  const used = Object.keys(args).filter((name) => JSON.stringify(step).includes(`"$arg":"${name}"`) || (step.kind === "shell" && step.run.includes(`SANREMES_ARG_${name.toUpperCase()}`)));
   const detail = used.map((name) => `${args[name]!.label ?? name}: ${name}${args[name]!.default === undefined ? "" : `, default ${JSON.stringify(args[name]!.default)}`}`);
   const what = step.kind === "shell" ? ` \`${step.run.split("\n", 1)[0]!.slice(0, 120)}\`` : step.kind === "app" ? ` (${step.tool})` : "";
   const place = step.where && PLACE[step.where] && !(step.kind === "browser" && step.where === "browser") ? ` ${PLACE[step.where]}` : "";

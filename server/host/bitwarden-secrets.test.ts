@@ -328,7 +328,7 @@ describe("Bitwarden Secrets Manager in the Vault", () => {
 
 describe("Settings → Vault → Bitwarden Secrets Manager", () => {
   async function serve(team = true) {
-    const dir = mkdtempSync(join(tmpdir(), "omb-bws-routes-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-bws-routes-"));
     dirs.push(dir);
     const store = new VaultStore({ dataDir: dir });
     const fake = fakeBws({ secrets: SECRETS });

@@ -41,7 +41,7 @@ const controller = new AbortController();
 let script = "";
 
 beforeEach(() => {
-  const dir = mkdtempSync(join(tmpdir(), "omb-host-computer-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-host-computer-"));
   dirs.push(dir);
   script = join(dir, "fake-computer.mjs");
   writeFileSync(script, FAKE);
@@ -61,7 +61,7 @@ function computer(driver: string, env: Record<string, string> = {}) {
     answered,
     server: {
       command: process.execPath, args: [script], scope: "local-computer" as const, platform: "win32" as const,
-      env: { OMB_CUA_COMMAND: driver, OMB_CUA_ARGS: '["mcp"]', OMB_CUA_PLATFORM: "win32", OMB_CONTROL_TOKEN: randomUUID(), ANSWERED: answered, ...env },
+      env: { SANREMES_CUA_COMMAND: driver, SANREMES_CUA_ARGS: '["mcp"]', SANREMES_CUA_PLATFORM: "win32", SANREMES_CONTROL_TOKEN: randomUUID(), ANSWERED: answered, ...env },
     },
   };
 }
@@ -83,11 +83,11 @@ describe("this desktop's own computer in a chat turn", () => {
     expect(hostComputerStartupMs("darwin")).toBe(20_000);
     expect(hostComputerStartupMs("linux")).toBe(20_000);
     const one = computer("C:\\cua-driver.exe").server, two = computer("C:\\cua-driver.exe").server;
-    expect(one.env.OMB_CONTROL_TOKEN).not.toBe(two.env.OMB_CONTROL_TOKEN);
+    expect(one.env.SANREMES_CONTROL_TOKEN).not.toBe(two.env.SANREMES_CONTROL_TOKEN);
     expect(hostComputerKey(one)).toBe(hostComputerKey(two));
-    expect(hostComputerKey(one)).not.toBe(hostComputerKey({ ...one, env: { ...one.env, OMB_CUA_ARGS: '["mcp","--embedded"]' } }));
+    expect(hostComputerKey(one)).not.toBe(hostComputerKey({ ...one, env: { ...one.env, SANREMES_CUA_ARGS: '["mcp","--embedded"]' } }));
     // A list remembered with the file tools is never offered by a bridge without them, nor the other way round.
-    expect(hostComputerKey(one)).not.toBe(hostComputerKey({ ...one, env: { ...one.env, OMB_HOST_FILES: "1" } }));
+    expect(hostComputerKey(one)).not.toBe(hostComputerKey({ ...one, env: { ...one.env, SANREMES_HOST_FILES: "1" } }));
   });
 
   it("is not skipped when slow, and the next turn lists its last tools after a short wait and its first call waits for the start", async () => {

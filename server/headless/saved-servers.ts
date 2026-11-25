@@ -1,4 +1,4 @@
-// The servers `openmausbot login` signed in to, like kubectl's contexts: servers.json names each server and which one is
+// The servers `sanremes login` signed in to, like kubectl's contexts: servers.json names each server and which one is
 // current; the session itself is in the macOS Keychain, or in a file only this user can read elsewhere. Nothing here is
 // ever printed. Paths come from the environment the command runs with, never from the process's own home.
 import { spawnSync } from "node:child_process";
@@ -32,7 +32,7 @@ export interface SavedServersOptions {
   security?: SecurityRunner;
 }
 
-const KEYCHAIN_SERVICE = "openmausbot-cli";
+const KEYCHAIN_SERVICE = "sanremes-cli";
 const NAME = /^[\w.-]{1,80}$/;
 
 const runSecurity: SecurityRunner = (args, stdin) => {
@@ -41,10 +41,10 @@ const runSecurity: SecurityRunner = (args, stdin) => {
 };
 
 export function cliConfigDir(env: NodeJS.ProcessEnv, platform: NodeJS.Platform = process.platform): string | null {
-  if (env.XDG_CONFIG_HOME?.trim()) return join(env.XDG_CONFIG_HOME.trim(), "openmausbot");
-  if (platform === "win32" && env.APPDATA?.trim()) return join(env.APPDATA.trim(), "openmausbot");
+  if (env.XDG_CONFIG_HOME?.trim()) return join(env.XDG_CONFIG_HOME.trim(), "sanremes");
+  if (platform === "win32" && env.APPDATA?.trim()) return join(env.APPDATA.trim(), "sanremes");
   const home = env.HOME?.trim() || env.USERPROFILE?.trim();
-  return home ? join(home, ".config", "openmausbot") : null;
+  return home ? join(home, ".config", "sanremes") : null;
 }
 
 /** `security -i` reads its command from stdin, so the session never appears in a process list. */
@@ -72,7 +72,7 @@ export class SavedServers {
       const parsed = JSON.parse(readFileSync(file, "utf8")) as SavedFile;
       return { ...(typeof parsed.current === "string" ? { current: parsed.current } : {}), servers: parsed.servers && typeof parsed.servers === "object" ? parsed.servers : {} };
     } catch {
-      throw new HeadlessError(`${file} could not be read`, EXIT.failed, "fix or remove it, then run openmausbot login again");
+      throw new HeadlessError(`${file} could not be read`, EXIT.failed, "fix or remove it, then run sanremes login again");
     }
   }
 
@@ -108,7 +108,7 @@ export class SavedServers {
 
   use(name: string): void {
     const saved = this.read();
-    if (!saved.servers[name]) throw new HeadlessError(`no saved server named "${name}"`, EXIT.notFound, "openmausbot servers lists them");
+    if (!saved.servers[name]) throw new HeadlessError(`no saved server named "${name}"`, EXIT.notFound, "sanremes servers lists them");
     this.write({ ...saved, current: name });
   }
 
@@ -151,7 +151,7 @@ export class SavedServers {
 
   private putToken(name: string, token: string): SavedServer["store"] {
     if (this.platform === "darwin") {
-      const added = this.security(["-i"], `add-generic-password -U -s ${quoted(KEYCHAIN_SERVICE)} -a ${quoted(name)} -l ${quoted(`OpenMausBot CLI: ${name}`)} -w ${quoted(token)}\n`);
+      const added = this.security(["-i"], `add-generic-password -U -s ${quoted(KEYCHAIN_SERVICE)} -a ${quoted(name)} -l ${quoted(`SanRemes CLI: ${name}`)} -w ${quoted(token)}\n`);
       if (added.status === 0) return "keychain";
     }
     if (!this.dir) throw new HeadlessError("no home folder to keep the sign-in in", EXIT.failed, "set HOME");
@@ -181,7 +181,7 @@ export function savedSessionHeaders(origin: string, env: NodeJS.ProcessEnv = pro
     const saved = new SavedServers({ env });
     const server = saved.at(origin);
     if (!server) return {};
-    const live = await fetch(`${origin}/.well-known/openmausbot/environment`, { signal: AbortSignal.timeout(3_000) })
+    const live = await fetch(`${origin}/.well-known/sanremes/environment`, { signal: AbortSignal.timeout(3_000) })
       .then((response) => response.json() as Promise<{ environmentId?: unknown }>, () => null);
     const token = live?.environmentId === server.environmentId ? saved.token(server.name) : null;
     return token ? { authorization: `Bearer ${token}` } : {};

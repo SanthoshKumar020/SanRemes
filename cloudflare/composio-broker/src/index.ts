@@ -717,7 +717,7 @@ async function authorize(
     serviceAccounts,
     alias,
     MULTI_ACCOUNT_CONFIG.max_accounts_per_toolkit,
-    () => `omb-retry-${crypto.randomUUID()}`,
+    () => `sanremes-retry-${crypto.randomUUID()}`,
   );
   if (!plan.ok) return json({ error: plan.error }, plan.status);
   for (const id of plan.replace) {
@@ -829,7 +829,7 @@ async function appEventRoute(request: Request, url: URL, installation: Installat
 
 async function route(request: Request, env: Env, ctx: ExecutionContext) {
   const url = new URL(request.url);
-  if (request.method === "GET" && url.pathname === "/health") return json({ service: "openmausbot-composio", ready: Boolean(env.COMPOSIO_API_KEY) });
+  if (request.method === "GET" && url.pathname === "/health") return json({ service: "sanremes-composio", ready: Boolean(env.COMPOSIO_API_KEY) });
   if (request.method === "POST" && url.pathname === "/v1/installations") return register(request, env);
   if (request.method === "POST" && url.pathname === "/v1/composio/webhook") return composioWebhook(request, env, ctx);
   if (request.method === "GET" && url.pathname === "/v1/stats/app-events") return appEventStats(request, url, env);

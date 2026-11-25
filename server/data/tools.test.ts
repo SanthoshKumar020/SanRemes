@@ -33,7 +33,7 @@ function deferred() {
   return { promise, resolve };
 }
 function freshDir(): string {
-  const dir = mkdtempSync(join(tmpdir(), "omb-data-tools-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-data-tools-"));
   dirs.push(dir);
   return dir;
 }

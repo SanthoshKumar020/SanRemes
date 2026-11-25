@@ -23,11 +23,11 @@ describe("the lock-down policy of a Chrome on a private display", () => {
   });
 
   it("lets through only the folders named, and nothing beside them", () => {
-    expect(desktopPolicy(["/data/.openmausbot/workspaces/scout/", "/srv/files"]).URLAllowlist).toEqual(expect.arrayContaining(["file:///data/.openmausbot/workspaces/scout/", "file:///srv/files/"]));
+    expect(desktopPolicy(["/data/.sanremes/workspaces/scout/", "/srv/files"]).URLAllowlist).toEqual(expect.arrayContaining(["file:///data/.sanremes/workspaces/scout/", "file:///srv/files/"]));
   });
 
   it("is put in force for that Chrome alone, in every installed brand's folder of a private mount namespace", () => {
-    const dir = join(mkdtempSync(join(tmpdir(), "omb-policy-")), "policy");
+    const dir = join(mkdtempSync(join(tmpdir(), "sanremes-policy-")), "policy");
     folders.push(join(dir, ".."));
     const installed = new Set(["/etc/chromium"]);
     const wrap = policyWrap("/usr/bin/bwrap", dir, [], (path) => installed.has(path));
@@ -39,8 +39,8 @@ describe("the lock-down policy of a Chrome on a private display", () => {
       "--tmpfs", "/etc/chromium/policies", "--ro-bind", dir, "/etc/chromium/policies/managed",
       "--",
     ]);
-    expect(JSON.parse(readFileSync(join(dir, "openmausbot.json"), "utf8"))).toEqual(desktopPolicy());
-    if (process.platform !== "win32") expect(statSync(join(dir, "openmausbot.json")).mode & 0o777).toBe(0o600);
+    expect(JSON.parse(readFileSync(join(dir, "sanremes.json"), "utf8"))).toEqual(desktopPolicy());
+    if (process.platform !== "win32") expect(statSync(join(dir, "sanremes.json")).mode & 0o777).toBe(0o600);
     expect(policyWrap("/usr/bin/bwrap", dir, [], () => false).args).not.toContain("/etc/chromium/policies/managed");
   });
 });

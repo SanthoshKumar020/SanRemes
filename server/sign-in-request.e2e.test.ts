@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { removeTempDir } from "./testing/cleanup.ts";
 import { openSse } from "./testing/sse.ts";
 
@@ -13,7 +13,7 @@ const SIGNED_IN_REPLY = "You are signed in, so I opened the dashboard.";
 
 /** A server whose bot asks for a sign-in on its first turn and reports the dashboard on its second. */
 async function signInFixture(ask: Record<string, unknown> = { site: "https://www.example.com/dashboard", reason: "The dashboard is behind a login." }) {
-  const tools = mkdtempSync(join(tmpdir(), "omb-sign-in-e2e-"));
+  const tools = mkdtempSync(join(tmpdir(), "sanremes-sign-in-e2e-"));
   const binaryPath = join(tools, "agent-browser");
   // Answers the saved-login check the mount makes; every other command succeeds silently.
   writeFileSync(binaryPath, `#!/bin/sh\nif [ "$1" = session ] && [ "$2" = list ]; then printf '{"success":true,"data":{"sessions":[]}}'; fi\nexit 0\n`, { mode: 0o755 });

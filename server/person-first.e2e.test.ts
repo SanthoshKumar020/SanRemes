@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it } from "vitest";
 
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { removeTempDir } from "./testing/cleanup.ts";
 import { hostTimeout } from "./testing/host-timeout.ts";
 
@@ -16,14 +16,14 @@ const QUESTION = "Is the PR up yet?";
 const ANSWER = "Yes: PR #42 is up. CI is still running, and I will tell you when it is done.";
 
 it("stops a turn that keeps the person's message unread in a long tool call, and answers it next", async () => {
-  const folder = mkdtempSync(join(tmpdir(), "omb-person-first-"));
+  const folder = mkdtempSync(join(tmpdir(), "sanremes-person-first-"));
   const calls = join(folder, "calls.json"), markers = join(folder, "markers.json");
   writeFileSync(markers, JSON.stringify({ [QUESTION]: ANSWER }));
   const owner = randomBytes(32).toString("base64url");
   const realFetch = globalThis.fetch;
   globalThis.fetch = (input, init = {}) => realFetch(input, { ...init,
-    headers: { ...Object.fromEntries(new Headers(init.headers)), "x-openmausbot-desktop-owner": owner } });
-  const fixture = await launchVerificationServer({ ...process.env, OMB_TEST_DESKTOP_OWNER_TOKEN: owner, OMB_PERSON_FIRST_MS: "1500",
+    headers: { ...Object.fromEntries(new Headers(init.headers)), "x-sanremes-desktop-owner": owner } });
+  const fixture = await launchVerificationServer({ ...process.env, SANREMES_TEST_DESKTOP_OWNER_TOKEN: owner, SANREMES_PERSON_FIRST_MS: "1500",
     FAKE_CLAUDE_TOOL_CALLS_FILE: calls, FAKE_CLAUDE_MARKER_REPLIES: markers });
   try {
     const api = async (method: string, path: string, body?: unknown) => {
@@ -59,7 +59,7 @@ it("stops a turn that keeps the person's message unread in a long tool call, and
     const content = JSON.parse(readFileSync(fixture.fixtureDumpPath, "utf8")).prompt?.message?.content;
     const prompt = typeof content === "string" ? content : (content as Array<{ text?: string }>).map((block) => block.text ?? "").join("\n");
     expect(prompt).toContain(QUESTION);
-    expect(prompt).toContain('[OpenMausBot: your step "Bash: gh run view 42; sleep 30" had run for');
+    expect(prompt).toContain('[SanRemes: your step "Bash: gh run view 42; sleep 30" had run for');
   } finally {
     globalThis.fetch = realFetch;
     await fixture.close();

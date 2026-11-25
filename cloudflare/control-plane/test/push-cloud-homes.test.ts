@@ -9,7 +9,7 @@ import { PUSH_DEVICE_LIMIT, PUSH_DEVICE_SEND_LIMIT, PUSH_REGISTER_LIMIT } from "
 import { CLOUD_HOME_FLEET_SEND_LIMIT, FLEET_ID } from "../src/push-cloud-homes";
 import fixture from "./fixtures/cloud-home-push.json";
 
-const BASE_URL = "https://auth.openmausbot.test";
+const BASE_URL = "https://auth.sanremes.test";
 const SECRET = "admin-push-relay-secret-0123456789abcdef";
 const PREVIOUS = "admin-push-relay-secret-before-rotation-0123";
 const TOKEN_A = "a1".repeat(32);
@@ -42,7 +42,7 @@ async function pushEnv(extra: Record<string, string> = {}): Promise<Env> {
     ...env,
     APNS_KEY_ID: "KEY1234567",
     APNS_TEAM_ID: "TEAM123456",
-    APNS_BUNDLE_ID: "com.example.mausbot",
+    APNS_BUNDLE_ID: "com.example.sanremes",
     APNS_PRIVATE_KEY: pem(await crypto.subtle.exportKey("pkcs8", pair.privateKey) as ArrayBuffer),
     APNS_ENVIRONMENTS: "production,sandbox",
     CLOUD_HOME_PUSH_SECRET: SECRET,

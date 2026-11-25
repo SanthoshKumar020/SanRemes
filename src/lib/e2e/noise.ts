@@ -30,7 +30,7 @@ const EC = { name: "ECDH", namedCurve: "P-256" } as const;
 const EMPTY = new Uint8Array(0);
 const hex = (bytes: Bytes) => Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 
-export const prologue = (transport: TransportByte): Bytes => concat(utf8("omb-e2e/1"), Uint8Array.of(0x00, transport));
+export const prologue = (transport: TransportByte): Bytes => concat(utf8("sanremes-e2e/1"), Uint8Array.of(0x00, transport));
 
 export interface KeyPair {
   privateKey: CryptoKey;

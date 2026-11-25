@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { writeFileSync } from "node:fs";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { fixtureApi } from "../scripts/testing/preview-fixture.ts";
 import { isTitleCall } from "./testing/title-call.ts";
 

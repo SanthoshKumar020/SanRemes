@@ -1,10 +1,10 @@
 // Sends each dream case to a real model with the dream's own prompt and scores what runDream would keep.
 //
-//   OMB_EVAL_LIVE=1 OMB_EVAL_LIVE_INSTANCE='{"instanceId":"claude","driver":"claudeAgent","model":"claude-haiku-5-5","config":{"cli":"/path/to/claude"},"environmentFrom":["HOME","USER","PATH"]}' \
+//   SANREMES_EVAL_LIVE=1 SANREMES_EVAL_LIVE_INSTANCE='{"instanceId":"claude","driver":"claudeAgent","model":"claude-haiku-5-5","config":{"cli":"/path/to/claude"},"environmentFrom":["HOME","USER","PATH"]}' \
 //     node --experimental-strip-types evals/dream/run-dream.ts [--only id,id]
 //
-// Each case is one real model call on your account: never in CI, closed unless OMB_EVAL_LIVE=1. The server's data folder is
-// a temporary one, so nothing reads or writes ~/.openmausbot.
+// Each case is one real model call on your account: never in CI, closed unless SANREMES_EVAL_LIVE=1. The server's data folder is
+// a temporary one, so nothing reads or writes ~/.sanremes.
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -13,12 +13,12 @@ import { fileURLToPath } from "node:url";
 const HERE = dirname(fileURLToPath(import.meta.url));
 
 async function main(): Promise<void> {
-  if (process.env.OMB_EVAL_LIVE !== "1") {
-    console.log("dream eval: skipped (set OMB_EVAL_LIVE=1; each case is one real model call)");
+  if (process.env.SANREMES_EVAL_LIVE !== "1") {
+    console.log("dream eval: skipped (set SANREMES_EVAL_LIVE=1; each case is one real model call)");
     return;
   }
-  const dataDir = mkdtempSync(join(tmpdir(), "omb-dream-eval-"));
-  process.env.OMB_DATA_DIR = dataDir;
+  const dataDir = mkdtempSync(join(tmpdir(), "sanremes-dream-eval-"));
+  process.env.SANREMES_DATA_DIR = dataDir;
   const { loadLiveInstance } = await import("../live/run-live.ts");
   const { BUILT_IN_DRIVERS } = await import("../../server/drivers/builtIn.ts");
   const { DREAM_TIMEOUT_MS } = await import("../../server/memory-upkeep.ts");

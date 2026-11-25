@@ -27,16 +27,16 @@ import {
 const flag = (on: boolean) => (on ? "1" : "0");
 const profile = (options: { chief?: boolean; skills?: boolean; shared?: boolean; voice?: boolean; cloudHome?: boolean; memory?: boolean; images?: boolean; botId?: string } = {}): CatalogProfile =>
   catalogProfileFromEnv({
-    OMB_BOT_ID: options.botId ?? "bot-bridge",
-    OMB_CHIEF_OF_STAFF: flag(options.chief ?? false),
-    OMB_SKILL_AUTHORING_ENABLED: flag(options.skills ?? false),
-    OMB_SHARED_COMPUTERS_ENABLED: flag(options.shared ?? false),
-    OMB_VOICE_NOTES: flag(options.voice ?? false),
-    OMB_CLOUD_HOME: flag(options.cloudHome ?? false),
-    OMB_MEMORY_ENABLED: flag(options.memory ?? true),
+    SANREMES_BOT_ID: options.botId ?? "bot-bridge",
+    SANREMES_CHIEF_OF_STAFF: flag(options.chief ?? false),
+    SANREMES_SKILL_AUTHORING_ENABLED: flag(options.skills ?? false),
+    SANREMES_SHARED_COMPUTERS_ENABLED: flag(options.shared ?? false),
+    SANREMES_VOICE_NOTES: flag(options.voice ?? false),
+    SANREMES_CLOUD_HOME: flag(options.cloudHome ?? false),
+    SANREMES_MEMORY_ENABLED: flag(options.memory ?? true),
     // A person's own request, which may pick its computer.
-    OMB_COMPUTER_SELECTION: "1",
-    OMB_IMAGE_GENERATION: flag(options.images ?? false),
+    SANREMES_COMPUTER_SELECTION: "1",
+    SANREMES_IMAGE_GENERATION: flag(options.images ?? false),
   });
 
 /** Every switch combination the harness can ask for, as the wire test's
@@ -517,8 +517,8 @@ describe("seeing through a bridged call", () => {
   });
 
   it("starts an agents server unbridged for a mount whose selection matches the name in the call", () => {
-    const bridged = { command: "node", args: ["agents-proxy.js"], env: { OMB_BOT_ID: "bot-1", [TOOL_BRIDGE_ENV]: "1" } };
-    expect(unbridgedServer(bridged)).toEqual({ command: "node", args: ["agents-proxy.js"], env: { OMB_BOT_ID: "bot-1", [TOOL_BRIDGE_ENV]: "0" } });
+    const bridged = { command: "node", args: ["agents-proxy.js"], env: { SANREMES_BOT_ID: "bot-1", [TOOL_BRIDGE_ENV]: "1" } };
+    expect(unbridgedServer(bridged)).toEqual({ command: "node", args: ["agents-proxy.js"], env: { SANREMES_BOT_ID: "bot-1", [TOOL_BRIDGE_ENV]: "0" } });
     // the turn's own integration is not touched
     expect(bridged.env[TOOL_BRIDGE_ENV]).toBe("1");
     // nothing to do: already unbridged, another server, or one with no environment

@@ -9,7 +9,7 @@ describe("VPS server ids", () => {
   });
 
   it("reads no alias from a container id, another kind's id or a malformed one", () => {
-    for (const id of ["vps:office-vps/openmausbot-vps-bot-abc", "cloud:bot-1", "local", "vps:", "vps:-x", "office-vps"]) {
+    for (const id of ["vps:office-vps/sanremes-vps-bot-abc", "cloud:bot-1", "local", "vps:", "vps:-x", "office-vps"]) {
       expect(vpsAliasOfServerId(id)).toBeNull();
     }
   });

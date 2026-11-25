@@ -69,7 +69,7 @@ function lifecycleInput(instanceId: string, dir: string, generation = "current",
 }
 
 it.each([false, true])("keeps a replacement's prices when its predecessor finishes discovery (disposed=%s)", async (disposed) => {
-  const dir = mkdtempSync(join(tmpdir(), "omb-price-replacement-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-price-replacement-"));
   dirs.push(dir);
   const id = `replacement-${disposed}`;
   const started = deferred<void>();
@@ -104,7 +104,7 @@ it.each([false, true])("keeps a replacement's prices when its predecessor finish
 });
 
 it("keeps prices discovered by status when startup uses a fresh saved listing", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "omb-price-status-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-price-status-"));
   dirs.push(dir);
   const id = "status-prices";
   savedListing(id);
@@ -119,7 +119,7 @@ it("keeps prices discovered by status when startup uses a fresh saved listing", 
 });
 
 it("does not restore old status prices after a refresh invalidates them", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "omb-price-status-refresh-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-price-status-refresh-"));
   dirs.push(dir);
   const id = "status-refresh-prices";
   savedListing(id);
@@ -148,7 +148,7 @@ it.each([
   { outcome: "failed", statusFirst: false },
   { outcome: "failed", statusFirst: true },
 ])("keeps the final $outcome refresh facts with an overlapping status read (status first: $statusFirst)", async ({ outcome, statusFirst }) => {
-  const dir = mkdtempSync(join(tmpdir(), "omb-price-refresh-status-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-price-refresh-status-"));
   dirs.push(dir);
   const id = `refresh-status-${outcome}-${statusFirst}`;
   savedListing(id);
@@ -190,7 +190,7 @@ it.each([
 });
 
 it("uses retained prices when the catalog default is absent from the live session", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "omb-price-fallback-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-price-fallback-"));
   dirs.push(dir);
   const catalog = prices("free");
   const instance = await createOpenCodeDriver(async () => catalog, { everyMs: Infinity, liveLists: [] }).create({
@@ -231,7 +231,7 @@ it("keeps the current free-price facts independent of another catalog", () => {
 });
 
 it.each(["free", "paid", "unknown", "failed"] as const)("applies only current confirmed free prices after a %s refresh through the ACP driver", async (price) => {
-  const dir = mkdtempSync(join(tmpdir(), "omb-opencode-prices-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-opencode-prices-"));
   dirs.push(dir);
   const failure = join(dir, "failure.json");
   writeFileSync(failure, JSON.stringify({ code: "QUOTA_EXCEEDED", message: MESSAGE }));
@@ -273,7 +273,7 @@ it.each(["free", "paid", "unknown", "failed"] as const)("applies only current co
 it("uses each instance's own free prices when the instances share a driver", async () => {
   const driver = createOpenCodeDriver(async (environment) => prices(environment.FIXTURE_PRICE === "paid" ? "paid" : "free"));
   for (const price of ["free", "paid"] as const) {
-    const dir = mkdtempSync(join(tmpdir(), "omb-opencode-instance-prices-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-opencode-instance-prices-"));
     dirs.push(dir);
     const failure = join(dir, "failure.json");
     writeFileSync(failure, JSON.stringify({ code: "QUOTA_EXCEEDED", message: MESSAGE }));

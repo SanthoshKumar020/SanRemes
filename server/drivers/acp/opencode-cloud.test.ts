@@ -32,7 +32,7 @@ afterEach(async () => {
 });
 
 async function open(driver: ReturnType<typeof createOpenCodeDriver>, instanceId: string, environment: (scratch: string) => Record<string, string>) {
-  const scratch = mkdtempSync(join(tmpdir(), "omb-opencode-cloud-"));
+  const scratch = mkdtempSync(join(tmpdir(), "sanremes-opencode-cloud-"));
   const instance = await driver.create({
     instanceId, displayName: instanceId, enabled: true,
     config: { cli: FAKE_CLI, fullAuto: false, workspace: scratch },
@@ -50,8 +50,8 @@ async function open(driver: ReturnType<typeof createOpenCodeDriver>, instanceId:
 
 describe("the keys saved for OpenCode inside the Cloud bot box", () => {
   const setup = {
-    dataDir: "/data/.openmausbot", home: "/data", codeRoots: ["/app"], engineRoots: engineInstallRoots("/data/.openmausbot"),
-    bridges: [{ name: "egress", port: BOX_EGRESS_PORT, socket: "/data/.openmausbot/box/egress.sock" }],
+    dataDir: "/data/.sanremes", home: "/data", codeRoots: ["/app"], engineRoots: engineInstallRoots("/data/.sanremes"),
+    bridges: [{ name: "egress", port: BOX_EGRESS_PORT, socket: "/data/.sanremes/box/egress.sock" }],
   };
   const runner = new BoxRunner({ bwrap: "/usr/bin/bwrap", bridge: { socat: null, bridgeScript: "/app/box-bridge.js", node: "/usr/bin/node" }, setup, denyEnv: BOX_DENY_ENV });
 

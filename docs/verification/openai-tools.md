@@ -169,7 +169,7 @@ Content-Type: application/json
 {"tools": false}
 ```
 
-Use the exact instance ID from `pnpm control:omb models --url URL`, and direct
+Use the exact instance ID from `pnpm control:sanremes models --url URL`, and direct
 the request only to that explicitly selected server. The route accepts this
 setting for OpenAI-compatible, Grok API, and MiniMax API instances, refuses
 changes while the instance is busy, and stores `config.tools` on that instance.

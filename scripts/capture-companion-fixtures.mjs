@@ -29,7 +29,7 @@ const HARNESS = `http://127.0.0.1:${HARNESS_PORT}`;
 const SIDECAR = `http://127.0.0.1:${COMPANION_PORT}`;
 const CONTROL = `http://127.0.0.1:${CONTROL_PORT}`;
 const CONTROL_TOKEN = randomBytes(32).toString("base64url");
-const controlHeaders = { "x-openmausbot-control-token": CONTROL_TOKEN };
+const controlHeaders = { "x-sanremes-control-token": CONTROL_TOKEN };
 
 const PROFILE = { name: "Ada Lovelace", email: "ada@example.com" };
 
@@ -127,8 +127,8 @@ async function captureFrames(wanted, during) {
 async function main() {
   mkdirSync(OUT, { recursive: true });
   home = mkdtempSync(join(tmpdir(), "companion-fixtures-"));
-  mkdirSync(join(home, ".openmausbot"), { recursive: true });
-  writeFileSync(join(home, ".openmausbot", "config.json"), JSON.stringify({
+  mkdirSync(join(home, ".sanremes"), { recursive: true });
+  writeFileSync(join(home, ".sanremes", "config.json"), JSON.stringify({
     profile: PROFILE,
     instances: {
       claude: {
@@ -143,9 +143,9 @@ async function main() {
   const harness = start("harness", [join(ROOT, "server", "index.ts")], {
     HOME: home,
     USERPROFILE: home,
-    OMB_PORT: String(HARNESS_PORT),
+    SANREMES_PORT: String(HARNESS_PORT),
     FAKE_CLAUDE_MODE: "happy",
-    OMB_WEBHOOK_PORT: String(base + 1),
+    SANREMES_WEBHOOK_PORT: String(base + 1),
   });
   await waitFor(`${HARNESS}/api/health`, "harness", harness);
 
@@ -154,12 +154,12 @@ async function main() {
   const sidecar = start("companion", [join(ROOT, "companion", "src", "index.ts")], {
     HOME: home,
     USERPROFILE: home,
-    OMB_PORT: String(HARNESS_PORT),
-    OMB_WEBHOOK_PORT: String(base + 1),
-    OMB_COMPANION_PORT: String(COMPANION_PORT),
-    OMB_CONTROL_PORT: String(CONTROL_PORT),
-    OMB_CONTROL_TOKEN: CONTROL_TOKEN,
-    OMB_COMPANION_DIR: join(home, "companion"),
+    SANREMES_PORT: String(HARNESS_PORT),
+    SANREMES_WEBHOOK_PORT: String(base + 1),
+    SANREMES_COMPANION_PORT: String(COMPANION_PORT),
+    SANREMES_CONTROL_PORT: String(CONTROL_PORT),
+    SANREMES_CONTROL_TOKEN: CONTROL_TOKEN,
+    SANREMES_COMPANION_DIR: join(home, "companion"),
   });
   await waitFor(`${CONTROL}/state`, "companion", sidecar, controlHeaders);
 
@@ -310,7 +310,7 @@ async function main() {
       prompt: "Check Discord for new bug reports and file them.",
       target: "bot",
       botId: kiwi.id,
-      runOn: "maus",
+      runOn: "sanremes",
       enabled: true,
       schedule: { type: "interval", everyMinutes: 5, anchorAt: Date.now() },
     }),

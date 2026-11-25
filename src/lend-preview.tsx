@@ -46,7 +46,7 @@ const browser = stateName === "browser";
 const now = Date.now();
 const environments = [
   { id: "local", kind: "local" as const, name: "This computer" },
-  { id: "vps", kind: "remote" as const, name, origin: "https://maus.example.com" },
+  { id: "vps", kind: "remote" as const, name, origin: "https://sanremes.example.com" },
 ];
 const capabilities = {
   host: { platform: "darwin", label: "macOS", session: "", packaged: true, homeDir: "" },
@@ -67,7 +67,7 @@ const ogb = browser ? undefined : {
       switch: async () => {}, forget: async () => {}, retry: async () => {}, addFromLink: async () => {}, create: async () => ({ ok: true, state: null }), pickDir: async () => ({ ok: false }) },
     computerSharing: { servers: async () => [{ id: "vps", enabled: lent.lendable && lent.on, connected: true, paused: false }] },
     workspaces: { state: () => new Promise(() => {}), places: () => new Promise(() => {}), add: async () => {},
-      probe: async () => ({ outcome: "found", origin: "https://maus.example.com", label: "maus.example.com", version: "0.1.178", transport: "https" }) },
+      probe: async () => ({ outcome: "found", origin: "https://sanremes.example.com", label: "sanremes.example.com", version: "0.1.178", transport: "https" }) },
   } : {}),
 };
 (globalThis as unknown as { ogb: unknown }).ogb = ogb;
@@ -116,7 +116,7 @@ if (params.get("add") === "1") after(900, () => {
   after(300, () => {
     const input = document.querySelector<HTMLInputElement>("[data-own-server-link]");
     if (!input) return;
-    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "https://maus.example.com#code=7KQ2-M9XD-H4TP");
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "https://sanremes.example.com#code=7KQ2-M9XD-H4TP");
     input.dispatchEvent(new Event("input", { bubbles: true }));
     after(200, () => { if (params.get("wish") === "1") document.querySelector<HTMLElement>("[data-lend-add] [role=switch]")?.click(); });
   });

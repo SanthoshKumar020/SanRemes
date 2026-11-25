@@ -79,7 +79,7 @@ const replies = (text: string): Script => (fake, _botId, _prompt, opts) => {
 };
 
 async function harness(script: Script, options: { waitMs?: number; full?: boolean; included?: () => boolean; noConfine?: boolean; owner?: { available(): boolean } } = {}) {
-  const dir = mkdtempSync(join(tmpdir(), "omb-bot-api-host-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-bot-api-host-"));
   dirs.push(dir);
   const fake = fakeStore();
   const turns: Array<{ botId: string; prompt: string; opts: BotApiTurnOptions }> = [];
@@ -302,7 +302,7 @@ describe("the Bot API door on the webhook receiver", () => {
     let held = 0, refuse = false;
     const release = { count: 0 };
     const fake = fakeStore();
-    const dir = mkdtempSync(join(tmpdir(), "omb-bot-api-claim-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-bot-api-claim-"));
     dirs.push(dir);
     const host = createBotApiHost({
       store: fake.store, manager: new BotApiManager({ file: join(dir, "bot-api.json") }), waitMs: 5_000,
@@ -327,7 +327,7 @@ describe("the Bot API door on the webhook receiver", () => {
 
   it("answers the licensed monthly spend limit with 429 and a Retry-After up to the next UTC month", async () => {
     const fake = fakeStore();
-    const dir = mkdtempSync(join(tmpdir(), "omb-bot-api-budget-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-bot-api-budget-"));
     dirs.push(dir);
     resetSpendCacheForTests();
     await appendUsage(dir, { botId: "b1", botName: "b1", threadId: "t", instanceId: "claude", driverKind: "claudeAgent", model: "m", input: 1, output: 1, costUsd: 2, trigger: { kind: "owner" } });
@@ -424,7 +424,7 @@ describe("the Bot API door on the webhook receiver", () => {
   });
 
   it("answers an unexpected error in fixed words, keeps its text for the person, and removes the thread when the turn never started", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "omb-bot-api-raw-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-bot-api-raw-"));
     dirs.push(dir);
     const fake = fakeStore();
     const manager = new BotApiManager({ file: join(dir, "bot-api.json") });

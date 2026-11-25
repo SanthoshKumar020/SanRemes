@@ -92,7 +92,7 @@ describe("the catalog answers from the copy it holds", () => {
 describe("the catalog kept in the data folder", () => {
   let dataDir: string;
   beforeEach(() => {
-    dataDir = mkdtempSync(join(tmpdir(), "omb-catalog-"));
+    dataDir = mkdtempSync(join(tmpdir(), "sanremes-catalog-"));
     rememberCatalogIn(dataDir);
   });
   afterEach(async () => {
@@ -283,7 +283,7 @@ describe("a walk that fails or comes up short", () => {
   });
 
   it("does not let a partial list on disk stand in for long after a restart", async () => {
-    const dataDir = mkdtempSync(join(tmpdir(), "omb-catalog-"));
+    const dataDir = mkdtempSync(join(tmpdir(), "sanremes-catalog-"));
     rememberCatalogIn(dataDir);
     try {
       fake.failPage = 3;

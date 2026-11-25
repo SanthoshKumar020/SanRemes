@@ -8,8 +8,8 @@ key or Composio dependency. The bundled logo is attributed in
 ## Isolated browser verification
 
 Use an installed Playwright module and Chromium executable. Set
-`OMB_VERIFY_PLAYWRIGHT` to its absolute module entry and
-`OMB_VERIFY_BROWSER_CHROME` to the browser executable if Playwright cannot
+`SANREMES_VERIFY_PLAYWRIGHT` to its absolute module entry and
+`SANREMES_VERIFY_BROWSER_CHROME` to the browser executable if Playwright cannot
 resolve its own browser. Then run:
 
 ```sh
@@ -37,8 +37,8 @@ has no alternate endpoint or test switch. It checks:
   while the other changes.
 - Narrow layout has no page overflow; no business tools execute during setup.
 
-Screenshots default to `/tmp/omb-whop-evidence`; override with
-`OMB_UI_EVIDENCE_DIR`. All fixture processes and data are cleaned up, with the
+Screenshots default to `/tmp/sanremes-whop-evidence`; override with
+`SANREMES_UI_EVIDENCE_DIR`. All fixture processes and data are cleaned up, with the
 server log retained. This proves the integration mechanics, **not a live Whop
 account or a real payment operation**. The live endpoint's published OAuth
 metadata was inspected separately and advertises dynamic registration, PKCE

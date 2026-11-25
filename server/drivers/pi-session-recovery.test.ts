@@ -13,7 +13,7 @@ const cli = fileURLToPath(new URL("../testing/fake-pi-cli.ts", import.meta.url))
 const setup = async (mode = "happy") => {
   ensureDirs();
   chmodSync(cli, 0o755);
-  const dump = join(mkdtempSync(join(tmpdir(), "omb-pi-recovery-")), "rpc.jsonl");
+  const dump = join(mkdtempSync(join(tmpdir(), "sanremes-pi-recovery-")), "rpc.jsonl");
   const instance = await PiDriver.create({ instanceId: "pi-recovery", displayName: undefined, enabled: true,
     environment: { FAKE_PI_DUMP: dump, FAKE_PI_MODE: mode, FAKE_PI_PERSIST_SESSION: "1", FAKE_PI_SESSION_FILE_IN_STATE_ONLY: "1" },
     config: { cli, fullAuto: false } });

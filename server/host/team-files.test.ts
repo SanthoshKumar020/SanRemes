@@ -15,7 +15,7 @@ const refused = async (work: () => unknown): Promise<{ status: number; code: str
 };
 
 beforeEach(() => {
-  dataDir = mkdtempSync(join(tmpdir(), "omb-team-files-"));
+  dataDir = mkdtempSync(join(tmpdir(), "sanremes-team-files-"));
   clock = 1_000;
   files = createTeamFiles({ dataDir, now: () => clock, cap: 64, uploadMax: 32 });
 });

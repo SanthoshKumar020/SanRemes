@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { VpsHostUnreachableError } from "./vps-command.ts";
 import { vpsContainerExec } from "./vps-exec.ts";
 
-const TARGET = { sshAlias: "my-vps", container: "openmausbot-vps-bot-abc" };
+const TARGET = { sshAlias: "my-vps", container: "sanremes-vps-bot-abc" };
 
 describe("vm_exec on a Self-hosted VPS desktop", () => {
   it("runs the command in the VPS container over the desktop's SSH connection", async () => {
@@ -10,7 +10,7 @@ describe("vm_exec on a Self-hosted VPS desktop", () => {
     await expect(vpsContainerExec(TARGET, "echo hello", { runner })).resolves.toEqual({ exitCode: 0, stdout: "hello\n", stderr: "", timedOut: false });
     const [args, options] = runner.mock.calls[0]!;
     expect(args.slice(0, 3)).toEqual(["-H", "ssh://my-vps", "exec"]);
-    expect(args).toContain("openmausbot-vps-bot-abc");
+    expect(args).toContain("sanremes-vps-bot-abc");
     expect(args.slice(-7)).toEqual(["timeout", "-k", "5", "60", "sh", "-lc", "echo hello"]);
     expect(args).toEqual(expect.arrayContaining(["-u", "cua", "-w", "/home/cua/workspace"]));
     expect(options).toEqual({ timeoutMs: 80_000 });

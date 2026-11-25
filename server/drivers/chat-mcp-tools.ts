@@ -61,7 +61,7 @@ export interface ChatToolSession {
    * skipped and what the tool limit did; undefined when none finished. */
   join(): Promise<string[] | undefined>;
   validate(name: string, args: unknown): void;
-  /** Directory reads and OpenMausBot's own agents server need no card; call_tool shows the tool it runs. */
+  /** Directory reads and SanRemes's own agents server need no card; call_tool shows the tool it runs. */
   view(name: string, args: Record<string, unknown>): ChatToolCallView;
   execute(name: string, args: Record<string, unknown>, signal: AbortSignal): Promise<ChatToolResult>;
   close(): Promise<void>;
@@ -296,7 +296,7 @@ export class ChatMcpClient {
       if (Date.now() >= deadline) throw new Error(STARTUP_TIMED_OUT);
       return deadline - Date.now();
     };
-    const handshake = { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "openmausbot-chat", version: "1" } };
+    const handshake = { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "sanremes-chat", version: "1" } };
     let initialized: unknown;
     if (observer?.mount.extension) {
       try { initialized = await this.call("initialize", withUiExtension(handshake), signal, remaining(), true, STARTUP_TIMED_OUT); }
@@ -466,7 +466,7 @@ export function normalizeBuiltInBrowserArgs(tool: string, args: unknown): void {
  * Say so on the failed navigation instead of leaving only ERR_SOCKS_CONNECTION_FAILED, and point at the LAN address to use.
  * Not on the desktop app, where the browser runs on the person's own computer, nor on a Cloud home, which has no such setting. */
 export function loopbackNavigationHint(tool: string, args: unknown, text: string, env: NodeJS.ProcessEnv = process.env): string {
-  if (env.OMB_DESKTOP_PARENT === "1" || cloudHomeConfigured(env)) return "";
+  if (env.SANREMES_DESKTOP_PARENT === "1" || cloudHomeConfigured(env)) return "";
   if (!/^agent_browser_(?:open|navigate)$/u.test(tool) || !object(args) || typeof args.url !== "string") return "";
   if (!ROUTE_LOOPBACK.test(args.url.trim()) || !/(?:ERR_[A-Z_]+|failed)/u.test(text)) return "";
   return " That address is the loopback of the machine running this browser, not your own computer: open the site by the LAN address it answers on (for example http://192.168.1.20:8188), which must be reachable from the server, and allow it under Settings → Desktops & browser → Built-in browser.";

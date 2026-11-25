@@ -23,11 +23,11 @@ export const CLOUD_HOME_PUSH_ACTIONS: Readonly<Record<string, "register" | "unre
 };
 export const CLOUD_HOME_PUSH_ADMIN_PATH = "/api/cloud/machines/push/";
 
-/** Must match the Admin's `cloudHomePushSignature` (openmaus-cloud server/cloud-push.ts): the action is signed, so a
+/** Must match the Admin's `cloudHomePushSignature` (sanremes-cloud server/cloud-push.ts): the action is signed, so a
  * request signed for one route is never accepted by another. */
 export function cloudHomePushSignature(secret: string, machineId: string, action: string, timestamp: string, nonce: string, body: string): string {
   const bodyHash = createHash("sha256").update(body).digest("hex");
-  return createHmac("sha256", secret).update(`omb-phone-push-v1\n${machineId}\n${action}\n${timestamp}\n${nonce}\n${bodyHash}`).digest("base64url");
+  return createHmac("sha256", secret).update(`sanremes-phone-push-v1\n${machineId}\n${action}\n${timestamp}\n${nonce}\n${bodyHash}`).digest("base64url");
 }
 
 /** The access a Cloud home has, or null when this server is not one. */
@@ -51,10 +51,10 @@ export function cloudHomePushRequest(access: CloudHomePushAccess, path: string, 
       headers: {
         accept: "application/json",
         "content-type": "application/json",
-        "x-omb-cloud-machine": access.machineId,
-        "x-omb-cloud-timestamp": timestamp,
-        "x-omb-cloud-nonce": nonce,
-        "x-omb-cloud-signature": `v1=${cloudHomePushSignature(access.secret, access.machineId, action, timestamp, nonce, raw)}`,
+        "x-sanremes-cloud-machine": access.machineId,
+        "x-sanremes-cloud-timestamp": timestamp,
+        "x-sanremes-cloud-nonce": nonce,
+        "x-sanremes-cloud-signature": `v1=${cloudHomePushSignature(access.secret, access.machineId, action, timestamp, nonce, raw)}`,
       },
     },
   };

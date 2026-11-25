@@ -2,7 +2,7 @@
 // shows each thread's first line and its replies, a row opens its thread beside the feed, and a line sent from the
 // feed's composer starts a thread of its own there while the room's current thread stays where it was. With the switch
 // off the room is its single transcript again. Needs the pinned agent-browser binary: runs when one resolves (tools
-// directory, OMB_AGENT_BROWSER_PATH or PATH) or OMB_UI_E2E=1 asks for the verified download; otherwise skipped.
+// directory, SANREMES_AGENT_BROWSER_PATH or PATH) or SANREMES_UI_E2E=1 asks for the verified download; otherwise skipped.
 import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -12,21 +12,21 @@ import { afterAll, expect, it } from "vitest";
 
 import { resolveAgentBrowserBinary } from "../../server/browser-engine.ts";
 import { removeTempDir, waitForExit } from "../../server/testing/cleanup.ts";
-import { runControlOmb } from "../control-omb.ts";
-import { agentBrowser, sessionEnv, UI_TOOLS_DIR, type UiHandle } from "./control-omb-ui.ts";
+import { runControlOmb } from "../control-sanremes.ts";
+import { agentBrowser, sessionEnv, UI_TOOLS_DIR, type UiHandle } from "./control-sanremes-ui.ts";
 import { fixtureApi } from "./preview-fixture.ts";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
-const forced = process.env.OMB_UI_E2E === "1";
+const forced = process.env.SANREMES_UI_E2E === "1";
 const enabled = forced || Boolean(resolveAgentBrowserBinary({ dataDir: UI_TOOLS_DIR, env: process.env }));
-if (!enabled) console.log("skipping room feed ui e2e: no agent-browser binary resolves; set OMB_UI_E2E=1 to install the pinned release");
+if (!enabled) console.log("skipping room feed ui e2e: no agent-browser binary resolves; set SANREMES_UI_E2E=1 to install the pinned release");
 const LAUNCH_TIMEOUT_MS = forced ? 600_000 : 180_000;
 
-const evidenceDir = process.env.OMB_UI_EVIDENCE_DIR ? resolve(ROOT, process.env.OMB_UI_EVIDENCE_DIR) : mkdtempSync(join(tmpdir(), "omb-ui-evidence-"));
-afterAll(async () => { if (!process.env.OMB_UI_EVIDENCE_DIR) await removeTempDir(evidenceDir); });
+const evidenceDir = process.env.SANREMES_UI_EVIDENCE_DIR ? resolve(ROOT, process.env.SANREMES_UI_EVIDENCE_DIR) : mkdtempSync(join(tmpdir(), "sanremes-ui-evidence-"));
+afterAll(async () => { if (!process.env.SANREMES_UI_EVIDENCE_DIR) await removeTempDir(evidenceDir); });
 
 async function launch(): Promise<{ child: ReturnType<typeof spawn>; info: { ui: string; url: string; botId: string; dataDir: string } }> {
-  const child = spawn(process.execPath, ["--experimental-strip-types", join(ROOT, "scripts", "control-omb.ts"), "ui", "launch"], {
+  const child = spawn(process.execPath, ["--experimental-strip-types", join(ROOT, "scripts", "control-sanremes.ts"), "ui", "launch"], {
     cwd: ROOT, env: process.env, stdio: ["ignore", "pipe", "pipe"], detached: process.platform !== "win32",
   });
   let stdout = "", stderr = "";

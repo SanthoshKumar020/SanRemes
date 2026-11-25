@@ -20,13 +20,13 @@ const PHONE_SESSION = { id: "phone-session", label: "Omkar's iPhone" } as Sessio
 const DESK_SESSION = { id: "desk-session", label: "Laptop" } as SessionRecord;
 const session = (record: SessionRecord): RequestAuth => ({ kind: "session", session: record, via: "bearer", scopes: ["admin", "client"] });
 const loopback: RequestAuth = { kind: "loopback", scopes: ["admin", "client"] };
-const chief = { id: "chief", name: "MausBot", color: "teal", chiefOfStaff: true } as BotRecord;
+const chief = { id: "chief", name: "SanRemes", color: "teal", chiefOfStaff: true } as BotRecord;
 
 const dirs: string[] = [];
 afterEach(async () => { for (const dir of dirs.splice(0)) await removeTempDir(dir); });
 
 function world(overrides: Partial<PhonesDeps> = {}) {
-  const dir = mkdtempSync(join(tmpdir(), "omb-phones-host-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-phones-host-"));
   dirs.push(dir);
   // The owner's iPhone, paired as a session, allowing Calendar.
   writeFileSync(join(dir, "phones.json"), JSON.stringify({ version: 1, phones: [{
@@ -118,7 +118,7 @@ describe("whose phones", () => {
     send(phones.sendIdFor(loopback));
     expect(phones.turnOwner(TURN)).toBe("owner");
     expect(phones.turnOwnerRefusal(TURN)).toBeNull();
-    expect(phones.integration(chief, TURN)).toMatchObject({ env: { OMB_MCP_TOKEN_DEVICE: "turn-token", OMB_HARNESS_URL: "http://127.0.0.1:1" } });
+    expect(phones.integration(chief, TURN)).toMatchObject({ env: { SANREMES_MCP_TOKEN_DEVICE: "turn-token", SANREMES_HARNESS_URL: "http://127.0.0.1:1" } });
     // A line from a person who holds no admin session here is not the owner's, nor is anything after it.
     send("guest-send-0000000001", { origin: { kind: "user" } }, "p_guest");
     expect(phones.turnOwner(TURN)).toBeNull();

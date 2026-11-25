@@ -18,7 +18,7 @@ export const LAUNCH_PATH = "/api/diagnostics/launch";
 const LAUNCH_BODY_MAX = 16 * 1024;
 
 export interface StorageViewDeps {
-  /** This server's environment id (already public at /.well-known/openmausbot/environment): the app keys what it remembers
+  /** This server's environment id (already public at /.well-known/sanremes/environment): the app keys what it remembers
    * of a storage answer by it, so two Clouds never share a "seen" mark or numbers. */
   serverId?: string;
   storageNow?(): Promise<VolumeBytes | null>;

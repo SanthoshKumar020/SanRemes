@@ -6,7 +6,7 @@ import { E2E, hostE2eOnly, isPortableE2e } from "./host-e2e.ts";
 
 // Vitest's --shard cuts equal-count slices; this balances them by recorded
 // seconds instead (slowest first, each to the shard with the least time so
-// far), and `--shard=n/8` on the same OS with the same OMB_VITEST_E2E picks
+// far), and `--shard=n/8` on the same OS with the same SANREMES_VITEST_E2E picks
 // the same files as that CI shard.
 export const SHARD_WEIGHTS_FILE = "scripts/testing/vitest-shard-weights.json";
 
@@ -78,7 +78,7 @@ export class DurationSequencer extends BaseSequencer {
     if (!shard) return files;
     const weights = loadShardWeights(root);
     const keys = files.map((spec) => weightKey(root, spec.moduleId) ?? spec.moduleId);
-    const nodeTests = process.env.OMB_VITEST_SUBSET ? 0 : NODE_TESTS_SECONDS[process.platform] ?? 0;
+    const nodeTests = process.env.SANREMES_VITEST_SUBSET ? 0 : NODE_TESTS_SECONDS[process.platform] ?? 0;
     const { shardOf, loads } = planShards(keys, weights, shard.count, nodeTests);
     const mine = files.filter((_, i) => shardOf[i] === shard.index - 1);
     // One line per run, so a CI log shows the weights were applied. If most
@@ -91,8 +91,8 @@ export class DurationSequencer extends BaseSequencer {
       `duration-sequencer: shard ${shard.index}/${shard.count} runs ${mine.length} of ${files.length} files, ` +
       `~${Math.round(loads[shard.index - 1])}s recorded; ${found} of ${listed} weighted files found`,
     );
-    // A run of a chosen few files (OMB_VITEST_SUBSET: ci.yml's locale and docs tests) finds few by design.
-    if (process.env.GITHUB_ACTIONS === "true" && !process.env.OMB_VITEST_SUBSET && found < listed * 0.9) {
+    // A run of a chosen few files (SANREMES_VITEST_SUBSET: ci.yml's locale and docs tests) finds few by design.
+    if (process.env.GITHUB_ACTIONS === "true" && !process.env.SANREMES_VITEST_SUBSET && found < listed * 0.9) {
       this.ctx.logger.log(
         `::warning title=duration-sequencer::Only ${found} of ${listed} weighted test files were found, so shards fall ` +
         `back to about equal file counts. Check ${SHARD_WEIGHTS_FILE} against the test file paths.`,

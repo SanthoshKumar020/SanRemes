@@ -31,7 +31,7 @@ describe("chat image transport and retained budget", () => {
 
 describe("chat user content with video clips", () => {
   it("still sends the turn when a clip was removed after it was attached, naming the gap", () => {
-    const dir = mkdtempSync(join(tmpdir(), "omb-chat-clip-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-chat-clip-"));
     const kept = join(dir, "kept.mp4");
     writeFileSync(kept, Buffer.from("00000018667479706d703432", "hex"));
     try {

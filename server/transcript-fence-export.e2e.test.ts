@@ -4,7 +4,7 @@ import { DatabaseSync } from "node:sqlite";
 import { fromMarkdown } from "mdast-util-from-markdown";
 import { expect, it } from "vitest";
 
-import { runControlOmb } from "../scripts/control-omb.ts";
+import { runControlOmb } from "../scripts/control-sanremes.ts";
 import { launchRestartableServer } from "./testing/restartable-server.ts";
 
 it("keeps a persisted unfinished reply separate from its follow-up in HTTP and CLI Markdown exports", async () => {

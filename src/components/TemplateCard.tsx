@@ -6,7 +6,7 @@ import { ArrowUpRight, Check, ChevronDown, Copy, FolderDown, Github, Library, Lo
 
 import { COMMUNITY_UPLOAD_URL, TEMPLATE_UPDATE_MESSAGE, type TemplateAvatar, type TemplateCard, type TemplateDetails, type TemplateRepoPublish } from "../../shared/share-card";
 import { botBodyId } from "../../shared/bot-body";
-import { MAUS_COLOR_NAMES, type MausColor } from "../../shared/wire";
+import { MAUS_COLOR_NAMES, type SanRemesColor } from "../../shared/wire";
 import { openExternalLink } from "@/lib/app-links";
 import { cn } from "@/lib/cn";
 import { useCopyFeedback } from "@/lib/copy-text";
@@ -28,7 +28,7 @@ const STATUS_KEY = {
   gone: "template.status.gone",
 } as const;
 
-const colorOf = (value: string): MausColor => (MAUS_COLOR_NAMES as readonly string[]).includes(value) ? value as MausColor : "cyan";
+const colorOf = (value: string): SanRemesColor => (MAUS_COLOR_NAMES as readonly string[]).includes(value) ? value as SanRemesColor : "cyan";
 
 /** A picture read from a template folder; a bot's own picture is a stored attachment and goes through BotAvatar. */
 const FOLDER_PICTURE = /^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/;

@@ -68,7 +68,7 @@ test("on: this computer's page lists My Cloud's bots, asked as background work w
   ], newBot: true });
   assert.deepEqual(f.asked.map(([side]) => side), ["admin", "cloud"], "the Admin is asked whether it sleeps first, then My Cloud, once");
   const [, url, init] = f.asked[1];
-  assert.deepEqual([url, init.headers["x-omb-background"], init.credentials, init.redirect], [`${CLOUD}/api/bots?messages=0`, "1", "include", "error"]);
+  assert.deepEqual([url, init.headers["x-sanremes-background"], init.credentials, init.redirect], [`${CLOUD}/api/bots?messages=0`, "1", "include", "error"]);
   assert.equal(f.changes, 1);
 });
 
@@ -170,7 +170,7 @@ test("a sleeping Cloud is never asked; its bots stay listed and a click wakes it
 test("a Cloud that answers it is going to sleep is held like a sleeping one", async () => {
   const f = setup();
   await f.together.refresh("cloud");
-  f.reply.cloud = answer(503, { error: "asleep" }, { "x-omb-cloud-power": "asleep" });
+  f.reply.cloud = answer(503, { error: "asleep" }, { "x-sanremes-cloud-power": "asleep" });
   f.later();
   await f.together.refresh("cloud");
   assert.equal(f.napped, 1);
@@ -571,7 +571,7 @@ test("the ＋ learns which AIs are ready in the other place with the list's own 
   const first = await f.together.newBotChoice("computer");
   assert.deepEqual(first, { home: "cloud", state: "ready", ais: [{ name: "Claude", kind: "claude" }, { name: "Included AI", kind: "claude" }] });
   assert.deepEqual(f.asked.map(([side, url]) => (side === "cloud" ? new URL(url).pathname : side)), ["admin", "/api/bots", "/api/instances"]);
-  assert.equal(f.asked.at(-1)[2].headers["x-omb-background"], "1");
+  assert.equal(f.asked.at(-1)[2].headers["x-sanremes-background"], "1");
   for (let i = 0; i < 5; i += 1) { f.clock += 5_000; assert.deepEqual(await f.together.newBotChoice("computer"), first); }
   assert.deepEqual([f.checks, f.cloudAsked("/api/instances"), f.cloudAsked()], [1, 1, 2], "five more opens ask the Admin and My Cloud nothing");
   f.later();
@@ -635,7 +635,7 @@ function loadPreload() {
   } };
   const preload = require.resolve("./preload.cjs");
   delete require.cache[preload];
-  process.argv.push("--omb-company-desktop=1");
+  process.argv.push("--sanremes-company-desktop=1");
   try { require(preload); } finally { process.argv.pop(); if (held) require.cache[electron] = held; else delete require.cache[electron]; delete require.cache[preload]; }
   return { api, channels, invoked };
 }

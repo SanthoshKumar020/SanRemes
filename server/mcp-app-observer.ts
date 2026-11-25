@@ -10,8 +10,8 @@ import { APP_EXTENSION_KEY, APP_MIME } from "../shared/app.ts";
 export const APP_ONLY_REFUSAL = "This tool belongs to an app view.";
 export const APP_REPORT_MAX_BYTES = 900 * 1024;
 export const APP_REPORT_TIMEOUT_MS = 10_000;
-export const GATE_APPS_ENV = "OMB_GATE_APPS";
-export const REMOTE_MCP_APPS_ENV = "OMB_REMOTE_MCP_APPS";
+export const GATE_APPS_ENV = "SANREMES_GATE_APPS";
+export const REMOTE_MCP_APPS_ENV = "SANREMES_REMOTE_MCP_APPS";
 
 export const UI_EXTENSION = { mimeTypes: [APP_MIME] } as const;
 

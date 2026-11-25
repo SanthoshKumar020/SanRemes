@@ -25,8 +25,8 @@ const RETRY_MS = 5 * 60 * 1000;
 
 const SEEN_PREFIX = "announcement:";
 const SPONSOR_DAY_PREFIX = "announcement-sponsor:";
-const LAUNCH_KEY = "omb.launch.announcement";
-const SPONSOR_DAY_STORAGE = "omb.announcement.sponsor-day";
+const LAUNCH_KEY = "sanremes.launch.announcement";
+const SPONSOR_DAY_STORAGE = "sanremes.announcement.sponsor-day";
 /** The workspace record keeps this many cards' marks at most, beside the app's own hints (server/config.ts caps them all). */
 const MAX_KEPT_HINTS = 10;
 const HINTS_CAP = 100;
@@ -119,7 +119,7 @@ export function announcementPlatform(userAgent: string | undefined): Announcemen
   return null;
 }
 
-/** The desktop app's own page, a MausBot Cloud's page, or any other server's. */
+/** The desktop app's own page, a SanRemes Cloud's page, or any other server's. */
 export function announcementSurface(local: boolean, cloudHome: boolean): AnnouncementSurface {
   return local ? "desktop" : cloudHome ? "cloud" : "server";
 }

@@ -13,11 +13,11 @@ describe("the server as a container's process 1", () => {
   });
 
   it("starts the launcher again under the image's tini, with its own flags, arguments and environment, and says so in one line", () => {
-    const init = containerInit({ ...asOne, runnable: (path) => path === IMAGE_INIT, env: { NODE_OPTIONS: "--enable-source-maps", OMB_DATA_DIR: "/data" } });
+    const init = containerInit({ ...asOne, runnable: (path) => path === IMAGE_INIT, env: { NODE_OPTIONS: "--enable-source-maps", SANREMES_DATA_DIR: "/data" } });
     expect(init.exec).toEqual({
       file: "/usr/bin/tini",
       args: ["/usr/bin/tini", "--", "/usr/local/bin/node", "--max-old-space-size=3072", "/app/dist-server/server-launcher.js", "--flag"],
-      env: { NODE_OPTIONS: "--enable-source-maps", OMB_DATA_DIR: "/data", [UNDER_IMAGE_INIT]: "1" },
+      env: { NODE_OPTIONS: "--enable-source-maps", SANREMES_DATA_DIR: "/data", [UNDER_IMAGE_INIT]: "1" },
     });
     expect(init.line).toContain("process 1");
     expect(init.line).toContain("docs/self-hosting.md");
@@ -40,7 +40,7 @@ describe("the server as a container's process 1", () => {
   });
 
   it("does not hand execve a tini it cannot run: Node 24 aborts the process when execve fails", () => {
-    const dir = mkdtempSync(join(tmpdir(), "omb-init-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-init-"));
     try {
       const plain = join(dir, "tini"), program = join(dir, "program");
       writeFileSync(plain, "", { mode: 0o644 });

@@ -40,13 +40,13 @@ export function pidsLimit(read: Read = readText): number | null {
   return limits.length > 0 ? Math.min(...limits) : null;
 }
 
-/** How many agent-browser browsers run at once: `OMB_BROWSER_MAX_RUNNING` (a whole number of at least 1), else what fits
+/** How many agent-browser browsers run at once: `SANREMES_BROWSER_MAX_RUNNING` (a whole number of at least 1), else what fits
  * in the browsers' share of the task limit and of the memory this server may use. Any other value, 0 included, is not a
  * way to turn browsers off (a bot's own browser switch is): it is refused with a log line and the computed size is used. */
 export function browserRoomSize(limits: { override?: string; pids: number | null; memoryBytes: number }, warn: (line: string) => void = () => undefined): number {
   const override = limits.override?.trim() ? Number(limits.override) : undefined;
   if (override !== undefined && Number.isInteger(override) && override > 0) return override;
-  if (override !== undefined) warn(`OMB_BROWSER_MAX_RUNNING=${JSON.stringify(limits.override)} is not a whole number of at least 1, so it is ignored; set it to 1 or more, or unset it to size the browsers by this server's limits`);
+  if (override !== undefined) warn(`SANREMES_BROWSER_MAX_RUNNING=${JSON.stringify(limits.override)} is not a whole number of at least 1, so it is ignored; set it to 1 or more, or unset it to size the browsers by this server's limits`);
   const byMemory = Math.floor((limits.memoryBytes * BROWSER_SHARE) / BROWSER_BYTES);
   const byTasks = limits.pids === null ? MOST_BROWSERS : Math.floor((limits.pids * BROWSER_SHARE) / BROWSER_THREADS);
   return Math.max(1, Math.min(MOST_BROWSERS, byMemory, byTasks));
@@ -54,7 +54,7 @@ export function browserRoomSize(limits: { override?: string; pids: number | null
 
 let size: number | undefined;
 export function defaultBrowserRoomSize(env: NodeJS.ProcessEnv = process.env): number {
-  size ??= browserRoomSize({ override: env.OMB_BROWSER_MAX_RUNNING, pids: pidsLimit(), memoryBytes: boxMemory().bytes }, (line) => console.warn(`browser: ${line}`));
+  size ??= browserRoomSize({ override: env.SANREMES_BROWSER_MAX_RUNNING, pids: pidsLimit(), memoryBytes: boxMemory().bytes }, (line) => console.warn(`browser: ${line}`));
   return size;
 }
 

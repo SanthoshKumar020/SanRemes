@@ -1,5 +1,5 @@
-export const APP_NAME = "OpenMausBot";
-export const APP_REPOSITORY = "https://github.com/milind-soni/OpenMausBot";
+export const APP_NAME = "SanRemes";
+export const APP_REPOSITORY = "https://github.com/SanthoshKumar020/SanRemes";
 export const DOCS_URL = `${APP_REPOSITORY}/tree/main/docs`;
 export const HELP_CENTER_URL = DOCS_URL;
 export const APPROVAL_LEVELS_URL = `${APP_REPOSITORY}/blob/main/docs/approval-levels.md`;
@@ -10,7 +10,7 @@ export const PRICING_URL = "https://www.openmausbot.com/pricing";
 /** The website's Team plans: `#teams` opens the pricing page on its Team tab. */
 export const TEAM_PLANS_URL = `${PRICING_URL}#teams`;
 export const CLOUD_PLAN_URL = "https://cloud.openmausbot.com/cloud";
-/** The Admin's team People page (openmaus-cloud docs/team-seats.md): people, seats and roles are managed there, never in
+/** The Admin's team People page (sanremes-cloud docs/team-seats.md): people, seats and roles are managed there, never in
  * the app. `invite` opens its invite box (Owner and Admins); `seats` its seat stepper (the Owner, whose card pays). */
 export const TEAM_PEOPLE_PAGES = { invite: "people?do=invite", seats: "people?do=seats" } as const;
 /** `cloudPage`: the Admin's Cloud pages for this team's Cloud (`<admin origin>/cloud`), sent by the server. */

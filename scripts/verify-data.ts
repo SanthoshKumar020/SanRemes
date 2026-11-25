@@ -9,8 +9,8 @@ import { fileURLToPath } from "node:url";
 import { closeBrowserSession } from "../server/browser-engine.ts";
 import { waitForExit } from "../server/testing/cleanup.ts";
 import { DATA_ROUTES, DATA_TOOL_NAMES, type DataSheet } from "../shared/data-surface.ts";
-import { launchVerificationServer, runControlOmb, verificationServerEnvironment } from "./control-omb.ts";
-import { agentBrowser, ensureUiBrowser, sessionEnv, type UiHandle } from "./testing/control-omb-ui.ts";
+import { launchVerificationServer, runControlOmb, verificationServerEnvironment } from "./control-sanremes.ts";
+import { agentBrowser, ensureUiBrowser, sessionEnv, type UiHandle } from "./testing/control-sanremes-ui.ts";
 import { mountPreview, parkUntilSignal, type MountedPreview } from "./testing/preview-fixture.ts";
 
 assert(process.argv.slice(2).every((arg) => arg === "--check"), "Usage: node --experimental-strip-types scripts/verify-data.ts [--check]");
@@ -47,7 +47,7 @@ async function startServer() {
   const log = openSync(logPath, "a", 0o600);
   server = spawn(process.execPath, ["--experimental-strip-types", join(root, "server/index.ts")], {
     cwd: root,
-    env: { ...verificationServerEnvironment({}, dataDir, Number(new URL(url).port)), OMB_TEST_INTERNAL_CAPABILITY_KEY: capabilityKey },
+    env: { ...verificationServerEnvironment({}, dataDir, Number(new URL(url).port)), SANREMES_TEST_INTERNAL_CAPABILITY_KEY: capabilityKey },
     stdio: ["ignore", log, log],
   });
   closeSync(log);
@@ -63,7 +63,7 @@ try {
   await startServer();
   await api("PATCH", "/api/config", { language: "en" });
   const { bot } = await runControlOmb(["new-bot", "--name", "Data review", "--url", url]) as { bot: { id: string; activeTaskId: string } };
-  const minted = await api("POST", "/api/testing/internal-capability", { botId: bot.id, threadId: bot.activeTaskId, kind: "data" }, { "x-openmausbot-test-capability": capabilityKey });
+  const minted = await api("POST", "/api/testing/internal-capability", { botId: bot.id, threadId: bot.activeTaskId, kind: "data" }, { "x-sanremes-test-capability": capabilityKey });
   const mcp = async (method: string, params?: unknown) =>
     (await api("POST", "/api/internal/data/mcp", { method, params }, { authorization: `Bearer ${minted.token}` })).result;
   const call = async (name: string, args: Record<string, unknown>) => {

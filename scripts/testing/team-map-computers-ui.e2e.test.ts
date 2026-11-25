@@ -5,14 +5,14 @@ import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
 import { resolveAgentBrowserBinary } from "../../server/browser-engine.ts";
 import { waitForExit } from "../../server/testing/cleanup.ts";
-import { runControlOmb } from "../control-omb.ts";
-import { ENABLE_ADVANCED_UI, UI_TOOLS_DIR } from "./control-omb-ui.ts";
+import { runControlOmb } from "../control-sanremes.ts";
+import { ENABLE_ADVANCED_UI, UI_TOOLS_DIR } from "./control-sanremes-ui.ts";
 import { fixtureApi } from "./preview-fixture.ts";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const binary = resolveAgentBrowserBinary({ dataDir: UI_TOOLS_DIR, env: process.env });
-const enabled = process.env.OMB_UI_E2E === "1" || Boolean(binary);
-if (!enabled) console.info("skipping Team map computers UI e2e: set OMB_UI_E2E=1 to install the pinned browser");
+const enabled = process.env.SANREMES_UI_E2E === "1" || Boolean(binary);
+if (!enabled) console.info("skipping Team map computers UI e2e: set SANREMES_UI_E2E=1 to install the pinned browser");
 
 type Info = { ui: string; url: string; dataDir: string; logPath: string; boatFixtureApi: string; botId: string; botIds: string[] };
 type Receipts = { calls: Array<{ method: string; path: string }>; shots: Record<string, number>; boats: Array<{ id: string; state: string }> };

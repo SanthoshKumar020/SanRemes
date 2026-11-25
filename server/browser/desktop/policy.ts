@@ -55,7 +55,7 @@ export interface PolicyWrap {
 /** Writes the policy into `dir` and answers the command that starts Chrome with only that policy in force. */
 export function policyWrap(bwrap: string, dir: string, fileRoots: readonly string[] = [], exists: (path: string) => boolean = existsSync): PolicyWrap {
   mkdirSync(dir, { recursive: true, mode: 0o700 });
-  writeFileSync(join(dir, "openmausbot.json"), `${JSON.stringify(desktopPolicy(fileRoots), null, 2)}\n`, { mode: 0o600 });
+  writeFileSync(join(dir, "sanremes.json"), `${JSON.stringify(desktopPolicy(fileRoots), null, 2)}\n`, { mode: 0o600 });
   const args = ["--dev-bind", "/", "/", "--die-with-parent"];
   const covered = new Set<string>();
   for (const brand of BRANDS) {

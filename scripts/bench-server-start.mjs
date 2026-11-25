@@ -2,7 +2,7 @@
 // The bundled server's start alone, on a fixture folder only: from the fork to its "listening" line and to its first
 // answered request, on the Node that Electron ships (ELECTRON_RUN_AS_NODE) or on this one. Prints one JSON object.
 //   pnpm build:server
-//   node scripts/bench-server-start.mjs --data /tmp/openmausbot-bench-X/data [--app CHECKOUT] [--runs 15] [--source]
+//   node scripts/bench-server-start.mjs --data /tmp/sanremes-bench-X/data [--app CHECKOUT] [--runs 15] [--source]
 //     [--node] [--no-cache] [--cpu-prof DIR] [--label NAME] [--stall-ms N] [--slow-engines N] [--against CHECKOUT]
 // --source: server/index.ts under --experimental-strip-types instead of the bundle. --node: this Node, not Electron's.
 // --no-cache: no compile cache (a first launch after an update). --cpu-prof: one V8 profile per run into DIR.
@@ -28,7 +28,7 @@ const { values } = parseArgs({ options: {
   port: { type: "string", default: "38811" },
   "stall-ms": { type: "string" }, "slow-engines": { type: "string" }, against: { type: "string" },
 } });
-if (!values.data || !values.data.includes("openmausbot-bench-")) throw new Error("--data must be a folder made for a bench (its path holds openmausbot-bench-)");
+if (!values.data || !values.data.includes("sanremes-bench-")) throw new Error("--data must be a folder made for a bench (its path holds sanremes-bench-)");
 mkdirSync(join(values.data, "tmp"), { recursive: true });
 const data = realpathSync(values.data);
 const entryOf = (appRoot) => {
@@ -72,13 +72,13 @@ function once({ appRoot, entry, cache }) {
       entry,
     ];
     const env = {
-      PATH: dirname(process.execPath), HOME: data, TMPDIR: join(data, "tmp"), LANG: "en_US.UTF-8", OMB_DATA_DIR: data, OMB_PORT: String(port),
-      OMB_WEBHOOK_PORT: String(port + 1), OMB_TEST_SEALED_PATH: "1", OMB_DISABLE_ANNOUNCEMENTS: "1", OMB_STATIC_DIR: join(appRoot, "dist"),
-      OMB_BENCH_EGRESS_LOG: join(dirname(data), "egress-server-start.log"), OMB_BENCH_CPU_OUT: cpuFile,
+      PATH: dirname(process.execPath), HOME: data, TMPDIR: join(data, "tmp"), LANG: "en_US.UTF-8", SANREMES_DATA_DIR: data, SANREMES_PORT: String(port),
+      SANREMES_WEBHOOK_PORT: String(port + 1), SANREMES_TEST_SEALED_PATH: "1", SANREMES_DISABLE_ANNOUNCEMENTS: "1", SANREMES_STATIC_DIR: join(appRoot, "dist"),
+      SANREMES_BENCH_EGRESS_LOG: join(dirname(data), "egress-server-start.log"), SANREMES_BENCH_CPU_OUT: cpuFile,
       ...(values.node ? {} : { ELECTRON_RUN_AS_NODE: "1" }),
-      ...(values["stall-ms"] ? { OMB_BENCH_EGRESS_STALL_MS: values["stall-ms"] } : {}),
+      ...(values["stall-ms"] ? { SANREMES_BENCH_EGRESS_STALL_MS: values["stall-ms"] } : {}),
       ...(values["slow-engines"] ? { PATH: `${slowEngines()}:${dirname(process.execPath)}` } : {}),
-      ...(values["no-cache"] || values.source ? {} : { OMB_SERVER_COMPILE_CACHE: cache }),
+      ...(values["no-cache"] || values.source ? {} : { SANREMES_SERVER_COMPILE_CACHE: cache }),
     };
     const at = performance.now();
     const child = spawn(runtime, args, { env, cwd: join(data, "tmp"), stdio: ["ignore", "pipe", "pipe"] });
@@ -89,7 +89,7 @@ function once({ appRoot, entry, cache }) {
     child.stderr.on("data", (chunk) => { output += chunk; });
     child.stdout.on("data", async (chunk) => {
       output += chunk;
-      if (listening !== undefined || !String(chunk).includes("openmausbot server on ")) return;
+      if (listening !== undefined || !String(chunk).includes("sanremes server on ")) return;
       listening = performance.now() - at;
       const status = await probe();
       const answered = performance.now() - at;

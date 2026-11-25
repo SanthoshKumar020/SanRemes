@@ -20,7 +20,7 @@ export interface GeminiAudio {
 }
 
 // Posts the input as it comes; the page resamples, so the worklet does not depend on the device's rate.
-const WORKLET = `registerProcessor("omb-mic", class extends AudioWorkletProcessor {
+const WORKLET = `registerProcessor("sanremes-mic", class extends AudioWorkletProcessor {
   process(inputs) { const c = inputs[0] && inputs[0][0]; if (c) this.port.postMessage(c.slice(0)); return true; }
 });`;
 
@@ -92,7 +92,7 @@ export function browserGeminiAudio(speakerRate = SPEAKER_RATE): GeminiAudio {
       if (!context) return;
       const mic = new MicResampler(context.sampleRate);
       resampler = mic;
-      node = new AudioWorkletNode(context, "omb-mic");
+      node = new AudioWorkletNode(context, "sanremes-mic");
       node.port.onmessage = (event: MessageEvent<Float32Array>) => mic.push(event.data).forEach(onChunk);
       context.createMediaStreamSource(stream).connect(node);
     },

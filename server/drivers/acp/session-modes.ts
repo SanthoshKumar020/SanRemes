@@ -41,7 +41,7 @@ export function readSessionModes(result: unknown): AcpSessionModes | null {
   return { availableModes, ...(currentModeId ? { currentModeId } : {}) };
 }
 
-/** Maps an OpenMausBot approval level onto an advertised ACP mode id without inventing unadvertised values. */
+/** Maps an SanRemes approval level onto an advertised ACP mode id without inventing unadvertised values. */
 export function selectAdvertisedMode(
   available: readonly AcpSessionMode[],
   approvalMode: ApprovalMode | undefined,

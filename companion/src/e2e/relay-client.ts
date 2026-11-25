@@ -1,11 +1,11 @@
-// The computer's side of MausBot Relay: one outbound control socket, and one data socket per phone session. The relay
+// The computer's side of SanRemes Relay: one outbound control socket, and one data socket per phone session. The relay
 // splices sealed bytes and can't open them; everything here is outside the encryption. Wire spec: README section 9.
 import { getDefaultAutoSelectFamilyAttemptTimeout, setDefaultAutoSelectFamilyAttemptTimeout } from "node:net";
 
 import { webSocketTransport } from "./phone.ts";
 import type { RecordTransport } from "./session.ts";
 
-export const RELAY_PROTOCOL = "omb-relay.v1";
+export const RELAY_PROTOCOL = "sanremes-relay.v1";
 export type RelayStatus = "connected" | "connecting" | "off";
 /** Why the control socket is not connected, in words the desktop's diagnosis maps: no hello in time ("no_answer"), the
  * token refused (4401), the relay busy or restarting (4429, 4503, `restarting`), the socket failed or closed

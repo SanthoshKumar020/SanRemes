@@ -124,7 +124,7 @@ describe("a turn's setup, recorded with the turn", () => {
     w.timings.flush();
     const saved = JSON.parse(readFileSync(file, "utf8"));
     saved.ring[1].setup["cat /Users/ada/plan.md"] = 5;
-    saved.ring[1].setup.browser = "OMB_SECRET";
+    saved.ring[1].setup.browser = "SANREMES_SECRET";
     delete saved.day[0].setup;
     writeFileSync(file, JSON.stringify(saved));
     const again = createTurnTimings({ file, now: w.now });

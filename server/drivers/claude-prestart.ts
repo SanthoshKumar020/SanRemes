@@ -1,5 +1,5 @@
 // A Claude process started before its conversation's first message connects its tool servers
-// at once. Some of OpenMausBot's own servers answer `tools/list` by asking the harness with the conversation's bearer, and
+// at once. Some of SanRemes's own servers answer `tools/list` by asking the harness with the conversation's bearer, and
 // the harness honours a bearer only while a turn runs, so that process lists nothing from them. Before the first turn
 // takes the process it asks the CLI to connect those servers again ({type:"control_request", request:{subtype:
 // "mcp_reconnect", serverName}}, answered once the server is connected and listed; Claude Code 2.1.321), now that the turn

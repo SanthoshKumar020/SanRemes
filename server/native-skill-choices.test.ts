@@ -17,7 +17,7 @@ const env = { HOME, CODEX_HOME };
 const choicesFile = (botId: string) => join(DATA_DIR, "skill-state", botId, "native-skills.json");
 
 afterEach(() => {
-  if (!DATA_DIR.startsWith(join(tmpdir(), "omb-test-home-"))) throw new Error(`refusing to clean ${DATA_DIR}: not this test's home`);
+  if (!DATA_DIR.startsWith(join(tmpdir(), "sanremes-test-home-"))) throw new Error(`refusing to clean ${DATA_DIR}: not this test's home`);
   for (const dir of [join(DATA_DIR, "skill-state"), join(DATA_DIR, "imported-skills"), join(HOME, ".agents"), CODEX_HOME, join(HOME, "repo"), join(HOME, "brought")]) {
     rmSync(dir, { recursive: true, force: true });
   }

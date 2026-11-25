@@ -21,7 +21,7 @@ type PaletteEntry =
   | { kind: "theme" }
   | { kind: "message"; hit: SearchHit };
 
-const OPEN_EVENT = "omb:open-command-palette";
+const OPEN_EVENT = "sanremes:open-command-palette";
 
 export function openCommandPalette() {
   window.dispatchEvent(new Event(OPEN_EVENT));

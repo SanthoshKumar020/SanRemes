@@ -7,7 +7,7 @@ conversation with the note. See [Routine schedules](../routine-schedules.md#chec
 
 ```sh
 pnpm exec vitest run server/host/check-back-time.test.ts server/host/check-backs.test.ts server/routes/check-backs.test.ts src/components/CheckBackLine.dom.test.ts
-OMB_TEST_PORTS=20900-20999 pnpm exec vitest run server/check-backs.e2e.test.ts server/cloud-team-check-backs.e2e.test.ts
+SANREMES_TEST_PORTS=20900-20999 pnpm exec vitest run server/check-backs.e2e.test.ts server/cloud-team-check-backs.e2e.test.ts
 ```
 
 Unix sockets cap their path near 104 bytes: run the e2e tests with a short `TMPDIR`.

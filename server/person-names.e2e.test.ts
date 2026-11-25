@@ -2,7 +2,7 @@ import { statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { launchVerificationServer } from "../scripts/control-omb.ts";
+import { launchVerificationServer } from "../scripts/control-sanremes.ts";
 
 describe("names people choose on a self-hosted server", () => {
   it("labels each signed-in person's lines with the name they chose, while the owner's computer keeps the profile's", async () => {

@@ -22,7 +22,7 @@ const scratch: string[] = [];
 afterEach(async () => { stop.refuses = false; await Promise.all(scratch.splice(0).map((path) => rm(path, { recursive: true, force: true }))); });
 
 async function fake(mode = "normal") {
-  const cwd = await mkdtemp(join(tmpdir(), "omb-catalog-test-"));
+  const cwd = await mkdtemp(join(tmpdir(), "sanremes-catalog-test-"));
   scratch.push(cwd);
   const cli = join(cwd, "fake.mjs");
   const dump = join(cwd, "requests.jsonl");
@@ -34,9 +34,9 @@ const modelOptions=[{value:'deep',name:'Deep'},{value:'flash',name:'Flash'},{val
 function result(){if(mode==='hostile'||mode==='hostile-default'||mode==='hostile-labels'||mode==='hostile-all'){const options=mode==='hostile-labels'
  ?[{value:'plain-model',name:'Plain'+String.fromCharCode(0x202e)+'Reversed'},{value:'good-model',name:'Good Model'}]
  :mode==='hostile-all'
- ?[{value:'../../.openmausbot',name:'Traversal'},{value:'bad'+String.fromCharCode(0)+'id',name:'Control'},{value:'x'.repeat(500),name:'Long'}]
- :[{value:'../../.openmausbot',name:'Traversal'},{value:'bad'+String.fromCharCode(0)+'id',name:'Control'},{value:'x'.repeat(500),name:'Long'},{value:'ok-model',name:'Fine'+String.fromCharCode(7)+'Name'},{value:'good-model',name:'Good Model'}];
- return {sessionId:'fake-session',configOptions:[{id:'model',type:'select',category:'model',currentValue:mode==='hostile-default'?String.fromCharCode(46,46,92)+String.fromCharCode(46,46,92)+'private':mode==='hostile-all'?'../../.openmausbot':'good-model',options}]};}
+ ?[{value:'../../.sanremes',name:'Traversal'},{value:'bad'+String.fromCharCode(0)+'id',name:'Control'},{value:'x'.repeat(500),name:'Long'}]
+ :[{value:'../../.sanremes',name:'Traversal'},{value:'bad'+String.fromCharCode(0)+'id',name:'Control'},{value:'x'.repeat(500),name:'Long'},{value:'ok-model',name:'Fine'+String.fromCharCode(7)+'Name'},{value:'good-model',name:'Good Model'}];
+ return {sessionId:'fake-session',configOptions:[{id:'model',type:'select',category:'model',currentValue:mode==='hostile-default'?String.fromCharCode(46,46,92)+String.fromCharCode(46,46,92)+'private':mode==='hostile-all'?'../../.sanremes':'good-model',options}]};}
  return {sessionId:'fake-session',configOptions:[{id:'model',type:'select',category:'model',currentValue:current,options:modelOptions},...(current==='silent'?[]:[{id:current==='flash'?'thought_level':'reasoning_effort',type:'select',category:'thought_level',currentValue:current==='flash'?'low':'max',options:[{value:current==='flash'?'low':'max',name:current==='flash'?'Low':'Max'}]}])]};}
 function emit(value){process.stdout.write(JSON.stringify(value)+'\\n');}
 function legacyResult(){const r=result();return {...r,models:{currentModelId:current,availableModels:modelOptions.map(x=>({modelId:x.value,name:x.name}))},configOptions:r.configOptions.filter(x=>x.id!=='model')}}
@@ -137,7 +137,7 @@ describe("custom ACP catalog discovery (isolated fake CLI)", () => {
     expect(forgetSession).toHaveBeenCalledOnce();
     const [session] = forgetSession.mock.calls[0] as unknown as [{ sessionId: string; cwd: string; env: unknown }];
     expect(session.sessionId).toBe("fake-session");
-    expect(basename(session.cwd)).toMatch(/^omb-acp-models-/);
+    expect(basename(session.cwd)).toMatch(/^sanremes-acp-models-/);
     // macOS reports the agent's cwd through /private; the folder name is the same either way.
     expect(basename(session.cwd)).toBe(basename((await fixture.requests())[0].cwd));
     expect(session.env).toBe(fixture.env);
@@ -196,7 +196,7 @@ describe("custom ACP catalog discovery (isolated fake CLI)", () => {
     ]);
     expect(catalog.default).toBe("good-model");
     const sent = JSON.stringify(await fixture.requests());
-    expect(sent).not.toContain("../.openmausbot");
+    expect(sent).not.toContain("../.sanremes");
     expect(sent).not.toContain("bad\u0000id");
     expect(sent).not.toContain("x".repeat(500));
   });
@@ -269,7 +269,7 @@ describe("a model list whose per-model effort reads are cut short (shared fake A
   });
 
   it("still fails when time runs out before the agent has listed its models, and names it a timeout", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "omb-catalog-silent-"));
+    const dir = await mkdtemp(join(tmpdir(), "sanremes-catalog-silent-"));
     scratch.push(dir);
     const cli = join(dir, "silent.mjs");
     await writeFile(cli, "process.stdin.resume();\n");

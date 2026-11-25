@@ -7,7 +7,7 @@ export const TALK_TEXT = Object.freeze({
   busy: "Voice is in use in SanRemes",
   serverDown: "Open SanRemes to talk",
   starting: "SanRemes is still starting. Try again in a moment.",
-  noMausbot: "Set up SanRemes first, then try again.",
+  noSanRemes: "Set up SanRemes first, then try again.",
   moved: "SanRemes lives on My Cloud now — talk to it there",
   permission: "Talking needs Microphone + Speech Recognition access — System Settings → Privacy & Security.",
   dictationOff: "Turn on Dictation in System Settings → Keyboard, then try again.",
@@ -28,11 +28,11 @@ const SPEECH_PROBLEMS = new Map([
 const SERVER_NOTICES = new Map([
   ["server-down", TALK_TEXT.serverDown],
   ["starting", TALK_TEXT.starting],
-  ["no-mausbot", TALK_TEXT.noMausbot],
+  ["no-sanremes", TALK_TEXT.noSanRemes],
   ["moved", TALK_TEXT.moved],
 ]);
 
-const SERVER_NOTICE_KEYS = new Map([["server-down", "native.talk.openSanRemes"], ["starting", "native.talk.starting"], ["no-mausbot", "native.talk.setUpFirst"], ["moved", "native.talk.movedToCloud"]]);
+const SERVER_NOTICE_KEYS = new Map([["server-down", "native.talk.openSanRemes"], ["starting", "native.talk.starting"], ["no-sanremes", "native.talk.setUpFirst"], ["moved", "native.talk.movedToCloud"]]);
 const SPEECH_KEYS = new Map([["speech-not-authorized", "native.talk.permissions"], ["mic-failed", "native.talk.unavailable"], ["recognizer-unavailable", "native.talk.unavailable"], ["dictation-disabled", "native.talk.dictationOff"], ["helper-build-failed", "native.talk.unavailable"], ["helper-start-failed", "native.talk.unavailable"], ["unsupported-platform", "native.talk.unavailable"]]);
 
 const UNDER_WAY = new Set(["listening", "sending", "thinking"]);

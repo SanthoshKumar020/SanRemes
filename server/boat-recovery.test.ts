@@ -111,8 +111,8 @@ beforeAll(async () => {
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   const { port } = server.address() as { port: number };
-  vi.stubEnv("OMB_CLOUD_BOAT_URL", `http://127.0.0.1:${port}/relay/api/box/v1`);
-  vi.stubEnv("OMB_CLOUD_BOAT_TOKEN", "box_omb_synthetic");
+  vi.stubEnv("SANREMES_CLOUD_BOAT_URL", `http://127.0.0.1:${port}/relay/api/box/v1`);
+  vi.stubEnv("SANREMES_CLOUD_BOAT_TOKEN", "box_omb_synthetic");
   const realFetch = globalThis.fetch;
   vi.spyOn(globalThis, "fetch").mockImplementation(async (...args) => {
     inFlight++;
@@ -164,7 +164,7 @@ beforeEach(async () => {
   pendingDeletes.clear();
   deleteDelayMs = 0; autoOn = true; deleteSpans.length = 0; teamOwners.clear(); watched.clear(); stopRefused = new Set(); deletesAllowed = false;
   at += 24 * 60 * 60_000;
-  file = join(mkdtempSync(join(tmpdir(), "omb-repl-")), "boat-replacements.json");
+  file = join(mkdtempSync(join(tmpdir(), "sanremes-repl-")), "boat-replacements.json");
   await load();
   start();
 });
@@ -852,13 +852,13 @@ describe("automatic replacement", () => {
     const on = recoveryModule.cloudComputerAutoReplace;
     expect(on({}, {})).toBe(true);
     expect(on({ features: { cloudComputerAutoReplace: false } }, {})).toBe(false);
-    expect(on({ features: { cloudComputerAutoReplace: false } }, { OMB_CLOUD_COMPUTER_AUTO_REPLACE: "1" })).toBe(true);
-    expect(on({ features: { cloudComputerAutoReplace: true } }, { OMB_CLOUD_COMPUTER_AUTO_REPLACE: "0" })).toBe(false);
-    for (const off of ["0", "false", "off", "no", " FALSE ", "Off"]) expect(on({}, { OMB_CLOUD_COMPUTER_AUTO_REPLACE: off })).toBe(false);
-    for (const value of ["1", "true", "on", "yes"]) expect(on({ features: { cloudComputerAutoReplace: false } }, { OMB_CLOUD_COMPUTER_AUTO_REPLACE: value })).toBe(true);
+    expect(on({ features: { cloudComputerAutoReplace: false } }, { SANREMES_CLOUD_COMPUTER_AUTO_REPLACE: "1" })).toBe(true);
+    expect(on({ features: { cloudComputerAutoReplace: true } }, { SANREMES_CLOUD_COMPUTER_AUTO_REPLACE: "0" })).toBe(false);
+    for (const off of ["0", "false", "off", "no", " FALSE ", "Off"]) expect(on({}, { SANREMES_CLOUD_COMPUTER_AUTO_REPLACE: off })).toBe(false);
+    for (const value of ["1", "true", "on", "yes"]) expect(on({ features: { cloudComputerAutoReplace: false } }, { SANREMES_CLOUD_COMPUTER_AUTO_REPLACE: value })).toBe(true);
     // Anything else leaves it to config.json.
-    expect(on({ features: { cloudComputerAutoReplace: false } }, { OMB_CLOUD_COMPUTER_AUTO_REPLACE: "maybe" })).toBe(false);
-    expect(on({}, { OMB_CLOUD_COMPUTER_AUTO_REPLACE: "" })).toBe(true);
+    expect(on({ features: { cloudComputerAutoReplace: false } }, { SANREMES_CLOUD_COMPUTER_AUTO_REPLACE: "maybe" })).toBe(false);
+    expect(on({}, { SANREMES_CLOUD_COMPUTER_AUTO_REPLACE: "" })).toBe(true);
   });
 });
 

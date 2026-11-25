@@ -28,7 +28,7 @@ skinModes.textContent = ':root[data-skin="daylight"] { --code-color-scheme: ligh
 document.head.append(skinModes);
 
 async function wear(theme: ThemeFile, skinChoice: string) {
-  values.set("omb-skin", skinChoice);
+  values.set("sanremes-skin", skinChoice);
   const runtime = await import("./runtime");
   runtime.wearTheme({ id: "repro", theme });
   return document.documentElement.dataset.skin;
@@ -62,7 +62,7 @@ it("follows the system's light or dark change while a theme with both blocks is 
     addEventListener: (_type: string, listener: () => void) => { onChange.add(listener); },
     removeEventListener: (_type: string, listener: () => void) => { onChange.delete(listener); },
   }));
-  values.set("omb-theme", JSON.stringify({ id: "repro", theme: { name: "Repro", skin: "system", ...bothModes } }));
+  values.set("sanremes-theme", JSON.stringify({ id: "repro", theme: { name: "Repro", skin: "system", ...bothModes } }));
   const runtime = await import("./runtime");
   const skins = await import("../skins");
   runtime.startTheme();

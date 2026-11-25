@@ -2,7 +2,7 @@
 
 A message sent while a Grok turn runs is taken into that turn instead of
 waiting for it to end, once Grok's own config has `follow_up_behavior = "steer"`.
-OpenMausBot adds the line itself, for a signed-in Grok, when a turn starts. A
+SanRemes adds the line itself, for a signed-in Grok, when a turn starts. A
 `follow_up_behavior` the person already set, `"queue"` included, is left alone.
 
 ## What Grok does (grok 1.0.89, 2026-11-19)
@@ -20,7 +20,7 @@ OpenMausBot adds the line itself, for a signed-in Grok, when a turn starts. A
 
 ## Fixture check
 
-`control-omb.ts launch` starts the fake engine only and does not pass `GROK_HOME`, so
+`control-sanremes.ts launch` starts the fake engine only and does not pass `GROK_HOME`, so
 the real CLI needs a server started by hand. Use a temporary data directory and a copy
 of the sign-in, never `~/.grok`:
 
@@ -33,7 +33,7 @@ of the sign-in, never `~/.grok`:
    cp ~/.grok/auth.json "$D/grokhome/auth.json"
    ```
 
-2. Write `$D/config.json` (the server reads `config.json` from `OMB_DATA_DIR`):
+2. Write `$D/config.json` (the server reads `config.json` from `SANREMES_DATA_DIR`):
 
    ```json
    {
@@ -55,11 +55,11 @@ of the sign-in, never `~/.grok`:
    ```js
    // start-grok-fixture.mts, run with: node --experimental-strip-types start-grok-fixture.mts
    import { spawn } from "node:child_process";
-   import { verificationServerArgs, verificationServerEnvironment } from "./scripts/control-omb.ts";
+   import { verificationServerArgs, verificationServerEnvironment } from "./scripts/control-sanremes.ts";
 
    const dataDir = process.env.D, port = 19975;
    const env = verificationServerEnvironment(process.env, dataDir, port);
-   env.OMB_STATIC_DIR = `${process.cwd()}/dist`;
+   env.SANREMES_STATIC_DIR = `${process.cwd()}/dist`;
    spawn(process.execPath, verificationServerArgs(env), { env, stdio: "inherit" });
    ```
 

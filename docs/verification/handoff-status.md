@@ -21,7 +21,7 @@ Hand-offs into a room (its `comm` rows) keep their own room status and get no ch
 
 ```sh
 pnpm exec vitest run server/host/handoff-status.test.ts src/components/HandoffStatusChip.test.ts src/components/ThreadChip.test.ts src/components/SidebarBotActivity.test.ts
-OMB_TEST_PORTS=20900-20999 pnpm exec vitest run server/handoff-status.e2e.test.ts
+SANREMES_TEST_PORTS=20900-20999 pnpm exec vitest run server/handoff-status.e2e.test.ts
 ```
 
 The e2e test uses the scripted engine: Lead hands Coder a page, Coder hands Writer the copy, and Lead's row moves

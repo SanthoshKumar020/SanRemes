@@ -35,7 +35,7 @@ const makeBot = (over: Partial<Bot> = {}): Bot => ({
     { threadId: "t2", title: "Pricing", createdAt: 2 },
     { threadId: "t3", title: "Old notes", createdAt: 3, archivedAt: 9 },
   ],
-  messages: [page("m1", 50, "https://aaaaaaaaaaaaaaaaaaaa.mausbot.page/"), app("m2", 60), page("m3", 70, "https://cccccccccccccccccccc.mausbot.page/", "unpublished")],
+  messages: [page("m1", 50, "https://aaaaaaaaaaaaaaaaaaaa.sanremes.page/"), app("m2", 60), page("m3", 70, "https://cccccccccccccccccccc.sanremes.page/", "unpublished")],
   ...over,
 }) as Bot;
 
@@ -52,12 +52,12 @@ beforeEach(() => {
   requests.length = 0;
   library = {
     pages: [
-      { threadId: "t2", messageId: "p2", at: 90, title: "Price sheet", url: "https://bbbbbbbbbbbbbbbbbbbb.mausbot.page/" },
+      { threadId: "t2", messageId: "p2", at: 90, title: "Price sheet", url: "https://bbbbbbbbbbbbbbbbbbbb.sanremes.page/" },
       // Unpublished in the open conversation since the server answered: the loaded message wins.
-      { threadId: "t1", messageId: "m3", at: 70, title: "Page m3", url: "https://cccccccccccccccccccc.mausbot.page/" },
-      { threadId: "t3", messageId: "p3", at: 10, title: "Old page", url: "https://dddddddddddddddddddd.mausbot.page/" },
+      { threadId: "t1", messageId: "m3", at: 70, title: "Page m3", url: "https://cccccccccccccccccccc.sanremes.page/" },
+      { threadId: "t3", messageId: "p3", at: 10, title: "Old page", url: "https://dddddddddddddddddddd.sanremes.page/" },
       // From a conversation deleted since: the panel no longer knows it.
-      { threadId: "t9", messageId: "p9", at: 99, title: "Gone page", url: "https://eeeeeeeeeeeeeeeeeeee.mausbot.page/" },
+      { threadId: "t9", messageId: "p9", at: 99, title: "Gone page", url: "https://eeeeeeeeeeeeeeeeeeee.sanremes.page/" },
     ],
     apps: [{ threadId: "t2", messageId: "a2", at: 80, title: "Quote calculator" }, { threadId: "t1", messageId: "m2", at: 60, title: "App m2" }],
     files: [{ threadId: "t3", messageId: "f3", at: 5, attachments: [{ path: "/work/report.pdf", kind: "file", name: "report.pdf" }], links: ["/work/notes.md"] }],
@@ -102,7 +102,7 @@ it("lists what the bot made in every conversation, newest first, each with the c
 it("opens a page by its link, and an app from another conversation at its message there", async () => {
   await render(makeBot());
   await act(async () => rows("page")[0]!.querySelector("button")?.click() ?? rows("page")[0]!.click());
-  expect(fixture.opened).toEqual(["https://bbbbbbbbbbbbbbbbbbbb.mausbot.page/"]);
+  expect(fixture.opened).toEqual(["https://bbbbbbbbbbbbbbbbbbbb.sanremes.page/"]);
   await act(async () => (rows("app")[0]!.querySelector("button") ?? rows("app")[0]!).click());
   expect(fixture.dispatch).toHaveBeenCalledWith({ type: "switchTask", botId: "scout", threadId: "t2" });
   expect(fixture.dispatch).toHaveBeenLastCalledWith({ type: "focusMessage", threadId: "t2", messageId: "a2" });
@@ -114,7 +114,7 @@ it("opens a page by its link, and an app from another conversation at its messag
 it("names no conversation while the bot has only one, and shows what is loaded when the server cannot answer", async () => {
   library = { pages: [], apps: [], files: [] };
   await render(makeBot({ tasks: [{ threadId: "t1", title: "Launch plan", createdAt: 1 }] }));
-  expect(rows("page").map((row) => row.textContent)).toEqual(["Page m1https://aaaaaaaaaaaaaaaaaaaa.mausbot.page/"]);
+  expect(rows("page").map((row) => row.textContent)).toEqual(["Page m1https://aaaaaaaaaaaaaaaaaaaa.sanremes.page/"]);
   expect(rows("app").map((row) => row.textContent)).toEqual(["App m2"]);
   vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 500 })));
   await render(makeBot({ id: "other" }));

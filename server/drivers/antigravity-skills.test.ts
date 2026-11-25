@@ -61,7 +61,7 @@ describe("Antigravity skill staging", () => {
     const turn = { threadId: "thread", text: "Read " + JSON.stringify(file), skillFiles: [file] };
     expect(() => stageAntigravitySkills(turn, cwd)).toThrow("unsafe file");
     const other = fixture("root-link");
-    symlinkSync(outside, join(other.cwd, "omb-skills"), process.platform === "win32" ? "junction" : "dir");
+    symlinkSync(outside, join(other.cwd, "sanremes-skills"), process.platform === "win32" ? "junction" : "dir");
     expect(() => stageAntigravitySkills({ ...turn, text: "Read " + JSON.stringify(other.file), skillFiles: [other.file] }, other.cwd)).toThrow("staging path");
   });
 
@@ -86,11 +86,11 @@ describe("Antigravity skill staging", () => {
     const outside = join(DATA_DIR, "race-outside");
     mkdirSync(task, { recursive: true });
     mkdirSync(outside, { recursive: true });
-    symlinkSync(outside, join(task, ".omb-skills"), process.platform === "win32" ? "junction" : "dir");
+    symlinkSync(outside, join(task, ".sanremes-skills"), process.platform === "win32" ? "junction" : "dir");
     const staged = stageAntigravitySkills({ threadId: "thread", text: "Read " + JSON.stringify(file), skillFiles: [file], cwd: task }, cwd);
-    expect(staged.text).toContain("omb-skills");
+    expect(staged.text).toContain("sanremes-skills");
     expect(readdirSync(outside)).toEqual([]);
-    expect(existsSync(join(task, "omb-skills"))).toBe(false);
+    expect(existsSync(join(task, "sanremes-skills"))).toBe(false);
   });
 
   it.each(["file", "link", "folder"])("rejects an unexpected %s in a reused staged copy", (kind) => {

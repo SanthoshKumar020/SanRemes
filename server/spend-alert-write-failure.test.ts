@@ -17,7 +17,7 @@ const state = (over: Partial<SpendState> = {}): SpendState => ({
 describe("spend notices when an existing receipt cannot be updated", () => {
   let dataDir: string;
   beforeEach(() => {
-    dataDir = mkdtempSync(join(tmpdir(), "omb-spend-alert-write-"));
+    dataDir = mkdtempSync(join(tmpdir(), "sanremes-spend-alert-write-"));
     resetSpendAlertsForTests();
   });
   afterEach(async () => {

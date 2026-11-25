@@ -14,7 +14,7 @@ describe("the person's own gh hosts file", () => {
   });
 
   it("names a login only when it lists a github.com account", () => {
-    const dir = mkdtempSync(join(tmpdir(), "omb-gh-hosts-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-gh-hosts-"));
     try {
       expect(personalGhLogin({ GH_CONFIG_DIR: dir })).toBeNull();
       writeFileSync(join(dir, "hosts.yml"), "ghe.example.com:\n    user: corp\n");

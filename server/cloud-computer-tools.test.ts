@@ -52,8 +52,8 @@ beforeAll(async () => {
   await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
   const address = server.address();
   if (!address || typeof address === "string") throw new Error("fixture did not bind");
-  vi.stubEnv("OMB_BOAT_API", `http://127.0.0.1:${address.port}`);
-  vi.stubEnv("OMB_CLOUD_BOAT_TOKEN", undefined);
+  vi.stubEnv("SANREMES_BOAT_API", `http://127.0.0.1:${address.port}`);
+  vi.stubEnv("SANREMES_CLOUD_BOAT_TOKEN", undefined);
   tools = await import("./cloud-computer-tools.ts");
 });
 beforeEach(() => { calls.length = 0; holdCommand = false; commandStarted = undefined; commandStatus = 200; commandExit = 0; unansweredFirst = 0; neverEnds = false; forever.clear(); });

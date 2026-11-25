@@ -5,9 +5,9 @@ import test from "node:test";
 
 import { createBrowserPanes, fromAppWindow } from "./browser-pane-main.mjs";
 
-const PARTITION = "persist:omb-pane-0123456789abcdef01234567";
-const MSG = "openmausbot:browser-pane";
-const DOWNLOADS = "/tmp/omb-pane-downloads";
+const PARTITION = "persist:sanremes-pane-0123456789abcdef01234567";
+const MSG = "sanremes:browser-pane";
+const DOWNLOADS = "/tmp/sanremes-pane-downloads";
 const tick = () => new Promise((resolve) => setImmediate(resolve));
 
 function fakeElectron(hints = null) {
@@ -72,7 +72,7 @@ function fakeElectron(hints = null) {
   const fromPartition = (name) => {
     if (!sessions.has(name)) {
       sessions.set(name, Object.assign(new EventEmitter(), {
-        agent: "Mozilla/5.0 (Macintosh) AppleWebKit/537.36 (KHTML, like Gecko) OpenMausBot/0.1.175 Chrome/146.0.7680.0 Electron/43.7.9 Safari/537.36",
+        agent: "Mozilla/5.0 (Macintosh) AppleWebKit/537.36 (KHTML, like Gecko) SanRemes/0.1.175 Chrome/146.0.7680.0 Electron/43.7.9 Safari/537.36",
         erased: 0,
         getUserAgent() { return this.agent; },
         setUserAgent(agent) { this.agent = agent; },
@@ -191,7 +191,7 @@ test("cleaned identity on request: Electron's token off everywhere but Google's 
 
 test("refuses a partition outside the pane pattern, and a profile without an egress gate", async () => {
   const { send, posted, electron } = setup();
-  send({ op: "open", browser: "bot:a", partition: "persist:openmausbot-app", egress: 41000, downloads: DOWNLOADS, identity: "native" });
+  send({ op: "open", browser: "bot:a", partition: "persist:sanremes-app", egress: 41000, downloads: DOWNLOADS, identity: "native" });
   send({ op: "open", browser: "bot:a", partition: PARTITION });
   await tick();
   assert.equal(posted.length, 1);

@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import { verificationServerEnvironment } from "../scripts/control-omb.ts";
+import { verificationServerEnvironment } from "../scripts/control-sanremes.ts";
 import { removeTempDir, waitForExit } from "./testing/cleanup.ts";
 import { freePortBlock } from "./testing/ports.ts";
 
@@ -23,7 +23,7 @@ afterEach(async () => {
 /** A home with the stub engine. A running daemon is a file in `running/`
  * plus the pid file agent-browser writes; `close` removes both. */
 function engineHome(config: Record<string, unknown> = {}) {
-  const home = mkdtempSync(join(tmpdir(), "omb-browser-shutdown-"));
+  const home = mkdtempSync(join(tmpdir(), "sanremes-browser-shutdown-"));
   homes.push(home);
   mkdirSync(join(home, "tmp"), { recursive: true });
   mkdirSync(join(home, "running"), { recursive: true });
@@ -58,7 +58,7 @@ async function startServer(home: string, engine: string) {
   const base = `http://127.0.0.1:${port}`;
   const child = spawn(process.execPath, ["--experimental-strip-types", join(ROOT, "server/index.ts")], {
     cwd: ROOT,
-    env: { ...verificationServerEnvironment(process.env, home, port), OMB_AGENT_BROWSER_PATH: engine },
+    env: { ...verificationServerEnvironment(process.env, home, port), SANREMES_AGENT_BROWSER_PATH: engine },
     stdio: ["ignore", "pipe", "pipe"],
   });
   children.push(child);

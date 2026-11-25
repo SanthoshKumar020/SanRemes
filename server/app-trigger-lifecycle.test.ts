@@ -21,7 +21,7 @@ const inventory: BrokerInventory = {
 };
 
 async function harness(overrides: Partial<AppTriggerBroker>) {
-  const dir = mkdtempSync(join(tmpdir(), "omb-trigger-lifecycle-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-trigger-lifecycle-"));
   folders.push(dir);
   const enqueue = vi.fn(() => ({ id: "run" }));
   const broker: AppTriggerBroker = {

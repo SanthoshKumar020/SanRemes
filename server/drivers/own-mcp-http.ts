@@ -1,4 +1,4 @@
-// OpenMausBot's own MCP servers (agents, browser, computer, data, email, device) reached by URL instead of a stdio proxy
+// SanRemes's own MCP servers (agents, browser, computer, data, email, device) reached by URL instead of a stdio proxy
 // process each: every engine process otherwise starts one Node helper per server, about 7 threads each, all counted
 // against a container's pids limit. The URL form is the endpoint those proxies forward to (routes/own-mcp-http.ts), with
 // the same capability token, so identity and permissions are the stdio form's. The permission prompt server (ogb, over the
@@ -11,10 +11,10 @@ import { acpOwnServersOverHttp, ownMcpOverHttp, type AcpMcpServer } from "./turn
 
 /** "1" turns the URL form on for every engine that can take it; "0" keeps every engine on stdio proxies, the ACP agents
  * that take the URL form by default included. */
-export const OWN_MCP_HTTP_ENV = "OMB_OWN_MCP_HTTP";
+export const OWN_MCP_HTTP_ENV = "SANREMES_OWN_MCP_HTTP";
 
-/** Whether Claude, Codex and the ACP agents that do not take the URL form by default get OpenMausBot's own servers by URL:
- * only with OMB_OWN_MCP_HTTP=1, and not while the bot box is on, where their HTTP clients have not been checked. */
+/** Whether Claude, Codex and the ACP agents that do not take the URL form by default get SanRemes's own servers by URL:
+ * only with SANREMES_OWN_MCP_HTTP=1, and not while the bot box is on, where their HTTP clients have not been checked. */
 export function ownMcpHttpEnabled(env: NodeJS.ProcessEnv = process.env, boxed: boolean = botBox.enabled()): boolean {
   return !boxed && env[OWN_MCP_HTTP_ENV] === "1";
 }
@@ -36,7 +36,7 @@ export function loopbackUnproxied(env: Record<string, string | undefined>, http:
 
 type StdioMount = { command?: unknown; args?: unknown; env?: unknown; alwaysLoad?: unknown };
 
-/** One --mcp-config entry as Claude Code's HTTP form when it is one of OpenMausBot's own stdio proxies (Claude Code 1.0.60,
+/** One --mcp-config entry as Claude Code's HTTP form when it is one of SanRemes's own stdio proxies (Claude Code 1.0.60,
  * 2.0.0, 2.1.257 and 2.1.325 checked: `type: "http"` with headers connects and lists tools), else null. `alwaysLoad` stays. */
 export function claudeOwnHttpMount(server: unknown): Record<string, unknown> | null {
   const mount = server as StdioMount | null;
@@ -45,7 +45,7 @@ export function claudeOwnHttpMount(server: unknown): Record<string, unknown> | n
   return http ? { type: "http", url: http.url, headers: http.headers, ...(mount.alwaysLoad === true ? { alwaysLoad: true } : {}) } : null;
 }
 
-/** Turns every one of OpenMausBot's own proxies in a Claude --mcp-config into its HTTP form, when the setting is on;
+/** Turns every one of SanRemes's own proxies in a Claude --mcp-config into its HTTP form, when the setting is on;
  * true when any was. */
 export function claudeOwnMcpOverHttp(servers: Record<string, unknown>, enabled: boolean = ownMcpHttpEnabled()): boolean {
   if (!enabled) return false;
@@ -57,7 +57,7 @@ export function claudeOwnMcpOverHttp(servers: Record<string, unknown>, enabled: 
   return converted;
 }
 
-/** How an ACP engine's turn gets OpenMausBot's own servers: `http` in every session, `advertised` in a session whose agent
+/** How an ACP engine's turn gets SanRemes's own servers: `http` in every session, `advertised` in a session whose agent
  * said in its `initialize` answer that it reaches MCP servers by URL (`agentCapabilities.mcpCapabilities.http`; the ACP spec
  * lets a client send an `http` server only to such an agent), else `stdio`. */
 export type AcpOwnMcpTransport = "http" | "advertised" | "stdio";
@@ -74,7 +74,7 @@ export function acpAgentTakesHttpMcp(init: unknown): boolean {
   return (init as { agentCapabilities?: { mcpCapabilities?: { http?: unknown } } } | null | undefined)?.agentCapabilities?.mcpCapabilities?.http === true;
 }
 
-/** The servers a session/new or session/load sends: under `advertised`, OpenMausBot's own as this server's endpoints when
+/** The servers a session/new or session/load sends: under `advertised`, SanRemes's own as this server's endpoints when
  * the session's agent takes them. Deciding here, after `initialize`, lets an agent's first session use the URL form too. */
 export function acpSessionMcpServers(servers: AcpMcpServer[], transport: AcpOwnMcpTransport, init: unknown): AcpMcpServer[] {
   return transport === "advertised" && acpAgentTakesHttpMcp(init) ? acpOwnServersOverHttp(servers) : servers;

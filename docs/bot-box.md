@@ -1,7 +1,7 @@
 # The bot box
 
-On a MausBot Cloud home every bot turn runs in a box: the engine (Claude Code, Codex, Grok, OpenCode, the ACP agents),
-every shell command it runs, the MCP servers it starts and OpenMausBot's own helper proxies all live inside one
+On a SanRemes Cloud home every bot turn runs in a box: the engine (Claude Code, Codex, Grok, OpenCode, the ACP agents),
+every shell command it runs, the MCP servers it starts and SanRemes's own helper proxies all live inside one
 unprivileged [bubblewrap](https://github.com/containers/bubblewrap) sandbox for that process's lifetime. The server,
 its database, its settings, other bots' folders and other turns' processes are not in it. Code: `server/bot-box/`.
 
@@ -11,7 +11,7 @@ its database, its settings, other bots' folders and other turns' processes are n
 |---|---|
 | `/usr`, `/etc`, `/opt`, the server's own code folder, read-only | The image: engine CLIs, node, python, git, the bots' browser |
 | `HOME`, read-write | The engines' own logins and settings (`~/.claude`, `~/.codex`, `~/.grok`). On a Team Cloud this is the turn's audience's engine home instead, with the team's engine sign-in files bound into it, and the server's HOME is not there at all ([team-cloud.md](team-cloud.md#engine-homes)) |
-| the data folder (`~/.openmausbot`), **an empty private folder** | `messages.db`, `config.json`, logins, the server's sockets, every other bot's folders are not there |
+| the data folder (`~/.sanremes`), **an empty private folder** | `messages.db`, `config.json`, logins, the server's sockets, every other bot's folders are not there |
 | put back inside it: the turn's working folder and the bot's own folder (`workspaces/<bot>`), read-write | What the turn works on, and the bot's memory and skills. On a Team Cloud a turn that is not the team's has the bot's own folder read-only, and its own memory layer read-write ([team-cloud.md](team-cloud.md#the-audience-rule)) |
 | put back: this turn's permission socket (the engine's question and approval helper reaches the server through it), and, read-only, the conversation's own hook token folder (the hook helper's bearer, renewed each turn) and the files its command line names (MCP config, system prompt) | What the driver made for this one process |
 | private `/tmp`, `/var/tmp`, `/run`, `/dev`, `/proc` | Its own PID namespace: other turns' processes do not exist for it |
@@ -19,10 +19,10 @@ its database, its settings, other bots' folders and other turns' processes are n
 | a network namespace with loopback only | Two loopback ports are bridged to unix sockets from outside (below); nothing else on the machine's loopback is reachable, and there is no route out |
 
 The environment is an allow-list (`server/bot-box/env.ts`): the engine's own settings and keys, the harness capability
-tokens and a few names a shell expects. Of OpenMausBot's own `OMB_*` variables only those a bot's engine, hooks and MCP
-proxies read pass (`BOX_ENV_OMB_NAMES`); every other one an operator sets on the server, such as `OMB_SIGNIN_SMTP_URL`,
-stays out. Every `OMB_CLOUD_*` setting, the server's own placement (`OMB_DATA_DIR`, `OMB_PORT`), the CLI's session
-token and server address (`OPENMAUSBOT_TOKEN`, `OPENMAUSBOT_URL`) and the workspace credentials are refused whatever
+tokens and a few names a shell expects. Of SanRemes's own `SANREMES_*` variables only those a bot's engine, hooks and MCP
+proxies read pass (`BOX_ENV_SANREMES_NAMES`); every other one an operator sets on the server, such as `SANREMES_SIGNIN_SMTP_URL`,
+stays out. Every `SANREMES_CLOUD_*` setting, the server's own placement (`SANREMES_DATA_DIR`, `SANREMES_PORT`), the CLI's session
+token and server address (`OPENSANREMES_TOKEN`, `OPENSANREMES_URL`) and the workspace credentials are refused whatever
 a driver passed.
 
 ## The two gates
@@ -43,15 +43,15 @@ neither bridge.
 
 An engine that signs in through a callback on `127.0.0.1` (Antigravity's Google sign-in) listens on the box's own
 loopback, which the server cannot reach. That box alone gets one more unix socket (`server/bot-box/relay.ts`), bound in
-at `/run/omb/relay.sock`: the in-box Node bridge dials out to it and keeps one connection waiting, and when someone
+at `/run/sanremes/relay.sock`: the in-box Node bridge dials out to it and keeps one connection waiting, and when someone
 pastes the redirect from another computer the server writes the callback's port on that connection and sends the
 request through it. Only the server ever chooses the port, the box reaches nothing new on the host, and the server never
 connects to a path inside the box.
 
 ## When it is on
 
-`server/bot-box/detect.ts`: on by default on a Cloud home (`OMB_CLOUD_ROLE=home` or `team`), off everywhere else
-unless `OMB_BOT_BOX=1`; `OMB_BOT_BOX=0` turns it off. It is never on without a working unprivileged bubblewrap: if the
+`server/bot-box/detect.ts`: on by default on a Cloud home (`SANREMES_CLOUD_ROLE=home` or `team`), off everywhere else
+unless `SANREMES_BOT_BOX=1`; `SANREMES_BOT_BOX=0` turns it off. It is never on without a working unprivileged bubblewrap: if the
 kernel refuses user namespaces or the image has no `bwrap`, the box reports `off` with the reason, and the Admin shows
 it. The cloud-home image installs `bubblewrap` and `socat` (the in-box bridges; without socat a bundled Node bridge does
 the same).
@@ -60,7 +60,7 @@ Cost on Fly (measured, T0 build notes): about 5 ms and 3 MB per box, plus one so
 
 ## Tool caches
 
-`server/bot-box/tool-caches.ts`, behind `OMB_CACHE_ROOT` (default off; `1`/`on` turns it on, only on a Cloud home, never
+`server/bot-box/tool-caches.ts`, behind `SANREMES_CACHE_ROOT` (default off; `1`/`on` turns it on, only on a Cloud home, never
 on a desktop). With it on, the box gives each process the tools' own cache variables, so what a bot's tools download
 lands in one folder, `cache` in the box's HOME, instead of all over it:
 
@@ -78,7 +78,7 @@ lands in one folder, `cache` in the box's HOME, instead of all over it:
   arguments are the same with the switch on or off (pinned by a test). The app's own rebuildable files stay in the data
   folder's `cache/` (`NODE_COMPILE_CACHE`), which the box hides.
 - **Only a folder the server made.** On the first spawn for a HOME (never at start), the server makes `cache` there and
-  writes a `CACHEDIR.TAG` (the standard signature, plus a line naming OpenMausBot). A `cache` that is already there
+  writes a `CACHEDIR.TAG` (the standard signature, plus a line naming SanRemes). A `cache` that is already there
   without that tag and with anything in it is the person's own: nothing is written in it, and that HOME's tools keep
   their own places. An empty one is marked and used (a start that made it may have stopped before writing the tag). A link
   named `cache` is never the server's. The cache cap (below) works only in a tagged folder.
@@ -112,19 +112,19 @@ lands in one folder, `cache` in the box's HOME, instead of all over it:
   tool downloads once more what the old folder held (an npx package, a model). Something run offline from the old place
   (`HF_HUB_OFFLINE=1` with a model there) fails until it is downloaded again. A later cleanup may delete the old folders
   in the table's third column.
-- **Box off, no change.** A Cloud whose box is off (`OMB_BOT_BOX=0`, or no working bubblewrap) runs its bots unboxed
+- **Box off, no change.** A Cloud whose box is off (`SANREMES_BOT_BOX=0`, or no working bubblewrap) runs its bots unboxed
   with today's environment.
 
 ### Tool caches: the cap
 
-`server/cache-sweep/`, behind `OMB_CACHE_SWEEP`. It is off by default; `1`/`on` turns it on, and only on a Cloud
+`server/cache-sweep/`, behind `SANREMES_CACHE_SWEEP`. It is off by default; `1`/`on` turns it on, and only on a Cloud
 home. With it off, nothing is read, started or deleted: no state file is read, no timer starts, and the two admin routes
 are not there. With it on, making it at start reads nothing either; its first tick is 5 minutes after the server answers.
 
 - **Caps.** The smaller of 10 GB and 15% of the volume (`limits.ts`), once for the tools' cache folders and once for the
   app's own `<data folder>/cache`. On a Team Cloud the tools' cap is split evenly between the cache folders there (the
   server's HOME and each audience's engine home), so one member's caches never push out another's. Overrides:
-  `OMB_CACHE_CAP_TOOLS` and `OMB_CACHE_CAP_APP`, in bytes or as `4G`, `512M`.
+  `SANREMES_CACHE_CAP_TOOLS` and `SANREMES_CACHE_CAP_APP`, in bytes or as `4G`, `512M`.
 - **Which folders.** Only a tools root the server made (its `CACHEDIR.TAG`, above), and only while the tools' switch is
   on and the bot box is live. In it, only these whole folders, by fixed name: `npm`, `pip`, `uv`, `huggingface/hub`,
   `huggingface/xet`, `bun`. Nothing else in a root is counted, listed or touched: not a
@@ -153,7 +153,7 @@ are not there. With it on, making it at start reads nothing either; its first ti
   `O_NOFOLLOW`, and each step names one child of an open folder through `/proc/self/fd/<fd>/<name>`, so the kernel
   resolves it from that open folder, never again by path. A link is never entered (`O_NOFOLLOW`), a folder on another
   filesystem is never entered, and `unlink`/`rmdir` act on the link itself. A folder above that a bot swaps for a link
-  changes nothing. A folder about to go is renamed to `.omb-trash-<random>` in the same open parent (never moved
+  changes nothing. A folder about to go is renamed to `.sanremes-trash-<random>` in the same open parent (never moved
   elsewhere, never put back), then emptied and removed; whatever a removal that stopped part-way left under that name,
   the next pass in that root finishes the same way (a link there is removed as a link). A walk goes at most 128 folders
   deep, so a bot's endlessly nested folders cannot use up the server's open files or memory; what lies deeper stays.
@@ -231,15 +231,15 @@ or files, the base URL is the broker, a call with the token reaches the upstream
 | Mount namespace (bubblewrap) | every boxed process | reading the server's data folder, other bots' folders, other turns' files in `/tmp`, `/.fly`; writing anywhere but its own folders | reading HOME's engine logins (the engine's own identity); a path a driver puts back on purpose |
 | PID namespace | every boxed process | seeing, reading the environment of, or signalling another turn's or the server's processes | nothing inside the same box |
 | Network namespace + the two gates | every boxed process with its own network | reaching this machine's other listeners, the local network, link-local, metadata, Fly's private network; any route out except the egress gate; any server route except `/api/internal/*` | what the harness routes allow with a valid per-turn bearer; a public destination |
-| Environment allow-list | every boxed process | `OMB_CLOUD_*`, the server's placement, workspace credentials, any `OMB_*` setting a boxed process does not read, any unlisted name | the engines' own settings |
+| Environment allow-list | every boxed process | `SANREMES_CLOUD_*`, the server's placement, workspace credentials, any `SANREMES_*` setting a boxed process does not read, any unlisted name | the engines' own settings |
 | Credential broker (T0b) | every boxed process with its own network | holding a provider key or an MCP header; using a token after its process or conversation ends; choosing the upstream | keys with no base-URL setting (named in the report); subscription logins |
 | seccomp filter (T0c) | every boxed process on x86-64 | 34 system calls that only reach the kernel's attack surface: mount family, kernel modules, bpf, perf, userfaultfd, the kernel keyring, `open_by_handle_at`, `setns`, kexec, reboot, swap, clock setting, I/O ports (EPERM); a process of another architecture (killed) | anything an engine, shell, git, npm, python or Chrome uses: all allowed |
-| `hidepid=invisible` on the host's /proc (T0c) | the whole machine, set by the root supervisor at boot, which then starts itself again through `setpriv` without CAP_SYS_ADMIN and CAP_SETPCAP (an own server's connector grants those two only for that remount, and only to an image that drops them) | a `maus` process outside a box (the browser engine, a helper) listing or reading root's processes | `maus` processes seeing each other; a box has its own /proc anyway |
-| `/.fly` root-only (T0c) | the whole machine | a `maus` process reaching Fly's local API socket | nothing else |
+| `hidepid=invisible` on the host's /proc (T0c) | the whole machine, set by the root supervisor at boot, which then starts itself again through `setpriv` without CAP_SYS_ADMIN and CAP_SETPCAP (an own server's connector grants those two only for that remount, and only to an image that drops them) | a `sanremes` process outside a box (the browser engine, a helper) listing or reading root's processes | `sanremes` processes seeing each other; a box has its own /proc anyway |
+| `/.fly` root-only (T0c) | the whole machine | a `sanremes` process reaching Fly's local API socket | nothing else |
 
-Not built, and why: a **separate Linux user per bot**. The server runs as `maus` under a root supervisor and cannot
+Not built, and why: a **separate Linux user per bot**. The server runs as `sanremes` under a root supervisor and cannot
 switch uid; a per-bot uid needs a privileged spawn service (stdio over FIFOs, kills by proxy, file ownership across
 everything the server reads from the workspaces) which is a slice of its own, and with the user namespace the host
-sees the box as `maus` anyway. **nftables** rules would add nothing to a box with its own network namespace, and for
+sees the box as `sanremes` anyway. **nftables** rules would add nothing to a box with its own network namespace, and for
 the whole machine they would have to allow Fly's resolver on the private network; left for the separate-user design.
-`OMB_CLOUD_HARDEN=0` skips the two supervisor steps if a machine ever needs that.
+`SANREMES_CLOUD_HARDEN=0` skips the two supervisor steps if a machine ever needs that.

@@ -33,8 +33,8 @@ const children: ChildProcessWithoutNullStreams[] = [];
 beforeEach(() => {
   ensureDirs();
   chmodSync(FAKE_CLAUDE, 0o755);
-  scratch = mkdtempSync(join(tmpdir(), "omb-idle-cap-"));
-  vi.stubEnv("OMB_IDLE_ENGINES_MAX", "2");
+  scratch = mkdtempSync(join(tmpdir(), "sanremes-idle-cap-"));
+  vi.stubEnv("SANREMES_IDLE_ENGINES_MAX", "2");
 });
 afterEach(async () => {
   vi.unstubAllEnvs();

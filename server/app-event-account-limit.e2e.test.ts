@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, expect, it, vi } from "vitest";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { startBrokerFake, type BrokerFake } from "./testing/broker-fake.ts";
 
 // An app-event run that is carried on later (here by a teammate's reply) checks the bot's account limit again right
@@ -20,7 +20,7 @@ beforeAll(async () => {
   owner = await broker.install();
   sales = broker.account(owner.userId, "gmail", "sales");
   support = broker.account(owner.userId, "gmail", "support");
-  fixture = await launchVerificationServer({ ...process.env, OMB_COMPOSIO_BROKER_URL: broker.url, OMB_COMPOSIO_BROKER_TOKEN: owner.token }, undefined, undefined, undefined, undefined, { scripted: true });
+  fixture = await launchVerificationServer({ ...process.env, SANREMES_COMPOSIO_BROKER_URL: broker.url, SANREMES_COMPOSIO_BROKER_TOKEN: owner.token }, undefined, undefined, undefined, undefined, { scripted: true });
 }, 60_000);
 
 afterAll(async () => {

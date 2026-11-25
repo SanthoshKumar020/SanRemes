@@ -33,7 +33,7 @@ const cases = [
 ];
 
 it.each(cases)("books $name through runtime events into the ledger and caps", async ({ stream, cached, expected, cost, tokens }) => {
-  const dataDir = mkdtempSync(join(tmpdir(), "omb-chat-cached-input-"));
+  const dataDir = mkdtempSync(join(tmpdir(), "sanremes-chat-cached-input-"));
   cleanups.push(async () => { await flushSpans(dataDir); await removeTempDir(dataDir); });
   const remote = await startFakeHttpMcp({ tools: [{ name: "read_notes", inputSchema: { type: "object", properties: {} } }] });
   cleanups.push(() => remote.close());

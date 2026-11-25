@@ -62,8 +62,8 @@ const KIND = /^[a-z][a-z-]{0,39}$/;
 const PAIRING = /^[A-Za-z0-9_-]{8,64}$/;
 const NEEDS_YOU = new Set(["approval", "question", "sign-in", "mention"]);
 /** The phone app's notification categories (action buttons) and Android channels, by the ids the store apps created. */
-const CATEGORY: Record<string, string> = { approval: "OPENMAUS_APPROVAL", question: "OPENMAUS_QUESTION" };
-const CATEGORY_UPDATE = "OPENMAUS_UPDATE";
+const CATEGORY: Record<string, string> = { approval: "SANREMES_APPROVAL", question: "SANREMES_QUESTION" };
+const CATEGORY_UPDATE = "SANREMES_UPDATE";
 const CHANNEL_BLOCKING = "approval_question";
 const CHANNEL_ROUTINES = "routine_failed";
 const CHANNEL_MESSAGES = "bot_messages";
@@ -201,10 +201,10 @@ export function pushChannel(kind: string): string {
   return BLOCKING_KINDS.has(kind) ? CHANNEL_BLOCKING : ROUTINE_KINDS.has(kind) ? CHANNEL_ROUTINES : CHANNEL_MESSAGES;
 }
 
-/** `body` repeats `omb` because expo-notifications (SDK 58) hands an app only a remote notification's `body` as its data. */
+/** `body` repeats `sanremes` because expo-notifications (SDK 58) hands an app only a remote notification's `body` as its data. */
 export function apnsPayload(request: PushSendRequest) {
   const notification = request.notification;
-  const omb = ombPayload(request);
+  const sanremes = ombPayload(request);
   return {
     aps: {
       alert: { title: notification.title },
@@ -213,8 +213,8 @@ export function apnsPayload(request: PushSendRequest) {
       category: pushCategory(notification.kind),
       "interruption-level": NEEDS_YOU.has(notification.kind) ? "time-sensitive" : "active",
     },
-    omb,
-    body: omb,
+    sanremes,
+    body: sanremes,
   };
 }
 

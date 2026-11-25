@@ -22,7 +22,7 @@ describe("the fake cua-driver", () => {
   let children: ChildProcess[] = [];
 
   beforeEach(() => {
-    home = mkdtempSync(join(tmpdir(), "omb-fake-cua-"));
+    home = mkdtempSync(join(tmpdir(), "sanremes-fake-cua-"));
     log = join(home, "cua-calls.jsonl");
     fail = join(home, "fail");
     hold = join(home, "hold");

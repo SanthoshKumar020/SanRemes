@@ -43,7 +43,7 @@ describe("storage categories", () => {
       ["logs/service.log", "logs"], ["evidence/thread/1.png", "attachments"], ["decisions.ndjson", "settings"], ["decisions.ndjson.1", "settings"], ["decisions/2026-11.ndjson", "settings"], ["decider-log/x", "logs"], ["engine-runs/tag/pid", "logs"], ["perf-timings.json", "logs"],
       ["perf-stalls.json", "logs"], ["launch-timings.json", "logs"], ["server.log", "logs"],
       ["cache/node-compile/x", "caches"], ["duckdb-extensions/v1/x", "caches"], ["org-library/blobs/abc", "caches"], ["org-library/catalog.json", "settings"],
-      ["tmp/omb-cline-mcp-1/x", "temp"], ["tunnel-runtime/x", "temp"], ["tools/.npm-staging-1/x", "temp"], ["tools/.npm-aside-1/x", "temp"],
+      ["tmp/sanremes-cline-mcp-1/x", "temp"], ["tunnel-runtime/x", "temp"], ["tools/.npm-staging-1/x", "temp"], ["tools/.npm-aside-1/x", "temp"],
       ["bots/bot1/data-tmp/spill", "temp"], ["config.json.123.0f8fad5b-d9cb-469f-a165-70867728950e.tmp", "temp"], ["notes.tmp", "settings"],
       ["browser/audiences.json", "browser_profiles"], ["browser/panes/abc", "browser_profiles"], ["browser/identity/x.json", "browser_cache"], ["browser/displays/1/x", "browser_cache"],
       ["browser/something-new", "other"], [".cache/x", "other"],
@@ -64,7 +64,7 @@ describe("storage categories", () => {
       [".agent-browser/sessions/s.json", "browser_profiles"],
       [".cache/opencode/models.json", "caches"], [".cache/something", "other"], [".cache/huggingface/token", "other"],
       [".local/share/pnpm/store/v3/x", "packages"], [".local/share/pnpm/global/5/x", "other"], [".local/state/claude/locks/x", "engine_clis"], [".local/share/uv/tools/x", "other"],
-      [".config/gh/hosts.yml", "settings"], [".omb-cloud-home.json", "settings"], [".omb-edge/caddy/x", "settings"],
+      [".config/gh/hosts.yml", "settings"], [".sanremes-cloud-home.json", "settings"], [".sanremes-edge/caddy/x", "settings"],
       ["Synced/Desktop/a.txt", "synced"], [".local/share/Trash/files/x", "trash"],
       ["lost+found/x", "other"], ["acme-merger/plan.md", "other"], [".local/lib/x", "other"],
       // The tools' cache folder (bot-box/tool-caches.ts): its own folders only; a token or a bot's file there is not a cache.

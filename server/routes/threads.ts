@@ -71,7 +71,7 @@ export interface ThreadRouteDeps {
   /** The bots in this person's own order (a Team Cloud's User); the team's order anywhere else. */
   botOrderFor?(auth: RequestAuth, bots: readonly BotRecord[]): readonly BotRecord[];
   visibleTo(viewer: Viewer): VisibleSet;
-  /** A Team Cloud: gives a member their own MausBot once, before their first list of bots. */
+  /** A Team Cloud: gives a member their own SanRemes once, before their first list of bots. */
   memberDefaultBot?(email: string): unknown;
   /** Who uploaded each file: only its uploader discards it, and only while nothing uses it. */
   uploads: { note(auth: RequestAuth, name: string): void; owns(auth: RequestAuth, name: string): boolean };
@@ -288,7 +288,7 @@ export function createThreadRoutes(deps: ThreadRouteDeps): RouteHandler {
             ? await openMessageFolderEntry(href, folderEntry, roots, maxBytes)
             : kept ? await openMessageFile(kept, [KEPT_ORIGINALS_DIR], maxBytes) : await openMessageFile(href, roots, maxBytes);
           // Says the bytes are exactly what the person sent, so a comparison may call them that.
-          if (kept) res.setHeader("x-openmausbot-kept-original", "1");
+          if (kept) res.setHeader("x-sanremes-kept-original", "1");
         } catch (error) {
           const code = (error as { code?: unknown } | null)?.code;
           const status = (error as { status?: unknown } | null)?.status;
@@ -303,7 +303,7 @@ export function createThreadRoutes(deps: ThreadRouteDeps): RouteHandler {
             // Only a client that asks for listings gets one; older clients keep the 400.
             if (body?.listFolder !== true || folderEntry || code !== "directory") throw error;
             const listing = await listMessageFolder(href, roots);
-            res.setHeader("x-openmausbot-folder", "1");
+            res.setHeader("x-sanremes-folder", "1");
             res.setHeader("cache-control", "private, no-store");
             return json(res, 200, listing);
           }
@@ -317,7 +317,7 @@ export function createThreadRoutes(deps: ThreadRouteDeps): RouteHandler {
         }
         if (asksMediaLink) {
           const id = mediaLinks.issue({ threadId, messageId: message.id, path: href, ...(folderEntry ? { entry: folderEntry } : {}) }, auth);
-          res.setHeader("x-openmausbot-media", "1");
+          res.setHeader("x-sanremes-media", "1");
           res.setHeader("cache-control", "private, no-store");
           return json(res, 200, { url: `/api/threads/${encodeURIComponent(threadId)}/messages/${encodeURIComponent(message.id)}/file?media=${id}`, mime: file.mime, bytes: file.bytes });
         }

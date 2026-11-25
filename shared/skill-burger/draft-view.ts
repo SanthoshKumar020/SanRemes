@@ -118,9 +118,9 @@ export function dependents(steps: ReadonlyArray<{ id: string; needs: readonly st
   return [...out];
 }
 
-/** Renames an arg everywhere it is used: references and the OMB_ARG_ variables in commands. */
+/** Renames an arg everywhere it is used: references and the SANREMES_ARG_ variables in commands. */
 function renameArg(steps: WorkflowStep[], from: string, to: string): WorkflowStep[] {
-  const env = new RegExp(`OMB_ARG_${from.toUpperCase()}(?![A-Z0-9_])`, "g");
+  const env = new RegExp(`SANREMES_ARG_${from.toUpperCase()}(?![A-Z0-9_])`, "g");
   const walk = (node: unknown): unknown => {
     if (Array.isArray(node)) return node.map(walk);
     if (!node || typeof node !== "object") return node;
@@ -130,7 +130,7 @@ function renameArg(steps: WorkflowStep[], from: string, to: string): WorkflowSte
   };
   return steps.map((step) => {
     const renamed = walk(step) as WorkflowStep;
-    return renamed.kind === "shell" ? { ...renamed, run: renamed.run.replace(env, `OMB_ARG_${to.toUpperCase()}`) } : renamed;
+    return renamed.kind === "shell" ? { ...renamed, run: renamed.run.replace(env, `SANREMES_ARG_${to.toUpperCase()}`) } : renamed;
   });
 }
 
@@ -146,7 +146,7 @@ export function applyChoices(workflow: Workflow, choices: DraftChoices | undefin
     if (missing) return { error: `"${step.label}" uses what "${workflow.steps.find((one) => one.id === missing)!.label}" returns; leave both out or keep both.` };
   }
   const args: Workflow["args"] = {};
-  const used = (name: string) => JSON.stringify(steps).includes(`"$arg":"${name}"`) || JSON.stringify(steps).includes(`{${name}}`) || steps.some((step) => step.kind === "shell" && new RegExp(`OMB_ARG_${name.toUpperCase()}(?![A-Z0-9_])`).test(step.run));
+  const used = (name: string) => JSON.stringify(steps).includes(`"$arg":"${name}"`) || JSON.stringify(steps).includes(`{${name}}`) || steps.some((step) => step.kind === "shell" && new RegExp(`SANREMES_ARG_${name.toUpperCase()}(?![A-Z0-9_])`).test(step.run));
   for (const [name, arg] of Object.entries(workflow.args)) {
     const choice: { name?: string; value?: string } | undefined = choices.inputs?.[name];
     const to = choice?.name?.trim().toLowerCase().replace(/[^a-z0-9_]+/g, "_") || name;

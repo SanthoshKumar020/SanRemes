@@ -80,7 +80,7 @@ export interface UpdateSteps {
   installStandalone(release: StandaloneRelease, options: StandaloneInstallOptions): Promise<unknown>;
   handshake(command: string, args: readonly string[], env: NodeJS.ProcessEnv): Promise<string | null>;
   /** The version of the Cloud image's own copy of an npm package when that copy is the one that runs, with
-   * OMB_IMAGE_ENGINES=1 (image-engines.ts); else null. */
+   * SANREMES_IMAGE_ENGINES=1 (image-engines.ts); else null. */
   imageVersion(pkg: string, baseDir: string): string | null;
   /** After an npm copy changed: whether the image's copies or the data folder's go first on PATH. */
   orderPath(baseDir: string): void;

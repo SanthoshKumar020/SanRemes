@@ -88,7 +88,7 @@ async function serve({ attach, current = () => true, download, audience = () => 
   action?: (body: unknown) => Promise<unknown>;
   inputLog?: BrowserInputLog;
 } = {}): Promise<Fixture> {
-  const fixture = { origin: "", attachments: [], inputs: [], answers: [], pickerChecks: 0, resumes: [], people: [], sizes: [], opened: [], checked: [], desktops: [], dataDir: mkdtempSync(join(tmpdir(), "omb-browser-viewers-")) } as unknown as Fixture;
+  const fixture = { origin: "", attachments: [], inputs: [], answers: [], pickerChecks: 0, resumes: [], people: [], sizes: [], opened: [], checked: [], desktops: [], dataDir: mkdtempSync(join(tmpdir(), "sanremes-browser-viewers-")) } as unknown as Fixture;
   folders.push(fixture.dataDir);
   const viewer = { id: "viewer", input: async (message: unknown) => { fixture.inputs.push(message); }, close: async () => {} } as unknown as Viewer;
   const service = {
@@ -140,7 +140,7 @@ async function serve({ attach, current = () => true, download, audience = () => 
     audience: (_auth, threadId) => audience(threadId),
     browser: async (botId, opened) => {
       fixture.opened.push(opened);
-      return botId === "pepper" ? { botId, session: "bot-pepper", spec: { command: "omb-cdp", args: ["bot:pepper"], env: {} } } : { status: 404, error: "no such bot" };
+      return botId === "pepper" ? { botId, session: "bot-pepper", spec: { command: "sanremes-cdp", args: ["bot:pepper"], env: {} } } : { status: 404, error: "no such bot" };
     },
     authorize,
     current: (_botId, _session, _auth, checked) => { fixture.checked.push(checked); return current(); },
@@ -517,7 +517,7 @@ describe("the page's file picker and downloads", () => {
   });
 
   it("serves a finished download as an attachment, and nothing else", async () => {
-    const folder = mkdtempSync(join(tmpdir(), "omb-download-"));
+    const folder = mkdtempSync(join(tmpdir(), "sanremes-download-"));
     folders.push(folder);
     const path = join(folder, "Q3 report.csv");
     writeFileSync(path, "report contents");

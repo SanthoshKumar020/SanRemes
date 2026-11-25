@@ -51,9 +51,9 @@ function harness(label: string, serverEnv: Record<string, string>, instanceEnv: 
   };
   beforeAll(async () => {
     chmodSync(FAKE_CLAUDE, 0o755);
-    home = mkdtempSync(join(tmpdir(), `omb-hooks-${label}-`));
-    mkdirSync(join(home, ".openmausbot"), { recursive: true });
-    writeFileSync(join(home, ".openmausbot", "config.json"), JSON.stringify({
+    home = mkdtempSync(join(tmpdir(), `sanremes-hooks-${label}-`));
+    mkdirSync(join(home, ".sanremes"), { recursive: true });
+    writeFileSync(join(home, ".sanremes", "config.json"), JSON.stringify({
       instances: {
         claude: {
           driver: "claudeAgent",
@@ -71,7 +71,7 @@ function harness(label: string, serverEnv: Record<string, string>, instanceEnv: 
         },
       },
     }));
-    const env: NodeJS.ProcessEnv = { HOME: home, USERPROFILE: home, OMB_PORT: String(PORT), ...serverEnv };
+    const env: NodeJS.ProcessEnv = { HOME: home, USERPROFILE: home, SANREMES_PORT: String(PORT), ...serverEnv };
     if (process.env.PATH) env.PATH = process.env.PATH;
     child = spawn(process.execPath, [join(SERVER_DIR, "index.ts")], { cwd: join(SERVER_DIR, ".."), env, stdio: ["ignore", "pipe", "pipe"] });
     child.stderr!.on("data", (c) => (stderr += c));
@@ -120,7 +120,7 @@ posixOnly("engine hooks e2e (fake Claude honouring the settings hooks)", () => {
       expect(row.tool).not.toHaveProperty("outputPath");
     }
     expect(JSON.stringify(tools)).not.toContain(h.home());
-    const root = join(h.home(), ".openmausbot", "tool-results");
+    const root = join(h.home(), ".sanremes", "tool-results");
     const threads = readdirSync(root);
     expect(threads).toHaveLength(1);
     const dir = join(root, threads[0]!);
@@ -151,7 +151,7 @@ posixOnly("engine hooks e2e: full tool output that arrives after its turn ended"
     expect(bot.messages.find((m: Msg) => m.kind === "digest").digest?.hookCoverage).toBe("preview");
     const rows = async (): Promise<Msg[]> => (await h.getBot(bot.id)).messages.filter((m: Msg) => m.kind === "activity" && m.tool?.itemId);
     const tokenDir = createHash("sha256").update(`${bot.id}\0${bot.threadId}`).digest("hex").slice(0, 24);
-    const bearer = { authorization: `Bearer ${readFileSync(join(h.home(), ".openmausbot", "hook-tokens", tokenDir, "token"), "utf8").trim()}` };
+    const bearer = { authorization: `Bearer ${readFileSync(join(h.home(), ".sanremes", "hook-tokens", tokenDir, "token"), "utf8").trim()}` };
 
     // While the late outputs are still owed, the ended turn's bearer writes only into its own bot and conversation.
     const owed = (await rows()).find((m) => m.tool!.fullResult !== true)!;
@@ -163,7 +163,7 @@ posixOnly("engine hooks e2e: full tool output that arrives after its turn ended"
     const digest = (await h.getBot(bot.id)).messages.find((m: Msg) => m.kind === "digest");
     expect(digest.digest?.hookCoverage).toBe("full");
     expect(digest.text).not.toContain("from tool previews");
-    const root = join(h.home(), ".openmausbot", "tool-results");
+    const root = join(h.home(), ".sanremes", "tool-results");
     const spilled = readdirSync(join(root, readdirSync(root)[0]!)).map((name) => readFileSync(join(root, readdirSync(root)[0]!, name), "utf8"));
     expect(spilled.some((text) => text.includes(BIG.slice(0, 200)))).toBe(true);
     expect(spilled.some((text) => text.includes("forged"))).toBe(false);
@@ -206,7 +206,7 @@ posixOnly("engine hooks e2e: compaction", () => {
 });
 
 posixOnly("engine hooks e2e: a shell call that hit its time limit", () => {
-  const dumpDir = mkdtempSync(join(tmpdir(), "omb-hooks-timeout-dump-"));
+  const dumpDir = mkdtempSync(join(tmpdir(), "sanremes-hooks-timeout-dump-"));
   const dump = join(dumpDir, "turn.json");
   afterAll(() => removeTempDir(dumpDir));
   const h = harness("timeout", {}, {
@@ -233,8 +233,8 @@ posixOnly("engine hooks e2e: a shell call that hit its time limit", () => {
   }, 60_000);
 });
 
-posixOnly("engine hooks e2e with OMB_HOOKS=0", () => {
-  const h = harness("off", { OMB_HOOKS: "0" });
+posixOnly("engine hooks e2e with SANREMES_HOOKS=0", () => {
+  const h = harness("off", { SANREMES_HOOKS: "0" });
 
   it("registers nothing: rows keep only previews and the digest says so", async () => {
     const bot = await h.runTurn();

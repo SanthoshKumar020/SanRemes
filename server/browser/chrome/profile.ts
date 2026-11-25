@@ -62,7 +62,7 @@ export interface ProfileRecord {
   migratedFrom?: string;
 }
 
-const RECORD_FILE = "omb-profile.json";
+const RECORD_FILE = "sanremes-profile.json";
 
 export function readProfileRecord(dir: string): ProfileRecord | null {
   const record = readJson(join(dir, RECORD_FILE)) as ProfileRecord | null;

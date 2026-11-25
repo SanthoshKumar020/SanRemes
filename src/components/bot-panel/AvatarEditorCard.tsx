@@ -5,12 +5,12 @@ import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
 import { bodyName, colorName, festivalName } from "@/lib/mascot-names";
 import type { LocaleKey } from "@/locales";
-import { colorSwatch, MAUS_COLOR_LABEL, MAUS_COLOR_NAMES, PICKABLE_STATES, type MausState } from "@/lib/mascot";
+import { colorSwatch, MAUS_COLOR_LABEL, MAUS_COLOR_NAMES, PICKABLE_STATES, type SanRemesState } from "@/lib/mascot";
 import { type Bot } from "@/state/store";
 import { mayRename, useTeamPeople } from "@/state/team-people";
 import { EVERYDAY_BODY_IDS, FESTIVAL_IDS, FESTIVALS, isCarvedBody, type BotBodyId } from "../../../shared/bot-body";
 import { useFestivalDress, wornBody } from "@/lib/festival-dress";
-import { MausAvatar } from "../Avatar";
+import { SanRemesAvatar } from "../Avatar";
 import { AvatarImageGenerator } from "../AvatarImageGenerator";
 import { AvatarFraming, OrganizationAvatarIcons, RESET_MASCOT_PATCH, useAvatarImage, type AvatarPatch } from "../avatar-editing";
 import { Segmented } from "./rows";
@@ -35,7 +35,7 @@ const CROP_KEY: Record<(typeof IMAGE_CROPS)[number], LocaleKey> = {
   square: "botPanel.avatar.square",
 };
 
-const FACE_KEY: Partial<Record<MausState, LocaleKey>> = {
+const FACE_KEY: Partial<Record<SanRemesState, LocaleKey>> = {
   idle: "botPanel.face.idle",
   happy: "botPanel.face.happy",
   curious: "botPanel.face.curious",
@@ -48,14 +48,14 @@ const FACE_KEY: Partial<Record<MausState, LocaleKey>> = {
   proud: "botPanel.face.proud",
 };
 
-const faceLabel = (state: MausState) => {
+const faceLabel = (state: SanRemesState) => {
   const key = FACE_KEY[state];
   return key ? t(key) : state;
 };
 
 export function AvatarEditorCard({ bot, activeState, onPatch, onClose }: {
   bot: Bot;
-  activeState: MausState;
+  activeState: SanRemesState;
   onPatch: (patch: AvatarPatch) => void;
   onClose: () => void;
 }) {
@@ -92,7 +92,7 @@ export function AvatarEditorCard({ bot, activeState, onPatch, onClose }: {
         !showsImage && body === id ? "bg-ink/[0.08] ring-[1.5px] ring-inset ring-ink/25" : "hover:bg-ink/[0.05]",
       )}
     >
-      <MausAvatar color={bot.color} faceColor={bot.mascotFaceColor} material={bot.mascotMaterial} bodyColor={bot.mascotBodyColor} bodyId={id} size={40} animated={false} trackPointer={false} />
+      <SanRemesAvatar color={bot.color} faceColor={bot.mascotFaceColor} material={bot.mascotMaterial} bodyColor={bot.mascotBodyColor} bodyId={id} size={40} animated={false} trackPointer={false} />
     </button>
   );
 

@@ -30,7 +30,7 @@ describe("Command Code ACP driver", () => {
 
   beforeEach(() => {
     ensureDirs();
-    scratch = mkdtempSync(join(tmpdir(), "omb-command-code-contract-"));
+    scratch = mkdtempSync(join(tmpdir(), "sanremes-command-code-contract-"));
   });
   afterEach(async () => {
     recorder?.stop();
@@ -107,12 +107,12 @@ describe("Command Code ACP driver", () => {
       return join(projects, folder, name);
     };
     // The folder names are command-code 1.88.4's slugs of the discovery's temporary cwd and of a real project.
-    const ours = file("private-var-folders-t-omb-acp-models-1kng-q5", "c7b01536.meta.json");
-    const sibling = file("private-var-folders-t-omb-acp-models-zz", "other.meta.json");
+    const ours = file("private-var-folders-t-sanremes-acp-models-1kng-q5", "c7b01536.meta.json");
+    const sibling = file("private-var-folders-t-sanremes-acp-models-zz", "other.meta.json");
     const project = file("users-someone-code-app", "c7b01536.meta.json");
     await forgetCommandCodeDiscoverySession({ sessionId: "c7b01536", env: { [homeVar]: home } });
     expect(existsSync(ours)).toBe(false);
-    expect(existsSync(join(projects, "private-var-folders-t-omb-acp-models-1kng-q5"))).toBe(false);
+    expect(existsSync(join(projects, "private-var-folders-t-sanremes-acp-models-1kng-q5"))).toBe(false);
     expect([existsSync(sibling), existsSync(project)]).toEqual([true, true]);
     await forgetCommandCodeDiscoverySession({ sessionId: "../../x", env: { [homeVar]: home } });
     await forgetCommandCodeDiscoverySession({ sessionId: "c7b01536", env: { [homeVar]: join(scratch, "no-home") } });
@@ -151,7 +151,7 @@ describe("Command Code ACP driver", () => {
     const agents = (token: string) => ({
       command: process.execPath,
       args: ["/app/dist-server/agents-proxy.js"],
-      env: { OMB_HARNESS_URL: "http://127.0.0.1:8799", OMB_COMMS_TOKEN: token, OMB_BOT_ID: "sprout", OMB_THREAD_ID: "command-code-bearer" },
+      env: { SANREMES_HARNESS_URL: "http://127.0.0.1:8799", SANREMES_COMMS_TOKEN: token, SANREMES_BOT_ID: "sprout", SANREMES_THREAD_ID: "command-code-bearer" },
     });
     const turn = async (text: string, token: string, resume: boolean) => {
       const { turnId } = await instance.adapter.sendTurn({

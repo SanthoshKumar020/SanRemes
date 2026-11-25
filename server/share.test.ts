@@ -20,7 +20,7 @@ const KEY = "sk-ant-api03-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 const skillText = "---\nname: triage\ndescription: Sort the inbox.\n---\n\n# Triage\n\nNewest first.\n";
 const folders: string[] = [];
 const scratch = () => {
-  const dir = mkdtempSync(join(tmpdir(), "omb-share-test-"));
+  const dir = mkdtempSync(join(tmpdir(), "sanremes-share-test-"));
   folders.push(dir);
   return dir;
 };
@@ -35,7 +35,7 @@ function bot(overrides: Partial<BotRecord> = {}): BotRecord {
   } as BotRecord;
 }
 
-const routine = { id: "r1", name: "Morning sweep", botId: "bot-1", prompt: "Sweep the inbox.", runOn: "maus", enabled: true,
+const routine = { id: "r1", name: "Morning sweep", botId: "bot-1", prompt: "Sweep the inbox.", runOn: "sanremes", enabled: true,
   schedule: { type: "daily", time: "09:00", weekdays: [1, 2, 3, 4, 5] }, durationMinutes: 30 } as unknown as Routine;
 
 function host(options: { submit?: (submission: unknown) => Promise<CommunityResult>; signedIn?: boolean; bots?: BotRecord[]; picture?: (bot: BotRecord) => string | undefined; brief?: string } = {}) {
@@ -77,14 +77,14 @@ describe("making a template", () => {
     const department = share.export({ scope: "department", section: "Ops", bots: [bot()] }, [routine]);
     expect(department.card.tagline).toBe("");
     const departmentDetails = share.get(department.card.id).details;
-    expect(departmentDetails.summary).toMatch(/^Shared from MausBot\. Its bots, skills, group chats and routines arrive/);
+    expect(departmentDetails.summary).toMatch(/^Shared from SanRemes\. Its bots, skills, group chats and routines arrive/);
     expect(departmentDetails.brief).toContain("49 per seat");
     const quiet = host({ bots: [bot({ title: undefined, description: undefined })] });
     const lone = quiet.share.export({ scope: "bot", bot: bot({ title: undefined, description: undefined }) }, []);
     expect(lone.card.tagline).toBe("");
     const loneSummary = quiet.share.get(lone.card.id).details.summary ?? "";
-    expect(loneSummary).toMatch(/^Shared from MausBot\. The bot arrives as a new copy/);
-    expect(loneSummary).not.toMatch(/group chats|OpenMausBot/);
+    expect(loneSummary).toMatch(/^Shared from SanRemes\. The bot arrives as a new copy/);
+    expect(loneSummary).not.toMatch(/group chats|SanRemes/);
     const titled = share.export({ scope: "bot", bot: bot() }, []);
     expect(titled.card.tagline).toBe("Inbox helper");
     expect(share.get(titled.card.id).details.summary).toBe("Keeps the inbox tidy.");
@@ -146,9 +146,9 @@ describe("publishing", () => {
     const publisher = createCommunityPublisher({ access: () => home, now: () => 1_792_670_400_000,
       fetch: (async (_url: string, init: RequestInit) => { headers = init.headers as Record<string, string>; body = String(init.body); return answer; }) as typeof fetch });
     expect(await publisher.submit({ slug: "a", files: { "bot.md": "x" } })).toEqual({ ok: false, reason: "failed", message: "Someone else already shares a template by that name." });
-    const expected = pagesHomeSignature(home.secret, home.machineId, headers["x-omb-cloud-timestamp"]!, headers["x-omb-cloud-nonce"]!, body, "omb-community-v1");
-    expect(headers["x-omb-cloud-signature"]).toBe(`v1=${expected}`);
-    expect(expected).not.toBe(pagesHomeSignature(home.secret, home.machineId, headers["x-omb-cloud-timestamp"]!, headers["x-omb-cloud-nonce"]!, body));
+    const expected = pagesHomeSignature(home.secret, home.machineId, headers["x-sanremes-cloud-timestamp"]!, headers["x-sanremes-cloud-nonce"]!, body, "sanremes-community-v1");
+    expect(headers["x-sanremes-cloud-signature"]).toBe(`v1=${expected}`);
+    expect(expected).not.toBe(pagesHomeSignature(home.secret, home.machineId, headers["x-sanremes-cloud-timestamp"]!, headers["x-sanremes-cloud-nonce"]!, body));
     answer = Response.json({ prUrl: "https://github.com/milind-soni/openmausbot-teams/pull/2", link: "https://github.com/milind-soni/openmausbot-teams/tree/b/teams/a", updated: true });
     expect(await publisher.submit({ slug: "a", files: { "bot.md": "x" } })).toMatchObject({ ok: true, prUrl: "https://github.com/milind-soni/openmausbot-teams/pull/2" });
   });

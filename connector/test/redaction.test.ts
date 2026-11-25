@@ -12,7 +12,7 @@ describe("connector secret redaction", () => {
   let dir: string;
 
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), "omb-connector-redaction-"));
+    dir = mkdtempSync(join(tmpdir(), "sanremes-connector-redaction-"));
     clearSecrets();
   });
 
@@ -28,9 +28,9 @@ describe("connector secret redaction", () => {
     // First process run: saves home environment with secrets
     const firstState = new StateStore(dir);
     firstState.saveHomeEnv({
-      OMB_CLOUD_IMAGE: "example/image:v1",
-      OMB_CLOUD_BOOTSTRAP_SECRET: sentinelSecret,
-      OMB_AGENT_TOKEN: sentinelToken,
+      SANREMES_CLOUD_IMAGE: "example/image:v1",
+      SANREMES_CLOUD_BOOTSTRAP_SECRET: sentinelSecret,
+      SANREMES_AGENT_TOKEN: sentinelToken,
     });
 
     // Simulate restart: clear in-memory secrets registry
@@ -54,7 +54,7 @@ describe("connector secret redaction", () => {
     const complexSecret = "SECRET_WITH/SLASH+PLUS&AMP=123";
     const state = new StateStore(dir);
     state.saveHomeEnv({
-      OMB_TEST_SECRET: complexSecret,
+      SANREMES_TEST_SECRET: complexSecret,
     });
 
     // Raw
@@ -82,7 +82,7 @@ describe("connector secret redaction", () => {
   it("redactError sanitizes error message, stack, and strips raw config", () => {
     const secret = "SECRET_KEY_FOR_DOCKER_CONTAINER_12345";
     const state = new StateStore(dir);
-    state.saveHomeEnv({ OMB_CLOUD_BOOTSTRAP_SECRET: secret });
+    state.saveHomeEnv({ SANREMES_CLOUD_BOOTSTRAP_SECRET: secret });
 
     const err = new Error(`Connection failed with secret=${secret}`);
     (err as unknown as { config: { secretKey: string } }).config = { secretKey: secret };
@@ -96,7 +96,7 @@ describe("connector secret redaction", () => {
   it("redacts secrets at the Agent.reply boundary when sending error replies", () => {
     const secret = "SENTINEL_OUTPUT_SECRET_54321";
     const state = new StateStore(dir);
-    state.saveHomeEnv({ OMB_CLOUD_BOOTSTRAP_SECRET: secret });
+    state.saveHomeEnv({ SANREMES_CLOUD_BOOTSTRAP_SECRET: secret });
 
     const mockSocket: Socket = {
       readyState: 1,
@@ -155,7 +155,7 @@ describe("connector secret redaction", () => {
   it("covers update/rollback error paths when errors carry secrets", () => {
     const rollbackSecret = "SENTINEL_ROLLBACK_SECRET_99999";
     const state = new StateStore(dir);
-    state.saveHomeEnv({ OMB_CLOUD_BOOTSTRAP_SECRET: rollbackSecret });
+    state.saveHomeEnv({ SANREMES_CLOUD_BOOTSTRAP_SECRET: rollbackSecret });
 
     const error = new Error(`Docker error during rollback with secret=${rollbackSecret}`);
     const logged = errorText(error);

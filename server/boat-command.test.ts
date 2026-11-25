@@ -61,8 +61,8 @@ beforeAll(async () => {
     setTimeout(() => send(res, 200, { exitCode, stdout: started.stdout, stderr: "" }), ms);
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
-  vi.stubEnv("OMB_BOAT_API", `http://127.0.0.1:${(server.address() as { port: number }).port}`);
-  vi.stubEnv("OMB_CLOUD_BOAT_TOKEN", undefined);
+  vi.stubEnv("SANREMES_BOAT_API", `http://127.0.0.1:${(server.address() as { port: number }).port}`);
+  vi.stubEnv("SANREMES_CLOUD_BOAT_TOKEN", undefined);
 });
 afterAll(async () => { vi.unstubAllEnvs(); server.closeAllConnections(); await new Promise<void>((resolve) => server.close(() => resolve())); });
 
@@ -108,7 +108,7 @@ describe("the provider's limits on a synchronous command", () => {
 
 describe("the commands a bot's exec calls left running", () => {
   const start = async (ms: number) => {
-    const response = await fetch(`${process.env.OMB_BOAT_API}/sandboxes/${BOX}/commands`, { method: "POST", body: JSON.stringify({ command: `serve ms:${ms}`, detached: true }) });
+    const response = await fetch(`${process.env.SANREMES_BOAT_API}/sandboxes/${BOX}/commands`, { method: "POST", body: JSON.stringify({ command: `serve ms:${ms}`, detached: true }) });
     return (await response.json() as { processId: number }).processId;
   };
 

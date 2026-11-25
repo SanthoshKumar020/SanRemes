@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { request } from "../scripts/mcp-server.ts";
 import { coordinateMessageMax } from "./too-long.ts";
 
@@ -15,7 +15,7 @@ const told = (turn: any): string => {
 
 async function fixture(test: (f: any) => Promise<void>) {
   const session = await launchVerificationServer({ ...process.env }, undefined, undefined, undefined, undefined, { scripted: true });
-  const cli = (...args: string[]) => runControlOmb(args, { env: { OPENMAUSBOT_URL: session.info.url } }) as Promise<any>;
+  const cli = (...args: string[]) => runControlOmb(args, { env: { OPENSANREMES_URL: session.info.url } }) as Promise<any>;
   const api = (path: string, options: RequestInit = {}) => request(path, options, session.info.url) as Promise<any>;
   try {
     const worker = (await cli("new-bot", "--name", "Nib")).bot;

@@ -136,7 +136,7 @@ describe("switching a bot to a model with no terminal says so once, only where i
     const notices: Array<[string, string]> = [];
     const h = host({
       engine: (selection) => engines[selection.instanceId], bot: () => ({ name: "Ledger" }), noComputer: () => true, lentTerminal: () => false,
-      routines: () => [{ runOn: "maus" }, { runOn: "cloud" }, { runOn: "maus", modelSelection: { instanceId: "claude" } }, {}],
+      routines: () => [{ runOn: "sanremes" }, { runOn: "cloud" }, { runOn: "sanremes", modelSelection: { instanceId: "claude" } }, {}],
       notice: (threadId, text) => notices.push([threadId, text]), ...over,
     });
     return { h, notices };

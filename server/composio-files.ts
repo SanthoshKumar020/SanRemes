@@ -62,10 +62,10 @@ export async function requestFileUpload(cfg: AppConfig, request: FileUploadReque
   const answer = apiKey ? projectAnswerSchema.parse(body) : serviceAnswerSchema.parse(body);
   const link = "url" in answer ? answer.url : answer.new_presigned_url ?? answer.newPresignedUrl;
   // Composio's storage; or, from a service on this computer, a link on this computer; or, with the project key, a link
-  // on the origin of an explicitly named Composio backend (OMB_COMPOSIO_API), as trustedSessionMcpUrl allows its Sessions.
+  // on the origin of an explicitly named Composio backend (SANREMES_COMPOSIO_API), as trustedSessionMcpUrl allows its Sessions.
   const url = composioUploadLink(link)
     ?? (broker && loopback(broker.url) && loopback(link) ? new URL(link!) : null)
-    ?? (apiKey && sameOrigin(link, process.env.OMB_COMPOSIO_API) && (link!.startsWith("https:") || loopback(link)) ? new URL(link!) : null);
+    ?? (apiKey && sameOrigin(link, process.env.SANREMES_COMPOSIO_API) && (link!.startsWith("https:") || loopback(link)) ? new URL(link!) : null);
   if (!url) throw new Error(`Composio returned an upload link that is not on its storage (${hostOf(link)})`);
   return { key: answer.key, url: url.toString() };
 }

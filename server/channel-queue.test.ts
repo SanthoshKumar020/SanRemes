@@ -81,7 +81,7 @@ describe("channel queue batches", () => {
 
 describe("channel queue", () => {
   it("keeps readable citation prompts byte-for-byte through room queue and steer hold", () => {
-    const prompt = '<!--omb-citation-v1:fixture-->\n> Quoted message:\n> multiline 🐭\n>   code\n\nComment:\nCheck it';
+    const prompt = '<!--sanremes-citation-v1:fixture-->\n> Quoted message:\n> multiline 🐭\n>   code\n\nComment:\nCheck it';
     const queued = queueChannelMessage("group-citation", "thread-citation", prompt);
     const held = holdChannelQueue("group-citation", "thread-citation", queued.id)!;
     expect(held.items[0].text).toBe(prompt);

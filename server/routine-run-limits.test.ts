@@ -11,15 +11,15 @@ describe("the limit a routine run works under", () => {
   });
 
   it("is what the environment names, in whole hours", () => {
-    expect(routineRunLimits({ OMB_ROUTINE_RUN_LIMIT_HOURS: "6" })).toEqual({ runMinutes: 360, goalMinutes: 720 });
-    expect(routineRunLimits({ OMB_ROUTINE_RUN_LIMIT_HOURS: "6", OMB_ROUTINE_GOAL_RUN_LIMIT_HOURS: "18" })).toEqual({ runMinutes: 360, goalMinutes: 1080 });
-    expect(routineRunLimits({ OMB_ROUTINE_RUN_LIMIT_HOURS: " 8 " })).toEqual({ runMinutes: 480, goalMinutes: 720 });
+    expect(routineRunLimits({ SANREMES_ROUTINE_RUN_LIMIT_HOURS: "6" })).toEqual({ runMinutes: 360, goalMinutes: 720 });
+    expect(routineRunLimits({ SANREMES_ROUTINE_RUN_LIMIT_HOURS: "6", SANREMES_ROUTINE_GOAL_RUN_LIMIT_HOURS: "18" })).toEqual({ runMinutes: 360, goalMinutes: 1080 });
+    expect(routineRunLimits({ SANREMES_ROUTINE_RUN_LIMIT_HOURS: " 8 " })).toEqual({ runMinutes: 480, goalMinutes: 720 });
   });
 
   it("keeps the defaults for anything that is not a whole number of hours in range", () => {
     for (const raw of ["0", "-2", "2.5", "25", "six", "", " "]) {
-      expect(routineRunLimits({ OMB_ROUTINE_RUN_LIMIT_HOURS: raw })).toEqual({ runMinutes: 180, goalMinutes: 720 });
-      expect(routineRunLimits({ OMB_ROUTINE_GOAL_RUN_LIMIT_HOURS: raw })).toEqual({ runMinutes: 180, goalMinutes: 720 });
+      expect(routineRunLimits({ SANREMES_ROUTINE_RUN_LIMIT_HOURS: raw })).toEqual({ runMinutes: 180, goalMinutes: 720 });
+      expect(routineRunLimits({ SANREMES_ROUTINE_GOAL_RUN_LIMIT_HOURS: raw })).toEqual({ runMinutes: 180, goalMinutes: 720 });
     }
   });
 });

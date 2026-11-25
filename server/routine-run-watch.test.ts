@@ -5,7 +5,7 @@ import { RunWatch, TURN_GONE_MS } from "./routine-run-watch.ts";
 import type { RoutineRun } from "./routines.ts";
 
 const run = (id: string, more: Partial<RoutineRun> = {}): RoutineRun => ({
-  id, routineId: id, routineName: "Check", prompt: "Check", target: "bot", botId: "bot-1", runOn: "maus",
+  id, routineId: id, routineName: "Check", prompt: "Check", target: "bot", botId: "bot-1", runOn: "sanremes",
   scheduledFor: 1, createdAt: 1, startedAt: 1, threadId: `thread-${id}`, status: "running", manual: false, ...more,
 });
 

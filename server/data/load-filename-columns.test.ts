@@ -9,7 +9,7 @@ import { createDataEngine, quoteIdentifier } from "./engine.ts";
 import { DataSheetStore } from "./sheet.ts";
 import { loadData, quoteLiteral, type DataContext } from "./tools.ts";
 
-const root = mkdtempSync(join(tmpdir(), "omb-load-filenames-"));
+const root = mkdtempSync(join(tmpdir(), "sanremes-load-filenames-"));
 const engine = createDataEngine({ botFolder: (id) => join(root, "bots", id), dataDir: join(root, "data") });
 const connection = "bot" as const;
 

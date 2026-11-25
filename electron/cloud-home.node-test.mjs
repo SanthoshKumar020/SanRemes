@@ -12,7 +12,7 @@ import nativeText from "./native-text.cjs";
 import { pairingPageUrl, parseServerInput } from "./server-address.mjs";
 
 const NOW = 1_800_000_000_000;
-const origin = "https://omb-u-1a2b3c4d5e6f.fly.dev";
+const origin = "https://sanremes-u-1a2b3c4d5e6f.fly.dev";
 const code = "ABCD-EFGH-JK23";
 
 test("the Admin says whether this account may move to its Cloud, and when an ended Cloud it still holds is deleted", () => {
@@ -47,8 +47,8 @@ test("a Cloud whose plan sleeps carries the Admin's power word; a malformed one 
 
 test("a malformed summary is no machine at all", () => {
   for (const input of [null, undefined, "ready", [], { state: "running", origin }, { state: "ready" }, { state: "ready", origin: null },
-    { state: "ready", origin: "http://omb-u-1a2b3c4d5e6f.fly.dev" }, { state: "ready", origin: `${origin}/pair` },
-    { state: "ready", origin: "https://user:pw@omb-u-1a2b3c4d5e6f.fly.dev" }, { state: "ready", origin: "https://localhost" },
+    { state: "ready", origin: "http://sanremes-u-1a2b3c4d5e6f.fly.dev" }, { state: "ready", origin: `${origin}/pair` },
+    { state: "ready", origin: "https://user:pw@sanremes-u-1a2b3c4d5e6f.fly.dev" }, { state: "ready", origin: "https://localhost" },
     { state: "stopped", origin: "javascript:alert(1)" }, { state: "toString", origin }, { state: "__proto__", origin },
     { state: "allowance_used", origin }]) {
     assert.equal(parseCloudSummary(input), null, JSON.stringify(input));
@@ -58,7 +58,7 @@ test("a malformed summary is no machine at all", () => {
 test("a pairing grant is accepted only for the machine it was asked for, fresh and well formed", () => {
   const grant = { cloudContractVersion: 1, origin, code, pairingUrl: `${origin}/pair#code=${code}`, expiresAt: NOW + 300_000, credential: `omb_pair_${"c".repeat(43)}` };
   assert.deepEqual(parsePairingGrant(grant, origin, NOW), { origin, code, expiresAt: NOW + 300_000 });
-  for (const bad of [{ ...grant, origin: "https://omb-u-ffffffffffff.fly.dev" }, { ...grant, cloudContractVersion: 2 }, { ...grant, code: "abcd-efgh-jk23" },
+  for (const bad of [{ ...grant, origin: "https://sanremes-u-ffffffffffff.fly.dev" }, { ...grant, cloudContractVersion: 2 }, { ...grant, code: "abcd-efgh-jk23" },
     { ...grant, code: "ABCD-EFGH-JK01" }, { ...grant, code: `${code}&x=1` }, { ...grant, expiresAt: NOW }, { ...grant, expiresAt: NOW + 3_600_000 }, null]) {
     assert.equal(parsePairingGrant(bad, origin, NOW), null, JSON.stringify(bad));
   }
@@ -166,7 +166,7 @@ test("a grant for another machine or an Admin refusal never connects", async t =
   const f = await admin(t);
   f.cloud = { state: "ready", origin, pairingAvailable: true };
   await f.connect();
-  f.pairing = { origin: "https://omb-u-ffffffffffff.fly.dev", code, expiresAt: NOW + 300_000 };
+  f.pairing = { origin: "https://sanremes-u-ffffffffffff.fly.dev", code, expiresAt: NOW + 300_000 };
   await assert.rejects(f.client.pairHome(), /Invalid Cloud pairing response/);
   f.pairingStatus = 409;
   await assert.rejects(f.client.pairHome(), error => error.status === 409);
@@ -386,7 +386,7 @@ test("a malformed offer is no offer, and a malformed plan or extra is left out, 
 });
 
 test("the public offer is the catalog, with the free trial for new customers when the Admin says so", () => {
-  const offer = parsePublicOffer({ name: "OpenMausBot", surface: "cloud", plans: catalog(), trial: { days: 7, holdDays: 3, creditUsd: 5, reminderDays: 2 }, refundDays: 14 });
+  const offer = parsePublicOffer({ name: "SanRemes", surface: "cloud", plans: catalog(), trial: { days: 7, holdDays: 3, creditUsd: 5, reminderDays: 2 }, refundDays: 14 });
   assert.deepEqual(offer.plans.map(plan => plan.trialDays), [7, 7, 7]);
   assert.deepEqual([offer.recommended, offer.creditUsd, offer.reminderDays, offer.refundDays, offer.checkout], ["pro", 5, 2, 14, undefined]);
   const today = parsePublicOffer({ plans: catalog() });
@@ -458,7 +458,7 @@ test("the Server menu opens My Cloud through the Cloud's own connection, never a
   await context.switchEnvironment("vps");
   assert.deepEqual(calls, ["remember:null", "look:vps"], "a server that doesn't answer: the window stays where it is");
   answers = true;
-  const acme = { id: "acme", name: "Acme", origin: "https://omb-u-acme.fly.dev", team: { id: "team-acme", role: "member" } };
+  const acme = { id: "acme", name: "Acme", origin: "https://sanremes-u-acme.fly.dev", team: { id: "team-acme", role: "member" } };
   context.environmentsState = { environments: [entry, other, acme], activeId: environments.LOCAL_ID };
   calls.length = 0; await context.switchEnvironment("acme");
   assert.deepEqual(calls, ['home:{"place":{"team":"team-acme","name":"Acme"}}'], "a team opens through the home window's team pairing, never a plain navigation");

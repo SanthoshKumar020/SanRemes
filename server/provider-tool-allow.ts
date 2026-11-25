@@ -6,7 +6,7 @@ import { isOutboundTool } from "../shared/outbound.ts";
 /** The app's own bridges: their launch carries a token for one turn, so a grant names the bridge instead. */
 const BUILTIN_SERVERS: ReadonlySet<string> = new Set(["composio", "own_apps", "agents", "browser", "data", "device", "email", "dweb"]);
 /** Tools that drive a computer or a phone: each use is asked, never remembered. */
-const CONTROLS_A_DEVICE: ReadonlySet<string> = new Set(["computer", "phone", "openmausbot_phone"]);
+const CONTROLS_A_DEVICE: ReadonlySet<string> = new Set(["computer", "phone", "sanremes_phone"]);
 const CONTROL_TOOLS: ReadonlySet<string> = new Set(["agents:shared_computer"]);
 
 /** What a grant on `server` is tied to: the server as configured, a built-in bridge by its name, or nothing for a server

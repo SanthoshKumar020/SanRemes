@@ -12,7 +12,7 @@ const NOW = Date.parse("2026-12-01T10:00:00Z");
 const scratch: string[] = [];
 afterEach(() => { for (const dir of scratch.splice(0)) rmSync(dir, { recursive: true, force: true }); });
 
-const dataDir = () => { const dir = mkdtempSync(join(tmpdir(), "omb-release-notes-")); scratch.push(dir); return dir; };
+const dataDir = () => { const dir = mkdtempSync(join(tmpdir(), "sanremes-release-notes-")); scratch.push(dir); return dir; };
 const release = (version: string, items: string[] = ["**Faster.** Much."]) => ({ version, date: "2026-11-30T00:00:00Z", sections: [{ title: "Fixes", items }] });
 const feed = (updatedAt: string, releases: unknown[]) => ({ version: 1, updatedAt, releases }) as ReleaseFeed;
 const answer = (body: unknown, init: ResponseInit = { status: 200 }) => new Response(typeof body === "string" ? body : JSON.stringify(body), init);

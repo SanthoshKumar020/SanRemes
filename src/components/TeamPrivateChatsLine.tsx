@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Lock, UserRound, Users } from "lucide-react";
 import { t } from "@/lib/i18n";
 
-const SEEN_KEY = (teamId: string) => `omb.team-private-chats.${teamId}`;
+const SEEN_KEY = (teamId: string) => `sanremes.team-private-chats.${teamId}`;
 
 /** Whether this team's sentence is still to be said here; saying it marks it said, so it shows in one private chat only. */
 export function teamPrivateChatsLineDue(teamId: string, storage: Pick<Storage, "getItem" | "setItem"> | null): boolean {
@@ -44,7 +44,7 @@ function ChatHeadAudience({ icon, label, ...data }: { icon: ReactNode; label: st
   </span>;
 }
 
-/** In a member's own MausBot's chats: that member's helper, which other members never see. */
+/** In a member's own SanRemes's chats: that member's helper, which other members never see. */
 export function TeamOwnHelperHeader() {
   return <ChatHeadAudience icon={<UserRound size={12} aria-hidden="true" className="shrink-0" />} label={t("team.ownHelperHeader")} data-chathead-own-helper="" />;
 }

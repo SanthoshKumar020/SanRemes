@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { request } from "../scripts/mcp-server.ts";
 import { rebuiltSessionNotice } from "./resume-recovery.ts";
 import { removeTempDir } from "./testing/cleanup.ts";
@@ -18,18 +18,18 @@ const told = (turn: any): string => {
   return `${turn.system}\n${typeof content === "string" ? content : JSON.stringify(content ?? "")}`;
 };
 
-/** With OMB_TEST_DESKTOP_OWNER_TOKEN it runs as the desktop app runs it, every change carrying the app's owner capability. */
+/** With SANREMES_TEST_DESKTOP_OWNER_TOKEN it runs as the desktop app runs it, every change carrying the app's owner capability. */
 async function fixture(test: (f: any) => Promise<void>, fakeEnv: NodeJS.ProcessEnv = {}) {
-  const desktopOwner = fakeEnv.OMB_TEST_DESKTOP_OWNER_TOKEN;
+  const desktopOwner = fakeEnv.SANREMES_TEST_DESKTOP_OWNER_TOKEN;
   const realFetch = globalThis.fetch;
   if (desktopOwner) globalThis.fetch = (input, init = {}) => realFetch(input, { ...init,
-    headers: { ...Object.fromEntries(new Headers(init.headers)), "x-openmausbot-desktop-owner": desktopOwner } });
+    headers: { ...Object.fromEntries(new Headers(init.headers)), "x-sanremes-desktop-owner": desktopOwner } });
   try { await fixtureSession(test, fakeEnv); } finally { globalThis.fetch = realFetch; }
 }
 
 async function fixtureSession(test: (f: any) => Promise<void>, fakeEnv: NodeJS.ProcessEnv) {
   const session = await launchVerificationServer({ ...process.env, ...fakeEnv }, undefined, undefined, undefined, undefined, { scripted: true });
-  const cli = (...args: string[]) => runControlOmb(args, { env: { OPENMAUSBOT_URL: session.info.url } }) as Promise<any>;
+  const cli = (...args: string[]) => runControlOmb(args, { env: { OPENSANREMES_URL: session.info.url } }) as Promise<any>;
   const api = (path: string, body?: unknown, method = "POST") => request(path, body === undefined ? {} : { method, body: JSON.stringify(body) }, session.info.url) as Promise<any>;
   try {
     const chief = (await cli("new-bot", "--name", "Clive", "--section", "Leadership")).bot;
@@ -117,7 +117,7 @@ it("marks a failed one-way send so restart recovery cannot duplicate its notice"
   // The failed send reports an incident to Clive, the lead's Chief; answering it must not send the task again.
   f.plan[f.chief.id] = { steps: [{ arguments: {
     bot_ids: [f.lead.id], message: "Try the task", thread: "new", reply: "none",
-  } }], reply: "Sent", byPrompt: [{ promptIncludes: "[From OpenMausBot · incident report", plan: { reply: "Noted the failed send" } }] };
+  } }], reply: "Sent", byPrompt: [{ promptIncludes: "[From SanRemes · incident report", plan: { reply: "Noted the failed send" } }] };
   f.plan[f.lead.id] = { fail: true };
   await f.start();
   expect((await f.wait()).status).toBe("settled");
@@ -598,7 +598,7 @@ it("does not treat self-opened work or an abandoned human branch as new human au
 }), 45_000);
 
 it("returns a nested coordinated result after Claude retries a transient provider exit", async () => {
-  const scratch = mkdtempSync(join(tmpdir(), "omb-coordination-retry-"));
+  const scratch = mkdtempSync(join(tmpdir(), "sanremes-coordination-retry-"));
   try {
     await fixture(async f => {
       await f.start();
@@ -694,10 +694,10 @@ it("continues one recipient thread for every follow-up from the same conversatio
 
 it.each<[string, NodeJS.ProcessEnv]>([
   ["a headless server", {}],
-  ["the desktop app", { OMB_TEST_DESKTOP_OWNER_TOKEN: randomBytes(32).toString("base64url") }],
+  ["the desktop app", { SANREMES_TEST_DESKTOP_OWNER_TOKEN: randomBytes(32).toString("base64url") }],
 ])("on %s, hands a follow-up sent while the teammate still works to its running turn, and one result comes back", (_where, env) => fixture(async f => {
-  expect((await f.api("/.well-known/openmausbot/environment", undefined, "GET")).capabilities.selfUpdate)
-    .toBe(env.OMB_TEST_DESKTOP_OWNER_TOKEN ? "desktop-managed" : "operator");
+  expect((await f.api("/.well-known/sanremes/environment", undefined, "GET")).capabilities.selfUpdate)
+    .toBe(env.SANREMES_TEST_DESKTOP_OWNER_TOKEN ? "desktop-managed" : "operator");
   const gate = join(f.session.info.dataDir, "first-request.gate");
   f.plan[f.lead.id] = { turns: [{ gateFile: gate, reply: "Export implemented, with the header row" }] };
   f.plan[f.chief.id] = { turns: [
@@ -1227,7 +1227,7 @@ it("tells the Chief a teammate's turn stopped because its engine's settings chan
 
 // Each title reply is keyed to the job it names, so a thread named from the wrong message would show it.
 const titledHandoffs = () => {
-  const routes = join(mkdtempSync(join(tmpdir(), "omb-handed-title-")), "routes.json");
+  const routes = join(mkdtempSync(join(tmpdir(), "sanremes-handed-title-")), "routes.json");
   writeFileSync(routes, JSON.stringify({
     "Message:\nImplement the CSV export": "CSV export build",
     "Message:\nAdd the header row": "Header row follow-up",
@@ -1270,7 +1270,7 @@ it("names a thread a teammate opened from the job it was handed, once, unless th
 
 // The small model's word is the fixture's: what matters here is what the runtime does with it.
 const withStatusAnswer = (answer: string) => {
-  const routes = join(mkdtempSync(join(tmpdir(), "omb-status-reply-")), "routes.json");
+  const routes = join(mkdtempSync(join(tmpdir(), "sanremes-status-reply-")), "routes.json");
   writeFileSync(routes, JSON.stringify({ "<teammate_reply>": answer }));
   return { FAKE_CLAUDE_TEXT_ROUTES: routes };
 };

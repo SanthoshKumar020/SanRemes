@@ -2,9 +2,9 @@
 import { existsSync } from "node:fs";
 import { join, sep } from "node:path";
 
-export const LATEST_RELEASE_URL = "https://api.github.com/repos/milind-soni/OpenMausBot/releases/latest";
+export const LATEST_RELEASE_URL = "https://api.github.com/repos/SanthoshKumar020/SanRemes/releases/latest";
 /** Written by .github/workflows/promote-stable.yml: the released version our own Clouds have run for 48 hours. */
-export const STABLE_CHANNEL_URL = "https://raw.githubusercontent.com/milind-soni/OpenMausBot/channels/stable.json";
+export const STABLE_CHANNEL_URL = "https://raw.githubusercontent.com/SanthoshKumar020/SanRemes/channels/stable.json";
 const CACHE_MS = 60 * 60_000;
 /** A press of Check for updates looks again unless the last lookup is younger than this. Any session may press it, and
  * GitHub allows a server 60 lookups an hour without a token: presses keep to 12 of them. */
@@ -13,24 +13,24 @@ const FRESH_MS = 5 * 60_000;
 const STALE_MS = 24 * 60 * 60_000;
 
 /** "managed" is a hosted or Cloud server that is updated for its owner. "podman" is deploy/podman's Compose recipe;
- * "podman-service" the rootless service deploy/podman/install.sh writes, whose unit sets OMB_PODMAN_SERVICE. */
+ * "podman-service" the rootless service deploy/podman/install.sh writes, whose unit sets SANREMES_PODMAN_SERVICE. */
 export type InstallKind = "desktop" | "managed" | "docker" | "podman" | "podman-service" | "npm" | "git" | "unknown";
 
 /** Where deploy/podman/install.sh puts the install unless told otherwise. */
-export const PODMAN_SERVICE_DIR = "~/.local/share/openmausbot";
+export const PODMAN_SERVICE_DIR = "~/.local/share/sanremes";
 
-/** The install's folder on the host, as the unit gives it in OMB_PODMAN_SERVICE (`~/…` or an absolute path). */
+/** The install's folder on the host, as the unit gives it in SANREMES_PODMAN_SERVICE (`~/…` or an absolute path). */
 export function podmanServiceDir(env: NodeJS.ProcessEnv = process.env): string {
-  const dir = env.OMB_PODMAN_SERVICE?.trim() ?? "";
+  const dir = env.SANREMES_PODMAN_SERVICE?.trim() ?? "";
   return /^(?:~\/|\/)[A-Za-z0-9/._@-]+$/.test(dir) && !dir.split("/").includes("..") ? dir.replace(/\/+$/, "") : PODMAN_SERVICE_DIR;
 }
 
 /** `stable` follows the promoted version; `newest` follows every release, as soon as it is published. */
 export type UpdateChannel = "stable" | "newest";
 
-/** OMB_UPDATE_CHANNEL: `newest` to hear of every release; anything else is `stable`. */
+/** SANREMES_UPDATE_CHANNEL: `newest` to hear of every release; anything else is `stable`. */
 export function updateChannel(env: NodeJS.ProcessEnv = process.env): UpdateChannel {
-  return env.OMB_UPDATE_CHANNEL?.trim().toLowerCase() === "newest" ? "newest" : "stable";
+  return env.SANREMES_UPDATE_CHANNEL?.trim().toLowerCase() === "newest" ? "newest" : "stable";
 }
 
 /**
@@ -43,7 +43,7 @@ export function updateCommand(install: InstallKind, target?: { version: string; 
     case "docker": return { command: `git pull && ./update.sh${version}`, restart: false };
     case "podman-service": return { command: `${podmanServiceDir(env)}/update.sh${version}`, restart: false };
     case "podman": return { command: "git pull && cd deploy/podman && PODMAN_COMPOSE_PROVIDER=podman-compose podman compose --env-file .env -f compose.yaml up -d --build", restart: false };
-    case "npm": return { command: `npm install -g openmausbot@${target?.version ?? "latest"}`, restart: true };
+    case "npm": return { command: `npm install -g sanremes@${target?.version ?? "latest"}`, restart: true };
     case "git": return { command: "git pull && pnpm install", restart: true };
     default: return undefined;
   }
@@ -59,7 +59,7 @@ export function installKind(input: {
   const exists = input.exists ?? existsSync;
   if (input.desktopManaged) return "desktop";
   if (input.managed) return "managed";
-  if ((input.env ?? process.env).OMB_PODMAN_SERVICE?.trim()) return "podman-service";
+  if ((input.env ?? process.env).SANREMES_PODMAN_SERVICE?.trim()) return "podman-service";
   if (exists("/.dockerenv")) return "docker";
   if (exists("/run/.containerenv")) return "podman";
   if (input.serverRoot.split(sep).includes("node_modules")) return "npm";
@@ -132,7 +132,7 @@ export function createUpdateChecker(options: {
     ...updateCommand(options.install),
   });
   const ask = (url: string) => fetchJson(url, {
-    headers: { accept: "application/vnd.github+json", "user-agent": "openmausbot-update-check" },
+    headers: { accept: "application/vnd.github+json", "user-agent": "sanremes-update-check" },
     signal: AbortSignal.timeout(8_000),
   });
 

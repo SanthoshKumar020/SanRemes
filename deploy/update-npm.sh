@@ -4,10 +4,10 @@ set -euo pipefail
 export PATH=/usr/sbin:/usr/bin:/sbin:/bin
 umask 077
 
-unit=openmausbot.service
-state_dir=/var/lib/openmausbot-npm-update
+unit=sanremes.service
+state_dir=/var/lib/sanremes-npm-update
 journal=$state_dir/pending.json
-stable_url=https://raw.githubusercontent.com/milind-soni/OpenMausBot/channels/stable.json
+stable_url=https://raw.githubusercontent.com/SanthoshKumar020/SanRemes/channels/stable.json
 local_url=http://127.0.0.1:8799
 version_pattern='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
 restore_inode=
@@ -23,7 +23,7 @@ physical_dir() {
   service_test -d "$1" && [[ $(as_service /usr/bin/readlink -f -- "$1") == "$1" ]]
 }
 package_version() {
-  as_service /usr/bin/jq -er 'select(.name == "openmausbot" and .bin.openmausbot == "cli.js") | .version | strings' "$1/package.json"
+  as_service /usr/bin/jq -er 'select(.name == "sanremes" and .bin.sanremes == "cli.js") | .version | strings' "$1/package.json"
 }
 
 read_service() {
@@ -45,9 +45,9 @@ read_service() {
   service_home=$home
   prefix=$home/.local
   modules=$prefix/lib/node_modules
-  package_dir=$modules/openmausbot
-  data_dir=$home/.openmausbot
-  cli=$prefix/bin/openmausbot
+  package_dir=$modules/sanremes
+  data_dir=$home/.sanremes
+  cli=$prefix/bin/sanremes
   exec_start=$(property ExecStart)
   case "$exec_start" in
     "{ path=$cli ; argv[]=$cli serve --tunnel ; ignore_errors=no ; "*|\
@@ -69,27 +69,27 @@ healthy() {
   systemctl is-active --quiet "$unit" || return 1
   health=$(fetch_json "$local_url/api/health") || return 1
   pid=$(jq -er --arg version "$1" \
-    'select(.app == "openmausbot" and .version == $version) | .pid | numbers' <<<"$health") || return 1
+    'select(.app == "sanremes" and .version == $version) | .pid | numbers' <<<"$health") || return 1
   [[ $pid =~ ^[1-9][0-9]*$ ]] || return 1
   group=$(property ControlGroup) || return 1
   [[ $group == "/system.slice/$unit" ]] || return 1
   # serve launches the HTTP process as a child within the unit's cgroup.
   grep -Fxq "0::$group" "/proc/$pid/cgroup" &&
-    grep -zFxq "OMB_DATA_DIR=$data_dir" "/proc/$pid/environ" &&
-    grep -zFxq 'OMB_PORT=8799' "/proc/$pid/environ" || return 1
+    grep -zFxq "SANREMES_DATA_DIR=$data_dir" "/proc/$pid/environ" &&
+    grep -zFxq 'SANREMES_PORT=8799' "/proc/$pid/environ" || return 1
   process_data=$(stat -Lc '%d:%i' "/proc/$pid/root$data_dir") || return 1
   [[ $process_data == "$(stat -Lc '%d:%i' "$data_dir")" ]]
 }
 engine_count() {
   local count report
   if count=$(fetch_json "$local_url/api/health/engines" 2>/dev/null |
-    jq -er 'select(.app == "openmausbot") | .engines | select(type == "number" and . >= 0 and floor == .)'); then
+    jq -er 'select(.app == "sanremes") | .engines | select(type == "number" and . >= 0 and floor == .)'); then
     printf '%s\n' "$count"
     return
   fi
   # Older releases expose engine readiness through doctor. A zero count can have a nonzero exit status.
   report=$(as_service /usr/bin/timeout 15 "$cli" doctor --json 2>/dev/null) || :
-  jq -er 'select(.health.app == "openmausbot") | .availableEngineCount | select(type == "number" and . >= 0 and floor == .)' <<<"$report"
+  jq -er 'select(.health.app == "sanremes") | .availableEngineCount | select(type == "number" and . >= 0 and floor == .)' <<<"$report"
 }
 wait_healthy() {
   local attempt count consecutive=0 deadline=$((SECONDS + 120))
@@ -117,9 +117,9 @@ stop_service() {
 }
 
 set_work_paths() {
-  data_work=$service_home/.openmausbot-update.$run_id
-  package_work=$modules/.openmausbot-update.$run_id
-  staged_package=$package_work/install/lib/node_modules/openmausbot
+  data_work=$service_home/.sanremes-update.$run_id
+  package_work=$modules/.sanremes-update.$run_id
+  staged_package=$package_work/install/lib/node_modules/sanremes
 }
 write_phase() {
   local next=$1 temporary
@@ -178,7 +178,7 @@ restore_previous() {
 failed_update() {
   printf '%s\n' "$*" >&2
   if restore_previous; then
-    die "OpenMausBot $old_version is running again. Update files are in $data_work and $package_work."
+    die "SanRemes $old_version is running again. Update files are in $data_work and $package_work."
   fi
   die "Recovery is incomplete. See $journal and $data_work, then run this script with --rollback."
 }
@@ -229,9 +229,9 @@ if [[ -f $journal ]]; then
   read_pending
   [[ $mode == rollback ]] ||
     die "An update to $target_version stopped at $phase. See $journal and $data_work. Use --rollback to restore $old_version."
-  printf 'Recovering OpenMausBot %s from %s.\n' "$old_version" "$data_work"
+  printf 'Recovering SanRemes %s from %s.\n' "$old_version" "$data_work"
   restore_previous || die "Recovery is incomplete. Check $journal and journalctl -u $unit, then retry --rollback."
-  printf 'OpenMausBot %s is running again.\n' "$old_version"
+  printf 'SanRemes %s is running again.\n' "$old_version"
   exit 0
 fi
 [[ $mode == update ]] || die "There is no interrupted update to recover."
@@ -244,26 +244,26 @@ for dir in "$package_dir" "$data_dir"; do
 done
 [[ $(as_service /usr/bin/readlink -f -- "$cli") == "$package_dir/cli.js" ]] ||
   die "The service CLI does not point into the fixed npm prefix."
-old_version=$(package_version "$package_dir") || die "Can't read the installed OpenMausBot package."
+old_version=$(package_version "$package_dir") || die "Can't read the installed SanRemes package."
 [[ $old_version =~ $version_pattern ]] || die "Unsupported installed version: $old_version"
 target_version=$(curl --disable -fsS --proto '=https' --max-time 15 --max-filesize 65536 "$stable_url" |
   jq -er '.version | strings') || die "Can't read the stable release. The service was not stopped."
 [[ $target_version =~ $version_pattern ]] || die "The stable channel returned an invalid version."
 if [[ $target_version == "$old_version" ||
   $(printf '%s\n' "$old_version" "$target_version" | LC_ALL=C sort -V | tail -n 1) != "$target_version" ]]; then
-  printf 'OpenMausBot %s is already at or ahead of stable (%s).\n' "$old_version" "$target_version"
+  printf 'SanRemes %s is already at or ahead of stable (%s).\n' "$old_version" "$target_version"
   exit 0
 fi
-healthy "$old_version" || die "Can't verify that $unit is serving OpenMausBot $old_version on port 8799."
+healthy "$old_version" || die "Can't verify that $unit is serving SanRemes $old_version on port 8799."
 
 run_slot=$(mktemp -d "$state_dir/run.XXXXXXXX")
 run_id=${run_slot##*.}
 rmdir -- "$run_slot"
 set_work_paths
 as_service /usr/bin/mkdir -m 0700 -- "$data_work" "$package_work"
-printf 'Staging OpenMausBot %s for %s.\n' "$target_version" "$unit"
-as_service npm install --global --prefix "$package_work/install" --no-audit --no-fund "openmausbot@$target_version" ||
-  die "npm could not stage OpenMausBot $target_version. The service was not stopped."
+printf 'Staging SanRemes %s for %s.\n' "$target_version" "$unit"
+as_service npm install --global --prefix "$package_work/install" --no-audit --no-fund "sanremes@$target_version" ||
+  die "npm could not stage SanRemes $target_version. The service was not stopped."
 [[ $(package_version "$staged_package") == "$target_version" ]] ||
   die "The staged package did not report version $target_version. The service was not stopped."
 physical_dir "$staged_package" || die "npm staged the package at an unexpected path."
@@ -286,8 +286,8 @@ if ! as_service /usr/bin/mv -T -- "$package_dir" "$package_work/previous" ||
   ! as_service /usr/bin/mv -T -- "$staged_package" "$package_dir" ||
   ! as_service /usr/bin/sync -f "$package_dir" ||
   ! systemctl start "$unit" || ! wait_healthy "$target_version"; then
-  failed_update "OpenMausBot $target_version could not be started successfully."
+  failed_update "SanRemes $target_version could not be started successfully."
 fi
 clear_journal
-printf 'OpenMausBot %s is running. Backup: %s/snapshot. Previous package: %s/previous.\n' \
+printf 'SanRemes %s is running. Backup: %s/snapshot. Previous package: %s/previous.\n' \
   "$target_version" "$data_work" "$package_work"

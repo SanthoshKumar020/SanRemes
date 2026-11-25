@@ -67,7 +67,7 @@ describe("OpenAI-compatible reasoning choices", () => {
   it.each([
     ["flat", { id: "vendor/future" }, "reasoning_effort"],
     ["nested", { id: "vendor/future", supported_parameters: ["reasoning"], reasoning_efforts: ["low", "max"] }, "reasoning"],
-    ["model name resembling an Ollama alias", { id: "vendor/model-omb-16k", reasoning_efforts: ["max"] }, "reasoning_effort"],
+    ["model name resembling an Ollama alias", { id: "vendor/model-sanremes-16k", reasoning_efforts: ["max"] }, "reasoning_effort"],
   ])("sends the exact choice in the %s format, but omits it by default", async (_name, model, property) => {
     const bodies: Array<Record<string, any>> = [];
     vi.stubGlobal("fetch", vi.fn(async (url, init) => {

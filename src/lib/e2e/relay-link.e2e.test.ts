@@ -26,7 +26,7 @@ const owner = async (path: string, init: RequestInit = {}) => {
 
 const session = (link: RelayLink) => link.fetch("/api/auth/session").then((res) => (res.ok ? (res.json() as Promise<{ id: string }>) : null), () => null);
 
-describe("a web page on MausBot Relay", () => {
+describe("a web page on SanRemes Relay", () => {
   it("pairs through the relay, then reaches the full web server and its live events, and dials again after a drop", async () => {
     await waitFor(async () => (await owner("/api/auth/pairing")).body.relay?.relay === "connected", 15_000);
     const minted = await owner("/api/auth/pairing", { method: "POST", body: JSON.stringify({ scopes: ["client"], label: "Web" }) });

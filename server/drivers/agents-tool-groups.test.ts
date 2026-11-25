@@ -9,19 +9,19 @@ import { EMAIL_TOOLS } from "../email/tools.ts";
 import { availableTools, catalogProfileFromEnv } from "./agents-catalog.ts";
 import { CORE_TOOLS, OWN_SWITCH_TOOLS, serverTurnedOff, TOOL_GROUP_MEMBERS, toolsOffNames } from "./agents-tool-groups.ts";
 
-/** Every host switch on: a Chief's MausBot on a server with a cloud computer, images, hosting and research. */
+/** Every host switch on: a Chief's SanRemes on a server with a cloud computer, images, hosting and research. */
 const FULLEST = {
-  OMB_BOT_ID: "bot-full", OMB_SKILL_AUTHORING_ENABLED: "1", OMB_SHARED_COMPUTERS_ENABLED: "1", OMB_VOICE_NOTES: "1", OMB_CHIEF_OF_STAFF: "1",
-  OMB_COMPUTER_SELECTION: "1", OMB_X_RESEARCH: "1", OMB_RESEARCH: "1", OMB_TEAM_PEOPLE: "1", OMB_IMAGE_GENERATION: "1", OMB_APP_HOSTING: "1",
-  OMB_MEETINGS: "1", OMB_MAUSBOT: "1",
+  SANREMES_BOT_ID: "bot-full", SANREMES_SKILL_AUTHORING_ENABLED: "1", SANREMES_SHARED_COMPUTERS_ENABLED: "1", SANREMES_VOICE_NOTES: "1", SANREMES_CHIEF_OF_STAFF: "1",
+  SANREMES_COMPUTER_SELECTION: "1", SANREMES_X_RESEARCH: "1", SANREMES_RESEARCH: "1", SANREMES_TEAM_PEOPLE: "1", SANREMES_IMAGE_GENERATION: "1", SANREMES_APP_HOSTING: "1",
+  SANREMES_MEETINGS: "1", SANREMES_SANREMES: "1",
 };
 const listed = (env: Record<string, string>) => availableTools(catalogProfileFromEnv(env));
 const names = (env: Record<string, string>) => listed(env).map((tool) => tool.name);
 /** The catalog's every tool, across the profiles that between them mount all of it. */
 const EVERY_TOOL = new Set([
   ...names(FULLEST),
-  ...names({ ...FULLEST, OMB_TEAM_PEOPLE: "0", OMB_CLOUD_HOME: "1" }),
-  ...names({ ...FULLEST, OMB_BOT_ID: WATCHER_OPTIONS_CARD_BOT_ID }),
+  ...names({ ...FULLEST, SANREMES_TEAM_PEOPLE: "0", SANREMES_CLOUD_HOME: "1" }),
+  ...names({ ...FULLEST, SANREMES_BOT_ID: WATCHER_OPTIONS_CARD_BOT_ID }),
 ]);
 const buckets: Array<[string, ReadonlySet<string>]> = [
   ...TOOL_GROUPS.map((group): [string, ReadonlySet<string>] => [group, TOOL_GROUP_MEMBERS[group].tools]),
@@ -40,14 +40,14 @@ describe("tool groups on the agents server", () => {
   it("leaves out each group's tools and nothing else, the rest byte for byte", () => {
     const full = listed(FULLEST);
     for (const group of TOOL_GROUPS) {
-      const without = listed({ ...FULLEST, OMB_TOOLS_OFF: group });
+      const without = listed({ ...FULLEST, SANREMES_TOOLS_OFF: group });
       expect(JSON.stringify(without), group).toBe(JSON.stringify(full.filter((tool) => !TOOL_GROUP_MEMBERS[group].tools.has(tool.name))));
       if (TOOL_GROUP_MEMBERS[group].tools.size) expect(without.length, group).toBeLessThan(full.length);
     }
   });
 
   it("with every group off keeps the core and the tools with switches of their own", () => {
-    const left = names({ ...FULLEST, OMB_TOOLS_OFF: TOOL_GROUPS.join(",") });
+    const left = names({ ...FULLEST, SANREMES_TOOLS_OFF: TOOL_GROUPS.join(",") });
     expect(left).toEqual(names(FULLEST).filter((tool) => !toolsOffNames(TOOL_GROUPS).has(tool)));
     for (const tool of ["show_html", "publish_page", "unpublish_page", "publish_app", "check_app_hosting", "join_meeting", "post_meeting_notes", "generate_image"]) {
       expect(left).not.toContain(tool);
@@ -57,7 +57,7 @@ describe("tool groups on the agents server", () => {
 
   it("is the same list for a variable naming no group, an unknown one or none", () => {
     const full = JSON.stringify(listed(FULLEST));
-    for (const value of ["", "browser", ",,"]) expect(JSON.stringify(listed({ ...FULLEST, OMB_TOOLS_OFF: value })), value).toBe(full);
+    for (const value of ["", "browser", ",,"]) expect(JSON.stringify(listed({ ...FULLEST, SANREMES_TOOLS_OFF: value })), value).toBe(full);
   });
 
   it("stands Data and Email for their own servers", () => {

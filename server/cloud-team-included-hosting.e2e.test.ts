@@ -1,4 +1,4 @@
-// The plan's included app hosting on a real Team Cloud (OMB_CLOUD_ROLE=team), tried as the people the rules must hold
+// The plan's included app hosting on a real Team Cloud (SANREMES_CLOUD_ROLE=team), tried as the people the rules must hold
 // against: two members, an Admin and the Owner. A bot publishes folders of its own through its tool's route; the relay
 // is a loopback stand-in, wired as the Admin wires a home. An app from a member's own chat is that member's alone, the
 // team's app is everyone's to see and an Admin's or its bot's person's to delete, and the count is the team's.
@@ -71,7 +71,7 @@ beforeAll(async () => {
   writeFileSync(replyFile, "Hello.");
   fake = await startFakeAppHosting(TOKEN, { apps: 20 });
   fx = await launchCloudSendFixture({ onePasswordToken: `ops_fake-team-${randomBytes(8).toString("hex")}`,
-    team: { id: "team-acme-hosting", name: "Acme", env: { OMB_CLOUD_HOSTING_URL: fake.url, OMB_CLOUD_HOSTING_TOKEN: TOKEN }, engine: `process.env.FAKE_CLAUDE_REPLY_FILE = ${JSON.stringify(replyFile)};` } });
+    team: { id: "team-acme-hosting", name: "Acme", env: { SANREMES_CLOUD_HOSTING_URL: fake.url, SANREMES_CLOUD_HOSTING_TOKEN: TOKEN }, engine: `process.env.FAKE_CLAUDE_REPLY_FILE = ${JSON.stringify(replyFile)};` } });
   team = fx.team!;
   owner = (await team.pair(OWNER)).token!;
   admin = (await team.pair(ADMIN)).token!;
@@ -83,7 +83,7 @@ beforeAll(async () => {
   benThread = (await team.as(ben, "POST", `/api/bots/${mira.id}/tasks`, { title: "Ben's plan" })).body.task.threadId;
   await turn(ada, mira, adaThread, "I'll build your portfolio.");
   await turn(ben, mira, benThread, "I'll draft your plan.");
-  data = join(team.home, ".openmausbot");
+  data = join(team.home, ".sanremes");
   expect(existsSync(join(data, "task-workspaces", mira.id, adaThread)), "a conversation's turns work in its own folder").toBe(true);
 }, hostTimeout(300_000));
 

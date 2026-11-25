@@ -8,12 +8,12 @@ import { PHONE_ACTIVITY_RELAY_PATH, PHONE_PUSH_RELAY_PATHS } from "../shared/pho
 import { CLOUD_HOME_PUSH_ACTIONS, cloudHomePushAccess, cloudHomePushRequest, cloudHomePushSignature } from "./phone-push-admin.ts";
 import { PhonePush, PhonePushAccessSource, RELAY_UNAVAILABLE_PAUSE_MS, type PhonePushOptions } from "./phone-push.ts";
 
-/** The bodies and the signature vector the Admin's tests read from their own copy of this file (openmaus-cloud
+/** The bodies and the signature vector the Admin's tests read from their own copy of this file (sanremes-cloud
  * tests/fixtures/cloud-home-push.json): both copies must hash to this. */
 const FIXTURE_FILE = new URL("../cloudflare/control-plane/test/fixtures/cloud-home-push.json", import.meta.url);
 const FIXTURE_SHA256 = "1cac2c96498e57fb2527813f84be74d453f77d058a4499674afab69f5c3da47d";
 
-const ADMIN = "https://cloud.mausbot.test";
+const ADMIN = "https://cloud.sanremes.test";
 const SECRET = "home-bootstrap-secret-0123456789abcdefghijklmnopq";
 const MACHINE = "cm_home_one";
 const HOME = { adminOrigin: ADMIN, machineId: MACHINE, bootstrapSecret: SECRET };
@@ -40,7 +40,7 @@ let dataDir: string;
 let clock: number;
 let timers: Array<{ run: () => void; at: number }>;
 beforeEach(() => {
-  dataDir = mkdtempSync(join(tmpdir(), "omb-phone-push-admin-"));
+  dataDir = mkdtempSync(join(tmpdir(), "sanremes-phone-push-admin-"));
   clock = 1_700_000_000_000;
   timers = [];
 });
@@ -81,9 +81,9 @@ const everyone = () => true;
 
 /** Checks a request as the Admin does: the signature over machine, action, time, nonce and body, in constant time. */
 function signedByHome(call: AdminCall, action: string): boolean {
-  const presented = /^v1=([A-Za-z0-9_-]{43})$/.exec(call.headers.get("x-omb-cloud-signature") ?? "")?.[1];
+  const presented = /^v1=([A-Za-z0-9_-]{43})$/.exec(call.headers.get("x-sanremes-cloud-signature") ?? "")?.[1];
   if (!presented) return false;
-  const expected = cloudHomePushSignature(SECRET, call.headers.get("x-omb-cloud-machine") ?? "", action, call.headers.get("x-omb-cloud-timestamp") ?? "", call.headers.get("x-omb-cloud-nonce") ?? "", call.body);
+  const expected = cloudHomePushSignature(SECRET, call.headers.get("x-sanremes-cloud-machine") ?? "", action, call.headers.get("x-sanremes-cloud-timestamp") ?? "", call.headers.get("x-sanremes-cloud-nonce") ?? "", call.body);
   return timingSafeEqual(Buffer.from(presented, "base64url"), Buffer.from(expected, "base64url"));
 }
 
@@ -120,21 +120,21 @@ describe("a Cloud home's pushes through its Admin", () => {
     expect(admin.calls.map((call) => call.url)).toEqual([`${ADMIN}/api/cloud/machines/push/register`, `${ADMIN}/api/cloud/machines/push/send`]);
     const [register, send] = admin.calls;
     expect(JSON.parse(register!.body)).toEqual({ v: 1, platform: "apns", token: APNS, environment: "production" });
-    expect(JSON.parse(send!.body)).toEqual({ v: 1, token: APNS, pairing: "pair-tag-0001", collapseId: "openmaus.th_1.7",
+    expect(JSON.parse(send!.body)).toEqual({ v: 1, token: APNS, pairing: "pair-tag-0001", collapseId: "sanremes.th_1.7",
       notification: { kind: "approval", title: "Scout needs approval", botId: "bot_1", botName: "Scout", threadId: "th_1" } });
     expect(signedByHome(register!, "register")).toBe(true);
     expect(signedByHome(send!, "send")).toBe(true);
     // Signed for one route, it is not valid for another; the machine id rides in a header the signature covers.
     expect(signedByHome(send!, "activity")).toBe(false);
     for (const call of admin.calls) {
-      expect(call.headers.get("x-omb-cloud-machine")).toBe(MACHINE);
-      expect(call.headers.get("x-omb-cloud-timestamp")).toBe(String(Math.floor(clock / 1000)));
+      expect(call.headers.get("x-sanremes-cloud-machine")).toBe(MACHINE);
+      expect(call.headers.get("x-sanremes-cloud-timestamp")).toBe(String(Math.floor(clock / 1000)));
       expect(call.headers.get("authorization")).toBeNull();
       expect(`${call.body}${JSON.stringify([...call.headers])}`).not.toContain(SECRET);
       expect(call.body).not.toContain("PRIVATE");
       expect(call.body).not.toContain(MACHINE);
     }
-    expect(admin.calls[0]!.headers.get("x-omb-cloud-nonce")).not.toBe(admin.calls[1]!.headers.get("x-omb-cloud-nonce"));
+    expect(admin.calls[0]!.headers.get("x-sanremes-cloud-nonce")).not.toBe(admin.calls[1]!.headers.get("x-sanremes-cloud-nonce"));
   });
 
   it("backs off an hour when the Admin or the control plane says push is unavailable, as an installation does", async () => {
@@ -195,8 +195,8 @@ describe("which transport a server uses", () => {
     expect(source({}, null)).toBeNull();
     expect(source({}, HOME)).toEqual({ admin: ADMIN, machineId: MACHINE, secret: SECRET });
     expect(source({}, { ...HOME, adminOrigin: `${ADMIN}/` })).toEqual({ admin: ADMIN, machineId: MACHINE, secret: SECRET });
-    // An installation credential wins, from the environment or `openmausbot login`'s file.
-    expect(source({ OMB_PUSH_CREDENTIAL: CREDENTIAL }, HOME)).toEqual({ controlPlane: "https://accounts.openmausbot.com", credential: CREDENTIAL });
+    // An installation credential wins, from the environment or `sanremes login`'s file.
+    expect(source({ SANREMES_PUSH_CREDENTIAL: CREDENTIAL }, HOME)).toEqual({ controlPlane: "https://accounts.openmausbot.com", credential: CREDENTIAL });
     writeFileSync(tunnelFile(), JSON.stringify({ companionInstallationCredential: CREDENTIAL }));
     expect(source({}, HOME)).toEqual({ controlPlane: "https://accounts.openmausbot.com", credential: CREDENTIAL });
     writeFileSync(tunnelFile(), JSON.stringify({}));

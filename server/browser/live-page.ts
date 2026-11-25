@@ -10,7 +10,7 @@ import { chooseWith, SELECT_SCRIPTS, selectPopupOf, type SelectPopup } from "./v
 const MODIFIER_KEYS = new Set(["Alt", "Control", "Meta", "Shift"]);
 /** Keys the engine's `press` resolves, sent as one acknowledged press on the relay. */
 export const DISCRETE_KEYS = new Set(["Backspace", "Enter", "Tab", "Escape", "Delete", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End", "PageUp", "PageDown"]);
-const WORLD = "omb-live-view";
+const WORLD = "sanremes-live-view";
 
 type KeyFields = { key: string; code?: unknown; windowsVirtualKeyCode?: unknown; modifiers?: unknown; text?: unknown };
 

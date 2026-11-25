@@ -126,7 +126,7 @@ export function createEmailHost(deps: EmailHostDeps) {
     available: () => allowedHere() && service.mounted(),
     integration(bot: EmailBot, mint: () => string, harnessUrl: string): { command: string; args: string[]; env: Record<string, string> } | null {
       if (!mounts(bot)) return null;
-      return { command: process.execPath, args: [SPAWNED_PROXIES.harnessMcp, EMAIL_MCP_SERVER], env: { ...AGENTS_NODE_FLAG, [harnessMcpTokenEnv("email")]: mint(), OMB_HARNESS_URL: harnessUrl } };
+      return { command: process.execPath, args: [SPAWNED_PROXIES.harnessMcp, EMAIL_MCP_SERVER], env: { ...AGENTS_NODE_FLAG, [harnessMcpTokenEnv("email")]: mint(), SANREMES_HARNESS_URL: harnessUrl } };
     },
     prompt(bot: EmailBot): string {
       if (!allowedHere() || service.status().state === "unavailable" || !shown(bot)) return "";

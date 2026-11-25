@@ -1357,7 +1357,7 @@
       "app_settings"
     ]
   },
-  "default+mausbot": {
+  "default+sanremes": {
     "bytes": 62437,
     "sha256": "e71818d3b029d88915f275d033efd65824bf856f10a42d416d70cb72deca109a",
     "tools": [
@@ -1420,7 +1420,7 @@
       "mark_notifications_read"
     ]
   },
-  "skills+shared+voice+mausbot": {
+  "skills+shared+voice+sanremes": {
     "bytes": 67804,
     "sha256": "cbc3d1a39e3f96cf3bcadc25091882f1380143ba2e3489678f8eb9eeb53e1b73",
     "tools": [

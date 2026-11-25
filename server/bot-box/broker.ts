@@ -57,7 +57,7 @@ interface Stored { hash: Buffer; botId: string | null; threadId: string | null; 
 /** Credential headers a client may send; the broker never forwards them. */
 /** The header a client sends its token in at `/g/<grant>`, where the token is kept out of the address (git writes the
  * address it fetched from into its own records: merge messages, FETCH_HEAD, error text). */
-export const BROKER_TOKEN_HEADER = "x-omb-broker";
+export const BROKER_TOKEN_HEADER = "x-sanremes-broker";
 const CREDENTIAL_HEADERS = new Set(["authorization", "x-api-key", "x-goog-api-key", "proxy-authorization", "cookie", BROKER_TOKEN_HEADER]);
 const HOP_BY_HOP = new Set(["connection", "keep-alive", "transfer-encoding", "te", "trailer", "upgrade", "proxy-connection", "host"]);
 const TOKEN = /^omb_t0_[a-f0-9]{48}$/;

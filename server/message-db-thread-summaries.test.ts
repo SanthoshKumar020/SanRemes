@@ -10,11 +10,11 @@ let roomThreadSummaries: typeof import("./message-db-thread-summaries.ts").roomT
 let at = 1_000;
 
 beforeEach(async () => {
-  home = mkdtempSync(join(tmpdir(), "omb-thread-summaries-"));
+  home = mkdtempSync(join(tmpdir(), "sanremes-thread-summaries-"));
   vi.resetModules();
   vi.stubEnv("HOME", home);
   vi.stubEnv("USERPROFILE", home);
-  vi.stubEnv("OMB_DATA_DIR", join(home, "data"));
+  vi.stubEnv("SANREMES_DATA_DIR", join(home, "data"));
   mdb = await import("./message-db.ts");
   ({ roomThreadSummaries } = await import("./message-db-thread-summaries.ts"));
 });

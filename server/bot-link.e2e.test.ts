@@ -3,7 +3,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { launchVerificationServer, runControlOmb } from "../scripts/control-omb.ts";
+import { launchVerificationServer, runControlOmb } from "../scripts/control-sanremes.ts";
 import { linkedAddress } from "../electron/bot-link-address.mjs";
 
 type Fixture = Awaited<ReturnType<typeof launchVerificationServer>>;
@@ -44,7 +44,7 @@ it("a bot on the computer and a bot on the person's own server hand each other w
     await home.api("POST", "/api/bot-link/pair", { computer: { id: "computer", name: "Sam's Mac" }, name: "My server" }, { status: 403 });
     const pairing = await home.api("POST", "/api/auth/pairing", { label: "The person's app", scopes: ["admin", "client"] });
     const owner = (await home.api("POST", "/api/auth/pair", { code: pairing.code })).token as string;
-    const thisComputer = { id: (await computer.api("GET", "/.well-known/openmausbot/environment")).environmentId as string, name: "Sam's Mac" };
+    const thisComputer = { id: (await computer.api("GET", "/.well-known/sanremes/environment")).environmentId as string, name: "Sam's Mac" };
     const paired = await home.api("POST", "/api/bot-link/pair", { computer: thisComputer, name: "My server" }, { token: owner });
     await computer.api("PUT", "/api/bot-link", { on: true, origin: home.url, token: paired.token, name: "Sam's Mac", cloud: paired.place });
     await expect.poll(async () => (await computer.api("GET", "/api/bot-link")), { timeout: 15_000 }).toMatchObject({ on: true, role: "dialer", online: true, peer: { name: "My server" } });

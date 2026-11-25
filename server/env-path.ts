@@ -19,9 +19,9 @@ function nvmBinDirs(home: string): string[] {
   }
 }
 
-/** A sealed test fixture sees only its own PATH, OMB_EXTRA_PATH, app-managed dirs and its temporary home, never this machine's CLIs or keychain. */
+/** A sealed test fixture sees only its own PATH, SANREMES_EXTRA_PATH, app-managed dirs and its temporary home, never this machine's CLIs or keychain. */
 export function sealedFixture(): boolean {
-  return process.env.OMB_TEST_SEALED_PATH === "1";
+  return process.env.SANREMES_TEST_SEALED_PATH === "1";
 }
 
 function knownDirs(home: string = homedir()): string[] {
@@ -129,7 +129,7 @@ function buildPath(): string {
   const fallback = fallbackDirs.filter((d) => existsSync(d));
   return mergePaths([
     ...registeredDirs.filter((d) => existsSync(d)),
-    ...(process.env.OMB_EXTRA_PATH ? process.env.OMB_EXTRA_PATH.split(delimiter) : []),
+    ...(process.env.SANREMES_EXTRA_PATH ? process.env.SANREMES_EXTRA_PATH.split(delimiter) : []),
     ...(process.env.PATH ? process.env.PATH.split(delimiter) : []),
     // Keep the last login-shell result while a rescan re-probes, or rc-only CLIs vanish for the response that triggered it.
     ...(loginShellPath ? loginShellPath.split(delimiter) : []),
@@ -147,8 +147,8 @@ const PROBE_MAX_OUTPUT_BYTES = 1024 * 1024;
 function probeLoginShellPath(): void {
   const shell = process.env.SHELL || "/bin/zsh";
   // -l -i: nvm and friends live in .zshrc/.bashrc, which only interactive shells read; a marker isolates $PATH from rc noise.
-  // detached: an interactive shell makes its job the terminal's foreground, which stops `openmausbot setup` and its sign-in CLI (SIGTTOU).
-  const child = spawn(shell, ["-l", "-i", "-c", 'printf "__OMB_PATH__%s__OMB_END__" "$PATH"'], {
+  // detached: an interactive shell makes its job the terminal's foreground, which stops `sanremes setup` and its sign-in CLI (SIGTTOU).
+  const child = spawn(shell, ["-l", "-i", "-c", 'printf "__SANREMES_PATH__%s__SANREMES_END__" "$PATH"'], {
     detached: true,
     stdio: ["ignore", "pipe", "ignore"],
   });
@@ -175,7 +175,7 @@ function probeLoginShellPath(): void {
   // background job holding it. Reading stops there, so that job's later output is never part of the answer.
   const applyIfDone = (): void => {
     if (finished || exitCode !== 0) return;
-    const m = /__OMB_PATH__([^\n]*?)__OMB_END__/.exec(stdout);
+    const m = /__SANREMES_PATH__([^\n]*?)__SANREMES_END__/.exec(stdout);
     if (!m) return;
     if (m[1] && m[1] !== loginShellPath) {
       loginShellPath = m[1];

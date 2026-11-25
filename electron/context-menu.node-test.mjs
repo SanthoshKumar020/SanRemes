@@ -74,7 +74,7 @@ test("a link keeps Copy Link and the text menu, and gains Save Link As only when
   assert.deepEqual(labels(menu({ linkURL: "https://example.com/about" })).slice(0, 2), ["Copy Link", "---"]);
   assert.equal(fileLink("https://example.com/index.html"), false);
   assert.equal(fileLink(`${CLOUD}/api/threads/t1/messages/m1/file`), true);
-  assert.equal(fileLink("openmausbot://bot/abc.def"), false);
+  assert.equal(fileLink("sanremes://bot/abc.def"), false);
   assert.equal(fileLink("mailto:someone@example.com"), false);
 });
 
@@ -128,7 +128,7 @@ for (const platform of ["win32", "linux"]) {
 }
 
 function scratch() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "omb-context-menu-"));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "sanremes-context-menu-"));
   return { dir, done: () => fs.rmSync(dir, { recursive: true, force: true }) };
 }
 

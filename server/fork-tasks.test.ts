@@ -6,7 +6,7 @@ import { afterEach, expect, it, vi } from "vitest";
 let home: string;
 
 async function freshStore() {
-  home = mkdtempSync(join(tmpdir(), "omb-fork-tasks-"));
+  home = mkdtempSync(join(tmpdir(), "sanremes-fork-tasks-"));
   vi.resetModules();
   vi.stubEnv("HOME", home);
   vi.stubEnv("USERPROFILE", home);

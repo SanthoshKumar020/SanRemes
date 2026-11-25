@@ -29,7 +29,7 @@ describe("windows on a private display", () => {
 
 describe("giving the display its usual size back", () => {
   it.skipIf(process.platform === "win32")("asks the display server for it over the RFB socket, as a viewer would", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "omb-rfb-"));
+    const dir = mkdtempSync(join(tmpdir(), "sanremes-rfb-"));
     const socket = join(dir, "rfb");
     const received: Buffer[] = [];
     const ended = new Promise<void>((resolve) => {

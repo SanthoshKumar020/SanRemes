@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { RUN_COMPUTER_MEMORY_MAX, runComputerMemory } from "./cloud-computer-run-memory.ts";
 
 let dir: string;
-beforeEach(() => { dir = mkdtempSync(join(tmpdir(), "omb-run-memory-")); });
+beforeEach(() => { dir = mkdtempSync(join(tmpdir(), "sanremes-run-memory-")); });
 afterEach(() => { rmSync(dir, { recursive: true, force: true }); });
 
 describe("which routines used a cloud computer, kept across restarts", () => {

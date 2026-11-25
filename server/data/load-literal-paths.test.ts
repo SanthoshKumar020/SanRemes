@@ -10,7 +10,7 @@ import { createDataEngine } from "./engine.ts";
 import { DataSheetStore } from "./sheet.ts";
 import { loadData, type DataContext } from "./tools.ts";
 
-const root = mkdtempSync(join(tmpdir(), "omb-load-literal-"));
+const root = mkdtempSync(join(tmpdir(), "sanremes-load-literal-"));
 const engine = createDataEngine({ botFolder: (id) => join(root, "bots", id), dataDir: join(root, "data") });
 const connection = "bot" as const;
 

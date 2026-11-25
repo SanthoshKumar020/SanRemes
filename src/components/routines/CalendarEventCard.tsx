@@ -4,7 +4,7 @@ import { Video } from "lucide-react";
 import { BotAvatar } from "@/components/Avatar";
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
-import { MAUS_COLORS, type MausState } from "@/lib/mascot";
+import { MAUS_COLORS, type SanRemesState } from "@/lib/mascot";
 import { CALENDAR_SLOT_MINUTES } from "@/lib/routine-calendar";
 import { partlyDone, routineHeldNote, routineRunLabel } from "@/lib/routine-display";
 import type { RoutineRunStatus } from "@/lib/routines";
@@ -15,7 +15,7 @@ import { EVENT_DRAG_TYPE } from "./LimitResetMarkers";
 
 export const HOUR_HEIGHT = 64;
 
-export function statusState(status: RoutineRunStatus): MausState {
+export function statusState(status: RoutineRunStatus): SanRemesState {
   if (status === "running") return "working";
   if (status === "waiting") return "curious";
   if (status === "completed") return "proud";

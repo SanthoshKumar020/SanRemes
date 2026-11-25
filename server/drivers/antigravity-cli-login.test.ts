@@ -24,7 +24,7 @@ const scratch: string[] = [];
 const logins: AntigravityCliLogin[] = [];
 
 function folder(): string {
-  const directory = mkdtempSync(join(tmpdir(), "omb-antigravity-login-"));
+  const directory = mkdtempSync(join(tmpdir(), "sanremes-antigravity-login-"));
   scratch.push(directory);
   return directory;
 }

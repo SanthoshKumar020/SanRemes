@@ -45,11 +45,11 @@ afterEach(async () => {
 describe("desktop companion endpoint", () => {
   it("preserves the local-origin boundary while marking companion client mode", () => {
     expect(desktopCompanionRendererArguments("http://127.0.0.1:8799", null)).toEqual([
-      "--omb-local-origin=http://127.0.0.1:8799",
+      "--sanremes-local-origin=http://127.0.0.1:8799",
     ]);
     expect(desktopCompanionRendererArguments("http://127.0.0.1:8798", access)).toEqual([
-      "--omb-local-origin=http://127.0.0.1:8798",
-      "--openmausbot-remote-client",
+      "--sanremes-local-origin=http://127.0.0.1:8798",
+      "--sanremes-remote-client",
     ]);
   });
 
@@ -67,11 +67,11 @@ describe("desktop companion endpoint", () => {
       `https://${LABEL}.openmausbot.com`,
     );
     // The control plane's second Cloudflare account gives addresses here.
-    expect(normalizeDesktopCompanionEndpoint(`https://${LABEL}.mausbot.si`)).toBe(
-      `https://${LABEL}.mausbot.si`,
+    expect(normalizeDesktopCompanionEndpoint(`https://${LABEL}.sanremes.si`)).toBe(
+      `https://${LABEL}.sanremes.si`,
     );
-    expect(normalizeDesktopCompanionEndpoint(` ${LABEL.toUpperCase()}.Mausbot.SI/ `)).toBe(
-      `https://${LABEL}.mausbot.si`,
+    expect(normalizeDesktopCompanionEndpoint(` ${LABEL.toUpperCase()}.SanRemes.SI/ `)).toBe(
+      `https://${LABEL}.sanremes.si`,
     );
     for (const endpoint of [
       "https://unrelated.example.com",
@@ -84,23 +84,23 @@ describe("desktop companion endpoint", () => {
       "http://user@host.example-tailnet.ts.net",
       "http://host.example-tailnet.ts.net.evil.test",
       `https://${LABEL}.openmausbot.com.evil.test`,
-      `http://${LABEL}.mausbot.si`,
-      `https://${LABEL}.mausbot.si/path`,
-      `https://${LABEL}.mausbot.si.evil.test`,
-      "https://mausbot.si",
-      "mausbot.si",
-      "https://evilmausbot.si",
-      `https://${LABEL}.evilmausbot.si`,
-      "https://www.mausbot.si",
-      "https://app.mausbot.si",
+      `http://${LABEL}.sanremes.si`,
+      `https://${LABEL}.sanremes.si/path`,
+      `https://${LABEL}.sanremes.si.evil.test`,
+      "https://sanremes.si",
+      "sanremes.si",
+      "https://evilsanremes.si",
+      `https://${LABEL}.evilsanremes.si`,
+      "https://www.sanremes.si",
+      "https://app.sanremes.si",
       "https://accounts.openmausbot.com",
       "https://c-opaque.openmausbot.com",
-      "https://c-opaque.mausbot.si",
-      `https://${LABEL.slice(0, -1)}.mausbot.si`,
-      `https://${LABEL}0.mausbot.si`,
-      `https://${LABEL.replace("c-", "d-")}.mausbot.si`,
-      `https://${LABEL}.extra.mausbot.si`,
-      `https://www.${LABEL}.mausbot.si`,
+      "https://c-opaque.sanremes.si",
+      `https://${LABEL.slice(0, -1)}.sanremes.si`,
+      `https://${LABEL}0.sanremes.si`,
+      `https://${LABEL.replace("c-", "d-")}.sanremes.si`,
+      `https://${LABEL}.extra.sanremes.si`,
+      `https://www.${LABEL}.sanremes.si`,
     ]) {
       expect(normalizeDesktopCompanionEndpoint(endpoint), endpoint).toBe("");
     }
@@ -109,7 +109,7 @@ describe("desktop companion endpoint", () => {
   it("accepts one c-<32 hex> label under each listed domain, and only those", () => {
     // The third domain is a one-line change; until the owner names it, nothing new is accepted.
     expect(NEXT_MANAGED_COMPANION_HOST_SUFFIX).toBe("");
-    expect(MANAGED_COMPANION_HOST_SUFFIXES).toEqual(["openmausbot.com", "mausbot.si"]);
+    expect(MANAGED_COMPANION_HOST_SUFFIXES).toEqual(["openmausbot.com", "sanremes.si"]);
     expect(Object.isFrozen(MANAGED_COMPANION_HOST_SUFFIXES)).toBe(true);
     for (const suffix of MANAGED_COMPANION_HOST_SUFFIXES) {
       expect(suffix).toMatch(/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/);
@@ -127,7 +127,7 @@ describe("desktop companion endpoint", () => {
         expect(normalizeDesktopCompanionEndpoint(near), near).toBe("");
       }
     }
-    for (const unlisted of ["example.net", "openmausbot.net", "mausbot.com", "si", "com", ""]) {
+    for (const unlisted of ["example.net", "sanremes.net", "sanremes.com", "si", "com", ""]) {
       expect(normalizeDesktopCompanionEndpoint(`https://${LABEL}.${unlisted}`), unlisted).toBe("");
     }
   });
@@ -137,12 +137,12 @@ describe("desktop companion endpoint", () => {
     expect(desktopCompanionAccess({ [DESKTOP_COMPANION_FIELD]: hostedAccess })).toEqual(
       hostedAccess,
     );
-    const secondDomain = { ...access, endpoint: `https://${LABEL}.mausbot.si` };
+    const secondDomain = { ...access, endpoint: `https://${LABEL}.sanremes.si` };
     expect(desktopCompanionAccess({ [DESKTOP_COMPANION_FIELD]: secondDomain })).toEqual(
       secondDomain,
     );
     expect(
-      desktopCompanionAccess({ [DESKTOP_COMPANION_FIELD]: { ...access, endpoint: "https://app.mausbot.si" } }),
+      desktopCompanionAccess({ [DESKTOP_COMPANION_FIELD]: { ...access, endpoint: "https://app.sanremes.si" } }),
     ).toBeNull();
 
     expect(desktopCompanionAccess({ [DESKTOP_COMPANION_FIELD]: access })).toEqual(access);
@@ -206,27 +206,27 @@ describe("desktop companion pairing", () => {
     );
 
     const secondDomain = await pairDesktopCompanion({
-      endpoint: `${LABEL}.mausbot.si`,
+      endpoint: `${LABEL}.sanremes.si`,
       code: "654321",
       deviceName: "Desktop client",
       requestId: "request-https-02",
       fetchImpl,
     });
-    expect(secondDomain).toEqual({ ...access, endpoint: `https://${LABEL}.mausbot.si` });
+    expect(secondDomain).toEqual({ ...access, endpoint: `https://${LABEL}.sanremes.si` });
     expect(fetchImpl).toHaveBeenLastCalledWith(
-      `https://${LABEL}.mausbot.si/api/pair`,
+      `https://${LABEL}.sanremes.si/api/pair`,
       expect.objectContaining({ method: "POST" }),
     );
 
     await expect(
       pairDesktopCompanion({
-        endpoint: "https://app.mausbot.si",
+        endpoint: "https://app.sanremes.si",
         code: "654321",
         deviceName: "Desktop client",
         requestId: "request-https-03",
         fetchImpl,
       }),
-    ).rejects.toThrow("OpenMausBot HTTPS companion address");
+    ).rejects.toThrow("SanRemes HTTPS companion address");
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
@@ -256,7 +256,7 @@ describe("desktop companion loopback relay", () => {
   });
 
   it("serves the UI only on loopback and never includes the bearer in the page", async () => {
-    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "omb-desktop-client-"));
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "sanremes-desktop-client-"));
     tempDirs.push(directory);
     fs.writeFileSync(path.join(directory, "index.html"), "<h1>Remote client</h1>");
     const relay = await startDesktopCompanionRelay({ access, staticDir: directory, ports: [0] });
@@ -377,7 +377,7 @@ describe("desktop companion loopback relay", () => {
   });
 
   it("answers a request target that is not a URL with 400 and keeps serving", async () => {
-    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "omb-desktop-client-"));
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "sanremes-desktop-client-"));
     tempDirs.push(directory);
     fs.writeFileSync(path.join(directory, "index.html"), "<h1>Remote client</h1>");
     const relay = await startDesktopCompanionRelay({ access, staticDir: directory, ports: [0] });

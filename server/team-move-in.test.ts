@@ -16,7 +16,7 @@ const adaKey = personKey({ id: "", email: ada.email });
 const url = (path: string) => new URL(`http://x${path}`);
 
 let dir = "";
-beforeEach(() => { dir = mkdtempSync(join(tmpdir(), "omb-move-in-")); });
+beforeEach(() => { dir = mkdtempSync(join(tmpdir(), "sanremes-move-in-")); });
 afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
 function setup(over: Partial<TeamMoveInDeps> = {}) {

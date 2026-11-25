@@ -53,20 +53,20 @@ describe("custom MCP registry", () => {
   });
 
   it("refuses harness-owned environment names in stored and renderer entries", () => {
-    for (const key of ["OMB_HARNESS_URL", "OGB_BOX_TOKEN"]) {
+    for (const key of ["SANREMES_HARNESS_URL", "OGB_BOX_TOKEN"]) {
       expect(parseStoredMcpServer("notes", { command: "notes-mcp", env: { [key]: "bad" } })).toEqual({
         ok: false,
-        error: `Environment variable “${key}” is reserved by OpenMausBot.`,
+        error: `Environment variable “${key}” is reserved by SanRemes.`,
       });
       expect(parseMcpServerMutation("notes", { command: "notes-mcp", env: { [key]: "bad" } })).toEqual({
         ok: false,
-        error: `Environment variable “${key}” is reserved by OpenMausBot.`,
+        error: `Environment variable “${key}” is reserved by SanRemes.`,
       });
     }
   });
 
   it("lets a custom server run an Electron binary as node, and nothing else", () => {
-    const refused = "Environment variable “ELECTRON_RUN_AS_NODE” is reserved by OpenMausBot; a custom server may set it to “1” only.";
+    const refused = "Environment variable “ELECTRON_RUN_AS_NODE” is reserved by SanRemes; a custom server may set it to “1” only.";
     expect(parseStoredMcpServer("notes", { command: "notes-mcp", env: { ELECTRON_RUN_AS_NODE: "0" } })).toEqual({ ok: false, error: refused });
     expect(parseMcpServerMutation("notes", { command: "notes-mcp", env: { ELECTRON_RUN_AS_NODE: "true" } })).toEqual({ ok: false, error: refused });
     const stored = parseStoredMcpServer("bundled", {
@@ -234,7 +234,7 @@ describe("parseMcpServersImport", () => {
     });
     expect(parseMcpServersImport('{"mcpServers": {"web": {"url": "x.example/mcp"}}}')).toMatchObject({ ok: false, error: expect.stringMatching(/full address/) });
     expect(parseMcpServersImport('{"mcpServers": {"computer": {"command": "x"}}}')).toMatchObject({ ok: false, error: expect.stringMatching(/reserved/i) });
-    expect(parseMcpServersImport('{"mcpServers": {"ok": {"command": "x", "env": {"OMB_TOKEN": "1"}}}}')).toMatchObject({ ok: false });
+    expect(parseMcpServersImport('{"mcpServers": {"ok": {"command": "x", "env": {"SANREMES_TOKEN": "1"}}}}')).toMatchObject({ ok: false });
     expect(parseMcpServersImport("not json")).toMatchObject({ ok: false, error: expect.stringMatching(/JSON/i) });
     expect(parseMcpServersImport("[]")).toMatchObject({ ok: false });
   });
@@ -318,10 +318,10 @@ describe("a url server's sign-in app", () => {
   });
 
   it("keeps a configured redirect uri through an edit that leaves it out, only for the same client id", () => {
-    const configured = { ...saved, oauth: { clientId: "corp-app", redirectUri: "https://maus.example/mcp-oauth/callback" } };
+    const configured = { ...saved, oauth: { clientId: "corp-app", redirectUri: "https://sanremes.example/mcp-oauth/callback" } };
     expect(parseMcpServerMutation("docs", { url, oauth: { clientId: "corp-app", scopes: ["offline_access"] } }, configured)).toEqual({
       ok: true,
-      server: { type: "http", url, headers: {}, oauth: { clientId: "corp-app", scopes: ["offline_access"], redirectUri: "https://maus.example/mcp-oauth/callback" }, enabled: true },
+      server: { type: "http", url, headers: {}, oauth: { clientId: "corp-app", scopes: ["offline_access"], redirectUri: "https://sanremes.example/mcp-oauth/callback" }, enabled: true },
     });
     expect(parseMcpServerMutation("docs", { url, oauth: { clientId: "other-app" } }, configured)).toEqual({
       ok: true,

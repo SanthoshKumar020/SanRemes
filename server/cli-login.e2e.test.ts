@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { launchVerificationServer, type VerificationServer } from "../scripts/control-omb.ts";
+import { launchVerificationServer, type VerificationServer } from "../scripts/control-sanremes.ts";
 
 describe("a terminal signs in with one click in the desktop app", () => {
   let fixture: VerificationServer;
@@ -12,20 +12,20 @@ describe("a terminal signs in with one click in the desktop app", () => {
     });
     return { status: response.status, body: await response.json().catch(() => ({})) as Record<string, any> };
   };
-  const asApp = (method: string, path: string, body?: unknown) => call(method, path, body, { "x-openmausbot-desktop-owner": owner, origin: fixture.info.url });
+  const asApp = (method: string, path: string, body?: unknown) => call(method, path, body, { "x-sanremes-desktop-owner": owner, origin: fixture.info.url });
   const ask = async (scope?: "client") => {
     const verifier = randomBytes(32).toString("base64url");
     const verifierHash = createHash("sha256").update(verifier).digest("base64url");
-    const started = await call("POST", "/api/auth/cli-login", { label: "openmausbot CLI on test", verifierHash, ...(scope ? { scope } : {}) });
+    const started = await call("POST", "/api/auth/cli-login", { label: "sanremes CLI on test", verifierHash, ...(scope ? { scope } : {}) });
     return { ...started, verifier, poll: (secret = verifier) => call("POST", `/api/auth/cli-login/${started.body.id}`, { verifier: secret }) };
   };
 
   beforeAll(async () => {
     // The launcher names its starter bot as the app would; every request in the tests below says who sends it.
     const realFetch = globalThis.fetch;
-    globalThis.fetch = (input, init = {}) => realFetch(input, { ...init, headers: { ...Object.fromEntries(new Headers(init.headers)), "x-openmausbot-desktop-owner": owner } });
+    globalThis.fetch = (input, init = {}) => realFetch(input, { ...init, headers: { ...Object.fromEntries(new Headers(init.headers)), "x-sanremes-desktop-owner": owner } });
     try {
-      fixture = await launchVerificationServer({ ...process.env, OMB_TEST_DESKTOP_OWNER_TOKEN: owner });
+      fixture = await launchVerificationServer({ ...process.env, SANREMES_TEST_DESKTOP_OWNER_TOKEN: owner });
     } finally {
       globalThis.fetch = realFetch;
     }
@@ -46,7 +46,7 @@ describe("a terminal signs in with one click in the desktop app", () => {
     expect(request.body).not.toHaveProperty("token");
 
     const listed = await asApp("GET", "/api/auth/cli-login");
-    expect(listed.body.requests).toEqual([expect.objectContaining({ id: request.body.id, code: request.body.code, local: true, scopes: ["admin", "client"], label: "openmausbot CLI on test" })]);
+    expect(listed.body.requests).toEqual([expect.objectContaining({ id: request.body.id, code: request.body.code, local: true, scopes: ["admin", "client"], label: "sanremes CLI on test" })]);
     expect(JSON.stringify(listed.body)).not.toContain(request.verifier);
 
     expect((await request.poll()).status).toBe(202);

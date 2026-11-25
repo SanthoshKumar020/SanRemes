@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 /** The bots whose threads the person unfolded under their sidebar row, on this device. Folded is the default. */
-export const UNFOLDED_THREADS_KEY = "omb-unfolded-threads";
+export const UNFOLDED_THREADS_KEY = "sanremes-unfolded-threads";
 const LIMIT = 200;
 const NONE: ReadonlySet<string> = new Set();
 let cache: { raw: string | null; ids: ReadonlySet<string> } | undefined;

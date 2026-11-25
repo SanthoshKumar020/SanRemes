@@ -58,7 +58,7 @@ export async function initializeAnswer(server: RemoteMcpSpec, options: { fetch?:
   const signal = AbortSignal.timeout(options.timeoutMs ?? REMOTE_MCP_STARTUP_MS);
   const client = new RemoteMcpClient(server, { maxBytes: MAX_REMOTE_MCP_BYTES, fetch: fetchImpl });
   try {
-    await client.initialize("OpenMausBot", signal);
+    await client.initialize("SanRemes", signal);
     return { ok: true };
   } catch (error) {
     const status = error instanceof McpHttpError && error.kind === "status" ? error.status : undefined;

@@ -29,7 +29,7 @@ describe("ensureScrcpyServer", () => {
 
   /** A release page that redirects /download to the file, as GitHub's does, and counts the downloads it served. */
   async function releaseOf(body: Buffer | { status: number }, digest = sha256(SERVER_FILE)) {
-    dataDir = mkdtempSync(join(tmpdir(), "omb-scrcpy-file-"));
+    dataDir = mkdtempSync(join(tmpdir(), "sanremes-scrcpy-file-"));
     const served = { downloads: 0 };
     release = createServer((request, response) => {
       if (request.url === "/download") {

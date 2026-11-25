@@ -61,11 +61,11 @@ describe("reading a site record", () => {
   });
 
   it("accepts a loopback address only for the stand-in that replaces Netlify", () => {
-    const env = { OMB_NETLIFY_API_URL: "http://127.0.0.1:4010/api/v1" };
+    const env = { SANREMES_NETLIFY_API_URL: "http://127.0.0.1:4010/api/v1" };
     const record = JSON.stringify({ ...RECORD, url: "http://127.0.0.1:4010/live/abc/", adminUrl: "http://127.0.0.1:4010/admin/abc" });
     expect(parseSiteRecord(record, "f", 1, env)).toMatchObject({ url: "http://127.0.0.1:4010/live/abc/", manageUrl: "http://127.0.0.1:4010/admin/abc" });
-    expect(parseSiteRecord(record, "f", 1, { OMB_NETLIFY_API_URL: "http://127.0.0.1:4011/api/v1" })).toBeNull();
-    expect(parseSiteRecord(record, "f", 1, { OMB_NETLIFY_API_URL: "http://evil.test/api/v1" })).toBeNull();
+    expect(parseSiteRecord(record, "f", 1, { SANREMES_NETLIFY_API_URL: "http://127.0.0.1:4011/api/v1" })).toBeNull();
+    expect(parseSiteRecord(record, "f", 1, { SANREMES_NETLIFY_API_URL: "http://evil.test/api/v1" })).toBeNull();
   });
 });
 
@@ -145,10 +145,10 @@ describe("deleting a site on Netlify", () => {
   it("uses the same API address guard as the publish helper", () => {
     for (const override of [undefined, "", "http://127.0.0.1:4010/api/v1", "http://127.0.0.1:4010/api/v1/", "http://127.0.0.1:4010", "https://127.0.0.1:4010/api/v1", "http://localhost:4010/api/v1",
       "http://127.0.0.1.evil.test/api/v1", "http://evil.test/api/v1", "http://127.0.0.1:4010/api/v1?x=@evil.test", "http://127.0.0.1:4010@evil.test/"]) {
-      const env = override === undefined ? {} : { OMB_NETLIFY_API_URL: override };
+      const env = override === undefined ? {} : { SANREMES_NETLIFY_API_URL: override };
       expect(netlifyApiBase(env), String(override)).toBe(apiBase(env));
     }
-    expect(netlifyApiBase({ OMB_NETLIFY_API_URL: "http://evil.test/api/v1" })).toBe("https://api.netlify.com/api/v1");
+    expect(netlifyApiBase({ SANREMES_NETLIFY_API_URL: "http://evil.test/api/v1" })).toBe("https://api.netlify.com/api/v1");
   });
 
   it("sends one DELETE for that site to Netlify with the token, and nothing else", async () => {
@@ -174,7 +174,7 @@ describe("deleting a site on Netlify", () => {
   it("deletes on the loopback stand-in, which refuses any other token", async () => {
     const fake = await startFakeNetlify(TOKEN);
     try {
-      const env = { OMB_NETLIFY_API_URL: fake.url };
+      const env = { SANREMES_NETLIFY_API_URL: fake.url };
       const made = await (await fetch(`${fake.url}/sites`, { method: "POST", headers: { authorization: `Bearer ${TOKEN}` }, body: "{}" })).json() as { id: string };
       expect(await deleteNetlifySite(made.id, "wrong-token", { env })).toEqual({ ok: false, reason: "token_refused", status: 401 });
       expect(fake.sites.has(made.id)).toBe(true);
@@ -187,7 +187,7 @@ describe("deleting a site on Netlify", () => {
   it("does what the publish helper's own --delete does: the same call, a missing site counts as gone, the record goes", async () => {
     const fake = await startFakeNetlify(TOKEN);
     try {
-      const env = { OMB_NETLIFY_API_URL: fake.url }, root = scratch(), tokenFile = join(scratch(), "token");
+      const env = { SANREMES_NETLIFY_API_URL: fake.url }, root = scratch(), tokenFile = join(scratch(), "token");
       writeFileSync(tokenFile, TOKEN);
       const made = async (name: string) => {
         const project = join(root, name);

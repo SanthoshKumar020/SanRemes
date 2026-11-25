@@ -27,7 +27,7 @@ export interface MoveFacts {
 
 /** What this computer lends My Cloud now (electron/move-lending.mjs). */
 export interface MoveLending {
-  /** Lending to My Cloud is paused from the OpenMausBot icon. */
+  /** Lending to My Cloud is paused from the SanRemes icon. */
   paused: boolean;
   /** Every working folder of the choice sits inside a folder already lent to My Cloud with editing (or the home folder,
    * which is lent by itself), so they are reachable whatever is chosen here. */
@@ -56,7 +56,7 @@ export type MoveChangeLine =
   | { kind: "skills"; skills: string[]; hidden: string[] };
 
 /** What the person can grant in the move step: the working folder when it isn't reachable yet, commands when they are
- * off. Nothing while lending is paused: the fix for that is Resume, in the OpenMausBot icon's menu. */
+ * off. Nothing while lending is paused: the fix for that is Resume, in the SanRemes icon's menu. */
 export function moveOffers(facts: MoveFacts, lending: MoveLending): { folder: boolean; commands: boolean; together: boolean } {
   const lends = !lending.paused;
   return {

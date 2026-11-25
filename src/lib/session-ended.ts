@@ -3,7 +3,7 @@ import { readSessionState } from "./session";
 import { forgetSharedSession } from "./session-reuse";
 
 export const SESSION_ENDED_REASON = "Your session ended. Pair this device again to keep using it.";
-const ENDED_KEY = "omb.session-ended";
+const ENDED_KEY = "sanremes.session-ended";
 
 let ended = false;
 let checking: Promise<void> | null = null;

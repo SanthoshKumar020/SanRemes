@@ -8,10 +8,10 @@ describe("the broker's rewrite of a spawn's environment", () => {
   it("replaces each provider key with the token and points its base URL at the broker, keeping the real key in the grant", () => {
     const { env, grants, unbrokered } = brokerRewrite({
       PATH: "/usr/bin", ANTHROPIC_API_KEY: "sk-ant-real", OPENAI_API_KEY: "sk-openai-real", OPENAI_BASE_URL: "https://openrouter.ai/api/v1/",
-      GEMINI_API_KEY: "gm-real", XAI_API_KEY: "xai-real", OMB_COMMS_TOKEN: "cap",
+      GEMINI_API_KEY: "gm-real", XAI_API_KEY: "xai-real", SANREMES_COMMS_TOKEN: "cap",
     }, token, 18080);
     expect(env).toEqual({
-      PATH: "/usr/bin", OMB_COMMS_TOKEN: "cap", XAI_API_KEY: "xai-real",
+      PATH: "/usr/bin", SANREMES_COMMS_TOKEN: "cap", XAI_API_KEY: "xai-real",
       ANTHROPIC_API_KEY: token, ANTHROPIC_BASE_URL: `http://127.0.0.1:18080/b/${token}/anthropic`,
       OPENAI_API_KEY: token, OPENAI_BASE_URL: `http://127.0.0.1:18080/b/${token}/openai`,
       GEMINI_API_KEY: token, GOOGLE_GEMINI_BASE_URL: `http://127.0.0.1:18080/b/${token}/gemini`,

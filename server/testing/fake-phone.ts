@@ -31,7 +31,7 @@ export function videoSession(width: number, height: number): Buffer {
 
 /** A copy of the fake adb in a folder of its own (`dir`, for the test to remove), with a prepared scrcpy server file. */
 export function fakePhone({ mode = "", video = SCRCPY_VIDEO, devices = "", under = tmpdir() } = {}) {
-  const dir = mkdtempSync(join(under, "omb-fake-adb-"));
+  const dir = mkdtempSync(join(under, "sanremes-fake-adb-"));
   const adbPath = join(dir, "adb.mjs");
   copyFileSync(FAKE_ADB, adbPath);
   chmodSync(adbPath, 0o755);
