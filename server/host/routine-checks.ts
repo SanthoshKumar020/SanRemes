@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { z } from "zod";
 
 import { writeFileAtomic } from "../atomic.ts";
+import { checkWatch, fetchPageText, type BrowserWatch, type PageFetch } from "../browser-errands.ts";
 import { SourceError, type CalendarEvent, type ConnectedReads, type EmailHeader, type ReadApp, type ReadSession } from "../connected-reads.ts";
 import type { Routine, RoutineCheckResult, RoutineChecks, RoutineRun } from "../routines.ts";
 import type { CheckHold } from "../routine-check-pacing.ts";
@@ -36,6 +37,8 @@ const pendingSchema = z.object({
   /** The threads a draft may answer, each to its own sender: the run's emails, nothing else. */
   replies: z.array(z.object({ threadId: id, to: z.string().max(320) })).max(200),
   drafted: z.array(id).max(200).optional(),
+  /** Watched pages whose text changed, with the digest the run must keep: the stored digest moves only once the run's answer is kept. */
+  watches: z.array(z.object({ watchId: id, botId: z.string().max(128), digest: z.string().max(128) })).max(50).optional(),
 });
 const failureSchema = z.object({ since: at, count: z.number().int().min(1), signedOut: z.boolean().optional(), lastAt: at });
 const routineStateSchema = z.object({
@@ -96,6 +99,10 @@ export interface RoutineChecksDeps {
   inbox?: Pick<InboxTriage, "ready" | "triage">;
   /** Emails a routine's checks had sorted: by a run whose answer was kept, or by the helper models. */
   sorted?(routineId: string, count: number): void;
+  /** The bot's watched pages, by bot id; absent means no watch is checked. */
+  browserWatches?: { list(botId: string): BrowserWatch[]; save(botId: string, watches: BrowserWatch[]): void };
+  /** Fetch a watched page's text; the plain fetch when unset. */
+  fetchPage?: (url: string) => Promise<PageFetch>;
 }
 
 const ACTIVE = new Set(["queued", "running", "waiting"]);
@@ -173,6 +180,16 @@ export function createRoutineChecks(deps: RoutineChecksDeps): RoutineChecks & {
     const [routineId, pending] = owner;
     const entry = of(routineId);
     if (pending.replies.length) deps.sorted?.(routineId, pending.replies.length);
+    if (pending.watches?.length && deps.browserWatches) {
+      for (const staged of pending.watches) {
+        const all = deps.browserWatches.list(staged.botId);
+        const watch = all.find((candidate) => candidate.id === staged.watchId);
+        if (!watch) continue;
+        watch.digest = staged.digest;
+        watch.lastChangedAt = new Date(now()).toISOString();
+        deps.browserWatches.save(staged.botId, all);
+      }
+    }
     if (pending.mailCursor !== undefined) entry.mailCursor = Math.max(entry.mailCursor ?? 0, pending.mailCursor);
     if (pending.runsCursor !== undefined) entry.runsCursor = Math.max(entry.runsCursor ?? 0, pending.runsCursor);
     entry.judged = keepNewest([...new Set([...(entry.judged ?? []), ...pending.mail])], MAX_JUDGED);
@@ -217,10 +234,11 @@ export function createRoutineChecks(deps: RoutineChecksDeps): RoutineChecks & {
     const aiAllowed = !context.hold && (routine.access !== "read-and-draft" || deps.fenced(routine.botId));
     const report: CheckReport = { routine, at };
     const trouble: ReadTrouble[] = [];
-    const items: CheckItems = { mail: [], prep: [], runs: [] };
+    const items: CheckItems = { mail: [], prep: [], runs: [], watches: [] };
     const pending: Omit<Pending, "at"> = { mail: [], prep: [], replies: [] };
     const held = new Set(Object.values(entry.pending ?? {}).flatMap((one) => [...one.mail, ...one.prep]));
     let wakeAt: number | undefined;
+    let watchTrouble: string | undefined;
     const apps = checks.includes("calendar") || checks.includes("mail") ? await deps.reads.connected().catch(() => null) : null;
     const session = deps.reads.session(routine.botId);
     report.session = session;
@@ -350,10 +368,38 @@ export function createRoutineChecks(deps: RoutineChecksDeps): RoutineChecks & {
       } else if (!finished.length) entry.runsCursor = at;
     }
 
+    if (checks.includes("browser") && deps.browserWatches) {
+      const all = deps.browserWatches.list(routine.botId);
+      const mine = all.filter((watch) => watch.routineId === routine.id);
+      if (brief && mine.length) {
+        // A watch change needs a run to say what changed, and a brief routine has no run to
+        // give it: the watch waits for its own routine.
+        watchTrouble = "Page watches report into a routine's own thread, not the brief — give this watch its own routine to hear about changes.";
+      } else {
+        let dirty = false;
+        for (const watch of mine) {
+          const result = await checkWatch(watch, deps.fetchPage ?? fetchPageText);
+          const stored = all.find((candidate) => candidate.id === watch.id);
+          if (!stored) continue;
+          stored.lastCheckedAt = result.fetchedAt;
+          dirty = true;
+          if (result.error !== undefined) continue;
+          if (watch.digest === "") {
+            stored.digest = result.digest;
+            continue;
+          }
+          if (!result.changed || !aiAllowed) continue;
+          pending.watches = [...(pending.watches ?? []), { watchId: watch.id, botId: routine.botId, digest: result.digest }];
+          items.watches.push({ name: watch.name, url: watch.url, excerpt: result.excerpt });
+        }
+        if (dirty) deps.browserWatches.save(routine.botId, all);
+      }
+    }
+
     if (apps) report.gmail = { connected: apps.gmail === true, ...(entry.address ? { address: entry.address } : {}) };
     if (trouble.length) report.trouble = trouble;
     let run: RoutineCheckResult["run"];
-    const work = brief ? items.mail.length + items.prep.length : items.mail.length + items.prep.length + items.runs.length;
+    const work = brief ? items.mail.length + items.prep.length : items.mail.length + items.prep.length + items.runs.length + items.watches.length;
     if (work > 0) {
       const key = `chk-${randomUUID()}`;
       entry.pending = { ...entry.pending, [key]: { at, ...pending } };
@@ -367,8 +413,8 @@ export function createRoutineChecks(deps: RoutineChecksDeps): RoutineChecks & {
     }
     save();
     if (brief) await deps.report(report);
-    const sentence = troubleSentence(trouble);
-    return { ...(run ? { run } : {}), ...(sentence ? { trouble: sentence } : {}), ...(wakeAt !== undefined ? { wakeAt } : {}) };
+    const sentences = [troubleSentence(trouble), watchTrouble].filter((one): one is string => one !== undefined);
+    return { ...(run ? { run } : {}), ...(sentences.length ? { trouble: sentences.join(" ") } : {}), ...(wakeAt !== undefined ? { wakeAt } : {}) };
   }
 
   function settled(run: RoutineRun): void {

@@ -31,6 +31,7 @@ import {
   saveSkill,
   type MemoryNotesDoc,
 } from "../memory-notes.ts";
+import { approveBrowserStep } from "../browser-trust.ts";
 import {
   approveProposal,
   denyProposal,
@@ -487,6 +488,16 @@ export function createBotMemoryRoutes(deps: BotMemoryRouteDeps): RouteHandler {
         }),
         z.object({ kind: z.literal("patch-skill"), name: z.string(), body: z.string() }),
         z.object({ kind: z.literal("forget-skill"), name: z.string() }),
+        z.object({
+          kind: z.literal("browser-step"),
+          step: z.object({
+            tool: z.string(),
+            args: z.record(z.string(), z.unknown()),
+            url: z.string().nullable(),
+            label: z.string(),
+          }),
+          fingerprint: z.string().regex(/^[a-f0-9]{64}$/),
+        }),
       ]);
       const parsed = pendingInput.safeParse(await readBody(req));
       if (!parsed.success) return json(res, 400, { error: "a proposal needs a kind and the change it asks for" });
@@ -506,6 +517,13 @@ export function createBotMemoryRoutes(deps: BotMemoryRouteDeps): RouteHandler {
         const botId = m[1];
         const proposalId = m[2]!;
         if (m[3] === "approve") {
+          // A browser step is approved by recording its exact action for replay, not by saving
+          // notes — like discarding, it touches only the queue, so it does not use the write path.
+          const kind = listProposals(notesRoot(botId)).find((proposal) => proposal.id === proposalId)?.kind;
+          if (kind === "browser-step") {
+            const approved = approveBrowserStep(notesRoot(botId), proposalId);
+            return json(res, 200, { ok: true, proposal: approved.proposal });
+          }
           // The notes save goes through the owner's write path, like every direct write; staging and
           // discarding touch only the queue itself, so they do not.
           const approved = write(botId, () => approveProposal(notesRoot(botId), proposalId));

@@ -448,6 +448,7 @@ import { createFillLoginTurn } from "./host/fill-login-turn.ts";
 import { BotLogins, cardLoginPlace, cardSignInElsewhere, observeSignInPage, type ObservedPage } from "./bot-logins.ts";
 import { relayFrame } from "./browser-relay.ts";
 import { browserEvidence, stepContext } from "./browser-steps.ts";
+import { gateBrowserMcpCall } from "./browser-trust.ts";
 import { parseLoginFields, parseTotpField, createLoginRoutes } from "./routes/logins.ts"; import { createVaultRoutes } from "./routes/vault.ts"; import { createVaultReaders } from "./host/vault-readers.ts"; import { createSignInVaultChoices } from "./vault/choices.ts";
 import { loginSite } from "../shared/logins.ts";
 import { browserRestartRefusal } from "./browser-live.ts";
@@ -12904,9 +12905,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
         if (!browser || browser.session !== internalCapability.browserSession) {
           return json(res, 409, { error: "this browser profile changed; start a new turn" });
         }
-        if (body?.method !== "tools/list" && body?.method !== "tools/call") {
-          return json(res, 400, { error: "unsupported browser method" });
-        }
+        const gated = gateBrowserMcpCall({ method: body?.method, params: body?.params, root: workspaceDir(bot.id), actor: isUnattended(bot.id, internalCapability.threadId) ? "agent" : "owner", session: browser.session }); if (gated) return json(res, gated.status, gated.body);
         if (body.method === "tools/call") {
           const abort = new AbortController(); res.once("close", () => { if (!res.writableEnded) abort.abort(); });
           const refused = await browserSeats.take(internalCapability, browser.session, abort.signal); requireActiveInternalCapability();

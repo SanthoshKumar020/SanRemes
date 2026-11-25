@@ -153,7 +153,7 @@ function todayString(now: Date = new Date()): string {
  * secret-word nearby still is not caught; that is the same limit Nod documents for its own detector. */
 const SECRET_PROSE = /\b(password|passwd|api[-_ ]?key|secret|access[-_ ]?token|auth[-_ ]?token|private[-_ ]?key)\s*(?:is|=|:)\s*(\S+)/i;
 
-function isSecret(text: string): boolean {
+export function isSecret(text: string): boolean {
   if (redactSecretsInText(text) !== text) return true;
   const prose = SECRET_PROSE.exec(text);
   if (!prose) return false;

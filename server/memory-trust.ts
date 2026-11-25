@@ -1,8 +1,9 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { existsSync, lstatSync, mkdirSync, readFileSync, realpathSync } from "node:fs";
 import { dirname, join, sep } from "node:path";
 
 import { writeFileAtomic } from "./atomic.ts";
+import { parseToolCall } from "./browser/tools.ts";
 import {
   addNote,
   archiveNote,
@@ -10,6 +11,7 @@ import {
   editNote,
   forgetNote,
   forgetSkill,
+  isSecret,
   loadNotesDoc,
   MemoryNotesError,
   patchSkill,
@@ -126,7 +128,46 @@ export type PendingProposalInput =
   | { kind: "remember"; path: string; chatId: string; messageId: string; text: string; at: string }
   | { kind: "save-skill"; input: SaveSkillInput }
   | { kind: "patch-skill"; name: string; body: string }
-  | { kind: "forget-skill"; name: string };
+  | { kind: "forget-skill"; name: string }
+  | { kind: "browser-step"; step: BrowserStepInput; fingerprint: string };
+
+/** A website step staged for approval: the parsed tool call, the page it was staged on, and a
+ * human-readable label. The label is display-only; the fingerprint binds the exact tool and
+ * arguments, so a changed action or argument is a different step and needs its own approval. */
+export interface BrowserStepInput {
+  tool: string;
+  args: Record<string, unknown>;
+  url: string | null;
+  label: string;
+}
+
+function canonical(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+        .map(([key, entry]) => [key, canonical(entry)]),
+    );
+  }
+  return value;
+}
+
+/** The approval binding: the exact tool and arguments, key order irrelevant. */
+export function browserStepFingerprint(step: BrowserStepInput): string {
+  return createHash("sha256").update(JSON.stringify(canonical({ tool: step.tool, args: step.args }))).digest("hex");
+}
+
+/** The text a step carries that could hold a credential: typed text, a script, a dialog answer, or
+ * a URL with credentials embedded. A step that holds one is refused outright — it is never staged,
+ * so the pending file never holds a secret. */
+export function browserStepHasSecret(step: BrowserStepInput): boolean {
+  const texts = [step.url ?? ""];
+  for (const field of ["text", "expression", "promptText"]) {
+    if (typeof step.args[field] === "string") texts.push(step.args[field] as string);
+  }
+  return texts.some((text) => isSecret(text));
+}
 
 export type PendingProposal = PendingProposalInput & {
   id: string;
@@ -145,7 +186,7 @@ export const MEMORY_PENDING_FILE = "memory/pending.json";
 export const MEMORY_PENDING_MAX = 50;
 const MEMORY_PENDING_MAX_BYTES = 64 * 1024;
 
-function fail(code: "invalid" | "conflict" | "not-found" | "too-large" | "corrupt" | "path", status: number, message: string): never {
+function fail(code: "invalid" | "conflict" | "not-found" | "too-large" | "corrupt" | "path" | "secret", status: number, message: string): never {
   throw new MemoryNotesError(code, status, message);
 }
 
@@ -153,9 +194,9 @@ export function emptyPendingDoc(): PendingDoc {
   return { version: 1, proposals: [] };
 }
 
-/** The pending file lives under the bot's workspace; a link in its place is not a pending file. */
-export function resolvePendingPath(root: string): string {
-  const absolute = join(root, MEMORY_PENDING_FILE);
+/** A memory file under the bot's workspace; a link in its place is not a memory file. */
+export function resolveMemoryFile(root: string, file: string): string {
+  const absolute = join(root, file);
   let realRoot: string;
   try {
     realRoot = realpathSync(root);
@@ -166,14 +207,19 @@ export function resolvePendingPath(root: string): string {
   while (!existsSync(ancestor) && ancestor !== root) ancestor = dirname(ancestor);
   const realAncestor = realpathSync(ancestor);
   if (realAncestor !== realRoot && !realAncestor.startsWith(realRoot + sep)) {
-    fail("path", 400, "the pending file escapes the workspace");
+    fail("path", 400, `the ${file} file escapes the workspace`);
   }
   try {
-    if (lstatSync(absolute).isSymbolicLink()) fail("path", 400, "the pending file is a link, not a file");
+    if (lstatSync(absolute).isSymbolicLink()) fail("path", 400, `the ${file} file is a link, not a file`);
   } catch (error) {
     if (error instanceof MemoryNotesError) throw error;
   }
   return absolute;
+}
+
+/** The pending file lives under the bot's workspace; a link in its place is not a pending file. */
+export function resolvePendingPath(root: string): string {
+  return resolveMemoryFile(root, MEMORY_PENDING_FILE);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -234,6 +280,8 @@ function proposalTarget(input: PendingProposalInput): string {
     case "patch-skill":
     case "forget-skill":
       return `skill:${input.name}`;
+    case "browser-step":
+      return `browser:${input.fingerprint}`;
   }
 }
 
@@ -275,6 +323,17 @@ function proposalTarget(input: PendingProposalInput): string {
     case "forget-skill":
       forgetSkill(doc, input.name);
       return;
+    case "browser-step": {
+      const parsed = parseToolCall(input.step.tool, input.step.args);
+      if (!parsed.ok) fail("invalid", 400, `that browser step cannot run: ${parsed.error}`);
+      if (browserStepFingerprint(input.step) !== input.fingerprint) {
+        fail("invalid", 400, "that browser step does not match its approval fingerprint");
+      }
+      if (browserStepHasSecret(input.step)) {
+        fail("secret", 400, "a browser step cannot carry a password, key or code — sign in with the saved login instead");
+      }
+      return;
+    }
   }
 }
 
@@ -307,6 +366,8 @@ function applyProposal(doc: MemoryNotesDoc, input: PendingProposalInput): Memory
       return patchSkill(doc, input.name, input.body);
     case "forget-skill":
       return forgetSkill(doc, input.name);
+    case "browser-step":
+      fail("invalid", 400, "a browser step is approved by running it, not by applying it to notes");
   }
 }
 
@@ -347,6 +408,11 @@ export function approveProposal(root: string, id: string): { doc: MemoryNotesDoc
 
 /** Discard a proposal: the queue entry goes, nothing live changes. */
 export function denyProposal(root: string, id: string): PendingProposal {
+  return takeProposal(root, id);
+}
+
+/** Take a proposal out of the queue and return it; the caller owns what happens next. */
+export function takeProposal(root: string, id: string): PendingProposal {
   const pending = loadPendingDoc(root);
   const proposal = pending.proposals.find((p) => p.id === id);
   if (!proposal) fail("not-found", 404, `no pending proposal ${JSON.stringify(id)}`);

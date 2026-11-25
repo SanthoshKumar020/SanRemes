@@ -14,6 +14,8 @@ export interface CheckItems {
   mail: EmailHeader[];
   prep: Array<{ key: string; event: CalendarEvent; short: boolean }>;
   runs: RoutineRun[];
+  /** Watched pages whose text changed since the last check, with what they say now. */
+  watches: Array<{ name: string; url: string; excerpt: string }>;
 }
 
 function when(ms: number, timeZone: string | undefined): string {
@@ -85,6 +87,7 @@ export function checkedPrompt(input: { instructions: string; items: CheckItems; 
     ...(items.mail.length ? ["New emails:", emailRecords(items.mail)] : []),
     ...(items.prep.length ? ["Meetings with other people starting soon:", meetingRecords(items.prep, input.timeZone)] : []),
     ...(items.runs.length ? ["Other routines that finished:", runRecords(items.runs)] : []),
+    ...(items.watches.length ? ["Watched pages that changed since the last check:", recordsBlock("Watched pages", items.watches.map((watch) => `${clean(watch.name, 120)} · ${clean(watch.url, 300)} · now says ${clean(watch.excerpt, 500)}`))] : []),
   ].join("\n");
 }
 

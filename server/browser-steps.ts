@@ -271,13 +271,17 @@ export class RefIndex {
 
   clear(): void { this.refs.clear(); }
 
+  entries(): Array<{ ref: string; role: string; name: string; inFrame: boolean }> {
+    return [...this.refs.entries()].map(([ref, value]) => ({ ref, ...value }));
+  }
+
   get(selector: string): { role: string; name: string; inFrame: boolean } | undefined {
     const ref = /^@?(e\d+)$/u.exec(selector.trim())?.[1];
     return ref ? this.refs.get(ref) : undefined;
   }
 }
 
-const SECRET_TARGET = /pass|pwd|otp|one.?time|2fa|mfa|security.?code|verif\w*.?code|cvc|cvv|card.?num|cc.?num|\bpin\b|ssn|secret|token/iu;
+export const SECRET_TARGET = /pass|pwd|otp|one.?time|2fa|mfa|security.?code|verif\w*.?code|cvc|cvv|card.?num|cc.?num|\bpin\b|ssn|secret|token/iu;
 
 /** Typed text is scrubbed of held secrets and masked outright for any field that looks secret. */
 export function stepLabel(tool: string, args: Record<string, unknown>, ref?: { role: string; name: string }, focus?: Focus | null): string {

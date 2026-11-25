@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { SourceError, type CalendarEvent, type ConnectedReads, type EmailHeader, type ReadApp } from "../connected-reads.ts";
 import type { Routine, RoutineRun } from "../routines.ts";
+import { newWatch, pageDigest, type BrowserWatch, type PageFetch } from "../browser-errands.ts";
 import { CHECKS_FILE, createRoutineChecks, type CheckReport } from "./routine-checks.ts";
 
 const MINUTE = 60_000;
@@ -45,10 +46,24 @@ function setup(options: { fenced?: boolean; may?: (app: ReadApp) => boolean; con
     }),
   };
   const sorted: Array<[string, number]> = [];
+  const pages = new Map<string, string>();
+  const failingPages = new Set<string>();
+  const watchStore = new Map<string, BrowserWatch[]>();
   const checks = createRoutineChecks({
     dataDir: dir, reads, now: () => now, mayRead: (_bot, app) => options.may?.(app) ?? true, fenced: () => options.fenced ?? true,
     timeZone: () => "UTC", runs: () => runs, dismissedFrom: () => [], report: (report) => { reports.push(report); },
     sorted: (routineId, count) => sorted.push([routineId, count]),
+    browserWatches: {
+      list: (botId) => watchStore.get(botId) ?? [],
+      save: (botId, watches) => {
+        watchStore.set(botId, watches);
+      },
+    },
+    fetchPage: async (url): Promise<PageFetch> => {
+      if (failingPages.has(url)) return { ok: false, status: 503, error: "the page answered 503" };
+      const text = pages.get(url);
+      return text === undefined ? { ok: false, error: "no such page" } : { ok: true, status: 200, text };
+    },
   });
   const routine = (extra: Partial<Routine> = {}): Routine => ({
     id: "watch", name: "Keep an eye on my day", prompt: "Check my day.", target: "bot", botId: "chief", runOn: "maus", enabled: true,
@@ -71,7 +86,7 @@ function setup(options: { fenced?: boolean; may?: (app: ReadApp) => boolean; con
     events.push(event);
     return event;
   };
-  return { checks, routine, mail, outlookMail, meeting, failing, several, calls, runs, reports, inbox, outlookInbox, sorted, advance: (ms: number) => { now += ms; }, now: () => now, file: join(dir, CHECKS_FILE) };
+  return { checks, routine, mail, outlookMail, meeting, failing, several, calls, runs, reports, inbox, outlookInbox, sorted, pages, failingPages, watchStore, advance: (ms: number) => { now += ms; }, now: () => now, file: join(dir, CHECKS_FILE) };
 }
 
 const run = (key: string, status: RoutineRun["status"], deliver?: "brief"): RoutineRun => ({
@@ -264,5 +279,75 @@ describe("a routine's checks", () => {
     s.advance(15 * MINUTE);
     const second = await s.checks.check(s.routine({ checks: ["mail"] }), { manual: true });
     expect(s.checks.items(second.run!.key)?.mail.map((email) => email.id)).toEqual(["o1"]);
+  });
+});
+
+describe("browser watches", () => {
+  const watchRoutine = (s: ReturnType<typeof setup>) => s.routine({ checks: ["browser"], deliver: undefined });
+  const priceWatch = () => newWatch("Price page", "https://example.com/price", "watch");
+
+  it("a first read seeds the digest and runs nothing", async () => {
+    const s = setup();
+    s.pages.set("https://example.com/price", "Price: 99");
+    s.watchStore.set("chief", [priceWatch()]);
+    const result = await s.checks.check(watchRoutine(s), { manual: true });
+    expect(result.run).toBeUndefined();
+    const stored = s.watchStore.get("chief")![0]!;
+    expect(stored.digest).toBe(pageDigest("Price: 99"));
+    expect(stored.lastCheckedAt).not.toBeNull();
+  });
+
+  it("an unchanged page runs nothing", async () => {
+    const s = setup();
+    s.pages.set("https://example.com/price", "Price: 99");
+    s.watchStore.set("chief", [{ ...priceWatch(), digest: pageDigest("Price: 99") }]);
+    expect((await s.checks.check(watchRoutine(s), { manual: true })).run).toBeUndefined();
+  });
+
+  it("a changed page starts a run naming the page, and the digest moves only when the run is kept", async () => {
+    const s = setup();
+    s.pages.set("https://example.com/price", "Price: 109");
+    s.watchStore.set("chief", [{ ...priceWatch(), digest: pageDigest("Price: 99") }]);
+    const first = await s.checks.check(watchRoutine(s), { manual: true });
+    expect(first.run?.key).toMatch(/^chk-/);
+    expect(first.run!.prompt).toContain("Price page");
+    expect(first.run!.prompt).toContain("Price: 109");
+    expect(s.watchStore.get("chief")![0]!.digest).toBe(pageDigest("Price: 99"));
+    s.checks.commit(first.run!.key);
+    expect(s.watchStore.get("chief")![0]!.digest).toBe(pageDigest("Price: 109"));
+    s.advance(15 * MINUTE);
+    expect((await s.checks.check(watchRoutine(s), { manual: true })).run).toBeUndefined();
+  });
+
+  it("a run that fails gives the change back on the next check", async () => {
+    const s = setup();
+    s.pages.set("https://example.com/price", "Price: 109");
+    s.watchStore.set("chief", [{ ...priceWatch(), digest: pageDigest("Price: 99") }]);
+    const first = await s.checks.check(watchRoutine(s), { manual: true });
+    expect(first.run).toBeDefined();
+    s.checks.settled(run(first.run!.key, "failed"));
+    expect(s.watchStore.get("chief")![0]!.digest).toBe(pageDigest("Price: 99"));
+    s.advance(15 * MINUTE);
+    const second = await s.checks.check(watchRoutine(s), { manual: true });
+    expect(second.run).toBeDefined();
+    expect(second.run!.prompt).toContain("Price: 109");
+  });
+
+  it("an unreachable page is not a change", async () => {
+    const s = setup();
+    s.failingPages.add("https://example.com/price");
+    s.watchStore.set("chief", [{ ...priceWatch(), digest: pageDigest("Price: 99") }]);
+    const result = await s.checks.check(watchRoutine(s), { manual: true });
+    expect(result.run).toBeUndefined();
+    expect(s.watchStore.get("chief")![0]!.digest).toBe(pageDigest("Price: 99"));
+  });
+
+  it("a brief routine with a watch is told the watch needs its own routine", async () => {
+    const s = setup();
+    s.pages.set("https://example.com/price", "Price: 109");
+    s.watchStore.set("chief", [{ ...priceWatch(), digest: pageDigest("Price: 99") }]);
+    const result = await s.checks.check(s.routine({ checks: ["browser"] }), { manual: true });
+    expect(result.run).toBeUndefined();
+    expect(result.trouble).toContain("own routine");
   });
 });

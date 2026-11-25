@@ -12,6 +12,8 @@ import { accountLimit, connectorAccessDecision } from "../../shared/connector-sc
 import type { Notification } from "../../shared/notification.ts";
 import type { RequestAuth } from "../request-auth.ts";
 import { writeFileAtomic } from "../atomic.ts";
+import { loadWatches, saveWatches } from "../browser-errands.ts";
+import { workspaceDir } from "../workspace.ts";
 import type { AppConfig } from "../config.ts";
 import { createConnectedReads, OUTLOOK_LIST_TOOL, READ_APPS, type ReadApp } from "../connected-reads.ts";
 import { evaluateConnectorTools } from "../connector-verdict.ts";
@@ -163,6 +165,12 @@ export function createProactive(deps: ProactiveDeps) {
   });
   const checks = createRoutineChecks({
     dataDir: deps.dataDir, reads, mayRead, fenced, runs, timeZone: brief.timeZone, dismissedFrom: brief.dismissedFrom,
+    browserWatches: {
+      list: (botId) => loadWatches(workspaceDir(botId)),
+      save: (botId, watches) => {
+        saveWatches(workspaceDir(botId), watches);
+      },
+    },
     report: async (found) => {
       await brief.report(found);
       if (found.gmail) suggestion.consider({ gmailConnected: found.gmail.connected, ...(found.gmail.address ? { inbox: found.gmail.address } : {}) });

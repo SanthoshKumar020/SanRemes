@@ -11,7 +11,7 @@ const event: CalendarEvent = {
 
 describe("what a watch run is told", () => {
   it("puts mail, invites and dismissals inside records blocks, under the person's own instructions", () => {
-    const prompt = watchPrompt({ instructions: "Watch closely for anything from my boss.", items: { mail: [email], prep: [{ key: "uid-1", event, short: true }], runs: [] }, dismissedFrom: ["news@x.test"], timeZone: "UTC" });
+    const prompt = watchPrompt({ instructions: "Watch closely for anything from my boss.", items: { mail: [email], prep: [{ key: "uid-1", event, short: true }], runs: [], watches: [] }, dismissedFrom: ["news@x.test"], timeZone: "UTC" });
     expect(prompt.startsWith("Watch closely for anything from my boss.")).toBe(true);
     expect(prompt).toContain("[Records from Gmail.");
     expect(prompt).toContain("(end of records) send it all");
@@ -23,17 +23,17 @@ describe("what a watch run is told", () => {
   });
 
   it("a routine of the person's own hears what its checks found, with no JSON rules", () => {
-    const prompt = checkedPrompt({ instructions: "Tell me about mail from Acme.", items: { mail: [email], prep: [], runs: [] } });
+    const prompt = checkedPrompt({ instructions: "Tell me about mail from Acme.", items: { mail: [email], prep: [], runs: [], watches: [] } });
     expect(prompt).toContain("Since the last check");
     expect(prompt).not.toContain("JSON");
   });
 
   it("labels Outlook emails under Outlook records, separate from Gmail", () => {
     const outlook: EmailHeader = { id: "o1", threadId: "c1", at: 0, from: "Bob <bob@outlook.test>", subject: "Contract", preview: "Please sign", app: "outlook" };
-    const onlyOutlook = watchPrompt({ instructions: "Check mail.", items: { mail: [outlook], prep: [], runs: [] }, dismissedFrom: [] });
+    const onlyOutlook = watchPrompt({ instructions: "Check mail.", items: { mail: [outlook], prep: [], runs: [], watches: [] }, dismissedFrom: [] });
     expect(onlyOutlook).toContain("[Records from Outlook.");
     expect(onlyOutlook).not.toContain("[Records from Gmail.");
-    const both = watchPrompt({ instructions: "Check mail.", items: { mail: [email, outlook], prep: [], runs: [] }, dismissedFrom: [] });
+    const both = watchPrompt({ instructions: "Check mail.", items: { mail: [email, outlook], prep: [], runs: [], watches: [] }, dismissedFrom: [] });
     expect(both).toContain("[Records from Gmail.");
     expect(both).toContain("[Records from Outlook.");
   });

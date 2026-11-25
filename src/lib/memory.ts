@@ -261,6 +261,7 @@ export type PendingProposal = PendingProposalBase & (
   | { kind: "save-skill"; input: { name: string; description: string; body: string; task?: string | null } }
   | { kind: "patch-skill"; name: string; body: string }
   | { kind: "forget-skill"; name: string }
+  | { kind: "browser-step"; step: { tool: string; args: Record<string, unknown>; url: string | null; label: string }; fingerprint: string }
 );
 
 export function proposalSummary(proposal: PendingProposal): string {
@@ -275,6 +276,7 @@ export function proposalSummary(proposal: PendingProposal): string {
     case "save-skill": return `Learn skill ${proposal.input.name}: ${proposal.input.description}`;
     case "patch-skill": return `Update skill ${proposal.name}`;
     case "forget-skill": return `Forget skill ${proposal.name}`;
+    case "browser-step": return `Run on the web: ${proposal.step.label}${proposal.step.url ? ` on ${proposal.step.url}` : ""}`;
   }
 }
 
