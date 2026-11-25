@@ -6,7 +6,8 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { newWatch, procedureBody, procedureSkillName, recordProcedure, saveWatches, type ErrandProcedure } from "./browser-errands.ts";
 import { loadNotesDoc, saveNotesDoc, saveSkill } from "./memory-notes.ts";
-import { approveProposal, denyProposal, listProposals, MemoryNotesError } from "./memory-trust.ts";
+import { approveProposal, denyProposal, listProposals } from "./memory-trust.ts";
+import { MemoryNotesError } from "./memory-notes.ts";
 import {
   evalProcedureAgainstSnapshot,
   evalProcedureRecall,
