@@ -10,8 +10,9 @@ import { locales } from "./index";
 
 const RETIRED: ReadonlyArray<readonly [string, RegExp, string]> = [
   ["OMB Cloud", /OMB Cloud/i, "SanRemes Cloud"],
-  ["SanRemes Cloud", /SanRemes Cloud/i, "SanRemes Cloud"],
-  ["SanRemes Pro", /SanRemes Pro\b/, "SanRemes Cloud"],
+  ["OpenMausBot Cloud", /OpenMausBot Cloud/i, "SanRemes Cloud"],
+  ["MausBot Cloud", /MausBot Cloud/i, "SanRemes Cloud"],
+  ["MausBot Pro", /MausBot Pro\b/, "SanRemes Cloud"],
   // \b before "_" fails, so environment names such as SANREMES_PUBLIC_IPV4 pass.
   ["OMB", /\bOMB\b/, "SanRemes"],
   ["Cloud box", /Cloud box/i, "cloud desktop"],
@@ -138,7 +139,7 @@ describe("one name per thing", () => {
   });
 
   it("the public docs name SanRemes Cloud and the Cloud as the app does", () => {
-    const names = new Set(["OMB Cloud", "SanRemes Cloud", "SanRemes Pro", "Connect to my Cloud", "your Cloud", "my Cloud"]);
+    const names = new Set(["OMB Cloud", "OpenMausBot Cloud", "MausBot Pro", "Connect to my Cloud", "your Cloud", "my Cloud"]);
     const cloudNames = RETIRED.filter(([word]) => names.has(word));
     const pages = (dir: string): string[] => readdirSync(dir).flatMap((name) => {
       const path = join(dir, name);
@@ -185,7 +186,7 @@ describe("one name per thing", () => {
 
   it("the check catches each retired word, and lets own-key Boat and env names through", () => {
     for (const bad of [
-      "Sign in to OMB Cloud", "Sign in to SanRemes Cloud", "Get SanRemes Pro", "SanRemes Pro plans",
+      "Sign in to OMB Cloud", "Sign in to OpenMausBot Cloud", "Get OpenMausBot Pro", "MausBot Pro plans",
       "restart OMB", "Cloud box", "Hosted desktop", "Run it in its cloud VM", "Boat cloud runner",
       "Open your Cloud dashboard", "Connect to my Cloud", "Your Cloud is ready", "Let my Cloud use this Mac",
       "Local (this computer)", "Choose Cloud to wake", "Auto, Cloud or Browser", "including one from T3",
