@@ -121,10 +121,11 @@ export function createBotMemoryRoutes(deps: BotMemoryRouteDeps): RouteHandler {
     let m: RegExpMatchArray | null = null;
     const write = <T>(botId: string, change: () => T): T => deps.ownersWrite ? deps.ownersWrite(auth, botId, change) : change();
     /** Direct note and skill writes are the owner's: a bot stages a proposal instead (see memory-trust.ts). */
-    const ownerOnly = () =>
-      memoryActorForAuth(auth) !== "owner"
-        ? json(res, 403, { error: "only the owner can change structured notes directly — a bot stages a proposal for the owner to review instead", code: "owner-only" })
-        : null;
+    const ownerOnly = (): true | null => {
+      if (memoryActorForAuth(auth) === "owner") return null;
+      json(res, 403, { error: "only the owner can change structured notes directly — a bot stages a proposal for the owner to review instead", code: "owner-only" });
+      return true;
+    };
     /** One memory file of `id`, a bot's own folder or a layer of it. */
     const serveFile = async (id: string, guarded: <T>(change: () => T) => T) => {
       if (isThreadNotes(url.searchParams.get("path") ?? "")) return json(res, 400, { error: "a conversation's notes are at /memory/thread/<thread id>", code: "path" });
