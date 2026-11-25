@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { recordEvents } from "../testing/events.ts";
 import { buildTurnContext, replaysNatively } from "../turn-context.ts";
 import { instanceConfigs } from "../config.ts";
-import { OpenAICompatDriver } from "./openai-compat.ts";
+import { OpenAICompatDriver, chatTimeoutMs } from "./openai-compat.ts";
 import { flushNativeLogs } from "./native.ts";
 
 describe("OpenAICompatDriver", () => {
@@ -24,6 +24,7 @@ describe("OpenAICompatDriver", () => {
     if (savedKey === undefined) delete process.env.OPENAI_COMPAT_API_KEY;
     else process.env.OPENAI_COMPAT_API_KEY = savedKey;
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
@@ -31,6 +32,14 @@ describe("OpenAICompatDriver", () => {
     expect(OpenAICompatDriver.driverKind).toBe("openai-compat");
     expect(OpenAICompatDriver.metadata.displayName).toBe("Other (OpenAI-compatible)");
     expect(OpenAICompatDriver.metadata.access).toBe("api");
+  });
+
+  it("gives a server on this network longer to its first token than a remote one", () => {
+    expect(chatTimeoutMs({ url: "http://127.0.0.1:11434" })).toBe(300_000);
+    expect(chatTimeoutMs({ url: "https://api.example.com/v1" })).toBe(180_000);
+    expect(chatTimeoutMs({ url: "http://127.0.0.1:11434", replyWaitMinutes: 2 })).toBe(120_000);
+    vi.stubEnv("SANREMES_OPENAI_COMPAT_IDLE_TIMEOUT_MS", "60000");
+    expect(chatTimeoutMs({ url: "http://127.0.0.1:11434" })).toBe(60_000);
   });
 
   it("falls back to the OpenRouter endpoint by default", () => {
@@ -289,6 +298,36 @@ describe("OpenAICompatDriver", () => {
       expect(request.mock.calls.some(call => String(call[0]).includes("chat/completions"))).toBe(false);
     } finally { await inst.dispose(); }
   });
+  it("posts an Ollama chat turn under /v1, not to the bare origin", async () => {
+    const reply = 'data: {"choices":[{"index":0,"delta":{"content":"4"}}]}\n\ndata: {"choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}\n\n';
+    const seen: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+      seen.push(url);
+      if (url.endsWith("/api/tags")) return new Response(JSON.stringify({ models: [{ name: "qwen3:4b", size: 2497293931, details: { family: "qwen3", parameter_size: "4.0B", quantization_level: "Q4_K_M" } }] }), { status: 200 });
+      if (url.endsWith("/api/version")) return new Response(JSON.stringify({ version: "0.40.18" }), { status: 200 });
+      if (url.endsWith("/api/show")) return new Response(JSON.stringify({ capabilities: ["completion", "tools"] }), { status: 200 });
+      if (url.endsWith("/v1/models")) return new Response(JSON.stringify({ data: [] }), { status: 200 });
+      if (url.includes("/api/")) return new Response(JSON.stringify({}), { status: 200 });
+      return new Response(reply, { status: 200, headers: { "content-type": "text/event-stream" } });
+    }));
+    const inst = await OpenAICompatDriver.create({
+      instanceId: "ollama", displayName: "Ollama", enabled: true,
+      config: { url: "http://127.0.0.1:11434", key: "ollama", catalog: "ollama" },
+      environment: {},
+    });
+    const recorder = recordEvents(inst.adapter);
+    try {
+      await inst.adapter.sendTurn({ threadId: "thread", text: "What is 2+2? Answer with just the number.", model: "qwen3:4b" });
+      expect(await recorder.until((event) => event.type === "turn.completed")).toMatchObject({ ok: true });
+      expect(seen).toContain("http://127.0.0.1:11434/v1/chat/completions");
+      expect(seen).not.toContain("http://127.0.0.1:11434/chat/completions");
+    } finally {
+      recorder.stop();
+      await inst.dispose();
+    }
+  }, 20_000);
+
   it("smoke: offers ask_user and returns the person's reply verbatim", async () => {
     const askBody = 'data: {"choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"ask1","type":"function","function":{"name":"ask_user","arguments":'
       + JSON.stringify(JSON.stringify({ questions: [{ question: "Ship the fixture?", options: [{ label: "Yes" }, { label: "No" }] }] }))

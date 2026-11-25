@@ -8,8 +8,10 @@ import { totalmem } from "node:os";
 const SUFFIX = /-sanremes-(\d+)k$/;
 const MIN_WINDOW = 16_384;
 const MAX_WINDOW = 65_536;
-/** An estimate, generous on purpose: what a token of window costs in memory varies with the architecture. */
-const WINDOW_BYTES_PER_TOKEN = 64 * 1024;
+/** What a token of window costs in memory: layers x 2 (K and V) x KV heads x head dim x 2 bytes. Qwen3-4B needs
+ * ~144 KB/token (36 layers, 8 KV heads, 128 dim), so 128 KB keeps the window honest on an 8 GB machine; a smaller
+ * number picked a 32k window there and the load was killed for memory. */
+const WINDOW_BYTES_PER_TOKEN = 128 * 1024;
 /** What macOS lets the GPU wire by default, and a fair share of a PC's memory. */
 const MEMORY_SHARE = 0.75;
 

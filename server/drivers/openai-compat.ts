@@ -15,6 +15,17 @@ import {
 
 const DRIVER_KIND = "openai-compat";
 const DEFAULT_IDLE_TIMEOUT_MS = 180_000;
+/** A model on this network sends nothing until its first token, and prefill of the full prompt on a slow machine
+ * takes minutes; the 180 s idle default aborts the turn before the first byte arrives. 300 s is the transport
+ * ceiling: Node's fetch fails a request after 300 s without bytes, so a longer wait needs fetchPastLimit. */
+const LOCAL_IDLE_TIMEOUT_MS = 300_000;
+/** The idle timeout for a chat turn: an explicit per-instance wait wins, then an explicit environment value, then
+ * the longer local allowance for a server on this network, then the default. */
+export function chatTimeoutMs(config: { replyWaitMinutes?: number; url: string }): number {
+  if (config.replyWaitMinutes) return config.replyWaitMinutes * 60_000;
+  if (process.env.SANREMES_OPENAI_COMPAT_IDLE_TIMEOUT_MS) return idleTimeoutMs();
+  return onThisNetwork(config.url) ? LOCAL_IDLE_TIMEOUT_MS : idleTimeoutMs();
+}
 const idleTimeoutMs = () => {
   const raw = process.env.SANREMES_OPENAI_COMPAT_IDLE_TIMEOUT_MS;
   if (!raw) return DEFAULT_IDLE_TIMEOUT_MS;
@@ -391,12 +402,16 @@ export const OpenAICompatDriver: ProviderDriver<OpenAICompatConfig> = {
     // The first list says which models can call tools, and is what the engine list shows right after adding Ollama.
     if (loading && isOllamaServer(config)) await Promise.race([loading, new Promise((done) => { setTimeout(done, OLLAMA_FIRST_LIST_MS).unref(); })]);
 
+    // Ollama's OpenAI-compatible routes sit under /v1, but the stored Ollama address is the bare origin
+    // (ollamaOrigin strips /v1); posting chat to the bare origin 404s, so the runtime talks to origin + /v1.
+    const apiUrl = isOllamaServer(config) ? `${ollamaOrigin(config.url)}/v1` : config.url;
+
     const runtime = createOpenAIChatRuntime({
       input,
       driverKind: DRIVER_KIND,
       ...(servedModel ? { servedModel } : {}),
       apiKey,
-      apiUrl: config.url,
+      apiUrl,
       tools: config.tools,
       computerUse: true,
       nudgeAnnouncedAction: true,
@@ -431,7 +446,7 @@ export const OpenAICompatDriver: ProviderDriver<OpenAICompatConfig> = {
       httpErrorLabel: "upstream",
       missingKeyError: missingKey,
       unavailableReason: missingKey,
-      timeoutMs: config.replyWaitMinutes ? config.replyWaitMinutes * 60_000 : idleTimeoutMs(),
+      timeoutMs: chatTimeoutMs(config),
       ...(onThisNetwork(config.url) ? { livenessEveryMs: livenessEveryMs(), localModel: true } : {}),
       reasoning: true,
       billing: "metered",
