@@ -8722,7 +8722,6 @@
   "serverError.team.memberLogin": "在 {team} 中只有管理員可以儲存登入資訊，而且之後 {team} 中的每個機器人都會使用它。",
   "serverError.team.signInFirst": "請先在應用程式中登入 {team}。",
   "serverError.chat.ownerOrAdmin": "只有擁有者或管理員可以這樣做。",
-  "serverError.routine.checks": "請從行事曆、郵件和執行中選擇檢查項目",
   "serverError.routine.checksRepeat": "檢查項目需要一個會重複的機器人例行工作",
   "serverError.routine.access": "請選擇讀取與草稿存取權，或不給予存取權",
   "serverError.routine.deliver": "只有機器人例行工作可以傳送到簡報",

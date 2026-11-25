@@ -9701,7 +9701,6 @@
   "serverError.team.signInFirst": "Iscriviti a {team} nell'app prima.",
   "serverError.team.ownAppsNeedKey": "Le tue app non possono essere collegate {team} ancora. Chiedi ad un amministratore di aggiungere la chiave Composio della squadra.",
   "serverError.chat.ownerOrAdmin": "Solo il proprietario o un amministratore possono farlo.",
-  "serverError.routine.checks": "Scegli i controlli dal calendario, dalla posta e dalle corse",
   "serverError.routine.checksRepeat": "I controlli hanno bisogno di una routine bot che ripete",
   "serverError.routine.access": "Scegliere l'accesso a lettura e a sorteggio o nessuno",
   "serverError.routine.deliver": "Solo una routine bot può consegnare al breve",

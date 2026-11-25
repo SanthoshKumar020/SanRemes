@@ -9408,7 +9408,6 @@
   "serverError.team.memberLogin": "在 {team} 中只有管理员能保存登录信息，保存后会由 {team} 里的每个机器人使用。",
   "serverError.team.signInFirst": "请先在应用中登录 {team}。",
   "serverError.chat.ownerOrAdmin": "只有所有者或管理员可以这样做。",
-  "serverError.routine.checks": "请从日历、邮件和运行记录中选择检查项",
   "serverError.routine.checksRepeat": "检查项需要配合一个会重复的机器人例行任务",
   "serverError.routine.access": "请选择“读取并起草”权限，或“无”",
   "serverError.routine.deliver": "只有机器人例行任务才能投递到简报",

@@ -9659,7 +9659,6 @@
   "serverError.team.signInFirst": "Primeiro, faça login em {team} no app.",
   "serverError.team.ownAppsNeedKey": "Ainda não dá para conectar seus próprios apps em {team}. Peça a um admin para adicionar a chave do Composio da equipe.",
   "serverError.chat.ownerOrAdmin": "Só o dono ou um admin pode fazer isso.",
-  "serverError.routine.checks": "Escolha o que verificar: agenda, e-mail e execuções.",
   "serverError.routine.checksRepeat": "As verificações precisam de uma rotina de bot que se repita.",
   "serverError.routine.access": "Escolha acesso para ler e criar rascunhos ou nenhum acesso.",
   "serverError.routine.deliver": "Só uma rotina de bot pode enviar para o Resumo.",
