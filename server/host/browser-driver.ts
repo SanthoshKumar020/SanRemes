@@ -32,3 +32,20 @@ export async function createWatchBrowserDriver(deps: WatchBrowserDriverDeps): Pr
     snapshot: () => call("agent_browser_snapshot", {}),
   };
 }
+
+export interface WatchBrowserDriverForBotDeps {
+  /** The server's browser runtime: the driver calls its agentRpc the way the internal browser MCP route does. */
+  runtime: Pick<BrowserRuntime, "agentRpc">;
+  /** The bot's current browser session and host spawn spec; null while its browser engine is not installed. */
+  resolveTarget: (botId: string) => Promise<{ session: string; spec: { command: string; args?: readonly string[]; env: Record<string, string> } } | null>;
+}
+
+/** A watch driver for one bot: resolves its current browser target and hands it to the read-only watch driver.
+ * The host spawn spec carries optional args and a string-only env, while the browser runtime takes a
+ * BrowserSpawnSpec, so the shape is normalized here and not at the call site. */
+export function watchBrowserDriverForBot(deps: WatchBrowserDriverForBotDeps): (botId: string) => Promise<BrowserDriver | null> {
+  return (botId) => createWatchBrowserDriver({ runtime: deps.runtime, spec: async () => {
+    const target = await deps.resolveTarget(botId);
+    return target && { session: target.session, spec: { command: target.spec.command, args: [...(target.spec.args ?? [])], env: target.spec.env } };
+  } });
+}

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import type { BrowserSpawnSpec } from "../browser-runtime.ts";
-import { createWatchBrowserDriver } from "./browser-driver.ts";
+import { createWatchBrowserDriver, watchBrowserDriverForBot } from "./browser-driver.ts";
 
 const spec: BrowserSpawnSpec = { command: "agent-browser", args: [], env: {} };
 const textResult = (text: string) => ({ content: [{ type: "text", text }] });
@@ -42,5 +42,35 @@ describe("createWatchBrowserDriver", () => {
     const { runtime } = harness({ isError: true, content: [{ type: "text", text: "the browser could not start" }] });
     const driver = await createWatchBrowserDriver({ runtime, spec: async () => ({ session: "s1", spec }) });
     await expect(driver!.readText()).rejects.toThrow("the browser could not start");
+  });
+});
+
+describe("watchBrowserDriverForBot", () => {
+  it("returns null when the bot has no browser session", async () => {
+    const { runtime } = harness(textResult("x"));
+    const driverForBot = watchBrowserDriverForBot({ runtime, resolveTarget: async () => null });
+    expect(await driverForBot("bot-1")).toBeNull();
+    expect(runtime.agentRpc).not.toHaveBeenCalled();
+  });
+
+  it("normalizes the host spawn spec before the driver uses it", async () => {
+    const seen: BrowserSpawnSpec[] = [];
+    const runtime = {
+      agentRpc: vi.fn(async (session: string, spec: BrowserSpawnSpec, _method: "tools/list" | "tools/call", params: unknown) => {
+        expect(session).toBe("s1");
+        seen.push(spec);
+        const { name, arguments: args } = params as { name: string; arguments: Record<string, unknown> };
+        expect(name).toBe("agent_browser_navigate");
+        expect(args).toEqual({ url: "https://example.com/price", readiness: "load" });
+        return textResult("Price: 109");
+      }),
+    };
+    const driverForBot = watchBrowserDriverForBot({
+      runtime,
+      resolveTarget: async () => ({ session: "s1", spec: { command: "agent-browser", env: { FOO: "bar" } } }),
+    });
+    const driver = await driverForBot("bot-1");
+    await driver!.navigate("https://example.com/price");
+    expect(seen).toEqual([{ command: "agent-browser", args: [], env: { FOO: "bar" } }]);
   });
 });

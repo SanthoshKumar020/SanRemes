@@ -8,6 +8,7 @@ import {
   LOCAL_QWEN_MODEL,
   LOCAL_QWEN_URL,
   pullOllamaModel,
+  startLocalQwenSetup,
   type OllamaSetupDeps,
   type OllamaSetupState,
 } from "./ollama-setup.ts";
@@ -145,6 +146,30 @@ describe("ensureLocalQwen", () => {
     const result = await ensureLocalQwen(deps);
     expect(result).toEqual({ ok: true, instanceId: "openai-compat-existing" });
     expect(Object.keys(instances)).toEqual(["openai-compat-existing"]);
+  });
+});
+
+describe("startLocalQwenSetup", () => {
+  it("does nothing off Windows", async () => {
+    const { deps, probe, saveDefault } = harness();
+    startLocalQwenSetup({ ...deps, platform: "darwin" });
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    expect(probe).not.toHaveBeenCalled();
+    expect(saveDefault).not.toHaveBeenCalled();
+  });
+
+  it("does nothing on a cloud host", async () => {
+    const { deps, probe, saveDefault } = harness();
+    startLocalQwenSetup({ ...deps, platform: "win32", cloud: true });
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    expect(probe).not.toHaveBeenCalled();
+    expect(saveDefault).not.toHaveBeenCalled();
+  });
+
+  it("runs the setup on a packaged Windows install", async () => {
+    const { deps, saveDefault } = harness();
+    startLocalQwenSetup({ ...deps, platform: "win32" });
+    await vi.waitFor(() => expect(saveDefault).toHaveBeenCalledWith(expect.objectContaining({ model: LOCAL_QWEN_MODEL })));
   });
 });
 

@@ -192,3 +192,11 @@ export async function ensureLocalQwen(deps: OllamaSetupDeps): Promise<OllamaSetu
     return { ok: false, reason };
   }
 }
+
+/** First run on a packaged Windows install: start the bundled Ollama, pull Qwen and make it the default when
+ * nothing is saved yet. It runs in the background and never blocks startup; a failure leaves the current
+ * default alone. */
+export function startLocalQwenSetup(deps: OllamaSetupDeps & { platform?: string; cloud?: boolean }): void {
+  if (deps.platform !== "win32" || deps.cloud) return;
+  void ensureLocalQwen(deps);
+}
