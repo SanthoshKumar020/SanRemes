@@ -681,6 +681,14 @@ export class ViewerHub {
     this.offerAuthPrompt();
   }
 
+  /** A bot tool call finished on a tab: every viewer gets the tabs as they are now and a fresh picture of the page. */
+  refreshViewers(): void {
+    for (const viewer of this.viewers) {
+      this.pushTabs(viewer);
+      viewer.refreshSoon();
+    }
+  }
+
   loading(tab: Tab, loading: boolean): void {
     this.#loading.set(tab, loading);
     this.navChanged(tab);

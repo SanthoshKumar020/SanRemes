@@ -62,6 +62,8 @@ export interface ToolContext {
   downloads(): Download[];
   /** Whether the person holds a tab of this browser in the app: the bot's tabs then stay behind theirs. */
   personHolds?(): boolean;
+  /** Tell every viewer the tabs as they are now and to fetch a fresh picture, after a bot tool call changed the page. */
+  refreshViewers?(): void;
 }
 
 /** A typed address with its scheme: a bare host means https, loopback http. */
@@ -210,6 +212,7 @@ async function act(context: ToolContext, tab: Tab | null, run: () => Promise<Too
     if (mark && !tab.page.dialogs.pending) await tab.page.navigations.follow(mark, Math.min(NAVIGATION_FOLLOW_MS, remaining(context)));
     const after = before && !tab.page.dialogs.pending ? await observe(tab) : null;
     const opened = observeChange ? await openedNote(context, tab, known) : null;
+    context.refreshViewers?.();
     return withParts(result, before && after ? describePageChange(before, after) : null, opened, dialogNote(tab), context.health(tab));
   }, { read });
 }

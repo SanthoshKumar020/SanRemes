@@ -568,6 +568,7 @@ export class BrowserService {
       saveScreenshot: (data, pageUrl) => this.#saveScreenshot(profile, data, pageUrl),
       downloads: () => run.browser.downloads?.list() ?? [],
       personHolds: () => run.opened.personControl?.holding() ?? false,
+      refreshViewers: () => profile.hub.refreshViewers(),
     };
   }
 

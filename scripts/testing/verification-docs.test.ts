@@ -38,12 +38,10 @@ const featureRouteModules = ["data/routes.ts", "workspace-backup-http.ts", "clou
 const serverSource = [join(ROOT, "server", "index.ts"), ...routeModules, ...featureRouteModules]
   .map((file) => readFileSync(file, "utf8")).join("\n");
 const hooksSource = readFileSync(join(ROOT, "server", "webhook-ingress.ts"), "utf8");
-const hostedSource = readFileSync(join(ROOT, "enterprise", "server", "workspace-access.ts"), "utf8");
-// Only constants named in the public handler's accepted-path guard are routes.
-// Outbound post("/api/handoff/...") calls belong to the identity service, not us.
-const hostedConstants = new Map([...hostedSource.matchAll(/const ([A-Z_]+) = "(\/api\/[^"\n]+)";/g)].map(match => [match[1]!, match[2]!]));
-const hostedPublicRoutes = new Set((hostedSource.match(/!\[([^\]]+)\]\.includes\(path\)/)?.[1] ?? "")
-  .split(",").map(name => hostedConstants.get(name.trim())).filter((path): path is string => path !== undefined));
+// The hosted portal's public sign-in routes, handled by the workspaceAccess layer when it is present
+// (server/index.ts answers /api/auth/hosted/* through it). The enterprise module that once listed them
+// is not in this tree, so the contract is stated here instead of derived from it.
+const hostedPublicRoutes = new Set(["/api/auth/hosted/start", "/api/auth/hosted/callback"]);
 // server/index.ts matches routes two ways: `path === "/api/x"` and
 // `path.match(/^\/api\/x\/(a|b)$/)`. Collect the regex form too.
 const routePatterns = [...serverSource.matchAll(/\/(\^\\\/api\\\/(?:\[(?:[^\]\\]|\\.)*\]|[^/\\\n[]|\\.)*)\/[a-z]*/g)].map((match) => new RegExp(match[1]!));
