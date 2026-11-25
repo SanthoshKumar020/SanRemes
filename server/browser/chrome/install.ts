@@ -23,6 +23,7 @@ const PINS: Record<string, Omit<ChromeForTestingPin, "version">> = {
   "darwin-arm64": { platform: "mac-arm64", bytes: 190878359, sha256: "939ef9dc3aa74240c929d793e123edab0fda89c5a9cfeb029686c34141d2ed58" },
   "linux-x64": { platform: "linux64", bytes: 195709628, sha256: "89778cbf7a852726b6f51649b2586b894c00737e81f8031733721560d21bbea7" },
   "linux-arm64": { platform: "linux-arm64", bytes: 195919275, sha256: "ef3d2fea85e675ba8e9a7894c0be4595e5130659a9ac95e04c6064ed09f411da" },
+  "win32-x64": { platform: "win64", bytes: 205252317, sha256: "1c0681d1a7e250bf0ab626d221da60227b61566a639a4791d089e16fe823de45" },
 };
 
 const EXECUTABLES: Record<string, string> = {

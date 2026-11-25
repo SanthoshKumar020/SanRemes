@@ -145,6 +145,6 @@ describe("downloading Chrome for Testing", () => {
     expect(chromeForTestingPin("darwin", "arm64")).toMatchObject({ platform: "mac-arm64", bytes: 190878359 });
     expect(chromeForTestingPin("linux", "x64")).toMatchObject({ platform: "linux64", bytes: 195709628 });
     expect(chromeForTestingPin("linux", "arm64")).toMatchObject({ platform: "linux-arm64", bytes: 195919275 });
-    expect(chromeForTestingPin("win32", "x64")).toBeNull();
+    expect(chromeForTestingPin("win32", "x64")).toMatchObject({ platform: "win64", bytes: 205252317 });
   });
 });
