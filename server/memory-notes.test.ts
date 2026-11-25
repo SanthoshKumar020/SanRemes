@@ -332,3 +332,55 @@ describe("notes store", () => {
     expect(workspaceDir(BOT)).toContain(BOT);
   });
 });
+
+describe("Vault boundary", () => {
+  it("refuses a plain-prose password and accepts a plain mention of one", () => {
+    expect(() =>
+      addNote(emptyNotesDoc(), {
+        path: "about/wifi",
+        text: "my wifi password is hunter2",
+        sources: [{ chatId: "c1", messageId: "m1", quote: "my wifi password is hunter2", at: "2026-11-25T10:00:00.000Z" }],
+      }, [source("m1", "my wifi password is hunter2")]),
+    ).toThrow(/cannot hold a secret/);
+    const doc = addNote(emptyNotesDoc(), {
+      path: "about/wifi",
+      text: "the wifi password is on the fridge",
+      sources: [{ chatId: "c1", messageId: "m1", quote: "the wifi password is on the fridge", at: "2026-11-25T10:00:00.000Z" }],
+    }, [source("m1", "the wifi password is on the fridge")]);
+    expect(doc.notes).toHaveLength(1);
+  });
+
+  it("refuses a secret hidden in a fact's entities", () => {
+    expect(() =>
+      addNote(emptyNotesDoc(), {
+        path: "preferences/short-replies",
+        text: "Prefers short replies",
+        sources: [{ chatId: "c1", messageId: "m1", quote: "I prefer short replies", at: "2026-11-25T10:00:00.000Z" }],
+        fact: { kind: "preference", entities: ["my password is hunter2"] },
+      }, [source()]),
+    ).toThrow(/cannot hold a secret/);
+  });
+
+  it("refuses a secret in a skill's task", () => {
+    expect(() =>
+      saveSkill(emptyNotesDoc(), { name: "weekly-report", description: "Builds the weekly report.", body: "1. Open the sheet.", task: "the password is hunter2" }),
+    ).toThrow(/cannot hold a secret/);
+  });
+
+  it("masks a shaped secret in the prompt index even from a hand-edited file", () => {
+    const jwt = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.signature-here";
+    const doc: MemoryNotesDoc = {
+      ...emptyNotesDoc(),
+      notes: [{
+        path: "about/key", area: "about", text: `token ${jwt}`, status: "stated",
+        updated: "2026-11-25T10:00:00.000Z", edited: null, expires: null, sources: [],
+      }],
+    };
+    const index = buildMemoryIndex(doc, TODAY);
+    expect(index).toContain("about/key:");
+    expect(index).not.toContain(jwt);
+    expect(index).toContain("redacted");
+    const skills = buildSkillsIndex([{ name: "deploy", description: `uses ${jwt}`, body: "x", learned: "2026-11-25T10:00:00.000Z", updated: "2026-11-25T10:00:00.000Z", edited: null, task: null }]);
+    expect(skills).not.toContain(jwt);
+  });
+});

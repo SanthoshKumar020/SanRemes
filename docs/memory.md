@@ -518,8 +518,13 @@ are quotes of at most 400 characters, and a save is refused unless every
 quote really appears in the cited message, case, accents, quote marks and
 spacing aside — a note can never be filed on words nobody said. Adding a
 note whose fact matches one already there merges the two instead of
-duplicating it. Secrets are redacted from a note's text before it reaches
-disk, the same as in the markdown files.
+duplicating it. Secrets are refused from a note's text before it reaches
+disk — stricter than the markdown files, which mask secrets in place. A note, a quote, a fact's
+entities, or a skill's body, description or task holding a key, token or password — shaped or
+written out in plain words, like "my password is hunter2" — is refused with `400`. The prompt
+index masks any shaped secret that reaches it through a hand-edited file, which bypasses the
+refusal. A secret with no shape and no secret-word nearby still is not caught; that is the
+detector's documented limit.
 
 Notes load into every turn as a short index under the heading
 **Your notes**, grouped by area with tentative notes marked, and capped
@@ -551,6 +556,26 @@ steps for a completed task (name, one-line description, body of at most
 oldest unedited one is evicted when the cap is reached. A skill the owner
 edited by hand is never overwritten or evicted by the bot — patching it
 is refused.
+
+### Who can change structured notes
+
+The policy is a table in `server/memory-trust.ts`, not scattered conditionals. The owner applies
+their own changes at once; a bot never writes a live note or skill directly — it stages a proposal
+in `memory/pending.json` (at most 50, one per note path or skill name), and the owner approves or
+discards it from the Memory panel. A proposal is validated twice, at staging and at approval,
+against the same checks as a direct write, so it can never smuggle in a quote nobody said, a
+secret, or a duplicate path; approval replays the operation and refuses with `409` when the notes
+changed since the proposal was staged, so an approval can never land on a document the owner has
+not seen. Direct writes are refused with `403` to anyone but the owner (the desktop app or an
+admin-scoped session); on a shared server a bot's shell is already stopped earlier, at the
+request-auth layer. Upkeep is the one exception to the pending path: it archives and deletes by
+rule, so there is nothing to review and a bot never runs it — owner only.
+
+On the desktop the bot's shell shares the owner's loopback trust, so the auth check alone cannot
+tell them apart there; the separation is the surface — a turn's tools never expose a direct note or
+skill write, only the proposal path. The Memory panel shows the pending queue, the live notes with
+confirm, edit, archive and forget, the archived notes with restore, and the learned skills with
+forget; forgetting is a two-step arm-then-confirm inside the panel, never a dialog.
 
 ## Shared team memory integrity
 

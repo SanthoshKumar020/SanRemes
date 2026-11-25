@@ -146,8 +146,19 @@ function todayString(now: Date = new Date()): string {
   return now.toISOString().slice(0, 10);
 }
 
+/** A shaped secret (a key, token or password the redactor recognises) or a plain-prose one — "my
+ * password is hunter2" — where the word after "is" looks like a credential: it carries a digit or a
+ * symbol, or it is long enough to be a passphrase. "The password is on the fridge" and "a token is
+ * required" do not match: their values are short plain words. A secret with no shape and no
+ * secret-word nearby still is not caught; that is the same limit Nod documents for its own detector. */
+const SECRET_PROSE = /\b(password|passwd|api[-_ ]?key|secret|access[-_ ]?token|auth[-_ ]?token|private[-_ ]?key)\s*(?:is|=|:)\s*(\S+)/i;
+
 function isSecret(text: string): boolean {
-  return redactSecretsInText(text) !== text;
+  if (redactSecretsInText(text) !== text) return true;
+  const prose = SECRET_PROSE.exec(text);
+  if (!prose) return false;
+  const value = prose[2]!.replace(/[.,;:!?]+$/, "");
+  return /[0-9!@#$%^&*_\-+=]/.test(value) || value.length >= 12;
 }
 
 /** The notes file lives under the bot's workspace; a link in its place is not a notes file. */
@@ -230,6 +241,9 @@ function checkFact(fact: unknown): MemoryFact | undefined {
   }
   for (const field of ["occurredOn", "validFrom", "validTo"] as const) {
     if (fact[field] !== undefined && !isMemoryDate(fact[field])) fail("invalid", 400, `a fact date must be YYYY-MM-DD: ${String(fact[field])}`);
+  }
+  for (const entity of fact.entities) {
+    if (typeof entity === "string" && isSecret(entity)) fail("secret", 400, "a fact cannot hold a secret — remove keys, tokens and passwords first");
   }
   return fact as unknown as MemoryFact;
 }
@@ -405,11 +419,13 @@ export function findNotes(doc: MemoryNotesDoc, query: string, today: string = to
   });
 }
 
-/** The index the agent reads: every live note in full, confirmed first, tentative marked as likely rather than certain. */
+/** The index the agent reads: every live note in full, confirmed first, tentative marked as likely rather than certain.
+ * Shaped secrets are masked here too: the save-time refusal is the enforcement point, but a hand-edited file on disk
+ * bypasses it, and the prompt must never be the leak. */
 export function buildMemoryIndex(doc: MemoryNotesDoc, today: string = todayString()): string {
   const lines = listNotes(doc)
     .filter((note) => !noteExpired(note, today))
-    .map((note) => `${note.path}: ${note.text}${note.status === "tentative" ? " (tentative)" : ""}`);
+    .map((note) => `${note.path}: ${redactSecretsInText(note.text)}${note.status === "tentative" ? " (tentative)" : ""}`);
   if (!lines.length) return "";
   let kept = lines;
   let omitted = 0;
@@ -423,7 +439,7 @@ export function buildMemoryIndex(doc: MemoryNotesDoc, today: string = todayStrin
 }
 
 export function buildSkillsIndex(skills: LearnedSkill[]): string {
-  return skills.map((skill) => `${skill.name}: ${skill.description}`).join("\n");
+  return skills.map((skill) => `${skill.name}: ${redactSecretsInText(skill.description)}`).join("\n");
 }
 
 export function structuredNotesPromptBlock(doc: MemoryNotesDoc, today: string = todayString()): string {
@@ -511,6 +527,7 @@ export function saveSkill(doc: MemoryNotesDoc, input: SaveSkillInput): MemoryNot
   const body = checkSkillBody(input.body, "body");
   if (body.length > SKILL_BODY_MAX_CHARS) fail("invalid", 400, `a skill body holds at most ${SKILL_BODY_MAX_CHARS} characters`);
   if (isSecret(body) || isSecret(description)) fail("secret", 400, "a skill cannot hold a secret — remove keys, tokens and passwords first");
+  if (typeof input.task === "string" && isSecret(input.task)) fail("secret", 400, "a skill cannot hold a secret — remove keys, tokens and passwords first");
   const now = new Date().toISOString();
   const next = structuredClone(doc);
   const existing = next.skills.find((s) => s.name === name);

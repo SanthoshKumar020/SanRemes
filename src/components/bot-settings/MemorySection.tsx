@@ -5,22 +5,33 @@ import { cn } from "@/lib/cn";
 import {
   MEMORY_INDEX,
   SOUL_PATH,
+  approveProposal,
   capacityStatus,
   deleteMemoryDoc,
+  denyProposal,
   fetchMemoryDoc,
   fetchMemoryJournal,
   fetchMemoryOverview,
+  fetchPendingProposals,
+  fetchStructuredNotes,
+  forgetLearnedSkill,
+  forgetStructuredNote,
   formatBytes,
   journalSource,
   journalSourceKey,
   fileLabel,
+  maintainStructuredNotes,
   openMemoryLocation,
   revertMemoryChange,
   saveMemoryDoc,
+  structuredNoteAction,
   tidyMemoryNow,
   tidySummary,
   noticedCount,
   topicFileName,
+  type PendingProposal,
+  type StructuredMaintainReport,
+  type StructuredNotesDoc,
   type UpkeepStatus,
   type MemoryCapacity,
   type MemoryFileInfo,
@@ -41,6 +52,7 @@ import { sameFields, useStoreDispatch, useStoreSelector } from "@/state/store-se
 import { useMinuteTick } from "@/lib/minute-tick";
 import { ThreadMemoryCard } from "../bot-panel/MemoryText";
 import { MemoryModelSetting } from "./MemoryModelSetting";
+import { StructuredNotesCard, type StructuredNotesAction } from "./StructuredNotesCard";
 import { useMemoryUpkeepStatus } from "./use-memory-upkeep-status";
 
 const buttonCls = "rounded-lg bg-control px-3 py-1.5 text-[13px] text-ink hover:bg-raised-hover disabled:opacity-50";
@@ -72,6 +84,18 @@ function localizedTidySummary(report: Parameters<typeof tidySummary>[0]): string
   add(report.superseded, "memory.upkeep.summary.crossed.one", "memory.upkeep.summary.crossed.many");
   add(report.organized, "memory.upkeep.summary.filed.one", "memory.upkeep.summary.filed.many");
   const summary = parts.length ? parts.join(", ") : t("memory.upkeep.summary.none");
+  return summary.charAt(0).toUpperCase() + summary.slice(1);
+}
+
+function localizedStructuredMaintainSummary(report: StructuredMaintainReport): string {
+  const parts: string[] = [];
+  const add = (count: number, one: "memory.structured.summary.archived.one" | "memory.structured.summary.merged.one" | "memory.structured.summary.stale.one", many: "memory.structured.summary.archived.many" | "memory.structured.summary.merged.many" | "memory.structured.summary.stale.many") => {
+    if (count) parts.push(t(count === 1 ? one : many, { count }));
+  };
+  add(report.expired, "memory.structured.summary.archived.one", "memory.structured.summary.archived.many");
+  add(report.duplicates, "memory.structured.summary.merged.one", "memory.structured.summary.merged.many");
+  add(report.stale, "memory.structured.summary.stale.one", "memory.structured.summary.stale.many");
+  const summary = parts.length ? parts.join(", ") : t("memory.structured.summary.none");
   return summary.charAt(0).toUpperCase() + summary.slice(1);
 }
 
@@ -126,6 +150,9 @@ export function MemorySection({ bot, active = true, onToggle }: { bot: Bot; acti
   const [tidying, setTidying] = useState(false);
   const [lendingReview, setLendingReview] = useState<LendingReview | null>(null);
   const [lendingReviewStale, setLendingReviewStale] = useState(false);
+  const [structuredDoc, setStructuredDoc] = useState<StructuredNotesDoc | null>(null);
+  const [pending, setPending] = useState<PendingProposal[] | null>(null);
+  const [structuredBusy, setStructuredBusy] = useState(false);
   const [reviewing, setReviewing] = useState(false);
   const state = useStoreSelector((s) => ({ config: s.config }), sameFields), dispatch = useStoreDispatch();
   const learnFromRooms = roomMemoryCaptureEnabled(state.config);
@@ -140,6 +167,11 @@ export function MemorySection({ bot, active = true, onToggle }: { bot: Bot; acti
     setOverview(nextOverview);
     setLendingReview(nextOverview.lendingReview ?? null);
     setJournal(nextJournal);
+    if (bot.memoryEnabled !== false) {
+      const [doc, list] = await Promise.all([fetchStructuredNotes(bot.id), fetchPendingProposals(bot.id)]);
+      setStructuredDoc(doc);
+      setPending(list);
+    }
     if (openPath) {
       const doc = await fetchMemoryDoc(bot.id, openPath);
       setEditing({ path: doc.path, text: doc.text, hash: doc.hash, dirty: false, readOnly: openPath.startsWith("memory/log/") });
@@ -291,6 +323,61 @@ export function MemorySection({ bot, active = true, onToggle }: { bot: Bot; acti
     }
   };
 
+  const structuredAction = async (action: StructuredNotesAction) => {
+    setStructuredBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const version = structuredDoc?.version;
+      switch (action.type) {
+        case "approve":
+          await approveProposal(bot.id, action.id);
+          setNotice(t("memory.structured.approved"));
+          break;
+        case "deny":
+          await denyProposal(bot.id, action.id);
+          setNotice(t("memory.structured.denied"));
+          break;
+        case "confirm-note":
+          await structuredNoteAction(bot.id, "confirm", { path: action.path, expectedVersion: version });
+          break;
+        case "archive-note":
+          await structuredNoteAction(bot.id, "archive", { path: action.path, reason: "manual", expectedVersion: version });
+          break;
+        case "restore-note":
+          await structuredNoteAction(bot.id, "restore", { path: action.path, expectedVersion: version });
+          break;
+        case "forget-note":
+          await forgetStructuredNote(bot.id, action.path, version);
+          break;
+        case "edit-note":
+          await structuredNoteAction(bot.id, "edit", { path: action.path, text: action.text, expectedVersion: version });
+          break;
+        case "forget-skill":
+          await forgetLearnedSkill(bot.id, action.name, version);
+          break;
+        case "maintain": {
+          const { report } = await maintainStructuredNotes(bot.id, version);
+          setNotice(localizedStructuredMaintainSummary(report));
+          break;
+        }
+      }
+      const [doc, list] = await Promise.all([fetchStructuredNotes(bot.id), fetchPendingProposals(bot.id)]);
+      setStructuredDoc(doc);
+      setPending(list);
+    } catch (e) {
+      setError(errorText(e));
+      // The notes may have changed under the panel; reload so the next action sees the current version.
+      try {
+        const [doc, list] = await Promise.all([fetchStructuredNotes(bot.id), fetchPendingProposals(bot.id)]);
+        setStructuredDoc(doc);
+        setPending(list);
+      } catch { /* the error already shown stands */ }
+    } finally {
+      setStructuredBusy(false);
+    }
+  };
+
   const home = capabilities.host.homeDir;
 
   return (
@@ -359,6 +446,10 @@ export function MemorySection({ bot, active = true, onToggle }: { bot: Bot; acti
         model={active && bot.memoryUpkeep !== false
           ? <MemoryModelSetting key={bot.id} bot={bot} upkeep={upkeep} className="mt-3 border-t border-hairline/40" /> : undefined}
       />}
+
+      {bot.memoryEnabled !== false && (
+        <StructuredNotesCard doc={structuredDoc} pending={pending} busy={structuredBusy} onAction={(action) => void structuredAction(action)} />
+      )}
 
       {editing && (
         <div className="rounded-xl bg-card p-4">

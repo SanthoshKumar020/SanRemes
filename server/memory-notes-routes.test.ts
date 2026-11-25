@@ -102,6 +102,46 @@ describe("structured memory notes routes through an isolated HTTP fixture", () =
     expect(remembered.body.note).toMatchObject({ path: "about/diet", text: "I am vegetarian", status: "stated" });
   });
 
+  it("queues a proposal for review and applies it only on approval", async () => {
+    const proposalBody = {
+      kind: "add-note",
+      input: {
+        path: "about/cuisine",
+        text: "Likes dosa",
+        sources: [{ chatId: "c1", messageId: "m3", quote: "I like dosa", at: "2026-11-25T13:00:00.000Z" }],
+      },
+      messages: [{ id: "m3", text: "I like dosa very much" }],
+    };
+    const queued = await api("GET", `/api/bots/${botId}/memory/pending`);
+    expect(queued.status).toBe(200);
+    expect(queued.body.proposals).toHaveLength(0);
+    const staged = await api("POST", `/api/bots/${botId}/memory/pending`, proposalBody);
+    expect(staged.status).toBe(200);
+    expect(staged.body.proposal).toMatchObject({ kind: "add-note", proposedBy: "owner" });
+    const before = await api("GET", `/api/bots/${botId}/memory/notes`);
+    expect(before.body.notes.find((n: { path: string }) => n.path === "about/cuisine")).toBeUndefined();
+    const denied = await api("POST", `/api/bots/${botId}/memory/pending/${staged.body.proposal.id}/deny`, {});
+    expect(denied.status).toBe(200);
+    expect((await api("GET", `/api/bots/${botId}/memory/pending`)).body.proposals).toHaveLength(0);
+    // Stage again, move the notes on, and approval must refuse while the proposal stays queued.
+    const stagedAgain = await api("POST", `/api/bots/${botId}/memory/pending`, proposalBody);
+    expect(stagedAgain.status).toBe(200);
+    const moved = await api("POST", `/api/bots/${botId}/memory/notes`, noteBody);
+    expect(moved.status).toBe(200);
+    const stale = await api("POST", `/api/bots/${botId}/memory/pending/${stagedAgain.body.proposal.id}/approve`, {});
+    expect(stale.status).toBe(409);
+    expect((await api("GET", `/api/bots/${botId}/memory/pending`)).body.proposals).toHaveLength(1);
+    // Deny the stale one, stage fresh, and approval applies it.
+    await api("POST", `/api/bots/${botId}/memory/pending/${stagedAgain.body.proposal.id}/deny`, {});
+    const stagedFresh = await api("POST", `/api/bots/${botId}/memory/pending`, proposalBody);
+    expect(stagedFresh.status).toBe(200);
+    const approved = await api("POST", `/api/bots/${botId}/memory/pending/${stagedFresh.body.proposal.id}/approve`, {});
+    expect(approved.status).toBe(200);
+    const after = await api("GET", `/api/bots/${botId}/memory/notes`);
+    expect(after.body.notes.find((n: { path: string }) => n.path === "about/cuisine")).toMatchObject({ text: "Likes dosa" });
+    expect((await api("GET", `/api/bots/${botId}/memory/pending`)).body.proposals).toHaveLength(0);
+  });
+
   it("maintains notes and manages learned skills", async () => {
     const maintained = await api("POST", `/api/bots/${botId}/memory/notes/maintain`, {});
     expect(maintained.status).toBe(200);

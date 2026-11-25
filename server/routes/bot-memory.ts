@@ -31,6 +31,13 @@ import {
   saveSkill,
   type MemoryNotesDoc,
 } from "../memory-notes.ts";
+import {
+  approveProposal,
+  denyProposal,
+  listProposals,
+  memoryActorForAuth,
+  stageProposal,
+} from "../memory-trust.ts";
 import { workspaceDir } from "../workspace.ts";
 import {
   flushMemoryJournal,
@@ -112,6 +119,11 @@ export function createBotMemoryRoutes(deps: BotMemoryRouteDeps): RouteHandler {
   return async ({ req, res, url, path, method, auth, json, readBody }) => {
     let m: RegExpMatchArray | null = null;
     const write = <T>(botId: string, change: () => T): T => deps.ownersWrite ? deps.ownersWrite(auth, botId, change) : change();
+    /** Direct note and skill writes are the owner's: a bot stages a proposal instead (see memory-trust.ts). */
+    const ownerOnly = () =>
+      memoryActorForAuth(auth) !== "owner"
+        ? json(res, 403, { error: "only the owner can change structured notes directly — a bot stages a proposal for the owner to review instead", code: "owner-only" })
+        : null;
     /** One memory file of `id`, a bot's own folder or a layer of it. */
     const serveFile = async (id: string, guarded: <T>(change: () => T) => T) => {
       if (isThreadNotes(url.searchParams.get("path") ?? "")) return json(res, 400, { error: "a conversation's notes are at /memory/thread/<thread id>", code: "path" });
@@ -299,6 +311,8 @@ export function createBotMemoryRoutes(deps: BotMemoryRouteDeps): RouteHandler {
     }
     if (m && method === "POST") {
       if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
+      const blocked = ownerOnly();
+      if (blocked) return blocked;
       const parsed = z.object({
         path: z.string(), text: z.string(), status: z.enum(["stated", "observed", "tentative"]).optional(),
         sources: z.array(noteSource), sourceMessages: z.array(citedMessage), fact: noteFact.optional(),
@@ -315,6 +329,8 @@ export function createBotMemoryRoutes(deps: BotMemoryRouteDeps): RouteHandler {
     }
     if (m && method === "DELETE") {
       if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
+      const blocked = ownerOnly();
+      if (blocked) return blocked;
       const notePath = url.searchParams.get("path") ?? "";
       const version = url.searchParams.get("expectedVersion");
       const expected = version === null || version === "" ? undefined : Number(version);
@@ -329,6 +345,8 @@ export function createBotMemoryRoutes(deps: BotMemoryRouteDeps): RouteHandler {
     m = path.match(/^\/api\/bots\/([\w-]+)\/memory\/notes\/remember$/);
     if (m && method === "POST") {
       if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
+      const blocked = ownerOnly();
+      if (blocked) return blocked;
       const parsed = z.object({ path: z.string(), chatId: z.string(), messageId: z.string(), text: z.string(), at: z.string(), expectedVersion }).safeParse(await readBody(req));
       if (!parsed.success) return json(res, 400, { error: "a remember needs a path and the owner's message" });
       const found = rememberFromMessage(parsed.data);
@@ -347,6 +365,8 @@ export function createBotMemoryRoutes(deps: BotMemoryRouteDeps): RouteHandler {
     m = path.match(/^\/api\/bots\/([\w-]+)\/memory\/notes\/(confirm|edit|archive|restore|maintain)$/);
     if (m && method === "POST") {
       if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
+      const blocked = ownerOnly();
+      if (blocked) return blocked;
       const action = m[2]!;
       const parsed = z.object({
         path: z.string().optional(), text: z.string().optional(),
@@ -388,6 +408,8 @@ export function createBotMemoryRoutes(deps: BotMemoryRouteDeps): RouteHandler {
     }
     if (m && method === "POST") {
       if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
+      const blocked = ownerOnly();
+      if (blocked) return blocked;
       const parsed = z.object({ name: z.string(), description: z.string(), body: z.string(), task: z.string().nullable().optional(), expectedVersion }).safeParse(await readBody(req));
       if (!parsed.success) return json(res, 400, { error: "a skill needs a name, a description and a body" });
       try {
@@ -400,6 +422,8 @@ export function createBotMemoryRoutes(deps: BotMemoryRouteDeps): RouteHandler {
     }
     if (m && method === "DELETE") {
       if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
+      const blocked = ownerOnly();
+      if (blocked) return blocked;
       const name = url.searchParams.get("name") ?? "";
       const version = url.searchParams.get("expectedVersion");
       const expected = version === null || version === "" ? undefined : Number(version);
@@ -414,12 +438,81 @@ export function createBotMemoryRoutes(deps: BotMemoryRouteDeps): RouteHandler {
     m = path.match(/^\/api\/bots\/([\w-]+)\/memory\/skills\/patch$/);
     if (m && method === "POST") {
       if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
+      const blocked = ownerOnly();
+      if (blocked) return blocked;
       const parsed = z.object({ name: z.string(), body: z.string(), expectedVersion }).safeParse(await readBody(req));
       if (!parsed.success) return json(res, 400, { error: "a skill patch needs a name and a body" });
       try {
         const botId = m[1];
         const saved = write(botId, () => saveNotes(botId, patchSkill(notesView(botId), parsed.data.name, parsed.data.body), parsed.data.expectedVersion));
         return json(res, 200, { ok: true, version: saved.version, skill: saved.skills.find((s) => s.name === parsed.data.name) ?? null });
+      } catch (error) {
+        return replyNotesError(res, error);
+      }
+    }
+    m = path.match(/^\/api\/bots\/([\w-]+)\/memory\/pending$/);
+    if (m && method === "GET") {
+      if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
+      try {
+        return json(res, 200, { version: 1, proposals: listProposals(notesRoot(m[1])) });
+      } catch (error) {
+        return replyNotesError(res, error);
+      }
+    }
+    if (m && method === "POST") {
+      // Staging is the agent's path in: it changes nothing live, and the proposal is validated here
+      // against the same checks as a direct write, so it stays open to any authenticated caller.
+      if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
+      const pendingInput = z.discriminatedUnion("kind", [
+        z.object({
+          kind: z.literal("add-note"),
+          input: z.object({
+            path: z.string(), text: z.string(), status: z.enum(["stated", "observed", "tentative"]).optional(),
+            sources: z.array(noteSource), fact: noteFact.optional(), expires: z.string().nullable().optional(),
+          }),
+          messages: z.array(citedMessage),
+        }),
+        z.object({ kind: z.literal("edit-note"), path: z.string(), text: z.string() }),
+        z.object({ kind: z.literal("confirm-note"), path: z.string() }),
+        z.object({
+          kind: z.literal("archive-note"), path: z.string(),
+          reason: z.enum(["superseded", "merged", "duplicate", "expired", "stale", "obsolete", "contradicted", "manual"]),
+        }),
+        z.object({ kind: z.literal("restore-note"), path: z.string() }),
+        z.object({ kind: z.literal("forget-note"), path: z.string() }),
+        z.object({ kind: z.literal("remember"), path: z.string(), chatId: z.string(), messageId: z.string(), text: z.string(), at: z.string() }),
+        z.object({
+          kind: z.literal("save-skill"),
+          input: z.object({ name: z.string(), description: z.string(), body: z.string(), task: z.string().nullable().optional() }),
+        }),
+        z.object({ kind: z.literal("patch-skill"), name: z.string(), body: z.string() }),
+        z.object({ kind: z.literal("forget-skill"), name: z.string() }),
+      ]);
+      const parsed = pendingInput.safeParse(await readBody(req));
+      if (!parsed.success) return json(res, 400, { error: "a proposal needs a kind and the change it asks for" });
+      try {
+        const proposal = stageProposal(notesRoot(m[1]), parsed.data, memoryActorForAuth(auth));
+        return json(res, 200, { ok: true, proposal });
+      } catch (error) {
+        return replyNotesError(res, error);
+      }
+    }
+    m = path.match(/^\/api\/bots\/([\w-]+)\/memory\/pending\/([\w-]+)\/(approve|deny)$/);
+    if (m && method === "POST") {
+      if (!deps.bot(m[1])) return json(res, 404, { error: "no such bot" });
+      const blocked = ownerOnly();
+      if (blocked) return blocked;
+      try {
+        const botId = m[1];
+        const proposalId = m[2]!;
+        if (m[3] === "approve") {
+          // The notes save goes through the owner's write path, like every direct write; staging and
+          // discarding touch only the queue itself, so they do not.
+          const approved = write(botId, () => approveProposal(notesRoot(botId), proposalId));
+          return json(res, 200, { ok: true, version: approved.doc.version, proposal: approved.proposal });
+        }
+        const denied = denyProposal(notesRoot(botId), proposalId);
+        return json(res, 200, { ok: true, proposal: denied });
       } catch (error) {
         return replyNotesError(res, error);
       }

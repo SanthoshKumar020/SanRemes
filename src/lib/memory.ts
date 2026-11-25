@@ -184,6 +184,160 @@ export function markMemoryReviewed(botId: string, token: string): Promise<{ ok: 
   return api(`/api/bots/${botId}/memory/reviewed`, { method: "POST", body: JSON.stringify({ token }) });
 }
 
+/** Structured notes: one fact per note, each with the words it came from. */
+export type StructuredNoteStatus = "stated" | "observed" | "tentative";
+
+export interface StructuredNoteSource {
+  chatId: string;
+  messageId: string;
+  quote: string;
+  at: string;
+}
+
+export interface StructuredNoteFact {
+  kind: "fact" | "preference" | "plan" | "event" | "possession";
+  entities: string[];
+  occurredOn?: string;
+  validFrom?: string;
+  validTo?: string;
+}
+
+export interface StructuredNote {
+  path: string;
+  area: string;
+  text: string;
+  status: StructuredNoteStatus;
+  updated: string;
+  edited: string | null;
+  expires: string | null;
+  sources: StructuredNoteSource[];
+  fact?: StructuredNoteFact;
+}
+
+export interface ArchivedStructuredNote {
+  path: string;
+  area: string;
+  text: string;
+  reason: string;
+  by: string | null;
+  archived: string;
+  sources: StructuredNoteSource[];
+  fact?: StructuredNoteFact;
+}
+
+export interface LearnedSkill {
+  name: string;
+  description: string;
+  body: string;
+  learned: string;
+  updated: string;
+  edited: string | null;
+  task: string | null;
+}
+
+export interface StructuredNotesDoc {
+  version: number;
+  notes: StructuredNote[];
+  archive: ArchivedStructuredNote[];
+  skills: LearnedSkill[];
+}
+
+interface PendingProposalBase {
+  id: string;
+  proposedBy: "agent" | "owner";
+  baseVersion: number;
+  createdAt: string;
+}
+
+/** A staged proposal: the exact change it asks for, plus who asked and the notes version it was checked against. */
+export type PendingProposal = PendingProposalBase & (
+  | { kind: "add-note"; input: { path: string; text: string; status?: StructuredNoteStatus; sources: StructuredNoteSource[]; fact?: StructuredNoteFact; expires?: string | null }; messages: { id: string; text: string }[] }
+  | { kind: "edit-note"; path: string; text: string }
+  | { kind: "confirm-note"; path: string }
+  | { kind: "archive-note"; path: string; reason: string }
+  | { kind: "restore-note"; path: string }
+  | { kind: "forget-note"; path: string }
+  | { kind: "remember"; path: string; chatId: string; messageId: string; text: string; at: string }
+  | { kind: "save-skill"; input: { name: string; description: string; body: string; task?: string | null } }
+  | { kind: "patch-skill"; name: string; body: string }
+  | { kind: "forget-skill"; name: string }
+);
+
+export function proposalSummary(proposal: PendingProposal): string {
+  switch (proposal.kind) {
+    case "add-note": return `Add note ${proposal.input.path}: “${proposal.input.text}”`;
+    case "edit-note": return `Change note ${proposal.path} to “${proposal.text}”`;
+    case "confirm-note": return `Confirm note ${proposal.path}`;
+    case "archive-note": return `Archive note ${proposal.path}`;
+    case "restore-note": return `Restore note ${proposal.path}`;
+    case "forget-note": return `Forget note ${proposal.path}`;
+    case "remember": return `Remember “${proposal.text}” as ${proposal.path}`;
+    case "save-skill": return `Learn skill ${proposal.input.name}: ${proposal.input.description}`;
+    case "patch-skill": return `Update skill ${proposal.name}`;
+    case "forget-skill": return `Forget skill ${proposal.name}`;
+  }
+}
+
+const structuredNotesRoute = (botId: string) => `/api/bots/${botId}/memory`;
+
+export function fetchStructuredNotes(botId: string): Promise<StructuredNotesDoc> {
+  return api(`${structuredNotesRoute(botId)}/notes`);
+}
+
+export async function fetchPendingProposals(botId: string): Promise<PendingProposal[]> {
+  const result: { proposals: PendingProposal[] } = await api(`${structuredNotesRoute(botId)}/pending`);
+  return result.proposals;
+}
+
+export function approveProposal(botId: string, id: string): Promise<{ ok: true; version: number }> {
+  return api(`${structuredNotesRoute(botId)}/pending/${encodeURIComponent(id)}/approve`, { method: "POST" });
+}
+
+export function denyProposal(botId: string, id: string): Promise<{ ok: true }> {
+  return api(`${structuredNotesRoute(botId)}/pending/${encodeURIComponent(id)}/deny`, { method: "POST" });
+}
+
+export type StructuredNoteActionKind = "confirm" | "edit" | "archive" | "restore";
+
+export function structuredNoteAction(
+  botId: string,
+  action: StructuredNoteActionKind,
+  options: { path: string; text?: string; reason?: string; expectedVersion?: number },
+): Promise<{ ok: true; version: number }> {
+  return api(`${structuredNotesRoute(botId)}/notes/${action}`, {
+    method: "POST",
+    body: JSON.stringify({
+      path: options.path,
+      ...(options.text !== undefined ? { text: options.text } : {}),
+      ...(options.reason !== undefined ? { reason: options.reason } : {}),
+      ...(options.expectedVersion !== undefined ? { expectedVersion: options.expectedVersion } : {}),
+    }),
+  });
+}
+
+export function forgetStructuredNote(botId: string, path: string, expectedVersion?: number): Promise<{ ok: true; version: number }> {
+  const query = expectedVersion === undefined ? "" : `&expectedVersion=${expectedVersion}`;
+  return api(`${structuredNotesRoute(botId)}/notes?path=${encodeURIComponent(path)}${query}`, { method: "DELETE" });
+}
+
+export function forgetLearnedSkill(botId: string, name: string, expectedVersion?: number): Promise<{ ok: true; version: number }> {
+  const query = expectedVersion === undefined ? "" : `&expectedVersion=${expectedVersion}`;
+  return api(`${structuredNotesRoute(botId)}/skills?name=${encodeURIComponent(name)}${query}`, { method: "DELETE" });
+}
+
+export interface StructuredMaintainReport {
+  expired: number;
+  duplicates: number;
+  stale: number;
+}
+
+export function maintainStructuredNotes(botId: string, expectedVersion?: number): Promise<{ report: StructuredMaintainReport }> {
+  return api(`${structuredNotesRoute(botId)}/notes/maintain`, {
+    method: "POST",
+    body: JSON.stringify(expectedVersion === undefined ? {} : { expectedVersion }),
+  });
+}
+
 export function tidyMemoryNow(botId: string): Promise<{ report: TidyReport; overview: MemoryOverview }> {
   return api(`/api/bots/${botId}/memory/tidy`, { method: "POST" });
 }

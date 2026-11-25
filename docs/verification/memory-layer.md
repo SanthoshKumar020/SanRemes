@@ -15,9 +15,9 @@ pnpm exec vitest run server/memory-capture-restart.e2e.test.ts
 pnpm exec vitest run server/thread-memory.e2e.test.ts server/thread-notes.test.ts
 pnpm exec vitest run server/spend-cap-api.test.ts
 pnpm exec vitest run server/memory-entries.test.ts server/recall.test.ts server/memory-upkeep.test.ts server/workspace.test.ts
-pnpm exec vitest run server/memory-notes.test.ts server/memory-notes-routes.test.ts
+pnpm exec vitest run server/memory-notes.test.ts server/memory-notes-routes.test.ts server/memory-trust.test.ts
 pnpm exec vitest run server/side-jobs.test.ts server/helper-model.e2e.test.ts
-pnpm exec vitest run src/components/bot-settings/MemorySection.test.ts src/lib/memory.test.ts server/drivers/agents-catalog-wire.test.ts
+pnpm exec vitest run src/components/bot-settings/MemorySection.test.ts src/components/bot-settings/StructuredNotesCard.test.ts src/lib/memory.test.ts server/drivers/agents-catalog-wire.test.ts
 ```
 
 The API fixture launches the shared isolated server with the fake engine. The
@@ -76,6 +76,20 @@ fixture in `server/memory-notes-routes.test.ts`) add:
   skill the owner edited, and round-trip through save, patch and forget.
 - A corrupt `notes.json` is a 500 with the file's path, never a crash; a
   note over 256 KiB is a 413.
+- The trust layer (`server/memory-trust.test.ts`, routes through the isolated fixture in
+  `server/memory-notes-routes.test.ts`): the owner applies every content change at once, a bot's
+  change waits as a proposal, and upkeep never runs on a bot's say-so; a proposal stages without
+  touching the live notes, approval applies it, denial drops it, and approval refuses with 409
+  when the notes moved on since staging while the proposal stays queued; staging refuses a quote
+  nobody said, a secret, or a second proposal for the same note or skill.
+- The Vault boundary (`server/memory-notes.test.ts`): a plain-prose password ("my password is
+  hunter2") is refused, a plain mention of a password ("the wifi password is on the fridge") is
+  not, a secret in a fact's entities or a skill's task is refused, and the prompt index masks a
+  shaped secret even from a hand-edited file.
+- The Memory panel (`src/components/bot-settings/StructuredNotesCard.test.ts`, `src/lib/memory.test.ts`):
+  the card shows the pending queue with Approve/Discard, notes with Confirm/Edit/Archive/Forget,
+  archived notes with Restore, and learned skills with the owner-edited mark; a proposal reads as
+  one plain line.
 
 ## Not proven here
 

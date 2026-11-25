@@ -6,11 +6,13 @@ import {
   formatBytes,
   journalSource,
   journalSummary,
+  proposalSummary,
   relativeTime,
   topicFileName,
   tidySummary,
   type MemoryCapacity,
   type MemoryJournalRow,
+  type PendingProposal,
 } from "./memory";
 
 it("reports organized notes rather than saying nothing was tidied", () => {
@@ -18,6 +20,22 @@ it("reports organized notes rather than saying nothing was tidied", () => {
   expect(tidySummary(report)).toBe("Nothing to tidy");
   expect(tidySummary({ ...report, organized: 1 })).toBe("Filed 1 note into topics");
   expect(tidySummary({ ...report, organized: 2 })).toBe("Filed 2 notes into topics");
+});
+
+describe("proposalSummary", () => {
+  const base = { id: "p1", proposedBy: "agent" as const, baseVersion: 0, createdAt: "2026-11-25T10:00:00.000Z" };
+  it("says each proposal in one plain line", () => {
+    const add: PendingProposal = { ...base, kind: "add-note", input: { path: "about/diet", text: "Is vegetarian", sources: [] }, messages: [] };
+    expect(proposalSummary(add)).toBe("Add note about/diet: “Is vegetarian”");
+    const edit: PendingProposal = { ...base, kind: "edit-note", path: "about/diet", text: "Is vegan" };
+    expect(proposalSummary(edit)).toBe("Change note about/diet to “Is vegan”");
+    const remember: PendingProposal = { ...base, kind: "remember", path: "about/diet", chatId: "c1", messageId: "m2", text: "I am vegetarian", at: "2026-11-25T10:00:00.000Z" };
+    expect(proposalSummary(remember)).toBe("Remember “I am vegetarian” as about/diet");
+    const skill: PendingProposal = { ...base, kind: "save-skill", input: { name: "weekly-report", description: "Builds the weekly report.", body: "1. Open the sheet." } };
+    expect(proposalSummary(skill)).toBe("Learn skill weekly-report: Builds the weekly report.");
+    const forget: PendingProposal = { ...base, kind: "forget-skill", name: "weekly-report" };
+    expect(proposalSummary(forget)).toBe("Forget skill weekly-report");
+  });
 });
 
 const index = (overrides: Partial<MemoryCapacity> = {}): MemoryCapacity => ({
