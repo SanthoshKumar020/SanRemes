@@ -437,7 +437,7 @@ describe("the Ollama row", () => {
     page();
     openServers();
     await found("no-models");
-    expect(row("ollama")!.textContent).toContain("ollama pull llama3.2");
+    expect(row("ollama")!.textContent).toContain("ollama pull qwen3:4b");
     answer("ready", "http://gpu-box.local:11434", [{ name: "qwen3:4b" }]);
     type(row("ollama")!.querySelector<HTMLInputElement>("input")!, "http://gpu-box.local:11434");
     flushSync(() => button("Check again").click());

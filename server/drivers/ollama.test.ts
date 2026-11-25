@@ -171,7 +171,7 @@ describe("finding Ollama", () => {
     const { url } = await fakeOllama({ models: [EMBED] });
     const status = await probeOllama(url);
     expect(status).toMatchObject({ state: "no-models", models: [] });
-    expect(ollamaUnavailable(status)).toMatch(/no models yet\. Run `ollama pull llama3\.2`/);
+    expect(ollamaUnavailable(status)).toMatch(/no models yet\. Run `ollama pull qwen3:4b`/);
   });
 
   it("says when nothing listens at the address", async () => {
@@ -285,7 +285,7 @@ describe("the chat engine on Ollama", () => {
     const empty = await create({ url: `${url}/v1`, catalog: "ollama" });
     try {
       await empty.refreshModels?.();
-      expect(await empty.snapshot()).toMatchObject({ state: "unavailable", reason: expect.stringContaining("ollama pull llama3.2"), ollama: { state: "no-models", url } });
+      expect(await empty.snapshot()).toMatchObject({ state: "unavailable", reason: expect.stringContaining("ollama pull qwen3:4b"), ollama: { state: "no-models", url } });
     } finally { await empty.dispose(); }
   });
 

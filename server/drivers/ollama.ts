@@ -9,7 +9,7 @@ export const OLLAMA_PORT = "11434";
 export const OLLAMA_LOCAL_URLS: readonly string[] = ["http://127.0.0.1:11434", "http://localhost:11434"];
 /** Ollama ignores the key; the OpenAI-compatible request still carries one. */
 export const OLLAMA_PLACEHOLDER_KEY = "ollama";
-export const OLLAMA_PULL_COMMAND = "ollama pull llama3.2";
+export const OLLAMA_PULL_COMMAND = "ollama pull qwen3:4b";
 
 /** A pulled model, as /api/tags and /api/show describe it. */
 export type OllamaModel = LocalModel;

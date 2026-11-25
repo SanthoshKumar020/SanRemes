@@ -5,7 +5,7 @@ import { localModelDetail } from "@/lib/local-model";
 import type { InstanceInfo } from "@/state/store";
 import type { OllamaProblem, OllamaStatus } from "../../shared/local-model";
 
-export const OLLAMA_PULL = "ollama pull llama3.2";
+export const OLLAMA_PULL = "ollama pull qwen3:4b";
 const OLLAMA_SERVE = "ollama serve";
 
 type Found = OllamaProblem & { models?: OllamaStatus["models"] };
