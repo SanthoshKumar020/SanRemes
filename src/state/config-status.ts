@@ -84,6 +84,9 @@ export interface ConfigStatus {
   /** Prompt-cache keep-warm for idle Claude threads. Absent from older servers. */
   cacheKeepWarm?: { enabled: boolean; windowMinutes: number };
   localVm: { mode: "shared" | "per-bot" | "pool"; maxInstances: number; idleTimeoutMinutes?: number; preserveInstalledApps?: boolean };
+  /** First-run install of the free local AI (Qwen): `idle` on machines it never runs on, `starting`/`pulling`
+   * while it installs, `ready` once it is the default, `failed` with the reason when it could not install. */
+  localQwen?: { state: "idle" | "starting" | "pulling" | "ready" | "failed"; percent?: number; instanceId?: string; error?: string };
   /** `providerKeys`: names of the keys saved for OpenCode's other
    * providers, never the keys. */
   opencodeGo?: SavedKey & { providerKeys?: string[] };

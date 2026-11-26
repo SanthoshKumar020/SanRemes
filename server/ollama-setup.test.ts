@@ -224,8 +224,9 @@ describe("startLocalQwenOnBoot", () => {
   });
 
   it("leaves bots alone when a default was already saved before this boot", async () => {
-    const { deps, saveDefault } = harness();
+    const { deps, states, saveDefault } = harness();
     const applied: string[] = [];
+    const changed = vi.fn();
     startLocalQwenOnBoot({
       ...deps,
       platform: "win32",
@@ -233,10 +234,50 @@ describe("startLocalQwenOnBoot", () => {
       bootPick: () => ({ instanceId: "claude", model: "claude-sonnet-5" }),
       bots: () => [{ id: "boot", modelSelection: { instanceId: "claude", model: "claude-sonnet-5" } }],
       applyDefault: (id) => { applied.push(id); },
-      changed: () => {},
+      changed,
     });
     await vi.waitFor(() => expect(saveDefault).toHaveBeenCalled());
     expect(applied).toEqual([]);
+    expect(states.at(-1)?.state).toBe("ready");
+    expect(changed).toHaveBeenCalled();
+  });
+
+  it("broadcasts a failure so the app can show it", async () => {
+    const { deps, states } = harness({ probes: [status("unreachable")] });
+    const applied: string[] = [];
+    const changed = vi.fn();
+    startLocalQwenOnBoot({
+      ...deps,
+      platform: "win32",
+      defaultAtBoot: null,
+      bootPick: () => ({ instanceId: "claude", model: "claude-sonnet-5" }),
+      bots: () => [{ id: "boot", modelSelection: { instanceId: "claude", model: "claude-sonnet-5" } }],
+      applyDefault: (id) => { applied.push(id); },
+      changed,
+    });
+    await vi.waitFor(() => expect(states.at(-1)).toMatchObject({ state: "failed" }));
+    expect(applied).toEqual([]);
+    expect(changed).toHaveBeenCalled();
+  });
+
+  it("reports pull progress so the app can show it", async () => {
+    const { deps, states } = harness({
+      probes: [status("ready", []), status("ready", [LOCAL_QWEN_MODEL])],
+      pullLines: [`{"status":"Pulling","digest":"sha256:a","total":100,"completed":25}`, `{"status":"success"}`],
+    });
+    const changed = vi.fn();
+    startLocalQwenOnBoot({
+      ...deps,
+      platform: "win32",
+      defaultAtBoot: null,
+      bootPick: () => ({ instanceId: "claude", model: "claude-sonnet-5" }),
+      bots: () => [],
+      applyDefault: () => {},
+      changed,
+    });
+    await vi.waitFor(() => expect(states).toContainEqual({ state: "pulling", percent: 25 }));
+    await vi.waitFor(() => expect(states.at(-1)?.state).toBe("ready"));
+    expect(changed).toHaveBeenCalled();
   });
 });
 
