@@ -1,4 +1,4 @@
-import { AppWindow, FolderOpen, FolderTree, Globe, Puzzle, Rocket, UsersRound, Zap } from "lucide-react";
+import { AppWindow, Briefcase, FolderOpen, FolderTree, Globe, Puzzle, Rocket, UsersRound, Zap } from "lucide-react";
 import { useMemo, type ReactNode } from "react";
 
 import { useAppTriggers } from "@/lib/app-triggers";
@@ -7,6 +7,7 @@ import { cn } from "@/lib/cn";
 import { useCloudFilesReady } from "@/lib/cloud-files";
 import { t } from "@/lib/i18n";
 import { useAdvancedMode } from "@/lib/interface-mode";
+import { useFeature } from "@/lib/use-feature";
 import { useWebPanels } from "@/lib/web-panel-preferences";
 import { useSidebarToolsLayout, type SidebarDensity } from "@/lib/sidebar-preferences";
 import { useStore } from "@/state/store";
@@ -127,6 +128,16 @@ export function SidebarFooterNav({
   const iconSize = iconsOnly && !rail ? 20 : 16;
   const tone = (active: boolean) => (active ? "text-accent" : "text-ink-secondary");
   const automationsNeedYou = useAutomationsNeedYou();
+  const jobBot = useFeature("jobBot");
+  const jobsRow = jobBot && <NavRow
+    id="jobs"
+    label={t("sidebar.nav.jobs")}
+    tourId="nav-jobs"
+    iconsOnly={iconsOnly || toolbar}
+    active={state.activeView === "jobs"}
+    icon={(active) => <Briefcase size={iconSize} className={tone(active)} />}
+    onClick={() => dispatch({ type: "showJobs" })}
+  />;
   const automationsRow = <NavRow
     id="automations"
     label={t("sidebar.nav.automations")}
@@ -162,6 +173,7 @@ export function SidebarFooterNav({
   const rows = (
     <>
       {automationsRow}
+      {jobsRow}
       {appsRow}
       {(advanced || iconsOnly) && (
         <NavRow

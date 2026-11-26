@@ -322,4 +322,32 @@ describe("toolbar tools layout", () => {
       expect(unset).not.toContain(`aria-label="${label}"`);
     }
   });
+
+  it("hides Jobs while the Job Bot switch is off", () => {
+    fixture.advanced = true;
+    fixture.state.config = { features: { jobBot: false } };
+    expect(render("comfortable").html).not.toContain('data-sidebar-nav="jobs"');
+    expect(render("icons").html).not.toContain('data-sidebar-nav="jobs"');
+  });
+
+  it("shows Jobs after Automations in Advanced mode, opens it, and marks it current while open", () => {
+    fixture.advanced = true;
+    fixture.state.config = { features: { jobBot: true } };
+    const { html, nodes: tree } = render("comfortable");
+    expect(html).toContain('data-sidebar-nav="jobs"');
+    expect(html).toContain(">Jobs</span>");
+    expect(html.indexOf('data-sidebar-nav="automations"')).toBeLessThan(html.indexOf('data-sidebar-nav="jobs"'));
+    expect(html.indexOf('data-sidebar-nav="jobs"')).toBeLessThan(html.indexOf('data-sidebar-nav="team-map"'));
+    (tree.find((node) => node.props.id === "jobs" && typeof node.props.onClick === "function")!.props.onClick as () => void)();
+    expect(fixture.dispatch).toHaveBeenLastCalledWith({ type: "showJobs" });
+    fixture.state.activeView = "jobs";
+    expect(render("comfortable").html).toMatch(/data-sidebar-nav="jobs"[^>]*aria-current="page"/);
+  });
+
+  it("shows Jobs in Simple mode's icons column while the switch is on, but not on its rail", () => {
+    fixture.state.config = { features: { jobBot: true } };
+    expect(render("icons").html).toContain('aria-label="Jobs" title="Jobs"');
+    const rail = renderToStaticMarkup(createElement(() => SidebarFooterNav({ density: "icons", rail: true })));
+    expect(rail).not.toContain('data-sidebar-nav="jobs"');
+  });
 });
