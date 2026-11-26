@@ -4,8 +4,9 @@ import { userError, type UserError } from "../user-errors.ts";
 import type { AppConfig } from "../config.ts";
 import { deciderCredential } from "../included-services.ts";
 import {
-  customAccount, geminiAccount, helpersOn, includedAccount, jevAccount, openrouterAccount, sharedOpenRouterKey, workersAiAccount, type HelperAccount,
+  cerebrasAccount, customAccount, geminiAccount, helpersOn, includedAccount, jevAccount, mistralAccount, openrouterAccount, sharedOpenRouterKey, workersAiAccount, type HelperAccount,
 } from "./accounts.ts";
+import { cerebrasBackend, mistralBackend } from "./chat.ts";
 import { geminiBackend } from "./gemini.ts";
 import { CUSTOM_DEFAULT_API, customApiOf, customBackend, customEndpoint } from "./custom.ts";
 import { jevBackend } from "./jev.ts";
@@ -27,8 +28,16 @@ export const KEY_CHECK_TIMEOUT_MS = 10_000;
 const MIN_TIMEOUT_MS = 50;
 const MAX_TIMEOUT_MS = 30_000;
 
+/** 429 or a 5xx: the provider is capped or sick, so the next configured provider gets the turn. Any other failure
+ * would come back the same from the next provider, so it is returned at once. */
+function retryable(result: { reason: DeciderFailure; status?: number }): boolean {
+  return result.reason === "rate_limited" || result.reason === "overloaded"
+    || (result.reason === "http_error" && typeof result.status === "number" && result.status >= 500);
+}
+
 const BACKENDS: Record<DeciderProvider, DeciderBackend> = {
   jev: jevBackend, workersai: workersAiBackend, openrouter: openrouterBackend, custom: customBackend, gemini: geminiBackend,
+  cerebras: cerebrasBackend, mistral: mistralBackend,
 };
 
 type DeciderConfig = NonNullable<AppConfig["decider"]>;
@@ -54,12 +63,20 @@ export function deciderApi(cfg: AppConfig): OpenRouterApi {
 
 /** A chosen custom gateway decides alone, or nothing does until it is set up. Otherwise, in order: the person's own Jev
  * key, their own Workers AI key (Clef), Cloud's included relay (only for seams it accepts), the OpenRouter LLM fallback,
- * a Gemini key saved for speech or images, nothing. */
-export function deciderAccount(cfg: AppConfig, seam?: DeciderSeam): HelperAccount | null {
-  if (cfg.decider?.provider === "custom") return customAccount(cfg);
+ * a Cerebras key saved for the engine, a Mistral key saved for the engine, a Gemini key saved for speech or images,
+ * nothing. */
+export function deciderAccounts(cfg: AppConfig, seam?: DeciderSeam): HelperAccount[] {
+  if (cfg.decider?.provider === "custom") {
+    const custom = customAccount(cfg);
+    return custom ? [custom] : [];
+  }
   const jev = jevAccount(cfg);
-  const candidates = [jev, workersAiAccount(cfg), jev?.included ? null : includedAccount(), openrouterAccount(cfg), geminiAccount(cfg)];
-  return candidates.find((account): account is HelperAccount => Boolean(account) && !(account!.included && seam && !relaySeam(seam))) ?? null;
+  const candidates = [jev, workersAiAccount(cfg), jev?.included ? null : includedAccount(), openrouterAccount(cfg), cerebrasAccount(cfg), mistralAccount(cfg), geminiAccount(cfg)];
+  return candidates.filter((account): account is HelperAccount => Boolean(account) && !(account!.included && seam && !relaySeam(seam)));
+}
+
+export function deciderAccount(cfg: AppConfig, seam?: DeciderSeam): HelperAccount | null {
+  return deciderAccounts(cfg, seam)[0] ?? null;
 }
 
 export function deciderConfigured(cfg: AppConfig): boolean {
@@ -88,9 +105,9 @@ export function deciderSharedKeyUsable(cfg: AppConfig): boolean {
   return Boolean(sharedOpenRouterKey(cfg));
 }
 
-/** A key from elsewhere in Settings the decision model falls back on: OpenRouter's, or a Gemini one. */
+/** A key from elsewhere in Settings the decision model falls back on: OpenRouter's, a Cerebras or Mistral engine key, or a Gemini one. */
 export function deciderBorrowedKey(cfg: AppConfig): boolean {
-  return deciderSharedKeyUsable(cfg) || Boolean(geminiAccount(cfg));
+  return deciderSharedKeyUsable(cfg) || Boolean(cerebrasAccount(cfg)) || Boolean(mistralAccount(cfg)) || Boolean(geminiAccount(cfg));
 }
 
 /** Never a key, nor an operator base URL with no UI; a custom gateway's `baseUrl` is the person's own setting. `provider` is the one in use, else the one chosen
@@ -103,9 +120,11 @@ export function describeDecider(cfg: AppConfig) {
   const provider = account?.provider ?? draftProvider(cfg);
   const jevChosen = cfg.decider?.provider === "jev" && provider === "openrouter" && account?.keySource === "shared";
   const openrouterChosen = cfg.decider?.provider === "openrouter" && provider === "gemini";
+  const picked = cfg.decider?.provider;
+  const borrowedChat = (picked === "jev" || picked === "openrouter") && (provider === "cerebras" || provider === "mistral") ? picked : undefined;
   return {
     provider,
-    ...(jevChosen ? { chosen: "jev" as const } : openrouterChosen ? { chosen: "openrouter" as const } : {}),
+    ...(jevChosen ? { chosen: "jev" as const } : openrouterChosen ? { chosen: "openrouter" as const } : borrowedChat ? { chosen: borrowedChat } : {}),
     ...(provider === "openrouter" ? { model: deciderModel(cfg), api: deciderApi(cfg) } : {}),
     ...(provider === "custom" ? {
       model: cfg.decider?.customModel?.trim() ?? "",
@@ -181,6 +200,8 @@ export const DECIDER_KEY_REJECTED: Record<DeciderProvider, string> = {
   openrouter: "OpenRouter rejected this key. Check it at openrouter.ai/keys and paste it again.",
   custom: "Your endpoint rejected this key. Check it with the endpoint's owner and paste it again.",
   gemini: "Google rejected the saved Gemini key. Check it at aistudio.google.com/apikey and paste it again under API keys.",
+  cerebras: "Cerebras rejected the saved key. Check it at cloud.cerebras.ai and paste it again under API keys.",
+  mistral: "Mistral rejected the saved key. Check it at console.mistral.ai/api-keys and paste it again under API keys.",
 };
 
 /** The key a save brings, to be tested before it is kept: a custom gateway's, Jev's, Workers AI's, then OpenRouter's. */
@@ -224,6 +245,8 @@ function checkAccount(cfg: AppConfig, input: { key?: string; provider?: DeciderP
   if (provider === "workersai") return workersAiAccount(cfg, { token: draft, accountId: input.accountId });
   if (provider === "openrouter") return openrouterAccount(cfg, draft);
   if (provider === "custom") return customAccount(cfg, draft);
+  if (provider === "cerebras") return cerebrasAccount(cfg, draft);
+  if (provider === "mistral") return mistralAccount(cfg, draft);
   if (provider === "gemini") return geminiAccount(cfg);
   return jevAccount(cfg, draft) ?? includedAccount();
 }
@@ -352,6 +375,9 @@ export function createDecider(deps: DeciderDeps): Decider {
       const model = input.model?.trim() || cfg.decider?.customModel?.trim();
       return { ...(model ? { model } : {}), api: input.api ? customApiOf(input.api) : customDeciderApi(cfg) };
     }
+    if (account.provider === "cerebras" || account.provider === "mistral") {
+      return input.model?.trim() ? { model: input.model.trim(), api: "chat" as const } : {};
+    }
     if (account.provider !== "openrouter") return {};
     return input.model?.trim() ? { model: input.model.trim(), api: input.api ?? "chat" } : { model: deciderModel(cfg), api: deciderApi(cfg) };
   };
@@ -366,10 +392,24 @@ export function createDecider(deps: DeciderDeps): Decider {
       const cfg = deps.config();
       const refused = gate(cfg, seam);
       if (refused) return { ok: false, reason: refused };
-      const account = deciderAccount(cfg, seam)!;
-      // Through the included token, only the exact requests the relay takes.
-      if (account.included && !relayAccepts(seam, state, questions)) return { ok: false, reason: "misconfigured" };
-      return await call(seam, account, { ...modelRequest(cfg, account), state, questions }, options);
+      const accounts = deciderAccounts(cfg, seam);
+      if (!accounts.length) return { ok: false, reason: "no_key" };
+      const started = now();
+      const budgetMs = options.timeoutMs ?? DEFAULT_DECIDER_TIMEOUT_MS;
+      let skippedRelay = false;
+      let last: DeciderResult<Answers<Qs>> | null = null;
+      for (const account of accounts) {
+        // Through the included token, only the exact requests the relay takes; a refused shape falls through to an own key.
+        if (account.included && !relayAccepts(seam, state, questions)) { skippedRelay = true; continue; }
+        const remainingMs = budgetMs - (now() - started);
+        if (remainingMs < MIN_TIMEOUT_MS) break;
+        const result = await call(seam, account, { ...modelRequest(cfg, account), state, questions }, { ...options, timeoutMs: remainingMs });
+        if (result.ok) return { ...result, latencyMs: Math.max(0, Math.round(now() - started)) };
+        last = result;
+        if (!retryable(result)) return result;
+      }
+      if (last) return last;
+      return { ok: false, reason: skippedRelay ? "misconfigured" : "no_key" };
     } catch {
       return { ok: false, reason: "malformed" };
     }

@@ -222,6 +222,106 @@ describe("failures come back as reasons", () => {
   });
 });
 
+describe("failover to the next configured provider", () => {
+  const CB_KEY = "csk-unit-cerebras-key-0123456789abcdef";
+  const MI_KEY = "unit-mistral-key-0123456789abcdef";
+  const BOTH: AppConfig = {
+    cerebras: { key: CB_KEY }, mistral: { key: MI_KEY },
+    decider: { enabled: true, key: KEY, jobs: { roomRouting: true } },
+  };
+  const chatCompletion = (choice: string, probabilities: Record<string, number>) => new Response(JSON.stringify({
+    model: "gpt-oss-120b",
+    choices: [{ message: { content: JSON.stringify({ answers: { answer: { choice, probabilities } } }) } }],
+    usage: { prompt_tokens: 210 },
+  }), { status: 200 });
+  const calls = (fetchImpl: FetchMock) => fetchImpl.mock.calls.map(([url, init]) => ({
+    url: String(url),
+    auth: (init!.headers as Record<string, string>).authorization,
+  }));
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("a 429 from Jev falls through to Cerebras, which answers", async () => {
+    const fetchImpl = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response("slow down", { status: 429 }))
+      .mockResolvedValueOnce(chatCompletion("theo", { theo: 0.9, maya: 0.1 }));
+    const result = await decider(BOTH, fetchImpl).choose("roomRouting", STATE, QUESTION);
+    expect(result).toMatchObject({ ok: true, provider: "cerebras", answers: { choice: "theo" } });
+    if (!result.ok) throw new Error("expected an answer");
+    expect(typeof result.latencyMs).toBe("number");
+    expect(calls(fetchImpl)).toEqual([
+      { url: "https://api.typesafe.ai/v1/systemone", auth: `Bearer ${KEY}` },
+      { url: "https://api.cerebras.ai/v1/chat/completions", auth: `Bearer ${CB_KEY}` },
+    ]);
+  });
+
+  it("a 500 from Jev falls through to Mistral, which answers", async () => {
+    const fetchImpl = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response("boom", { status: 500 }))
+      .mockResolvedValueOnce(chatCompletion("maya", { maya: 0.8, theo: 0.2 }));
+    const config: AppConfig = { mistral: { key: MI_KEY }, decider: { enabled: true, key: KEY, jobs: { roomRouting: true } } };
+    const result = await decider(config, fetchImpl).choose("roomRouting", STATE, QUESTION);
+    expect(result).toMatchObject({ ok: true, provider: "mistral", answers: { choice: "maya" } });
+    expect(calls(fetchImpl)).toEqual([
+      { url: "https://api.typesafe.ai/v1/systemone", auth: `Bearer ${KEY}` },
+      { url: "https://api.mistral.ai/v1/chat/completions", auth: `Bearer ${MI_KEY}` },
+    ]);
+  });
+
+  it.each([
+    [401, "rejected"],
+    [413, "too_large"],
+  ])("a %i from Jev is never retried: %s, called once", async (status, reason) => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(new Response("no", { status }));
+    const result = await decider(BOTH, fetchImpl).choose("roomRouting", STATE, QUESTION);
+    expect(result).toMatchObject({ ok: false, provider: "jev", reason, status });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("when every provider is rate-limited, the last failure comes back and each was tried once", async () => {
+    const fetchImpl = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response("slow", { status: 429 }))
+      .mockResolvedValueOnce(new Response("slow", { status: 429 }))
+      .mockResolvedValueOnce(new Response("slow", { status: 503 }));
+    const result = await decider(BOTH, fetchImpl).choose("roomRouting", STATE, QUESTION);
+    expect(result).toMatchObject({ ok: false, provider: "mistral", reason: "overloaded", status: 503 });
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    expect(calls(fetchImpl).map((call) => call.url)).toEqual([
+      "https://api.typesafe.ai/v1/systemone",
+      "https://api.cerebras.ai/v1/chat/completions",
+      "https://api.mistral.ai/v1/chat/completions",
+    ]);
+  });
+
+  it("a timeout spends the budget on the first provider and tries no other", async () => {
+    const fetchImpl = vi.fn<typeof fetch>((_url, init) => new Promise((_resolve, reject) => {
+      init?.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));
+    }));
+    const result = await decider(BOTH, fetchImpl).choose("roomRouting", STATE, QUESTION, { timeoutMs: 80 });
+    expect(result).toMatchObject({ ok: false, provider: "jev", reason: "timeout" });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("a shape the included relay refuses falls through to an own key instead of failing", async () => {
+    vi.stubEnv("SANREMES_CLOUD_DECIDER_URL", "https://cloud.example.test/api/cloud/services/decider");
+    vi.stubEnv("SANREMES_CLOUD_DECIDER_TOKEN", "omb_decide_unit_included_token_0123456789");
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(chatCompletion("theo", { theo: 0.9, maya: 0.1 }));
+    const config: AppConfig = { cerebras: { key: CB_KEY }, decider: { enabled: true, jobs: { roomRouting: true } } };
+    const result = await decider(config, fetchImpl).choose("roomRouting", { ...STATE, files: ["~/.ssh/id_ed25519"] }, QUESTION);
+    expect(result).toMatchObject({ ok: true, provider: "cerebras" });
+    expect(calls(fetchImpl)).toEqual([{ url: "https://api.cerebras.ai/v1/chat/completions", auth: `Bearer ${CB_KEY}` }]);
+    expect(JSON.stringify(fetchImpl.mock.calls)).not.toContain("omb_decide_unit_included_token_0123456789");
+  });
+
+  it("with no own key, a shape the relay refuses is still misconfigured and never called", async () => {
+    vi.stubEnv("SANREMES_CLOUD_DECIDER_URL", "https://cloud.example.test/api/cloud/services/decider");
+    vi.stubEnv("SANREMES_CLOUD_DECIDER_TOKEN", "omb_decide_unit_included_token_0123456789");
+    const fetchImpl = vi.fn<typeof fetch>();
+    await expect(decider({}, fetchImpl).choose("roomRouting", { ...STATE, files: ["~/.ssh/id_ed25519"] }, QUESTION))
+      .resolves.toEqual({ ok: false, reason: "misconfigured" });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+});
+
 describe("the decision log", () => {
   it("writes one 0600 row per call with no message text and no key", async () => {
     const dataDir = mkdtempSync(join(tmpdir(), "sanremes-decider-log-"));

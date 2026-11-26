@@ -83,6 +83,11 @@ describe("routed-by line", () => {
     expect(renderToStaticMarkup(createElement(RoutedByLine, { routedBy: { provider: "openrouter", probability: 0.81 } }))).toContain("Picked by OpenRouter · 81%");
   });
 
+  it("names Cerebras and Mistral when either picked the speaker", () => {
+    expect(renderToStaticMarkup(createElement(RoutedByLine, { routedBy: { provider: "cerebras", probability: 0.9 } }))).toContain("Picked by Cerebras · 90%");
+    expect(renderToStaticMarkup(createElement(RoutedByLine, { routedBy: { provider: "mistral", probability: 0.77 } }))).toContain("Picked by Mistral · 77%");
+  });
+
   it("appears under a Jev-routed reply only", () => {
     const reply = (id: string, extra: Partial<Message> = {}): Message =>
       ({ id, role: "bot", kind: "text", text: `reply ${id}`, at: 1_000, from: { botId: "theo", name: "Theo", color: "green" }, ...extra });

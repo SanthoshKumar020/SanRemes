@@ -188,6 +188,9 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=4096
         run: pnpm package:mac
 
+      - name: "Gate: release hygiene (no maps, no plaintext secrets, fuses set)"
+        run: node scripts/check-release-hygiene.mjs --app release/mac-arm64/SanRemes.app --app release/mac/SanRemes.app --platform darwin
+
       - name: "Gate: both packaged apps use the canonical updater feed"
         run: |
           for app in release/mac-arm64/SanRemes.app release/mac/SanRemes.app; do
@@ -369,6 +372,8 @@ jobs:
         shell: bash
         run: rm -rf dist dist-server release
       - run: pnpm package:win
+      - name: "Gate: release hygiene (no maps, no plaintext secrets, fuses set)"
+        run: node scripts/check-release-hygiene.mjs --app release/win-unpacked --platform win32
       - name: Smoke the staged Windows Ollama bundle
         run: pnpm smoke:ollama-win
       - name: "Gate: bundled browser works with an empty home"
@@ -456,6 +461,8 @@ jobs:
       - name: Prove overlay-free X11 input routing
         run: dbus-run-session -- xvfb-run -a pnpm smoke:cua-x11-input
       - run: pnpm package:linux
+      - name: "Gate: release hygiene (no maps, no plaintext secrets, fuses set)"
+        run: node scripts/check-release-hygiene.mjs --app release/linux-unpacked --platform linux
       - name: Verify the packaged updater target
         run: |
           update=release/linux-unpacked/resources/app-update.yml

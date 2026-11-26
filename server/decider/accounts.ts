@@ -2,6 +2,7 @@
 // wins; Cloud's included token goes only to its relay; the engine's OpenRouter key goes only to OpenRouter's own address.
 import type { AppConfig } from "../config.ts";
 import { deciderCredential, type ServiceCredential } from "../included-services.ts";
+import { CEREBRAS_DECIDER_URL, MISTRAL_DECIDER_URL } from "./chat.ts";
 import { WORKERS_AI_ACCOUNT_ID } from "./config.ts";
 import { customEndpoint } from "./custom.ts";
 import { GEMINI_DECIDER_URL } from "./gemini.ts";
@@ -65,6 +66,18 @@ export function includedAccount(): HelperAccount | null {
 export function geminiAccount(cfg: AppConfig): HelperAccount | null {
   const token = cfg.tts?.geminiKey?.trim() || cfg.imageGen?.geminiKey?.trim();
   return token ? { provider: "gemini", token, api: GEMINI_DECIDER_URL, included: false } : null;
+}
+
+/** The Cerebras key saved for the engine: the decision model borrows it, as it borrows Gemini's. */
+export function cerebrasAccount(cfg: AppConfig, draft?: string): HelperAccount | null {
+  const token = draft?.trim() || cfg.cerebras?.key?.trim();
+  return token ? { provider: "cerebras", token, api: CEREBRAS_DECIDER_URL, included: false } : null;
+}
+
+/** The Mistral key saved for the engine: the decision model borrows it, as it borrows Gemini's. */
+export function mistralAccount(cfg: AppConfig, draft?: string): HelperAccount | null {
+  const token = draft?.trim() || cfg.mistral?.key?.trim();
+  return token ? { provider: "mistral", token, api: MISTRAL_DECIDER_URL, included: false } : null;
 }
 
 export function openrouterAccount(cfg: AppConfig, draft?: string): HelperAccount | null {

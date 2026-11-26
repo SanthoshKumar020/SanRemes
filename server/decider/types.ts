@@ -1,6 +1,7 @@
 /** workersai: Cloudflare's Clef on Workers AI, Jev-compatible. custom: a gateway the person points at. gemini: Google's
- * Decisions API with the Gemini key saved for speech or images. */
-export type DeciderProvider = "jev" | "workersai" | "openrouter" | "custom" | "gemini";
+ * Decisions API with the Gemini key saved for speech or images. cerebras, mistral: the person's own engine key from
+ * Settings → API keys, asked over OpenAI-compatible chat. */
+export type DeciderProvider = "jev" | "workersai" | "openrouter" | "custom" | "gemini" | "cerebras" | "mistral";
 
 /** chat: a chat model asked for strict JSON; decisions: OpenRouter's Decisions API (output modality `decisions`). */
 export type OpenRouterApi = "chat" | "decisions";

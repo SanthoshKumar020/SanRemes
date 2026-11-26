@@ -31,6 +31,7 @@ export function createDeciderRoutes(deps: DeciderRouteDeps): RouteHandler {
     if (draft.length > MAX_KEY_LENGTH) return json(res, 400, { error: "That does not look like an API key." });
     res.setHeader("cache-control", "no-store");
     const provider = body?.provider === "jev" || body?.provider === "openrouter" || body?.provider === "workersai" || body?.provider === "custom"
+      || body?.provider === "cerebras" || body?.provider === "mistral"
       ? body.provider : undefined;
     if (body?.accountId !== undefined && (typeof body.accountId !== "string" || !WORKERS_AI_ACCOUNT_ID.test(body.accountId.trim()))) {
       return json(res, 400, userError("serverError.decider.accountId"));

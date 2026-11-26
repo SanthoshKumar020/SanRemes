@@ -51,6 +51,21 @@ files:
 
 asar: true
 
+# Electron fuses, flipped by electron-builder after packing and before
+# signing (its bundled @electron/fuses; no separate dependency). RunAsNode
+# is the sharp one: the packaged server and its helpers run the Electron
+# binary as plain node via ELECTRON_RUN_AS_NODE (server/drivers/claude.ts),
+# so disabling the fuse stops those spawns from running as node. The
+# main-process server itself uses utilityProcess.fork and is unaffected.
+# Leave RunAsNode on: flipping it off stops the Electron binary running as
+# plain node, which breaks the Claude engine, MCP stdio servers, and
+# permission proxies in a packaged build (Electron 43).
+electronFuses:
+  runAsNode: true
+  enableNodeCliInspectArguments: false
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+
 extraResources:
   # Ship the app's own license terms in every desktop distribution.
   - from: LICENSE

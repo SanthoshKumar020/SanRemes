@@ -5323,6 +5323,8 @@
   "room.routedBy.openrouter": "Picked by OpenRouter · {percent}%",
   "room.routedBy.workersai": "Picked by Clef · {percent}%",
   "room.routedBy.gemini": "Picked by Gemini · {percent}%",
+  "room.routedBy.cerebras": "Picked by Cerebras · {percent}%",
+  "room.routedBy.mistral": "Picked by Mistral · {percent}%",
   "room.turnLimit.aria": "Turn limit for this conversation",
   "room.turnLimit.default": "Default ({minutes} min)",
   "room.turnLimit.minutes": "{minutes} minutes",

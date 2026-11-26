@@ -1,7 +1,7 @@
 {
   "name": "sanremes",
   "private": true,
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "A local-first chat app for running a team of AI agents.",
   "homepage": "https://github.com/SanthoshKumar020/SanRemes",
   "repository": {
@@ -53,6 +53,7 @@
     "test:cua": "pnpm build:cua && node scripts/smoke-cua.mjs",
     "test:cua-container": "node scripts/smoke-cua-container.mjs",
     "check:electron": "node scripts/check-electron.mjs",
+    "check:release-hygiene": "node scripts/check-release-hygiene.mjs",
     "preview": "vite preview",
     "gen:bodies": "node --experimental-strip-types scripts/gen-mascot-bodies.ts",
     "gen:carved": "node --experimental-strip-types scripts/gen-carved-bodies.ts",

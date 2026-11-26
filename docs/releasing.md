@@ -154,6 +154,44 @@ stapling silently invalidating every published hash, and a finished release
 sitting invisible as a draft. Don't remove a gate without reading the comment
 above it.
 
+## Release hygiene gate
+
+Every platform job runs `node scripts/check-release-hygiene.mjs --app <packaged app>` on its packaged output, before any draft is assembled. It fails the release when it finds any of:
+
+- a `.map` file inside `app.asar` or the unpacked resources;
+- `sourceMappingURL` or `sourcesContent` in any shipped file (a map that
+  survived, or a bundle that still embeds its sources);
+- a plaintext secret in any shipped file: a PEM private-key header, a
+  GitHub / AWS / OpenAI / Anthropic / Slack / Google / npm token. Findings
+  name the file and the check, never the matched text.
+- an Electron fuse in the wrong state. The required fuses live in
+  `electron-builder.yml` (`electronFuses`) and are checked against the same
+  policy in `scripts/check-release-hygiene.mjs`: `runAsNode` on,
+  `enableNodeCliInspectArguments` off, `enableEmbeddedAsarIntegrityValidation`
+  on, `onlyLoadAppFromAsar` on. The gate reads the fuse wire from the
+  packaged binary itself (the Electron Framework binary on macOS, the app
+  executable on Windows/Linux), so a packaging step that silently skipped
+  the flip is caught here rather than in a user's install.
+
+The fuses are flipped by electron-builder's own `electronFuses` support
+after packing and before signing, using its bundled `@electron/fuses` —
+there is no separate dependency and no afterPack code. `pnpm
+check:release-hygiene` runs the same check locally against a packaged app
+directory. `scripts/electron-fuses.mjs` holds the wire reader the gate uses.
+
+Known trade-off, decided in v0.1.5 and recorded here so a future release
+does not rediscover it by breaking: flipping `runAsNode` off was proven
+(by flipping the real Electron 43 binary) to stop `ELECTRON_RUN_AS_NODE=1`
+from working, and the packaged app runs several helpers that way — the
+Claude engine spawn, MCP stdio servers, and permission proxies all launch
+`process.execPath` as plain node (`server/drivers/claude.ts`). The
+main-process server itself is unaffected (it uses `utilityProcess.fork`).
+So `runAsNode` stays on; the other three fuses were verified safe on a
+Linux probe app. Do not ship a release with these fuses until the packaged
+server smoke (`release.yml`'s packaged-server gates) has passed on a build
+that has them: if the engine spawns fail there, the fuse set needs
+revisiting before the release goes out, not after.
+
 ## Bundled browser gates
 
 Desktop builds also stage a pinned engine and Chromium Headless Shell before
