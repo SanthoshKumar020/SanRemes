@@ -200,3 +200,39 @@ export function startLocalQwenSetup(deps: OllamaSetupDeps & { platform?: string;
   if (deps.platform !== "win32" || deps.cloud) return;
   void ensureLocalQwen(deps);
 }
+
+/** First run on a packaged Windows install, with the handoff to the bots: once Qwen is the saved default, the
+ * bots still on the model the server picked at boot move to Qwen, so a fresh install opens on Qwen instead of
+ * Claude. A bot the person pointed elsewhere keeps its model, and a default saved before this boot is never
+ * moved. Progress goes to the log; a failure leaves the current default untouched. */
+export function startLocalQwenOnBoot(deps: OllamaSetupDeps & {
+  platform?: string;
+  cloud?: boolean;
+  defaultAtBoot: ModelSelection | null;
+  bootPick: () => ModelSelection;
+  bots: () => readonly { id: string; modelSelection: ModelSelection }[];
+  applyDefault: (id: string, selection: ModelSelection) => void;
+  changed: () => void;
+}): void {
+  const log = deps.log ?? (() => {});
+  let pullLogged = -1;
+  startLocalQwenSetup({ ...deps, onState: (state) => {
+    if (state.state === "pulling") {
+      const band = Math.floor(state.percent / 25) * 25;
+      if (band !== pullLogged) { pullLogged = band; log(`downloading Qwen ${state.percent}%`); }
+      return;
+    }
+    if (state.state !== "ready" || deps.defaultAtBoot) return;
+    const saved = deps.defaultSelection();
+    if (saved?.model !== LOCAL_QWEN_MODEL) return;
+    const ids = botsOnBootPick(deps.bots(), deps.bootPick());
+    for (const id of ids) deps.applyDefault(id, saved);
+    if (ids.length) { log(`local Qwen is ready and is now the default for ${ids.length} bot(s)`); deps.changed(); }
+  } });
+}
+
+/** Bots that never had a model of their own: no selection, or still the one the server picked at boot. */
+export function botsOnBootPick(bots: readonly { id: string; modelSelection: ModelSelection }[], bootPick: ModelSelection): string[] {
+  return bots.filter((bot) => (!bot.modelSelection.instanceId && !bot.modelSelection.model)
+    || (bot.modelSelection.instanceId === bootPick.instanceId && bot.modelSelection.model === bootPick.model)).map((bot) => bot.id);
+}

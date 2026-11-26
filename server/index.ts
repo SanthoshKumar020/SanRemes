@@ -3,7 +3,7 @@ import { BOOT_CLOUD_SECRETS } from "./cloud-secrets-boot.ts";
 import { startFailureText } from "./start-failure-text.ts";
 import { reserveGmailDrafts } from "./gmail-draft-policy.ts";
 import { createGmailDrafts } from "./host/gmail-drafts.ts";
-import { watchBrowserDriverForBot } from "./host/browser-driver.ts"; import { startLocalQwenSetup } from "./ollama-setup.ts";
+import { watchBrowserDriverForBot } from "./host/browser-driver.ts"; import { startLocalQwenOnBoot } from "./ollama-setup.ts";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { existsSync, realpathSync, rmSync } from "node:fs";
@@ -2489,7 +2489,7 @@ async function refreshUnsetModelSelections(instances?: readonly SelectableInstan
   bootSelection = testedAi.settle(await defaultSelection(undefined, selectable.filter(instance => readyToRun(instance, selectionContext))), selectable, read);
   if (hostedModels || !bootSelection.instanceId || !bootSelection.model) return;
   const selection = withNewBotEffort(bootSelection, cfg.newBots?.effort,
-    offeredEffortLevels(registry.get(bootSelection.instanceId), bootSelection.model));
+    offeredEffortLevels(registry.get(bootSelection.instanceId), bootSelection.model)); appliedBootSelection = selection;
   for (const bot of store.bots) {
     if (!bot.modelSelection.instanceId && !bot.modelSelection.model) store.applyModelDefault(bot.id, selection);
   }
@@ -2724,7 +2724,7 @@ function checkedMemberIds(value: unknown): { ok: true; memberIds: string[] } | {
   }
   return { ok: true, memberIds };
 }
-let bootSelection = { instanceId: "", model: "" }; // Settled by one tiny test message through each AI it could be (server/tested-ai.ts).
+let bootSelection = { instanceId: "", model: "" }; let appliedBootSelection: ModelSelection | null = null; // Settled by one tiny test message through each AI it could be (server/tested-ai.ts).
 const testedAi = createTestedAi({ engine: (instanceId) => registry.get(instanceId), store: () => store, threadBusy, context: selectionContext, changed: () => refreshUnsetModelSelections().then(() => broadcast({ kind: "config", ...configStatus() })),
   saved: () => [cfg.defaultModelSelection, cfg.newBotDefaults?.profile.modelSelection], hosted: () => Boolean(hostedModels), identity: (instanceId) => configIdentity(providerConfigs()[instanceId]), file: join(DATA_DIR, "providers", "ai-checks.json"), forBot: (selection) => withNewBotEffort(selection, cfg.newBots?.effort, offeredEffortLevels(registry.get(selection.instanceId), selection.model)) });
 /** The start-up read of every engine: routines and room handoffs wait for it; a turn waits only for its own engine's probe. */
@@ -15137,7 +15137,7 @@ server.listen(PORT, listenHost(server), async () => {
   }
   // Only once every registry is initialized and the endpoint listens: earlier dispatch can hit uninitialized bindings.
   moveFreeze.hold(() => { routines!.start(); botWaits.start(); checkBacks.start(); proactive.start(); }, () => { routines!.stop(); botWaits.stop(); checkBacks.stop(); proactive.stop(); });
-  limitClock.start(); burst.recover(); handoffStatus.changed(); startLocalQwenSetup({ platform: process.platform, cloud: Boolean(CLOUD_HOME || HOSTED_WORKSPACE || CLOUD_TEAM), resourcesPath: process.env.SANREMES_RESOURCES_PATH, instances: () => persistableInstanceConfigs(cfg), persist: persistProviderInstance, defaultSelection: () => cfg.defaultModelSelection ?? null, saveDefault: (selection) => { saveConfig({ defaultModelSelection: selection }); cfg.defaultModelSelection = selection; }, log: (line) => console.log(`[ollama-setup] ${line}`) });
+  limitClock.start(); burst.recover(); handoffStatus.changed(); startLocalQwenOnBoot({ platform: process.platform, cloud: Boolean(CLOUD_HOME || HOSTED_WORKSPACE || CLOUD_TEAM), resourcesPath: process.env.SANREMES_RESOURCES_PATH, instances: () => persistableInstanceConfigs(cfg), persist: persistProviderInstance, defaultSelection: () => cfg.defaultModelSelection ?? null, saveDefault: (selection) => { saveConfig({ defaultModelSelection: selection }); cfg.defaultModelSelection = selection; }, defaultAtBoot: cfg.defaultModelSelection ?? null, bootPick: () => appliedBootSelection ?? bootSelection, bots: () => store.bots, applyDefault: (id, selection) => store.applyModelDefault(id, selection), changed: () => broadcast({ kind: "config", ...configStatus() }), log: (line) => console.log(`[ollama-setup] ${line}`) });
   moveFreeze.hold(() => memoryUpkeep.start(), () => memoryUpkeep.stop());
 });
 

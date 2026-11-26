@@ -3,11 +3,13 @@ import { describe, expect, it, vi } from "vitest";
 import type { InstanceConfigMap } from "./contracts.ts";
 import type { OllamaStatus } from "./drivers/ollama.ts";
 import {
+  botsOnBootPick,
   bundledOllamaExe,
   ensureLocalQwen,
   LOCAL_QWEN_MODEL,
   LOCAL_QWEN_URL,
   pullOllamaModel,
+  startLocalQwenOnBoot,
   startLocalQwenSetup,
   type OllamaSetupDeps,
   type OllamaSetupState,
@@ -61,7 +63,31 @@ describe("bundledOllamaExe", () => {
   });
 });
 
+describe("botsOnBootPick", () => {
+  const bootPick = { instanceId: "claude", model: "claude-sonnet-5" };
+  const bot = (id: string, instanceId: string, model: string) => ({ id, modelSelection: { instanceId, model } });
+  it("takes bots with no model and bots still on the boot pick, and leaves the rest alone", () => {
+    expect(botsOnBootPick([
+      bot("empty", "", ""),
+      bot("boot", "claude", "claude-sonnet-5"),
+      bot("other-model", "claude", "claude-opus-5"),
+      bot("other-instance", "codex", "codex-default"),
+    ], bootPick)).toEqual(["empty", "boot"]);
+  });
+});
+
 describe("ensureLocalQwen", () => {
+  it("saves the default before reporting ready", async () => {
+    const order: string[] = [];
+    const { deps } = harness({
+      saveDefault: () => { order.push("saved"); },
+      onState: (state) => { order.push(state.state); },
+    });
+    await ensureLocalQwen(deps);
+    expect(order).toContain("saved");
+    expect(order.indexOf("saved")).toBeLessThan(order.indexOf("ready"));
+  });
+
   it("does nothing when Qwen is already the default", async () => {
     const { deps, states, probe, saveDefault } = harness({ defaultSelection: () => ({ instanceId: "openai-compat-x", model: LOCAL_QWEN_MODEL }) });
     const result = await ensureLocalQwen(deps);
@@ -170,6 +196,47 @@ describe("startLocalQwenSetup", () => {
     const { deps, saveDefault } = harness();
     startLocalQwenSetup({ ...deps, platform: "win32" });
     await vi.waitFor(() => expect(saveDefault).toHaveBeenCalledWith(expect.objectContaining({ model: LOCAL_QWEN_MODEL })));
+  });
+});
+
+describe("startLocalQwenOnBoot", () => {
+  it("moves bots still on the boot pick to Qwen once it is the default", async () => {
+    const { deps } = harness();
+    const applied: string[] = [];
+    const changed = vi.fn();
+    const saved: { instanceId: string; model: string } = { instanceId: "", model: "" };
+    startLocalQwenOnBoot({
+      ...deps,
+      platform: "win32",
+      defaultAtBoot: null,
+      bootPick: () => ({ instanceId: "claude", model: "claude-sonnet-5" }),
+      bots: () => [
+        { id: "boot", modelSelection: { instanceId: "claude", model: "claude-sonnet-5" } },
+        { id: "other", modelSelection: { instanceId: "codex", model: "codex-default" } },
+      ],
+      applyDefault: (id) => { applied.push(id); },
+      changed,
+      saveDefault: (selection) => { Object.assign(saved, selection); },
+      defaultSelection: () => (saved.model ? saved : null),
+    });
+    await vi.waitFor(() => expect(applied).toEqual(["boot"]));
+    expect(changed).toHaveBeenCalled();
+  });
+
+  it("leaves bots alone when a default was already saved before this boot", async () => {
+    const { deps, saveDefault } = harness();
+    const applied: string[] = [];
+    startLocalQwenOnBoot({
+      ...deps,
+      platform: "win32",
+      defaultAtBoot: { instanceId: "claude", model: "claude-sonnet-5" },
+      bootPick: () => ({ instanceId: "claude", model: "claude-sonnet-5" }),
+      bots: () => [{ id: "boot", modelSelection: { instanceId: "claude", model: "claude-sonnet-5" } }],
+      applyDefault: (id) => { applied.push(id); },
+      changed: () => {},
+    });
+    await vi.waitFor(() => expect(saveDefault).toHaveBeenCalled());
+    expect(applied).toEqual([]);
   });
 });
 
