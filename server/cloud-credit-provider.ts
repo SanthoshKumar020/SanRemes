@@ -1,4 +1,4 @@
-// A Cloud home trial's Claude credit: OMB's own chat engine on the Admin's OpenAI-compatible relay, never Claude Code or
+// A Cloud home trial's Claude credit: SanRemes's own chat engine on the Admin's OpenAI-compatible relay, never Claude Code or
 // Codex, since the platform's key never runs another product's agent. This machine holds only the relay's address and its
 // token, in memory, reaching this one engine. It is never saved to config.json and the person's own engine always wins; a
 // refusal is remembered under providers/, which never travels in a backup or a move.

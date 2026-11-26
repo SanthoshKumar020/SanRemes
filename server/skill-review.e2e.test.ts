@@ -66,7 +66,7 @@ it("reviews a conversation in the background once its tool steps reach the thres
   }
 }, 90_000);
 
-// On Codex, OMB's default engine, the review is Codex's own tool-free `codex exec` call.
+// On Codex, SanRemes's default engine, the review is Codex's own tool-free `codex exec` call.
 it("reviews a Codex bot's conversation through Codex's own background call", async () => {
   const scratch = mkdtempSync(join(tmpdir(), "sanremes-skill-review-codex-"));
   const routes = join(scratch, "routes.json");

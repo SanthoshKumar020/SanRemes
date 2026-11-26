@@ -27,7 +27,7 @@ For server feature switches, defaults and configuration-file instructions, see
 | A domain name, and ports 80 and 443 open | `npx sanremes serve --domain sanremes.example.com` | `https://sanremes.example.com/pair#code=…` |
 | Tailscale on the server and your devices | `npx sanremes serve --tailscale` | `https://<machine>.<tailnet>.ts.net/pair#code=…` |
 | Only this network (home or office) | `npx sanremes serve --lan` | `http://192.168.1.20:8799/pair#code=…` |
-| Nothing at all | `npx sanremes account login`, then `npx sanremes serve --tunnel` | `https://c-….openmausbot.com/pair#code=…` |
+| Nothing at all | `npx sanremes account login`, then `npx sanremes serve --tunnel` | `https://c-….sanremes.invalid/pair#code=…` |
 | Only the phone app, from anywhere (a machine with no tunnel address, for now) | `npx sanremes login --relay`, then `npx sanremes serve --relay` | a QR for the SanRemes app ([SanRemes Relay](phone-relay-server.md)) |
 
 `--lan` can be added to any of the others. Plain `http://` is only for a
@@ -367,7 +367,7 @@ too.
   says so and stays on loopback. Plain http travels in clear, so use it only
   on a network you trust.
 - **`--tunnel`**: `npx sanremes account login` reserves an address like
-  `https://c-….openmausbot.com` for this machine (an emailed code signs it
+  `https://c-….sanremes.invalid` for this machine (an emailed code signs it
   in). `serve --tunnel` connects it through a Cloudflare tunnel, the same one
   the desktop app uses for its companion. The first run downloads
   `cloudflared` (pinned version and digest) into the data dir. Only traffic
@@ -393,14 +393,14 @@ service never downloads a new release on its own.
 ## Connect ChatGPT from the browser
 
 A browser paired with Full access can connect an installed Codex CLI without opening a
-terminal: **Settings → Engines → Codex → Connect ChatGPT**. OMB starts
+terminal: **Settings → Engines → Codex → Connect ChatGPT**. SanRemes starts
 `codex login --device-auth` on the server and shows a one-time code. Choose
 **Open ChatGPT sign-in**, enter the code on OpenAI's page, and complete sign-in
-with your own account. OMB checks for completion and refreshes the model list.
+with your own account. SanRemes checks for completion and refreshes the model list.
 You can cancel or request a fresh code after it expires.
 
 The server still needs Codex installed and runs it as the same operating-system
-user as OMB. Your password never goes through OMB; Codex stores its credentials
+user as SanRemes. Your password never goes through SanRemes; Codex stores its credentials
 on the server. Treat server access and backups as sensitive. Device-code login
 may need enabling in ChatGPT security settings or by your workspace admin; see
 [OpenAI's headless authentication guide](https://learn.chatgpt.com/docs/auth#login-on-headless-devices).
@@ -409,7 +409,7 @@ other providers retain their existing sign-in methods.
 
 Once connected, Settings shows the account email when Codex can report it.
 To switch accounts, open **Manage account and sign-in** under that line
-and choose **Sign out of ChatGPT**: OMB runs `codex logout` on the server as
+and choose **Sign out of ChatGPT**: SanRemes runs `codex logout` on the server as
 the same user and confirms with `codex login status`. New ChatGPT tasks need
 a connected account. Stop running Codex tasks before switching: sign-out does
 not cancel work already in progress. API-key logins are not removed by this
@@ -429,7 +429,7 @@ relative name (or `@` at the zone root). Server/proxy instructions are under
 The IP comes from this server's network interfaces, never the browser, tunnel
 hostname or an IP-echo service. Only a single unambiguous public IPv4 is shown.
 For containers/NAT or hosts with multiple public addresses, an administrator can
-set `SANREMES_PUBLIC_IPV4` to the public IPv4 of the HTTPS proxy and restart OMB.
+set `SANREMES_PUBLIC_IPV4` to the public IPv4 of the HTTPS proxy and restart SanRemes.
 This is a display hint, not proof of reachability; verification still checks
 HTTPS and the workspace identity. If the IP is missing or invalid, the UI asks
 for administrator help instead of inventing a DNS value.
@@ -440,12 +440,12 @@ To configure the connection:
    Add **AAAA** only when IPv6 routes to the same server.
 2. Configure HTTPS with a reverse proxy such as Caddy. The Settings example uses
    your actual app and webhook ports; the [supplied Caddyfile](../deploy/Caddyfile)
-   is the reference. Keep OMB listening on loopback, forward the original Host
+   is the reference. Keep SanRemes listening on loopback, forward the original Host
    and proxy headers, and keep event streams unbuffered. Caddy needs incoming
    ports 80/443 for its usual certificate setup. For containers, follow the
    Docker recipe below so Caddy can reach the loopback listener.
 3. Enter `bots.yourcompany.com` (or its bare `https://` origin) and choose
-   **Connect domain**. OMB checks HTTPS and the workspace identity at that
+   **Connect domain**. SanRemes checks HTTPS and the workspace identity at that
    domain before saving it. An incorrect domain leaves the existing address
    unchanged.
 
@@ -483,7 +483,7 @@ docker compose pull sanremes && docker compose up -d
 ```
 
 That starts the image CI publishes on every `main` push
-(`ghcr.io/milind-soni/openmausbot:latest`; each release is also tagged `v…`,
+(`ghcr.io/SanthoshKumar020/sanremes:latest`; each release is also tagged `v…`,
 and the one our own Clouds have run for 48 hours is `stable`). Move to the
 stable version right away with `./update.sh`, which pins it by digest in
 `.env`. To build from your checkout instead: `docker compose up -d --build`. The
@@ -545,7 +545,7 @@ docker compose build --build-arg CHROME_CACHE_TAG=$(date +%F) sanremes && docker
 
 These platforms run the image's own command, with no `--init`, and usually
 with a 64 MB `/dev/shm` and a limit on how many processes the container may
-hold. The server image (`ghcr.io/milind-soni/openmausbot`) is built for that:
+hold. The server image (`ghcr.io/SanthoshKumar020/sanremes`) is built for that:
 
 - **It brings its own init.** tini is the image's entrypoint and collects
   the processes that bots' engines, browsers and shell commands leave behind.
@@ -557,7 +557,7 @@ hold. The server image (`ghcr.io/milind-soni/openmausbot`) is built for that:
   init of the platform's own on top (`docker run --init`, Compose's
   `init: true`) does no harm. A command you give the container runs as
   written, so start it with `sanremes …` or `node …`
-  (`docker run --rm ghcr.io/milind-soni/openmausbot sanremes --version`):
+  (`docker run --rm ghcr.io/SanthoshKumar020/sanremes sanremes --version`):
   a bare `--version` or `dist-server/sanremes.js`, which older images
   passed on to Node, no longer starts.
 - **Chrome does not need a larger `/dev/shm`.** Where `/dev/shm` is under
@@ -779,10 +779,10 @@ rely on routines running unattended.
 
 Engines whose installer is an npm package (Claude Code, Codex, OpenCode,
 MiniMax, pi) can be installed and updated from **Settings → Engines** when
-npm is on the server's PATH. OMB runs `npm install -g` as its own user into
+npm is on the server's PATH. SanRemes runs `npm install -g` as its own user into
 `<data dir>/tools/npm`, so nothing needs sudo and nothing touches a global
 prefix; that folder goes ahead of everything else on the engines' PATH, so
-the copy OMB installed is the one bots run. The package name comes from the
+the copy SanRemes installed is the one bots run. The package name comes from the
 engine's own install descriptor, never from the browser. Engines installed
 by a `curl | bash` script still need the command on the server.
 
@@ -1160,7 +1160,7 @@ is bootstrapped; while it does, Settings refuses to change that list and says
 which variable to change instead. One that is empty, as `.env.example` and the
 Compose files leave them, leaves the list to Settings.
 
-The code itself comes from `accounts.openmausbot.com`, the SanRemes
+The code itself comes from `accounts.sanremes.invalid`, the SanRemes
 account service, so your server needs no email credentials. Your server asks
 it to send the code, checks the answer, and then issues its own session
 cookie: the browser only ever talks to your server, and who is welcome is

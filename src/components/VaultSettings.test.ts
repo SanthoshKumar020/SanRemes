@@ -156,7 +156,7 @@ describe("Settings → Vault: logins", () => {
   });
 
   it("connects 1Password with a masked token it then forgets, lists its logins read-only, and disconnects", async () => {
-    const on = { connected: true, vaults: [{ id: "v1", title: "Shared with OMB", items: 1, bots: "all" }], items: 1 };
+    const on = { connected: true, vaults: [{ id: "v1", title: "Shared with SanRemes", items: 1, bots: "all" }], items: 1 };
     fixture.api
       .mockResolvedValueOnce({ logins: [], onePassword: OFF })
       .mockResolvedValueOnce({ onePassword: on })
@@ -173,7 +173,7 @@ describe("Settings → Vault: logins", () => {
     await act(async () => inDialog("Connect 1Password").click());
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
     expect(fixture.api).toHaveBeenNthCalledWith(2, "/api/logins/1password", { method: "POST", body: JSON.stringify({ token: "ops_fake-typed-token" }) });
-    expect(host.querySelector("[data-onepassword]")!.textContent).toContain("Connected to Shared with OMB · 1 logins, keys and secrets");
+    expect(host.querySelector("[data-onepassword]")!.textContent).toContain("Connected to Shared with SanRemes · 1 logins, keys and secrets");
     expect(host.innerHTML).not.toContain("ops_fake-typed-token");
     const row = host.querySelector('[data-login-row="example.com"]')!;
     expect(row.textContent).toContain("From 1Password · All bots");
@@ -186,7 +186,7 @@ describe("Settings → Vault: logins", () => {
   });
 
   it("keeps a 1Password vault to the bots chosen for it, on the same screen", async () => {
-    const vault = { id: "v1", title: "Shared with OMB", items: 2, bots: "all" };
+    const vault = { id: "v1", title: "Shared with SanRemes", items: 2, bots: "all" };
     const on = { connected: true, vaults: [vault], items: 2 };
     const narrowed = { ...on, vaults: [{ ...vault, bots: ["quill"] }] };
     fixture.api
@@ -194,9 +194,9 @@ describe("Settings → Vault: logins", () => {
       .mockResolvedValueOnce({ onePassword: narrowed })
       .mockResolvedValueOnce({ logins: [{ ...VAULT_LOGIN, bots: ["quill"] }], onePassword: narrowed });
     await render();
-    const row = () => host.querySelector('[data-vault="Shared with OMB"]')!;
+    const row = () => host.querySelector('[data-vault="Shared with SanRemes"]')!;
     expect(row().textContent).toContain("2 website logins · All bots");
-    await click("Change who can use Shared with OMB");
+    await click("Change who can use Shared with SanRemes");
     await act(async () => { [...row().querySelectorAll<HTMLInputElement>('input[type="radio"]')][1]!.click(); });
     await act(async () => { [...row().querySelectorAll<HTMLInputElement>('input[type="checkbox"]')][1]!.click(); });
     await click("Save changes");
@@ -207,7 +207,7 @@ describe("Settings → Vault: logins", () => {
   });
 
   it("keeps one 1Password item to its own bots ahead of its vault's, and hands it back to the vault's choice", async () => {
-    const on = { connected: true, vaults: [{ id: "v1", title: "Shared with OMB", items: 1, bots: "all" }], items: 1 };
+    const on = { connected: true, vaults: [{ id: "v1", title: "Shared with SanRemes", items: 1, bots: "all" }], items: 1 };
     const follows = { ...VAULT_LOGIN, onePassword: { item: "v1:i1", ownBots: false } };
     const own = { ...VAULT_LOGIN, bots: ["quill"], onePassword: { item: "v1:i1", ownBots: true } };
     fixture.api

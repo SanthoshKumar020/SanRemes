@@ -20,7 +20,7 @@ A standalone server becomes connected by enrolling the connector. No reinstall, 
 
 ## Parts and where the code lives
 
-- **Home**: the server image our own Clouds run (`ghcr.io/milind-soni/openmausbot`). This repository.
+- **Home**: the server image our own Clouds run (`ghcr.io/SanthoshKumar020/sanremes`). This repository.
 - **Connector** (`connector/`): enrols with a one-time code, holds its own Ed25519 key, keeps one outbound WebSocket
   and runs only a fixed job list. No shell, no command of its own choosing, no read of a file by path. In this
   repository, so customers can read what it can do. It has two modes, chosen on the server when it enrols:
@@ -157,7 +157,7 @@ Backward compatible: a field is only ever added, and only by a customer-run serv
 | `JobErrorCode` | `refused_by_mode`, `paused`, `update_unavailable`, `update_not_started`, `older_version` | Only from a customer-run server. Its error `message` is a fixed sentence per code |
 
 For a customer-run box the Admin should: send `start` with no arguments; send `update` with
-`ghcr.io/milind-soni/openmausbot@sha256:…` (the server image, not the Cloud home image); never an older version than the one running; never send `export-disk`,
+`ghcr.io/SanthoshKumar020/sanremes@sha256:…` (the server image, not the Cloud home image); never an older version than the one running; never send `export-disk`,
 `import-disk`, `self-update`, `restore` or a request other than `GET /v1/health`, `/v1/version`, `/v1/seats`, `/v1/update`; send
 `schedule.image: null` in the signed config (a Cloud home image there is accepted, any other is ignored with the whole
 config); and sign people in by sending them to the server's own address, never by pairing.

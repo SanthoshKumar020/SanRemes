@@ -161,7 +161,7 @@ export function processAlive(pid: number): boolean {
 const WRAPPER_DEPTH = 3;
 
 /**
- * Browsers on OMB's profiles that no live server registered: left behind by a crash or a force-quit. A launch wrapped in
+ * Browsers on SanRemes's profiles that no live server registered: left behind by a crash or a force-quit. A launch wrapped in
  * another program (a Chrome on a private display starts under bubblewrap) registers the wrapper's pid, so a Chrome under
  * a live registered launch of the same profile is that launch's, not a stray.
  */

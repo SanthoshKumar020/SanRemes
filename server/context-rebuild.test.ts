@@ -158,7 +158,7 @@ describe("tool history in a rebuilt session", () => {
 
     it("leaves a bracket that opens no note alone", () => {
       expect(toolReplayLine({ name: "Read", ok: true, input: toolDetailPreview({ file_path: "app/[id]/page.tsx" })! })).toBe("[ran: Read: app/[id]/page.tsx — ok]");
-      expect(toolReplayLine({ name: "Bash", summary: "[ -f .env ] && echo [OMB-2470] found", ok: true })).toBe("[ran: Bash: [ -f .env ] && echo [OMB-2470] found — ok]");
+      expect(toolReplayLine({ name: "Bash", summary: "[ -f .env ] && echo [SR-2470] found", ok: true })).toBe("[ran: Bash: [ -f .env ] && echo [SR-2470] found — ok]");
     });
 
     it("carries no tool result, and nothing of the input preview but its target", () => {

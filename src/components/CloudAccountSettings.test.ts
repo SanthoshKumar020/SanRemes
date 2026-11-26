@@ -94,7 +94,7 @@ it("a failed re-check keeps the plan, Cloud and Connect, and only says it is che
   all(html, [">Max<", "Checking with SanRemes Cloud…", "Open My Cloud", "Manage subscription"]);
   none(html, [...BUY, ...ALARM]);
 });
-it("OMB Cloud out of reach: the plan last verified stays named, calmly, with no offer to buy", async () => {
+it("SanRemes Cloud out of reach: the plan last verified stays named, calmly, with no offer to buy", async () => {
   await ready({ status: "unavailable", message: "unreachable", account: { id: "fixture", email: "person@example.test" }, lastPlan: { tier: "personal", active: true } });
   let html = render().html;
   all(html, ["Personal · checking with SanRemes Cloud…", "be reached right now, so this app", "Nothing has changed with your plan", "Manage subscription"]);

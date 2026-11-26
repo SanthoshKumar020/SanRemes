@@ -2,7 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-/** Every Chrome-related file OMB keeps lives under `<data dir>/browser`. */
+/** Every Chrome-related file SanRemes keeps lives under `<data dir>/browser`. */
 export function browserRoot(dataDir: string): string {
   return join(dataDir, "browser");
 }

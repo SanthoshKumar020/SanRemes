@@ -37,7 +37,7 @@ umask 022
 # update half-way. Output to a terminal that has gone is lost; .update/update.log keeps it.
 trap '' HUP PIPE
 
-REPO="ghcr.io/milind-soni/openmausbot"
+REPO="ghcr.io/SanthoshKumar020/sanremes"
 PINNED="^ghcr\.io/SanthoshKumar020/sanremes@sha256:[0-9a-f]{64}$"
 STABLE_URL=${SANREMES_STABLE_URL:-https://raw.githubusercontent.com/SanthoshKumar020/SanRemes/channels/stable.json}
 NEWEST_URL=${SANREMES_NEWEST_URL:-https://api.github.com/repos/SanthoshKumar020/SanRemes/releases/latest}

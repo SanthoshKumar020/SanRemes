@@ -30,7 +30,7 @@ describe("the device list", () => {
     const devices = build({
       places: places([
         { id: "local", kind: "local", name: "This computer" },
-        { id: "home", kind: "remote", name: "My Cloud", origin: "https://ada.mausbot.cloud", home: true },
+        { id: "home", kind: "remote", name: "My Cloud", origin: "https://ada.sanremes.invalid", home: true },
         { id: "mini", kind: "remote", name: "Studio", origin: "http://studio-mini.tail1234.ts.net:8799" },
         { id: "vps", kind: "remote", name: "Hetzner box", origin: "https://sanremes.example.com" },
         { id: "lan", kind: "remote", name: "Old PC", origin: "http://192.168.1.40:8799" },
@@ -54,7 +54,7 @@ describe("the device list", () => {
   });
 
   it("leaves out the place on screen and this computer's own environments", () => {
-    const devices = build({ places: { ...places([{ id: "home", kind: "remote", name: "My Cloud", origin: "https://a.mausbot.cloud", home: true }, { id: "env2", kind: "local", name: "Work", dataDir: "/x" }]), activeId: "home" } });
+    const devices = build({ places: { ...places([{ id: "home", kind: "remote", name: "My Cloud", origin: "https://a.sanremes.invalid", home: true }, { id: "env2", kind: "local", name: "Work", dataDir: "/x" }]), activeId: "home" } });
     expect(devices.map((device) => device.id)).toEqual(["here"]);
   });
 
@@ -153,7 +153,7 @@ describe("the device list", () => {
 
   it("groups the map by what each device is, in one fixed order, this place apart", () => {
     const devices = build({
-      places: places([{ id: "home", kind: "remote", name: "My Cloud", origin: "https://a.mausbot.cloud", home: true }, { id: "mini", kind: "remote", name: "Mac mini", origin: "http://mini.tail1.ts.net:8799" }]),
+      places: places([{ id: "home", kind: "remote", name: "My Cloud", origin: "https://a.sanremes.invalid", home: true }, { id: "mini", kind: "remote", name: "Mac mini", origin: "http://mini.tail1.ts.net:8799" }]),
       companion: { devices: [phone("a", "Phone", { route: "wifi" })], connectedDeviceIds: ["a"] },
       vps: [{ alias: "gpu" }],
     });

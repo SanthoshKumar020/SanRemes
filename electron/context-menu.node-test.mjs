@@ -7,7 +7,7 @@ import { test } from "node:test";
 
 import { contextMenuTemplate, createMediaDownloads, fileLink, mediaCopyName, mediaLink, savedName } from "./context-menu.mjs";
 
-const CLOUD = "https://bright-otter.mausbot.cloud";
+const CLOUD = "https://bright-otter.sanremes.invalid";
 const VIDEO = `${CLOUD}/api/threads/t1/messages/m1/file?media=${"a".repeat(43)}`;
 const editFlags = { canUndo: false, canRedo: false, canCut: false, canCopy: false, canPaste: false, canSelectAll: true };
 const base = { mediaType: "none", srcURL: "", hasImageContents: false, linkURL: "", isEditable: false, misspelledWord: "", dictionarySuggestions: [], selectionText: "", x: 12, y: 34, editFlags, pageURL: `${CLOUD}/` };

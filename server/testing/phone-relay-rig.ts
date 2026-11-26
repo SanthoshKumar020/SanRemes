@@ -52,7 +52,7 @@ export async function startPhoneRelayRig(): Promise<PhoneRelayRig> {
     const iat = Math.floor(Date.now() / 1000);
     const token = mintRelayToken({ v: 1, kid: "k1", hid: b64u(hostId), iid: "test-install", iat, exp: iat + 43_200 }, signingKey);
     res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify({
-      token, hostId: b64u(hostId), nodes: ["relay1.openmausbot.com"], expiresAt: (iat + 43_200) * 1000, refreshAfter: (iat + 3_600) * 1000,
+      token, hostId: b64u(hostId), nodes: ["relay1.sanremes.com"], expiresAt: (iat + 43_200) * 1000, refreshAfter: (iat + 3_600) * 1000,
     }));
   });
   await new Promise<void>((resolve) => controlPlane.listen(0, "127.0.0.1", resolve));

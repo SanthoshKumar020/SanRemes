@@ -62,7 +62,7 @@ from the binary itself once per version: its own user agent without
 platform version, architecture). agent-browser runs a generated launcher
 (`browser/chrome-launcher.sh`, `.cmd` on Windows) that adds
 `--disable-blink-features=AutomationControlled`, that user agent, the primary
-display's size and, when OMB knows it, the language; on a server it also
+display's size and, when SanRemes knows it, the language; on a server it also
 passes the server's `TZ`. A bot's Chrome never touches the person's keychain
 or keyring (`--use-mock-keychain` on macOS, `--password-store=basic` on
 Linux), and on macOS it always runs with the person's own home, so no
@@ -266,7 +266,7 @@ Recording requires `ffmpeg` on the server's PATH, with `libvpx` for WebM or
 `libx264` for MP4. `agent-browser doctor` reports these optional dependencies.
 They are not bundled or required for normal browsing. Higher frame rates use
 more CPU and disk space; the actual distinct frames depend on page repaints.
-There is no recording control in OMB's browser panel.
+There is no recording control in SanRemes's browser panel.
 
 ## Linux sandbox
 

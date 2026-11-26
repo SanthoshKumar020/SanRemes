@@ -10,7 +10,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 const SCRIPT = join(import.meta.dirname, "..", "..", "deploy", "update.sh");
 const FAKE = join(import.meta.dirname, "fake-compose-docker.mjs");
-const REPO = "ghcr.io/milind-soni/openmausbot";
+const REPO = "ghcr.io/SanthoshKumar020/sanremes";
 const posix = process.platform !== "win32";
 
 const id = (letter: string) => `sha256:${letter.repeat(64)}`;

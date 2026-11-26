@@ -308,7 +308,7 @@ export async function prepareAntigravityProfile(input: {
     PYTHONUNBUFFERED: "1",
     ELECTRON_RUN_AS_NODE: "1",
   });
-  // On Windows the runtime unpacks 0.34-1.26 GB into TEMP per launch: one OMB folder per instance,
+  // On Windows the runtime unpacks 0.34-1.26 GB into TEMP per launch: one SanRemes folder per instance,
   // stable so the pooled spawn contract (which hashes this env) holds.
   let tempDirectory: string | undefined;
   if ((input.platform ?? process.platform) === "win32") {

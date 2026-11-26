@@ -11,7 +11,7 @@ same runtime as the other ACP engines.
    [OpenCode installation guide](https://opencode.ai/docs/).
 2. Connect the providers you want in the OpenCode app, run
    `opencode auth login`, or save the provider's key in SanRemes under
-   Settings → API keys → **Keys for other OpenCode providers**. On an OMB
+   Settings → API keys → **Keys for other OpenCode providers**. On an SanRemes
    Cloud, which has no terminal, save the key there.
 3. Restart SanRemes. It reuses OpenCode's existing connections and model
    configuration automatically.

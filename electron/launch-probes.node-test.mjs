@@ -21,9 +21,9 @@ test("a started program is kept under a fixed name: never its folder, its argume
 test("a request is kept as the kind of its host; this computer is not a request at all", () => {
   assert.equal(hostKind("http://127.0.0.1:8799/api/health"), null);
   assert.equal(hostKind("http://localhost:5173/"), null);
-  assert.equal(hostKind("https://accounts.openmausbot.com/token?code=abc"), "accounts");
+  assert.equal(hostKind("https://accounts.sanremes.invalid/token?code=abc"), "accounts");
   assert.equal(hostKind("https://sanremes-u-1.fly.dev/api/bots"), "cloud");
-  assert.equal(hostKind(new URL("https://c-opaque.openmausbot.com/x")), "cloud");
+  assert.equal(hostKind(new URL("https://c-opaque.sanremes.invalid/x")), "cloud");
   assert.equal(hostKind({ url: "https://github.com/SanthoshKumar020/SanRemes/releases" }), "updates");
   assert.equal(hostKind("https://raw.githubusercontent.com/x/y"), "updates");
   assert.equal(hostKind("https://intranet.acme.test/q?token=abc"), "other");
@@ -83,7 +83,7 @@ test("requests off this computer are counted by kind while the same promise is h
   const original = owner.fetch;
   const frozen = Object.freeze({ fetch: () => Promise.resolve() });
   const watch = watchLaunchWork({ fetchOwners: [owner, frozen, {}, null], now: () => clock });
-  const first = owner.fetch("https://accounts.openmausbot.com/token?code=abc");
+  const first = owner.fetch("https://accounts.sanremes.invalid/token?code=abc");
   assert.equal(first, answers[0]);
   clock = 120;
   await first;

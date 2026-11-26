@@ -212,7 +212,7 @@ describe("GitHub Copilot ACP driver", () => {
     // A quoted value, a trailing separator or (on Windows) another case still names the same folder.
     const quoted = session("quoted", JSON.stringify(join(scratch, "sanremes-acp-models-y")));
     await forgetCopilotDiscoverySession({ sessionId: "quoted", cwd: join(scratch, "sanremes-acp-models-y"), env });
-    const spelled = session("spelled", `${process.platform === "win32" ? join(scratch, "OMB-ACP-MODELS-Z") : join(scratch, "sanremes-acp-models-z")}${sep}`);
+    const spelled = session("spelled", `${process.platform === "win32" ? join(scratch, "SanRemes-ACP-MODELS-Z") : join(scratch, "sanremes-acp-models-z")}${sep}`);
     await forgetCopilotDiscoverySession({ sessionId: "spelled", cwd: join(scratch, "sanremes-acp-models-z"), env });
     expect([existsSync(quoted), existsSync(spelled)]).toEqual([false, false]);
     const person = session("person", join(scratch, "project"), "copilot-cli");

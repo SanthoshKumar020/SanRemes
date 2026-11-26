@@ -54,7 +54,7 @@ function install(tailscaleProblem?: CompanionState["tailscaleProblem"]) {
   };
   saved = [
     { id: "local", kind: "local", name: "This computer" },
-    { id: "home", kind: "remote", name: "Ada’s Cloud", origin: "https://ada.mausbot.cloud", home: true },
+    { id: "home", kind: "remote", name: "Ada’s Cloud", origin: "https://ada.sanremes.invalid", home: true },
     { id: "vps", kind: "remote", name: "Hetzner box", origin: "https://sanremes.example.com" },
   ];
   environments = {

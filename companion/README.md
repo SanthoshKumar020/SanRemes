@@ -127,7 +127,7 @@ it is switched on, so the opt-in is never implicit.
 | `SANREMES_COMPANION_ROUTES` | `wifi` | the direct ways in, a comma list of `wifi` (this computer's LAN addresses and Bonjour) and `tailscale` (its tailnet address); empty for neither, when only the relay or an HTTPS address reaches it. A connection is answered only when both ends are private (loopback, RFC 1918, link-local, fd00::/8, or a tailnet peer on Tailscale's own interface) and it arrived on a way in that is on. The desktop app sets it from Settings → Remote access |
 | `SANREMES_COMPANION_TAILNET_NAME` | none | this computer's MagicDNS name, offered while `tailscale` is listed. The sidecar never runs Tailscale to learn it: the desktop app asks Tailscale once, when the person turns Tailscale on |
 | `SANREMES_COMPANION_BONJOUR` | on | `0` keeps a test rig off the network's Bonjour |
-| `SANREMES_COMPANION_RELAY_URL` | none | test rigs only: a `ws://127.0.0.1:<port>` relay in place of `wss://relayN.openmausbot.com` |
+| `SANREMES_COMPANION_RELAY_URL` | none | test rigs only: a `ws://127.0.0.1:<port>` relay in place of `wss://relayN.sanremes.invalid` |
 
 `SANREMES_COMPANION_NAME` overrides a name the sidecar otherwise asks the harness
 for: the computer name set in Settings → Remote access, else the profile from

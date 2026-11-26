@@ -138,7 +138,7 @@ ChatGPT/Claude subscriptions. New API keys in config.json and managed
 account credentials in tunnel-account.json are plaintext, not encrypted,
 with owner-only permissions (0600 on Unix). Keep these files private.
 
-Ctrl-C before saving AI setup leaves its pending OMB changes unapplied.
+Ctrl-C before saving AI setup leaves its pending SanRemes changes unapplied.
 During the later phone step, it keeps the AI setup already saved and exits
 without starting a server. Completed installs and sign-ins remain; run
 \`sanremes setup\` to continue without deleting your data.

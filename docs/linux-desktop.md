@@ -22,11 +22,11 @@ The local preview does **not** give the bot control of this computer by itself. 
 the global **Enable local control** choice and assigning a bot to **This computer**; every action still enters the
 approval flow. On Wayland, local control is disabled and legacy opt-ins are cleared automatically. Automatic Wayland
 helper installation, native on-device dictation, and ARM64 remain unavailable and fail closed; follow their
-progress in [issue #29](https://github.com/SanthoshKumar020/SanRemes/issues/29) and the safety hold in
-[issue #345](https://github.com/SanthoshKumar020/SanRemes/issues/345). Bundled
-CUA supply-chain work is tracked in [issue #113](https://github.com/SanthoshKumar020/SanRemes/issues/113). Xorg is tracked in
-[issue #79](https://github.com/SanthoshKumar020/SanRemes/issues/79), and guarded GNOME/Wayland support in
-[issue #109](https://github.com/SanthoshKumar020/SanRemes/issues/109).
+progress in [issue #29](https://github.com/milind-soni/OpenMausBot/issues/29) and the safety hold in
+[issue #345](https://github.com/milind-soni/OpenMausBot/issues/345). Bundled
+CUA supply-chain work is tracked in [issue #113](https://github.com/milind-soni/OpenMausBot/issues/113). Xorg is tracked in
+[issue #79](https://github.com/milind-soni/OpenMausBot/issues/79), and guarded GNOME/Wayland support in
+[issue #109](https://github.com/milind-soni/OpenMausBot/issues/109).
 
 ## Download packages
 

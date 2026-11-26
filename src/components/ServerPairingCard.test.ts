@@ -81,7 +81,7 @@ describe("pairing devices from a hosted server's settings", () => {
     expect(member).not.toContain("sanremes pair");
   });
 
-  it("on an OMB Cloud home, which is personal, offers no chat-only choice, lists only the owner's devices, and says why in one line", () => {
+  it("on an SanRemes Cloud home, which is personal, offers no chat-only choice, lists only the owner's devices, and says why in one line", () => {
     const admin = { kind: "session" as const, id: "s", label: "Mac", scopes: ["admin", "client"], expiresAt: 1 };
     const cloud = renderToStaticMarkup(createElement(ServerPairingCard, { initialSession: admin, cloudHome: true, placeName: "My Cloud" }));
     expect(cloud).toContain(">Pair a phone<");

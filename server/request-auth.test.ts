@@ -519,7 +519,7 @@ describe("resolveRequestAuth", () => {
     try {
       acceptLegacyOrigins(["https://sanremes-u-1.fly.dev"]);
       expect(resolve(forwarded("https://sanremes-u-1.fly.dev"), "/api/bots", "POST").auth?.kind).toBe("session");
-      expect(resolve(forwarded("https://OMB-U-1.fly.dev "), "/api/bots", "POST").auth?.kind).toBe("session");
+      expect(resolve(forwarded("https://SanRemes-U-1.fly.dev "), "/api/bots", "POST").auth?.kind).toBe("session");
       expect(resolve(forwarded("https://sanremes-u-1.fly.dev", browser.token, page), "/api/bots", "POST").auth?.kind).toBe("session");
       expect(resolve(forwarded("https://sanremes-u-1.fly.dev"), "/api/events").auth?.kind).toBe("session");
       expect(isSameOrigin(request({ host: "sanremes-u-1.homes.example", "x-forwarded-proto": "https", origin: "https://sanremes-u-1.fly.dev", upgrade: "websocket" }))).toBe(true);
@@ -693,7 +693,7 @@ describe("an IPC listener (sanremes serve --tunnel) is remote by construction", 
       const { code } = sessions.openPairing({ scopes: ["admin", "client"] });
       const paired = sessions.exchange({ code, label: "phone", source: "203.0.113.9" });
       if (!paired.ok) throw new Error(paired.error);
-      const admitted = resolveRequestAuth(overSocket({ host: "c-1.openmausbot.com", authorization: `Bearer ${paired.token}` }), gate);
+      const admitted = resolveRequestAuth(overSocket({ host: "c-1.sanremes.invalid", authorization: `Bearer ${paired.token}` }), gate);
       expect(admitted.auth?.kind).toBe("session");
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -812,7 +812,7 @@ describe("loopback trust: owner on one person's machine, service on a shared wor
     expect(desktop.warning).toMatch(/ignored in the desktop app/);
   });
 
-  it("is always service on an OMB Cloud home, where a local request is only ever a process on the machine", () => {
+  it("is always service on an SanRemes Cloud home, where a local request is only ever a process on the machine", () => {
     const pick = (env: NodeJS.ProcessEnv) => resolveLoopbackTrust({ env, desktopManaged: false, hostedWorkspace: false, cloudHome: true });
     expect(pick({})).toEqual({ trust: "service", reason: "SanRemes Cloud home", localBrowsers: false });
     expect(pick({ SANREMES_LOOPBACK_TRUST: "service" })).toEqual({ trust: "service", reason: "SanRemes Cloud home", localBrowsers: false });

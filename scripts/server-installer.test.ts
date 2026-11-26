@@ -236,7 +236,7 @@ describe.skipIf(!posix)("deploy/install.sh", () => {
     ["a clock an hour off", { env: { FAKE_THEIRS: "1794265200" } }, /^This server's clock is 60 minutes off, so HTTPS certificates will be refused\. Run: sudo timedatectl set-ntp true/],
     ["a release without an image", { env: { FAKE_RELEASE_STATUS: "404" } }, /^SanRemes v0\.1\.151 has no server image yet/],
     ["a registry that is throttling", { env: { FAKE_RELEASE_STATUS: "429" } }, /^The image registry ghcr\.io did not say whether it has SanRemes v0\.1\.151 \(it answered 429\)\. Run this again in a few minutes\.$/],
-    ["the latest tag asked for", { env: { SANREMES_INSTALL_IMAGE: "ghcr.io/milind-soni/openmausbot:latest" } }, /^SANREMES_INSTALL_IMAGE names the latest tag/],
+    ["the latest tag asked for", { env: { SANREMES_INSTALL_IMAGE: "ghcr.io/SanthoshKumar020/sanremes:latest" } }, /^SANREMES_INSTALL_IMAGE names the latest tag/],
   ])("--check on %s prints the one thing to fix", (_name, server, sentence) => {
     const result = run(["--check", "--domain", "sanremes.example.com"], server);
     expect(result.fixes).toHaveLength(1);
@@ -309,19 +309,19 @@ describe.skipIf(!posix)("deploy/install.sh", () => {
     const result = run(["--domain", "sanremes.example.com", "--email", "owner@example.com"]);
     expect(result.all).toContain("SanRemes is running at https://sanremes.example.com");
     expect(result.status).toBe(0);
-    expect(readFileSync(join(result.install, ".env"), "utf8")).toContain("DOMAIN=sanremes.example.com\nSANREMES_IMAGE=ghcr.io/milind-soni/openmausbot:v0.1.151\nSANREMES_SIGNIN_EMAILS=owner@example.com\n");
+    expect(readFileSync(join(result.install, ".env"), "utf8")).toContain("DOMAIN=sanremes.example.com\nSANREMES_IMAGE=ghcr.io/SanthoshKumar020/sanremes:v0.1.151\nSANREMES_SIGNIN_EMAILS=owner@example.com\n");
     expect(statSync(join(result.install, ".env")).mode & 0o777).toBe(0o600);
     expect(statSync(join(result.install, "data")).mode & 0o777).toBe(0o700);
     for (const file of ["compose.yaml", "Caddyfile", "caddy/data", "caddy/config"]) expect(existsSync(join(result.install, file)), file).toBe(true);
     const changes = result.docker.filter((call) => !READS.test(call) && !call.includes(" ps -q sanremes") && !call.startsWith("docker inspect"));
     expect(changes).toEqual([
       "docker compose pull -q",
-      'docker image inspect -f {{index .Config.Labels "org.opencontainers.image.version"}} ghcr.io/milind-soni/openmausbot:v0.1.151',
-      "docker image inspect -f {{json .Config.Env}} ghcr.io/milind-soni/openmausbot:v0.1.151",
-      'docker image inspect -f {{index .Config.Labels "org.opencontainers.image.version"}} ghcr.io/milind-soni/openmausbot:v0.1.151',
-      "docker run --rm --network none --entrypoint id ghcr.io/milind-soni/openmausbot:v0.1.151 -u",
-      "docker run --rm --network none --entrypoint id ghcr.io/milind-soni/openmausbot:v0.1.151 -g",
-      'docker image inspect -f {{index .Config.Labels "org.opencontainers.image.version"}} ghcr.io/milind-soni/openmausbot:v0.1.151',
+      'docker image inspect -f {{index .Config.Labels "org.opencontainers.image.version"}} ghcr.io/SanthoshKumar020/sanremes:v0.1.151',
+      "docker image inspect -f {{json .Config.Env}} ghcr.io/SanthoshKumar020/sanremes:v0.1.151",
+      'docker image inspect -f {{index .Config.Labels "org.opencontainers.image.version"}} ghcr.io/SanthoshKumar020/sanremes:v0.1.151',
+      "docker run --rm --network none --entrypoint id ghcr.io/SanthoshKumar020/sanremes:v0.1.151 -u",
+      "docker run --rm --network none --entrypoint id ghcr.io/SanthoshKumar020/sanremes:v0.1.151 -g",
+      'docker image inspect -f {{index .Config.Labels "org.opencontainers.image.version"}} ghcr.io/SanthoshKumar020/sanremes:v0.1.151',
       "docker compose up -d --remove-orphans",
       "docker compose exec -T sanremes node dist-server/bot-box/box-check.js --public=none",
     ]);
@@ -391,7 +391,7 @@ describe.skipIf(!posix)("deploy/install.sh", () => {
   it("uses the stable channel once it is published, and never the latest tag", () => {
     const result = run(["--domain", "sanremes.example.com"], { env: { FAKE_STABLE: "200" } });
     expect(result.stdout).toContain("  ok    version: the stable channel");
-    expect(readFileSync(join(result.install, ".env"), "utf8")).toContain("SANREMES_IMAGE=ghcr.io/milind-soni/openmausbot:stable\n");
+    expect(readFileSync(join(result.install, ".env"), "utf8")).toContain("SANREMES_IMAGE=ghcr.io/SanthoshKumar020/sanremes:stable\n");
     expect(script).not.toMatch(/sanremes:latest/);
     expect(result.calls.some((call) => call.includes("releases/latest"))).toBe(false);
   });
@@ -439,7 +439,7 @@ describe.skipIf(!posix)("deploy/install.sh", () => {
     expect(second.all).toContain("SanRemes is running at https://sanremes.example.com");
     expect(second.status).toBe(0);
     expect(readFileSync(env, "utf8").split("\n").filter((line) => /^[A-Z_]+=/.test(line))).toEqual([
-      "SANREMES_SIGNIN_SMTP_URL=smtps://mail.example.com", "DOMAIN=sanremes.example.com", "SANREMES_IMAGE=ghcr.io/milind-soni/openmausbot:v0.1.152", "COMPOSE_FILE=compose.yaml:compose.box.yaml",
+      "SANREMES_SIGNIN_SMTP_URL=smtps://mail.example.com", "DOMAIN=sanremes.example.com", "SANREMES_IMAGE=ghcr.io/SanthoshKumar020/sanremes:v0.1.152", "COMPOSE_FILE=compose.yaml:compose.box.yaml",
     ]);
     expect(readFileSync(join(first.install, "compose.yaml"), "utf8")).toContain("name: sanremes");
     expect(readFileSync(join(first.install, "data", "messages.db"), "utf8")).toBe("chats");
@@ -628,8 +628,8 @@ describe.skipIf(!posix)("deploy/install.sh", () => {
     expect(statSync(join(first.install, "update.sh")).mode & 0o777).toBe(0o755);
     expect(first.stdout).toContain(`To update later, with a backup first and a way back:  sudo ${first.install}/update.sh`);
     const env = join(first.install, ".env");
-    const pin = `ghcr.io/milind-soni/openmausbot@sha256:${"a".repeat(64)}`;
-    writeFileSync(env, readFileSync(env, "utf8").replace("SANREMES_IMAGE=ghcr.io/milind-soni/openmausbot:stable", `SANREMES_IMAGE=${pin}`));
+    const pin = `ghcr.io/SanthoshKumar020/sanremes@sha256:${"a".repeat(64)}`;
+    writeFileSync(env, readFileSync(env, "utf8").replace("SANREMES_IMAGE=ghcr.io/SanthoshKumar020/sanremes:stable", `SANREMES_IMAGE=${pin}`));
     const again = run([], { env: { FAKE_STABLE: "200" } }, { dir: first.dir });
     expect(again.status).toBe(0);
     expect(again.stdout).toContain("  ok    version: the one update.sh pinned here; it stays until update.sh changes it");

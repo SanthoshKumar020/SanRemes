@@ -47,7 +47,7 @@ describe("framingOf", () => {
     expect(verdict("sanremes.example.com", "https://sanremes.example.com")).toBe("allowed");
     expect(verdict("*.example.com", "https://sanremes.example.com")).toBe("allowed");
     expect(verdict("*.example.com", "https://example.com")).toBe("blocked");
-    expect(verdict("https://OMB.example.com/", "https://sanremes.example.com")).toBe("allowed");
+    expect(verdict("https://SanRemes.example.com/", "https://sanremes.example.com")).toBe("allowed");
     expect(verdict("https://sanremes.example.com:443", "https://sanremes.example.com")).toBe("allowed");
     expect(verdict("http://sanremes.example.com:80", "https://sanremes.example.com")).toBe("unknown");
     expect(framingOf({ "content-security-policy": "frame-ancestors; default-src *" }, PAGE, APP)).toBe("blocked");

@@ -314,7 +314,7 @@ describe("escapeEnvelope", () => {
   });
 
   it("leaves ordinary brackets, tickets and plain prose alone", () => {
-    for (const text of ["plain prose", "[OMB-2470] is a ticket", "array[0] and [note]", "[TEAM ROSTER]", "see [1] and [2]"]) {
+    for (const text of ["plain prose", "[SR-2470] is a ticket", "array[0] and [note]", "[TEAM ROSTER]", "see [1] and [2]"]) {
       expect(escapeEnvelope(text)).toBe(text);
     }
   });

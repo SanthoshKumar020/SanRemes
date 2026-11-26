@@ -92,7 +92,7 @@ function fixture(root: string): DatabaseSync {
 function encryptedPayload(root: string, plaintext: Buffer): string {
   const salt = randomBytes(16);
   const iv = randomBytes(12);
-  const header = Buffer.concat([Buffer.from("OMB-WORKSPACE-1\n"), salt, iv]);
+  const header = Buffer.concat([Buffer.from("SANREMES-WORK-1\n"), salt, iv]);
   const cipher = createCipheriv("aes-256-gcm", scryptSync(PASSWORD, salt, 32, { N: 131_072, r: 8, p: 1, maxmem: 256 * 1024 ** 2 }), iv);
   cipher.setAAD(header);
   const path = join(root, "malicious.ombbackup");

@@ -217,7 +217,7 @@ $downloads = Join-Path $env:USERPROFILE 'Downloads'
 New-Item -ItemType Directory -Force -Path $downloads | Out-Null
 $target = Join-Path $downloads ${quote(path.basename(installer))}
 Copy-Item -LiteralPath ${quote(installer)} -Destination $target -Force
-Set-Content -LiteralPath $target -Stream Zone.Identifier -Value @('[ZoneTransfer]', 'ZoneId=3', 'ReferrerUrl=https://www.openmausbot.com/download', 'HostUrl=https://github.com/SanthoshKumar020/SanRemes/releases/latest/download/SanRemes-setup.exe')
+Set-Content -LiteralPath $target -Stream Zone.Identifier -Value @('[ZoneTransfer]', 'ZoneId=3', 'ReferrerUrl=https://github.com/SanthoshKumar020/SanRemes/releases', 'HostUrl=https://github.com/SanthoshKumar020/SanRemes/releases/download/v0.1.1/SanRemes-0.1.1-setup.exe')
 [pscustomobject]@{
   path = $target; bytes = (Get-Item -LiteralPath $target).Length; sha256 = (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash
   zone = @(Get-Content -LiteralPath $target -Stream Zone.Identifier) -join ' | '

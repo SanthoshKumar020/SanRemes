@@ -40,7 +40,7 @@ try {
   const message = messages.find((item: { text?: string }) => item.text?.includes("Quarterly report"));
   if (!message) throw new Error("Fixture did not produce the table reply");
   ui = await mountPreview(fixture, {
-    entry: "/scripts/testing/rich-tables-preview.tsx", route: "/__rich-tables.html", title: "Isolated OMB tables",
+    entry: "/scripts/testing/rich-tables-preview.tsx", route: "/__rich-tables.html", title: "Isolated SanRemes tables",
     extraRoutes: [{ path: "/__table-fixture", handler: (_req, res) => {
       res.setHeader("content-type", "application/json");
       res.end(JSON.stringify({ text: message.text, message: { threadId: sent.taskId, messageId: message.id } }));

@@ -28,7 +28,7 @@ function setup(options: { token?: string | null; fail?: () => Error | null; now?
       v2: { title: "Finance", items: [
         { id: "f1", title: "Bank", urls: ["https://bank.example.net/login"], username: "treasurer", password: "fake-bank-pass" },
       ] },
-      v1: { title: "Shared with OMB", items: [
+      v1: { title: "Shared with SanRemes", items: [
         { id: "i1", title: "Example", urls: ["https://accounts.example.com/login", "accounts.example.com"], username: "alice@example.com", password: VAULT_PASSWORD, totp: KEY },
         { id: "i2", title: "Two sites", urls: ["https://crm.example.org", "https://www.crm.example.org/"], username: "team", password: "fake-crm-pass" },
         { id: "i3", title: "No website", urls: [], username: "x", password: "fake-x-pass" },
@@ -81,7 +81,7 @@ describe("1Password logins", () => {
     const { source, calls } = setup();
     expect(await source.refresh()).toEqual({ connected: true, items: 3, vaults: [
       { id: "v2", title: "Finance", items: 1, bots: "all" },
-      { id: "v1", title: "Shared with OMB", items: 2, bots: "all" },
+      { id: "v1", title: "Shared with SanRemes", items: 2, bots: "all" },
     ] });
     expect(calls).toEqual(["createClient SanRemes", "vaults.list", "items.list v2", "items.getAll v2 f1", "items.list v1", "items.getAll v1 i1,i2,i4,i5,i6,i7,i8,i11,i3,i10"]);
     const rows = source.list();
@@ -112,7 +112,7 @@ describe("1Password logins", () => {
     await source.refresh();
     expect(source.status().vaults).toEqual([
       { id: "v2", title: "Finance", items: 1, bots: ["quill"] },
-      { id: "v1", title: "Shared with OMB", items: 2, bots: [] },
+      { id: "v1", title: "Shared with SanRemes", items: 2, bots: [] },
     ]);
     expect(linkedCandidates(source, "bank.example.net", "pepper")).toEqual([]);
     expect(linkedCandidates(source, "accounts.example.com", "pepper")).toEqual([]);
@@ -358,23 +358,23 @@ describe("1Password secrets", () => {
       const use = findLinkedSecret([source], reference, bot);
       return use ? readLinkedSecret(use) : null;
     };
-    expect(await read("op://Shared with OMB/Stripe secret key")).toBe(STRIPE);
+    expect(await read("op://Shared with SanRemes/Stripe secret key")).toBe(STRIPE);
     expect(await read("op://shared with sanremes/stripe secret key/credential")).toBe(STRIPE);
     expect(await read("op://v1/i6")).toBe(STRIPE);
-    expect(await read("op://Shared with OMB/Plain token/token")).toBe(PLAIN_TOKEN);
-    expect(await read("op://Shared with OMB/Partner API/Client ID")).toBe(CLIENT_ID);
-    expect(await read("op://Shared with OMB/Partner API/Section/Client Secret")).toBe(CLIENT_SECRET);
-    expect(await read("op://Shared with OMB/Acme OAuth/client_secret", "quill")).toBe(ACME_SECRET);
-    expect(await read("op://Shared with OMB/Acme OAuth/client_secret"), "an item kept to other bots").toBeNull();
-    expect(await read("op://Shared with OMB/Stripe secret key/nothing")).toBeNull();
+    expect(await read("op://Shared with SanRemes/Plain token/token")).toBe(PLAIN_TOKEN);
+    expect(await read("op://Shared with SanRemes/Partner API/Client ID")).toBe(CLIENT_ID);
+    expect(await read("op://Shared with SanRemes/Partner API/Section/Client Secret")).toBe(CLIENT_SECRET);
+    expect(await read("op://Shared with SanRemes/Acme OAuth/client_secret", "quill")).toBe(ACME_SECRET);
+    expect(await read("op://Shared with SanRemes/Acme OAuth/client_secret"), "an item kept to other bots").toBeNull();
+    expect(await read("op://Shared with SanRemes/Stripe secret key/nothing")).toBeNull();
     expect(await read("op://Finance/Stripe secret key")).toBeNull();
   });
 
   it("never reads a Login's username, password or one-time code by reference", async () => {
     const { source } = setup();
     await source.refresh();
-    for (const reference of ["op://Shared with OMB/Partner API/password", "op://Shared with OMB/Partner API/username", "op://Shared with OMB/Example/password",
-      "op://Shared with OMB/Example/one-time password", "op://Shared with OMB/Example/password?attribute=otp", "op://Finance/Bank/password"]) {
+    for (const reference of ["op://Shared with SanRemes/Partner API/password", "op://Shared with SanRemes/Partner API/username", "op://Shared with SanRemes/Example/password",
+      "op://Shared with SanRemes/Example/one-time password", "op://Shared with SanRemes/Example/password?attribute=otp", "op://Finance/Bank/password"]) {
       expect(findLinkedSecret([source], reference, "pepper"), reference).toBeNull();
     }
   });

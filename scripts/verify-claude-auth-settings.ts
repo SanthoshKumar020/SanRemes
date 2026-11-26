@@ -1,4 +1,4 @@
-// Real Claude CLI through the OMB driver, synthetic account and loopback API.
+// Real Claude CLI through the SanRemes driver, synthetic account and loopback API.
 import assert from "node:assert/strict";
 import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
@@ -53,7 +53,7 @@ writeFileSync(join(account, "settings.json"), JSON.stringify({
   env: { ANTHROPIC_BASE_URL: `http://127.0.0.1:${port}`, ...(apiKey ? { ANTHROPIC_API_KEY: "fixture-only-key" } : {}) },
   hooks: { SessionStart: [{ hooks: [{ type: "command", command: `${JSON.stringify(process.execPath)} -e "require('fs').writeFileSync('hook-ran', 'unexpected')"` }] }] },
 }), { mode: 0o600 });
-// The bot's own settings, with a field Claude Code would refuse: it must not take OMB's own settings down with it.
+// The bot's own settings, with a field Claude Code would refuse: it must not take SanRemes's own settings down with it.
 writeFileSync(botSettings, JSON.stringify({
   model: 123,
   hooks: { Stop: [{ hooks: [{ type: "command", command: `${JSON.stringify(process.execPath)} -e "require('fs').writeFileSync('bot-hook-ran', 'ran')"` }] }] },

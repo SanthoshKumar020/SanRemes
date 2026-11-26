@@ -66,7 +66,7 @@ it.each([
   ["an http origin", "http://sanremes-u-old.fly.dev"],
   ["an origin with a path", "https://sanremes-u-old.fly.dev/app"],
   ["an origin with credentials", "https://user:pass@sanremes-u-old.fly.dev"],
-  ["a host that is not written as its origin", "https://OMB-U-OLD.fly.dev"],
+  ["a host that is not written as its origin", "https://SanRemes-U-OLD.fly.dev"],
   ["a loopback name", "https://localhost"],
   ["a loopback address", "https://127.0.0.1:8443"],
   ["too many", Array.from({ length: 9 }, (_, at) => `https://old-${at}.example.test`).join(",")],

@@ -67,6 +67,6 @@ Whop's hosted service currently requests admin access across the user's managed
 businesses. Choosing a business in a prompt is not an account-level restriction.
 Consequential operations retain Whop's prepare/confirm protocol and idempotency
 requirements. This change adds no blanket auto-confirm policy, new payment
-tools, or independent credential store. Normal OMB approval modes are unchanged.
+tools, or independent credential store. Normal SanRemes approval modes are unchanged.
 
 Upstream: [official Whop MCP](https://github.com/whopio/whop-mcp-server).

@@ -135,7 +135,7 @@ root, sign in again as `sanremes`; those accounts have different homes and crede
 
 ## Path A: a public address with one command
 
-No domain, no proxy, no open port. The server gets an address like `https://c-7f3a9c.openmausbot.com` through a Cloudflare tunnel; only traffic through the tunnel reaches it, and that traffic still has to pair.
+No domain, no proxy, no open port. The server gets an address like `https://c-7f3a9c.sanremes.invalid` through a Cloudflare tunnel; only traffic through the tunnel reaches it, and that traffic still has to pair.
 
 ```sh
 npx sanremes account login          # once: an emailed code signs this machine in and reserves its address
@@ -179,7 +179,7 @@ The [installer](#quick-start-one-command-on-your-own-domain) does these steps fo
    version on [the releases page](https://github.com/SanthoshKumar020/SanRemes/releases/latest):
 
    ```sh
-   echo "SANREMES_IMAGE=ghcr.io/milind-soni/openmausbot:vX.Y.Z" >> .env
+   echo "SANREMES_IMAGE=ghcr.io/SanthoshKumar020/sanremes:vX.Y.Z" >> .env
    docker compose pull sanremes && docker compose up -d
    docker compose ps        # sanremes "healthy", caddy "running"
    ```
@@ -278,7 +278,7 @@ npx sanremes pair --label "Kitchen iPad"
 
 ```
 Pairing code   RR8Y-BLR6-H939   works once, until 10:59 · everything
-Link           https://c-7f3a9c.openmausbot.com/pair#code=RR8Y-BLR6-H939
+Link           https://c-7f3a9c.sanremes.invalid/pair#code=RR8Y-BLR6-H939
 
   Desktop app   ＋ → Connect to another computer, paste the link
   Phone         scan with your camera or the SanRemes app
@@ -511,7 +511,7 @@ every file's owner and mode either way. The script then:
    changed. The copy from the update before is removed only after this one
    has matched. The server is down from here until step 4; how long depends
    on how much data there is.
-3. Writes the image into `.env` (`SANREMES_IMAGE=ghcr.io/milind-soni/openmausbot@sha256:…`)
+3. Writes the image into `.env` (`SANREMES_IMAGE=ghcr.io/SanthoshKumar020/sanremes@sha256:…`)
    and starts it. An install the installer made while Caddy still shared the
    server's network gets the installer's current `compose.yaml` and
    `Caddyfile` here, as a run of the installer would write them (the rollback

@@ -55,7 +55,7 @@ interface Timers {
 }
 
 export interface DialOptions extends Timers {
-  /** `ws://host:port/v1/e2e` for Wi-Fi and Tailscale, `wss://relayN.openmausbot.com/v1/phone` for the relay. The direct
+  /** `ws://host:port/v1/e2e` for Wi-Fi and Tailscale, `wss://relayN.sanremes.invalid/v1/phone` for the relay. The direct
    * route refuses any Origin header (README section 4), so a web page always goes through the relay. */
   url: string;
   /** The pinned transport key `T.pub`. */

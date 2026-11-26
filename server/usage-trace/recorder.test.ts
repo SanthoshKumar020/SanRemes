@@ -114,7 +114,7 @@ describe("trace recorder", () => {
     expect(tools[1]).toMatchObject({ status: "ended", endedAt: T0 + 1_200, detail: "example.com/pricing" });
   });
 
-  it("takes OMB's own timing for the tools it serves, and keeps a served call the engine never reported", async () => {
+  it("takes SanRemes's own timing for the tools it serves, and keeps a served call the engine never reported", async () => {
     const dir = dataDir();
     const recorder = createTraceRecorder({ dataDir: dir });
     recorder.observe(started("bot", "t1", 0));
@@ -132,7 +132,7 @@ describe("trace recorder", () => {
       .toEqual([[0, 1_000], [2_000, 3_000], [3_400, 5_000]]);
   });
 
-  it("times the browser, computer and app calls OMB answers itself, and reads their failure from the answer", async () => {
+  it("times the browser, computer and app calls SanRemes answers itself, and reads their failure from the answer", async () => {
     const recorder = createTraceRecorder({ dataDir: dataDir() });
     recorder.observe(event("bot", "t1", Date.now() - T0, { type: "turn.started" }));
     const server = createServer(async (req, res) => {

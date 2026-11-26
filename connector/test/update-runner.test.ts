@@ -8,7 +8,7 @@ import { UPDATE_FILES } from "../src/adopted-home.ts";
 import { CUSTOMER_HOME_IMAGE, SERVER_VERSION_FLOOR, VERSION_LABEL } from "../src/customer-run.ts";
 
 const SCRIPT = join(import.meta.dirname, "..", "host", "sanremes-update-runner.sh");
-const IMAGE = `ghcr.io/milind-soni/openmausbot@sha256:${"b".repeat(64)}`;
+const IMAGE = `ghcr.io/SanthoshKumar020/sanremes@sha256:${"b".repeat(64)}`;
 const posix = process.platform !== "win32";
 const dirs: string[] = [];
 afterEach(() => {
@@ -64,7 +64,7 @@ describe.skipIf(!posix)("sanremes-update-runner.sh", () => {
   });
 
   it("runs nothing for an image that is not SanRemes's server image by digest, whatever the request says", () => {
-    for (const image of ["ghcr.io/milind-soni/openmausbot:latest", "ghcr.io/someone/sanremes@sha256:" + "b".repeat(64), `${IMAGE} --replace-local-build`, `${IMAGE};reboot`, ""]) {
+    for (const image of ["ghcr.io/SanthoshKumar020/sanremes:latest", "ghcr.io/someone/sanremes@sha256:" + "b".repeat(64), `${IMAGE} --replace-local-build`, `${IMAGE};reboot`, ""]) {
       const refused = run(`id=u1\nimage=${image}\n`);
       expect(refused.calls, image).toEqual([]);
       expect(refused.answer, image).toBe("id=u1\ncode=4\n");

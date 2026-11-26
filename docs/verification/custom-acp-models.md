@@ -77,7 +77,7 @@ the offline fixture; they are not screenshots of installed provider accounts.
 
 ![Selected Flash model and its supported thinking choices](evidence/custom-acp-models/flash-thinking.png)
 
-These checks do not establish a packaged desktop launch. The isolated E2E establishes OMB persistence
+These checks do not establish a packaged desktop launch. The isolated E2E establishes SanRemes persistence
 and actual ACP transport against a fake agent; acceptance by an installed
 provider must be reported separately, with the exact model ID and supported
 options advertised by that provider. A failing or skipped provider check is

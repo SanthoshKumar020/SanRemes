@@ -90,7 +90,7 @@ machine causes a clear failure, never an automatic paid replacement. These
 checks prove server routing and ownership, not actual Boat provisioning or
 remote desktop operation.
 
-The separate `team-computers-ui` test uses a real OMB server and renderer with
+The separate `team-computers-ui` test uses a real SanRemes server and renderer with
 an owned loopback HTTP Boat provider. It creates a named machine through **Add →
 Boat computer**, verifies opening the shelf never provisions a machine, cancels
 and confirms a pointer drop, explicitly unassigns before moving to another team,

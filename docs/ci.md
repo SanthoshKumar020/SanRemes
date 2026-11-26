@@ -117,7 +117,7 @@ meet another file's. Files share the runner's CPU, so test and hook
 timeouts double there, as on Windows (`server/testing/host-timeout.ts`).
 
 **Which files run where.** Linux runs every file. Most e2e files drive
-OMB's own logic through a real server and fake engines, which is the same on
+SanRemes's own logic through a real server and fake engines, which is the same on
 every OS, and they were 70% of a Windows shard's time, so only Linux runs
 them: the Windows and macOS shards set `SANREMES_VITEST_E2E=host`, and
 `vite.config.ts` then leaves out every e2e file not listed in

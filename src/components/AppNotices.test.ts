@@ -682,13 +682,13 @@ describe("What's new after the update", () => {
   it("See the new Cloud and Start a Team open the Cloud website with their slide's tag, and end it for good", async () => {
     await launch();
     press("See the new Cloud"); await flush();
-    expect(window.ogb?.openExternal).toHaveBeenCalledWith("https://cloud.openmausbot.com/cloud?src=app_whats_new_pro");
+    expect(window.ogb?.openExternal).toHaveBeenCalledWith("https://cloud.sanremes.invalid/cloud?src=app_whats_new_pro");
     expect(steps().at(-1)).toEqual(step("see_cloud", "pro"));
     await keptForGood();
     fresh(); vi.mocked(window.ogb!.openExternal!).mockClear();
     await relaunch(); press("Next");
     press("Start a Team"); await flush();
-    expect(window.ogb?.openExternal).toHaveBeenCalledWith("https://cloud.openmausbot.com/pro/buy?plan=team&src=app_whats_new_team");
+    expect(window.ogb?.openExternal).toHaveBeenCalledWith("https://cloud.sanremes.invalid/pro/buy?plan=team&src=app_whats_new_team");
     expect(steps().at(-1)).toEqual(step("start_team", "team"));
     await keptForGood();
   });
@@ -1828,7 +1828,7 @@ describe("the Teams What's new", () => {
   const TITLE = "SanRemes is better with your team", GROK = "Move from Grok Bot";
   const POINTS = ["One shared bot for everyone: set it up once, everyone uses it.", "Team files and templates everyone&#x27;s bots can use.",
     "Private chats stay private, even from admins.", "$40 a month for 2 people, $20 for each extra person."];
-  const TEAM = { id: "team-acme", name: "Acme", cloudPage: "https://admin.openmausbot.com/cloud" };
+  const TEAM = { id: "team-acme", name: "Acme", cloudPage: "https://admin.sanremes.invalid/cloud" };
   const steps = () => vi.mocked(track).mock.calls.filter(([event, props]) => event === "whats_new" && (props as { slide: string }).slide === "teams")
     .map(([, props]) => (props as { action: string }).action);
   let firstScreen: boolean;
@@ -1870,7 +1870,7 @@ describe("the Teams What's new", () => {
     expect(steps()).toContain("seen");
     expect(vi.mocked(track)).toHaveBeenCalledWith("whats_new", { action: "seen", slide: "teams", audience: "no_team", campaign: TEAMS_NOTICE });
     press("Start a team"); await flush();
-    expect(window.ogb?.openExternal).toHaveBeenCalledWith("https://cloud.openmausbot.com/pro/buy?plan=team&src=app_whats_new_teams");
+    expect(window.ogb?.openExternal).toHaveBeenCalledWith("https://cloud.sanremes.invalid/pro/buy?plan=team&src=app_whats_new_teams");
     expect(steps().at(-1)).toBe("start_team");
     expect(hints()).toContain(TEAMS_NOTICE); expect(desktopMarks()).toContain(TEAMS_NOTICE);
     expect(render(), "nothing else that launch").toBe("");
@@ -1897,7 +1897,7 @@ describe("the Teams What's new", () => {
     for (const text of [TITLE, "Invite your team", "Not now"]) expect(html).toContain(text);
     expect(html).not.toContain("Start a team");
     press("Invite your team"); await flush();
-    expect(window.open, "a Cloud's page opens links as a browser does").toHaveBeenCalledWith("https://admin.openmausbot.com/cloud/team/team-acme/people?do=invite", "_blank", "noopener,noreferrer");
+    expect(window.open, "a Cloud's page opens links as a browser does").toHaveBeenCalledWith("https://admin.sanremes.invalid/cloud/team/team-acme/people?do=invite", "_blank", "noopener,noreferrer");
     expect(vi.mocked(track)).toHaveBeenCalledWith("whats_new", { action: "invite", slide: "teams", audience: "team_admin", campaign: TEAMS_NOTICE });
     expect(wrote("/api/me/welcome")).toEqual([{ hints: [TEAMS_NOTICE] }]);
     expect(wrote("/api/config"), "never the team's record").toEqual([]);

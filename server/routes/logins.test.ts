@@ -31,7 +31,7 @@ async function serve() {
   const dir = mkdtempSync(join(tmpdir(), "sanremes-login-routes-"));
   dirs.push(dir);
   const store = new VaultStore({ dataDir: dir });
-  const vaults = { v1: { title: "Shared with OMB", items: [
+  const vaults = { v1: { title: "Shared with SanRemes", items: [
     { id: "i1", title: "Example", urls: ["https://vault.example.com"], username: "vault-user", password: VAULT_PASSWORD },
   ] } };
   let down: Error | null = null;
@@ -135,7 +135,7 @@ describe("Settings → Logins routes", () => {
     expect((await call("POST", "/api/logins/1password", { token: "eyJhbGciOiJFUzI1NiJ9.fake-connect-token" })).body.error).toBe(LOGIN_ERRORS.notServiceAccount);
     expect(store.onePasswordToken()).toBeNull();
 
-    expect(await call("POST", "/api/logins/1password", { token: TOKEN })).toMatchObject({ status: 200, body: { onePassword: { connected: true, vaults: [{ id: "v1", title: "Shared with OMB", items: 1, bots: "all" }], items: 1 } } });
+    expect(await call("POST", "/api/logins/1password", { token: TOKEN })).toMatchObject({ status: 200, body: { onePassword: { connected: true, vaults: [{ id: "v1", title: "Shared with SanRemes", items: 1, bots: "all" }], items: 1 } } });
     expect(store.onePasswordToken()).toBe(TOKEN);
     const listed = await call("GET", "/api/logins");
     expect(listed.body.logins).toEqual([expect.objectContaining({ site: "example.com", hosts: ["vault.example.com"], username: "vault-user", source: "1password", bots: "all" })]);

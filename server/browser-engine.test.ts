@@ -675,7 +675,7 @@ describe("finding the browser engine", () => {
     expect(asset).toEqual({
       target: "win32-x64", version: "0.36.0-omb.1",
       asset: "agent-browser-win32-x64-0.36.0-omb.1.exe",
-      url: "https://github.com/milind-soni/OpenMausBot/releases/download/browser-engine-v0.36.0-omb.1/agent-browser-win32-x64-0.36.0-omb.1.exe",
+      url: "https://github.com/SanthoshKumar020/SanRemes/releases/download/v0.1.1/agent-browser-win32-x64-0.36.0-omb.1.exe",
       bytes: 13806080, sha256: "33bee834f6a6072ec8688b0914726e0262874d758f69f27e8baf7eaac6b5ed15",
     });
     expect(agentBrowserReleaseVersion(asset)).toBe("0.36.0-omb.1");
@@ -711,7 +711,7 @@ describe("finding the browser engine", () => {
 
   it.each(SUPPORTED_BROWSER_TARGETS)("uses the complete %s desktop bundle before old downloaded engines", (target) => {
     const [platform, arch] = target.split("-");
-    const env = { SANREMES_RESOURCES_PATH: join(tmpdir(), "OMB resources"), PATH: "" };
+    const env = { SANREMES_RESOURCES_PATH: join(tmpdir(), "SanRemes resources"), PATH: "" };
     const bundle = browserBundlePaths(join(env.SANREMES_RESOURCES_PATH, "browser-engine"), target);
     const files = new Set([bundle.directory, bundle.engine, bundle.chrome, bundle.manifest, bundle.licenses]);
     const options = { env, platform: platform as NodeJS.Platform, arch, exists: (p: string) => files.has(p) };
@@ -782,7 +782,7 @@ describe("finding the browser engine", () => {
     expect(browserEngineStatus({ dataDir, env, exists, versionOf: () => AGENT_BROWSER_VERSION })).toMatchObject({ kind: "ready", binaryPath: pathBinary, managed: false });
   });
 
-  it("hands agent-browser the Chrome OMB prepared instead of the bundled shell, never when it attaches to the person's Chrome", () => {
+  it("hands agent-browser the Chrome SanRemes prepared instead of the bundled shell, never when it attaches to the person's Chrome", () => {
     const resources = mkdtempSync(join(tmpdir(), "sanremes-browser-resources-"));
     scratch.push(resources);
     const host = { platform: "darwin" as const, arch: "arm64" };

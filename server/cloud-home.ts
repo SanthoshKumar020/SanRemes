@@ -1,4 +1,4 @@
-// OMB Cloud Pro home machine. The server binds 127.0.0.1 behind an edge proxy and every request carries X-Forwarded-*
+// SanRemes Cloud Pro home machine. The server binds 127.0.0.1 behind an edge proxy and every request carries X-Forwarded-*
 // headers, so no network request is ever the loopback owner. The Admin never holds a session: it signs a request with the
 // bootstrap secret (HMAC-SHA256 over method, path and query, timestamp, nonce and body hash). A valid pairing request opens
 // one ordinary pairing window; a valid health request reads the content-free health report (server/cloud-health.ts).

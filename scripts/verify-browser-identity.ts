@@ -1,4 +1,4 @@
-// What sites see of a bot's browser: today's engine (agent-browser) drives the Chrome OMB resolves, through the same launcher
+// What sites see of a bot's browser: today's engine (agent-browser) drives the Chrome SanRemes resolves, through the same launcher
 // and identity connection as the server, on a throwaway profile. It checks the identity on a loopback probe page and, with
 // --public, reads the four public bot-test pages. Read-only: it never signs in or submits a form.
 // Usage: node --experimental-strip-types scripts/verify-browser-identity.ts [--chrome PATH] [--engine PATH] [--public] [--out DIR]
@@ -265,7 +265,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   if (!engine) throw new Error("No agent-browser found: pass --engine or set SANREMES_AGENT_BROWSER_PATH.");
   const plan = new ChromeLauncher({ dataDir: DATA_DIR }).plan();
   const chrome = values.chrome ?? (plan.kind === "chrome" ? plan.chrome.path : null);
-  if (!chrome) throw new Error(`OMB would not start its own Chrome here (${plan.kind === "legacy" ? plan.reason : "Chrome for Testing is not downloaded yet"}); pass --chrome.`);
+  if (!chrome) throw new Error(`SanRemes would not start its own Chrome here (${plan.kind === "legacy" ? plan.reason : "Chrome for Testing is not downloaded yet"}); pass --chrome.`);
   const out = resolve(values.out ?? mkdtempSync(join(tmpdir(), "sanremes-browser-identity-")));
   const { readout, public: verdicts } = await verifyBrowserIdentity({ engine, chrome, out, publicPages: values.public, sessionPrefix: values["session-prefix"], log: (line) => console.log(line) });
   printReadout(readout, verdicts);

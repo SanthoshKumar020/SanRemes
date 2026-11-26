@@ -118,6 +118,6 @@ only Read inside the disposable working directories.
 An arithmetic control using the old automatic-setup block also answered `42`.
 This does **not** reproduce every reported refusal, establish malicious intent,
 or prove every provider behaves identically. The verified regression is the
-unrequested coaching sent by OMB; live results confirm ordinary work, explicit
+unrequested coaching sent by SanRemes; live results confirm ordinary work, explicit
 setup and cross-folder reading on the tested Claude model. Group model routing
 and UI persistence use the offline provider. No real bots or files were moved.

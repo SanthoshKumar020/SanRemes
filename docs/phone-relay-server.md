@@ -259,7 +259,7 @@ The server keeps working on every other way in; the relay only adds one. What
 | The relay does not answer | Can't reach SanRemes Relay yet. The server keeps working here and keeps trying; phones pair once it connects. |
 
 The server log says `phone relay: connecting`, `phone relay: connected via
-relay2.openmausbot.com` and `phone relay: relay token …`. It redials at once,
+relay2.sanremes.com` and `phone relay: relay token …`. It redials at once,
 then backs off to a minute, moves to the next node on a restart or refusal, and
 renews its token hourly; sessions already open survive a token renewal. A phone
 that cannot reach the relay shows "Can't reach SanRemes Relay right now. Trying

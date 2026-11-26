@@ -294,7 +294,7 @@ export async function prepareBrowserSessionState(
 }
 
 export type BrowserEngineStatus =
-  /** `managed`: the engine OMB installed (bundled or pinned), not one named by SANREMES_AGENT_BROWSER_PATH or found on PATH. */
+  /** `managed`: the engine SanRemes installed (bundled or pinned), not one named by SANREMES_AGENT_BROWSER_PATH or found on PATH. */
   | { kind: "ready"; binaryPath: string; version: string; managed: boolean; warning?: string }
   | { kind: "unavailable"; reason: string; installable: boolean };
 
@@ -591,7 +591,7 @@ export function agentBrowserIntegration(input: {
   /** The person's own Chrome: agent-browser auto-connects (DevToolsActivePort, then ports 9222/9229) or uses `cdpUrl`, which
    * comes only from workspace config, never the ambient environment. */
   attach?: { cdpUrl?: string };
-  /** The Chrome OMB prepared for the engine to start (server/browser/chrome/launcher.ts); unused when attaching. */
+  /** The Chrome SanRemes prepared for the engine to start (server/browser/chrome/launcher.ts); unused when attaching. */
   launcher?: Record<string, string>;
   dataDir?: string;
   /** /dev/shm is too small for Chrome's shared memory; read from the host when absent. */
@@ -612,7 +612,7 @@ export function agentBrowserIntegration(input: {
   // Headless on a displayless Linux host; an explicit AGENT_BROWSER_HEADED=0 also brings back headless a daemon that kept a headed launch config.
   const displayless = (input.platform ?? process.platform) === "linux" && !sourceEnv.DISPLAY && !sourceEnv.WAYLAND_DISPLAY;
   if (input.attach) {
-    // The person's Chrome keeps its own sign-ins: restoring or saving would copy cookies between it and OMB's store.
+    // The person's Chrome keeps its own sign-ins: restoring or saving would copy cookies between it and SanRemes's store.
     if (input.attach.cdpUrl) env.AGENT_BROWSER_CDP = input.attach.cdpUrl;
     else env.AGENT_BROWSER_AUTO_CONNECT = "1";
     env.AGENT_BROWSER_RESTORE_SAVE = "never";

@@ -10,7 +10,7 @@ import type { PhoneRelayStatus } from "./phone-relay.ts";
 import { removeTempDir } from "./testing/cleanup.ts";
 import { startControlPlaneStub } from "./testing/control-plane-stub.ts";
 
-const status = (over: Partial<PhoneRelayStatus> = {}): PhoneRelayStatus => ({ relay: "connected", node: "relay1.openmausbot.com", grant: "ok", phones: 1, maxPhones: 20, ...over });
+const status = (over: Partial<PhoneRelayStatus> = {}): PhoneRelayStatus => ({ relay: "connected", node: "relay1.sanremes.com", grant: "ok", phones: 1, maxPhones: 20, ...over });
 const invite = "sanremes://pair?address=relay-only.invalid%3A443&token=omb_pair_x&e2e=eyJ2IjoxfQ";
 
 describe("sanremes serve --relay", () => {

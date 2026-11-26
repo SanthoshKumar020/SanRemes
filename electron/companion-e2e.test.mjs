@@ -15,7 +15,7 @@ const HOST_ID = "lz81isB3BuNV6rHgYgG3Wg";
 const grant = (overrides = {}) => ({
   token: "eyJ2IjoxfQ.c2lnbmF0dXJl",
   hostId: HOST_ID,
-  nodes: ["relay1.openmausbot.com", "relay2.openmausbot.com"],
+  nodes: ["relay1.sanremes.com", "relay2.sanremes.com"],
   expiresAt: 10 * 60 * 60_000,
   refreshAfter: 60 * 60_000,
   ...overrides,

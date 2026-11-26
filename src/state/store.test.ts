@@ -2613,7 +2613,7 @@ describe("live config frames", () => {
     expect(configStatusFromFrame(baseFrame)).not.toHaveProperty("team");
   });
 
-  it("keeps an OMB Cloud home's flag through live config refreshes, and adds none elsewhere", () => {
+  it("keeps an SanRemes Cloud home's flag through live config refreshes, and adds none elsewhere", () => {
     expect(configStatusFromFrame({ ...baseFrame, cloudHome: true }).cloudHome).toBe(true);
     expect(configStatusFromFrame({ ...baseFrame, awakeLimit: 3, pausedBots: ["scout"] })).toMatchObject({ awakeLimit: 3, pausedBots: ["scout"] });
     expect(configStatusFromFrame(baseFrame)).not.toHaveProperty("pausedBots");

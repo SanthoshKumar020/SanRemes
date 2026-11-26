@@ -16,7 +16,7 @@ test("origins are bare http(s) origins, nothing else", () => {
 });
 
 test("self-hosted pairing supports custom HTTPS and Cloudflare names without Tailscale", () => {
-  for (const origin of ["https://bots.example.com", "https://example.trycloudflare.com", "https://c-example.openmausbot.com"]) {
+  for (const origin of ["https://bots.example.com", "https://example.trycloudflare.com", "https://c-example.sanremes.invalid"]) {
     const parsed = parseServerInput(`${origin}/pair#code=ABCD-EFGH-JKLM`);
     assert.deepEqual([parsed.candidates, parsed.code], [[origin], "ABCD-EFGH-JKLM"]);
     const saved = env.withEnvironment({ environments: [], activeId: "local" }, { origin, name: "My server" }, () => "fixture");
@@ -187,7 +187,7 @@ test("the places line names this computer's bots briefly, says nothing when its 
 test("native window identity distinguishes hosted HTML, companion data, and the local workspace", () => {
   const state = { environments: [{ id: "old", name: "Old team", origin: "https://old.example" }], activeId: "old" };
   assert.equal(env.workspaceWindowTitle(state), "SanRemes — Hosted: Old team (old.example)");
-  assert.equal(env.workspaceWindowTitle(state, { serverName: "Office", endpoint: "https://c-office.openmausbot.com" }), "SanRemes — Connected to: Office (c-office.openmausbot.com)");
+  assert.equal(env.workspaceWindowTitle(state, { serverName: "Office", endpoint: "https://c-office.sanremes.invalid" }), "SanRemes — Connected to: Office (c-office.sanremes.invalid)");
   assert.equal(env.workspaceWindowTitle(env.withActive(state, "local")), "SanRemes");
 });
 

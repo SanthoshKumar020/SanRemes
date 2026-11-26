@@ -147,7 +147,7 @@ export function welcomeFinishedThisLaunch(): boolean {
   }
 }
 
-export const DEFAULT_ADMIN_ORIGIN = "https://admin.openmausbot.com";
+export const DEFAULT_ADMIN_ORIGIN = "https://admin.sanremes.invalid";
 
 export function organisationSignIn<Bridge>(
   ogb: { organization?: Bridge; remoteClient?: { active?: boolean } } | undefined,

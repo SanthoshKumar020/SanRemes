@@ -14,7 +14,7 @@ const CANDIDATES: Record<ApprovalMode, readonly string[]> = {
   ask: ["default", "ask", "normal"],
   edits: ["accept_edits", "acceptedits", "accept-edits", "auto_edit", "auto-edit", "auto-accept"],
   auto: ["default", "ask", "normal"],
-  // Full access keeps the agent's own default mode: every permission request still reaches OMB, which approves it
+  // Full access keeps the agent's own default mode: every permission request still reaches SanRemes, which approves it
   // unless the safety floor holds it. A native don't-ask mode would run never-list commands without asking.
   full: ["default", "ask", "normal"],
   custom: ["default", "ask", "normal"],

@@ -17,7 +17,7 @@ settings() {
   INSTALL_DIR="${SANREMES_INSTALL_DIR:-/opt/sanremes}"
   IMAGE_REPO=SanthoshKumar020/sanremes
   RELEASES_URL=https://api.github.com/repos/SanthoshKumar020/SanRemes/releases/latest
-  ADMIN_URL="${SANREMES_ADMIN_URL:-https://cloud.openmausbot.com}"
+  ADMIN_URL="${SANREMES_ADMIN_URL:-https://cloud.sanremes.invalid}"
   SCRIPT_URL=https://raw.githubusercontent.com/SanthoshKumar020/SanRemes/main/deploy/install.sh
   # Where the files this installer places come from: this repository at the tag of the version it installs, and at
   # main when that tag does not have them. SANREMES_INSTALL_SOURCE names one copy to use instead (https://… or file:///…).
@@ -395,8 +395,8 @@ check_outbound() {
     return
   fi
   ok "outbound: the image registries and Let's Encrypt are reachable"
-  if ! reachable https://accounts.openmausbot.com/; then
-    note "accounts.openmausbot.com is not reachable, so signing in with an emailed code needs a mail server of your own (SANREMES_SIGNIN_SMTP_URL). Pairing codes work without it."
+  if ! reachable https://accounts.sanremes.invalid/; then
+    note "accounts.sanremes.invalid is not reachable, so signing in with an emailed code needs a mail server of your own (SANREMES_SIGNIN_SMTP_URL). Pairing codes work without it."
   fi
 }
 

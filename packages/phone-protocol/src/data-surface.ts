@@ -1,5 +1,5 @@
 // The Data surface: what the server, the bots' tools and the panel agree on.
-// DuckDB runs in the OMB server, one database per bot.
+// DuckDB runs in the SanRemes server, one database per bot.
 
 /** The five tools a bot gets, in the order the catalog lists them. */
 export const DATA_TOOL_NAMES = ["data_load", "data_describe", "data_sql", "data_show", "data_export"] as const;

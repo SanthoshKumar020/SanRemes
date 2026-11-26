@@ -1121,7 +1121,7 @@ describe("Antigravity driver over shared ACP", () => {
     expect(normalizeAntigravityTurn({ ...turn, model: "gemini-4-neon-medium" }, offered, catalog)).toEqual({ ...turn, model: "gemini-4-neon-medium" });
   });
 
-  it("keeps one process across approval and model changes, starting on OMB's model", async () => {
+  it("keeps one process across approval and model changes, starting on SanRemes's model", async () => {
     ensureDirs();
     const fake = fakeRuntime();
     const dump = join(fake.directory, "dump.json");
@@ -1375,7 +1375,7 @@ describe("Antigravity driver over shared ACP", () => {
       return { done, events: recorder!.events.filter((event) => event.turnId === turnId) };
     };
     expect((await run("thread-known", "gemini-3.8-flash-low")).done).toMatchObject({ ok: true });
-    // a tier-locked model, and OMB's static default the account lacks
+    // a tier-locked model, and SanRemes's static default the account lacks
     for (const [index, model] of ["gemini-3.8-pro-high", STATIC_ANTIGRAVITY_MODELS.default].entries()) {
       const { done, events } = await run(`thread-unavailable-${index}`, model);
       expect(done).toMatchObject({ ok: false });

@@ -38,7 +38,7 @@ It does not retain full provider request bodies, authorization headers or MCP
 tokens. The fixture closes its own children and loopback server, then removes
 its disposable home. The log and evidence paths are printed by the test.
 
-This proves API persistence and actual OMB → ACP → OpenCode → SDK transport
+This proves API persistence and actual SanRemes → ACP → OpenCode → SDK transport
 against a simulated provider. It does not establish acceptance by any real
 provider, an upstream gateway's routing, or the SanRemes GUI. The fixture
 rejects `none` at its simulated provider as a guard; real model capabilities

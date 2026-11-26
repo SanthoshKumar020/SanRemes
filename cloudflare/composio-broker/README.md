@@ -26,7 +26,7 @@ without affecting existing users.
 ## App events (Composio triggers)
 
 The broker also receives Composio trigger events for every installation and
-queues them until the installation's OMB server collects them. A desktop
+queues them until the installation's SanRemes server collects them. A desktop
 needs no public URL: Composio posts to the broker, the server long-polls it.
 
 ```
@@ -157,7 +157,7 @@ changes nothing.
 6. Waking sleeping Clouds (at launch of a plan that sleeps): apply migration
    `0003_cloud_wake.sql` (step 1) before deploying the code that uses it, then
    set `CLOUD_ADMIN_URL` to the Cloud Admin's origin
-   (`https://cloud.openmausbot.com`). Either add it to `vars` in
+   (`https://cloud.sanremes.invalid`). Either add it to `vars` in
    `wrangler.jsonc` in a PR, or `wrangler secret put CLOUD_ADMIN_URL`: a
    deploy replaces variables set in the dashboard, but keeps secrets. Without
    it (or without `CLOUD_GRANT_SECRET`) the broker never asks the Admin to wake

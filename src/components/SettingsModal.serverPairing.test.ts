@@ -58,7 +58,7 @@ describe("the old phone section, opened by Connect your phone or a link", () => 
     expect(html).not.toContain('data-settings-page="devices"');
   });
 
-  it("on an OMB Cloud home, which is personal, offers no People section to invite anyone", () => {
+  it("on an SanRemes Cloud home, which is personal, offers no People section to invite anyone", () => {
     vi.stubGlobal("window", {});
     expect(render()).toContain(">People<");
     fixture.config = { cloudHome: true };

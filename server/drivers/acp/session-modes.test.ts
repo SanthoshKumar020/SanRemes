@@ -51,7 +51,7 @@ describe("selectAdvertisedMode", () => {
     { id: "dont_ask", name: "Don't Ask" },
   ];
 
-  it("maps OMB approval levels onto Hermes advertised modes while keeping auto conservative", () => {
+  it("maps SanRemes approval levels onto Hermes advertised modes while keeping auto conservative", () => {
     expect(selectAdvertisedMode(hermesModes, "ask", false)).toBe("default");
     expect(selectAdvertisedMode(hermesModes, "edits", false)).toBe("accept_edits");
     expect(selectAdvertisedMode(hermesModes, "auto", false)).toBe("default");

@@ -1987,7 +1987,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     expect(await turn("t-ungated-url", { custom: { docs } })).toBe(String(UNGATED_MCP_OUTPUT_TOKENS));
   });
 
-  // Claude Code advertises no MCP Apps UI extension and keeps tool results to itself, so only OMB's
+  // Claude Code advertises no MCP Apps UI extension and keeps tool results to itself, so only SanRemes's
   // remote proxy can observe a URL app server.
   it("mounts a url app server through the proxy and a url server without apps natively, unchanged", async () => {
     await create();
@@ -2156,7 +2156,7 @@ describe("ClaudeDriver turns (fake CLI)", () => {
     expect((await turn("project", project)).settings.env.ENABLE_TOOL_SEARCH).toBe("auto:100");
   });
 
-  it("does not mix a personal helper/endpoint with an explicitly configured OMB connection", async () => {
+  it("does not mix a personal helper/endpoint with an explicitly configured SanRemes connection", async () => {
     const account = join(scratch, "account");
     mkdirSync(account);
     writeFileSync(join(account, "settings.json"), JSON.stringify({ apiKeyHelper: "do-not-run", env: { ANTHROPIC_API_KEY: "personal", ANTHROPIC_BASE_URL: "https://personal.invalid" } }));

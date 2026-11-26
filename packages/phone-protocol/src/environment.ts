@@ -32,7 +32,7 @@ export interface EnvironmentDescriptor {
     fileEdits?: true;
     /** A lent computer may say it runs the MCP servers saved here that run on it (mcp_tools, mcp_call). Never a team Cloud. */
     lentMcp?: true;
-    /** A person's own OMB Cloud home. */
+    /** A person's own SanRemes Cloud home. */
     cloudHome?: true;
     /** A team's Cloud home: `label` is the team's name. */
     cloudTeam?: true;

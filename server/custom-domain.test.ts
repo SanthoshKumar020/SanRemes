@@ -141,7 +141,7 @@ describe("domain verification", () => {
     expect(request.mock.calls[0]![1]).toEqual(address);
   });
 
-  it("rejects another OMB server", async () => {
+  it("rejects another SanRemes server", async () => {
     const { verifier, request } = fixture();
     request.mockResolvedValueOnce({ environmentId: "another-server" });
     await expect(verifier.verify("bots.company.com")).rejects.toThrow("does not point to this");

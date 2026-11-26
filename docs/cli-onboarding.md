@@ -81,6 +81,6 @@ API keys are hidden while typed or pasted. New API connections save their key in
 
 The packaged desktop app does not keep your AI provider and service keys there: it encrypts them with the operating system (Keychain on macOS, DPAPI on Windows, the system secret store on Linux, where a desktop without one gets only Electron's fixed-key obfuscation) in `credentials.bin` and moves keys it finds in `config.json` into that store at startup. Keys entered through this CLI setup, OpenCode provider keys, keys given to one engine (`environment` or `key`), and MCP header values stay plaintext in `config.json`, on desktop too. `mcp-oauth.json` is also plaintext.
 
-Ctrl-C during AI setup leaves unsaved OMB changes unapplied. Installations and provider sign-ins already completed remain available. Ctrl-C during the later phone step keeps the AI setup you already saved, exits without starting a server, and does not undo an account sign-in already completed. Run `sanremes setup` to continue; no destructive reset is needed.
+Ctrl-C during AI setup leaves unsaved SanRemes changes unapplied. Installations and provider sign-ins already completed remain available. Ctrl-C during the later phone step keeps the AI setup you already saved, exits without starting a server, and does not undo an account sign-in already completed. Run `sanremes setup` to continue; no destructive reset is needed.
 
 For remote access and background deployment options, see [self-hosting](self-hosting.md) and [the VPS guide](deploy-vps.md).

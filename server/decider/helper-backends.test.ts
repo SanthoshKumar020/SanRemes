@@ -159,7 +159,7 @@ describe("Clef on Workers AI", () => {
   });
 });
 
-/** The relay sees the wire body; OMB builds it from its own question shape. */
+/** The relay sees the wire body; SanRemes builds it from its own question shape. */
 function fromWire(body: { state: unknown; questions: Record<string, { type: string; instructions: string; criteria?: unknown }> }) {
   const questions = Object.fromEntries(Object.entries(body.questions).map(([id, wire]): [string, DeciderQuestion] => {
     if (wire.type === "choice") return [id, { type: "choice", instructions: wire.instructions, options: wire.criteria as Record<string, string> }];
@@ -174,7 +174,7 @@ describe("the relay's seams, from the fixtures shared with Cloud's Admin", () =>
   it.each(relayFixtures.cases.map((fixture) => [fixture.name, fixture] as const))("%s", (_name, fixture) => {
     const { state, questions } = fromWire(fixture.body as never);
     expect(relayAccepts(fixture.seam as DeciderSeam, state, questions)).toBe(fixture.accepts);
-    // The fixture is exactly what OMB puts on the wire.
+    // The fixture is exactly what SanRemes puts on the wire.
     expect(jevRequestBody(state, questions)).toEqual(fixture.body);
   });
 

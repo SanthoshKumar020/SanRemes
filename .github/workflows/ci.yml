@@ -200,7 +200,7 @@ jobs:
     # cannot affect a platform's results leaves it out, and one that changes
     # only translations runs the locale tests alone. On a Boat VM the static
     # job runs the Linux entries itself. Linux runs every file;
-    # Windows and macOS run every file but the e2e files that test only OMB's
+    # Windows and macOS run every file but the e2e files that test only SanRemes's
     # own logic (SANREMES_VITEST_E2E=host, scripts/testing/host-e2e.ts). The split
     # is deterministic, so a failure names the same shard on every run, and
     # the same --shard and SANREMES_VITEST_E2E reproduce it locally.
@@ -627,7 +627,7 @@ jobs:
     needs: static
     if: contains(needs.static.outputs.jobs, '"browser-identity"')
     # Advisory, outside the required gate: the pinned agent-browser drives a
-    # real Chrome for Testing through OMB's launcher and identity connection
+    # real Chrome for Testing through SanRemes's launcher and identity connection
     # (scripts/testing/browser-identity.e2e.test.ts): a 1280x720 page whose
     # user agent and client hints are the browser's own in the page, a
     # worker, a service worker and a cross-site frame. On Windows this is

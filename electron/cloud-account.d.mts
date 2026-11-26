@@ -15,7 +15,7 @@ export interface CloudAccountState {
   entitlement?: { plan: "free" | "pro"; tier?: string; status: "active" | "inactive"; expiresAt: number | null; version: number };
   verifiedAt?: number;
   verifiedUntil?: number;
-  /** Connected, but the last checks with OMB Cloud failed; the snapshot is the last verified one. */
+  /** Connected, but the last checks with SanRemes Cloud failed; the snapshot is the last verified one. */
   checking?: true;
   /** Not connected (unavailable, or the sign-in ended): the paid plan last
    * verified for this account, for display only. It activates nothing. */
@@ -40,7 +40,7 @@ export interface CloudAccountState {
    * whether main keeps that page (`link`), and `done` once it was opened or announced. */
   /** `cloudId` null: a checkout the Admin said is still open, before the session lists its Cloud. */
   adding?: { cloudId: string | null; name: string; color: import("./cloud-list.mjs").CloudSwatch | null; tier: string | null; startedAt: number; link?: true; done?: true };
-  /** A payment OMB Cloud received and is still linking to this account. */
+  /** A payment SanRemes Cloud received and is still linking to this account. */
   purchase?: import("./cloud-home.mjs").CloudPurchase;
   /** Connected: the free trial on this account's Cloud, when the Admin says (display only). */
   trial?: import("./cloud-home.mjs").CloudTrial;

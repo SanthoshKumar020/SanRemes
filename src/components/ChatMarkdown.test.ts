@@ -1342,8 +1342,8 @@ describe("bidi: message content carries its own direction", () => {
   });
 
   it("does not count a bare address, which is Latin in any language", () => {
-    expect(textDirection("راجع https://github.com/SanthoshKumar020/SanRemes/issues/6541 للتفاصيل")).toBe("rtl");
-    expect(textDirection("https://openmausbot.com/download هو رابط التحميل الرسمي")).toBe("rtl");
+    expect(textDirection("راجع https://github.com/milind-soni/OpenMausBot/issues/6541 للتفاصيل")).toBe("rtl");
+    expect(textDirection("https://sanremes.invalid/download هو رابط التحميل الرسمي")).toBe("rtl");
     expect(textDirection("انظر www.example.com/a/very/long/path/to/the/release/notes هنا")).toBe("rtl");
     expect(textDirection("https://example.com/page")).toBe("ltr");
   });

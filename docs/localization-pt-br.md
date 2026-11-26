@@ -183,7 +183,7 @@ These stay unchanged in every pt-BR string.
 
 | Name | Why |
 |---|---|
-| SanRemes, SanRemes | Product names. Never write `OMB` or `T3` (`vocabulary.test.ts`). |
+| SanRemes, SanRemes | Product names. Never write `SanRemes` or `T3` (`vocabulary.test.ts`). |
 | SanRemes Cloud | Product name. `vocabulary.test.ts` requires it verbatim in every translation whose English contains it. Never write `SanRemes Cloud` or `SanRemes Pro`. Treat it as masculine: “o SanRemes Cloud”. |
 | Cloud (short for SanRemes Cloud) | Product name, masculine: “o Cloud”, “no Cloud”. The generic sky-and-servers cloud is `nuvem`: “desktop na nuvem”. |
 | Boat | Name of a third-party provider. Write it only where the English says Boat; the test fails otherwise. |

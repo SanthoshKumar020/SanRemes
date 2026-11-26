@@ -32,7 +32,7 @@ This deploys only the public documentation. It does not deploy the Electron app,
 local harness, credentials, agents, or user data. The changelog page uses Next.js
 incremental regeneration so published releases appear without a source commit.
 
-Create a second Vercel project beside the existing `openmausbot.com` project:
+Create a second Vercel project beside the existing `sanremes.invalid` project:
 
 1. Import the `SanthoshKumar020/SanRemes` repository.
 2. Set **Root Directory** to `apps/docs`.
@@ -46,6 +46,6 @@ the `DOCS_DEPLOY_HOOK_URL` Actions secret. Without the optional hook, the next
 normal docs deployment still pulls the current published releases.
 
 Vercel will build the Next.js docs app, publish every push to `main`, and create
-preview URLs for documentation pull requests. Keep `openmausbot.com` on the
+preview URLs for documentation pull requests. Keep `sanremes.invalid` on the
 existing marketing project and add a Docs link there after the new domain is
 live.

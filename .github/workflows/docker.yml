@@ -70,8 +70,8 @@ jobs:
         run: |
           set -euo pipefail
           test "$(docker exec sanremes id -un)" = sanremes
-          timeout 45 docker exec sanremes agent-browser --session ci-browser open 'data:text/html,<title>OMB browser smoke</title><h1>Browser ready</h1>'
-          timeout 15 docker exec sanremes agent-browser --session ci-browser get title | grep -Fx 'OMB browser smoke'
+          timeout 45 docker exec sanremes agent-browser --session ci-browser open 'data:text/html,<title>SanRemes browser smoke</title><h1>Browser ready</h1>'
+          timeout 15 docker exec sanremes agent-browser --session ci-browser get title | grep -Fx 'SanRemes browser smoke'
           # Chrome for Testing's page is 1280x577 until sized; the harness sizes
           # it to 1280x720 so pictures, boxes and clicks agree.
           timeout 15 docker exec sanremes agent-browser --session ci-browser set viewport 1280 720
@@ -113,7 +113,7 @@ jobs:
         run: |
           set -euo pipefail
           docker rm -f sanremes >/dev/null
-          docker tag sanremes:ci ghcr.io/milind-soni/openmausbot:latest
+          docker tag sanremes:ci ghcr.io/SanthoshKumar020/sanremes:latest
           printf 'DOMAIN=localhost\nENGINES=\n' > deploy/.env
           docker compose -f deploy/docker-compose.yml up -d --no-build
           for i in $(seq 1 45); do
@@ -511,8 +511,8 @@ jobs:
           docker exec sanremes curl -sf http://127.0.0.1:8799/ | grep -qi "<html" || { docker logs sanremes; echo "UI not served"; exit 1; }
           docker exec -w /app/duckdb sanremes node --input-type=module -e "const { DuckDBInstance } = await import('@duckdb/node-api'); const c = await (await DuckDBInstance.create()).connect(); const r = await c.runAndReadAll('select 42 as x'); if (Number(r.getRows()[0][0]) !== 42) process.exit(1)"
           test "$(docker exec sanremes id -un)" = sanremes
-          timeout 90 docker exec sanremes agent-browser --session ci-browser open 'data:text/html,<title>OMB browser smoke</title><h1>Browser ready</h1>'
-          timeout 15 docker exec sanremes agent-browser --session ci-browser get title | grep -Fx 'OMB browser smoke'
+          timeout 90 docker exec sanremes agent-browser --session ci-browser open 'data:text/html,<title>SanRemes browser smoke</title><h1>Browser ready</h1>'
+          timeout 15 docker exec sanremes agent-browser --session ci-browser get title | grep -Fx 'SanRemes browser smoke'
           timeout 15 docker exec sanremes agent-browser --session ci-browser close
 
   publish:
@@ -581,7 +581,7 @@ jobs:
       # The Cloud Pro home machine (the Dockerfile's cloud-home target), on the
       # same runtime layers as the server image just pushed, with Claude Code,
       # Codex and Grok baked in. The Admin pins it by digest
-      # (SANREMES_CLOUD_HOME_IMAGE=ghcr.io/milind-soni/openmausbot-cloud-home@sha256:...).
+      # (SANREMES_CLOUD_HOME_IMAGE=ghcr.io/SanthoshKumar020/sanremes-cloud-home@sha256:...).
       - id: repo
         # Image references must be lowercase; the repository name is not.
         run: echo "name=${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"

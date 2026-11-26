@@ -132,7 +132,7 @@ describe("who gets the welcome flow", () => {
     expect(tree?.props.hosted).toBe(true);
   });
 
-  it("leaves an OMB Cloud home's first run to its engine sign-in", () => {
+  it("leaves an SanRemes Cloud home's first run to its engine sign-in", () => {
     vi.stubGlobal("window", REMOTE_PAGE);
     expect(gate({ hosted: false, canSave: true, cloudHome: true }).tree).toBeNull();
     store.state = { ...store.state, welcomeOpen: true };
@@ -207,7 +207,7 @@ describe("who gets the welcome flow", () => {
     expect(gate(LOCAL_VIEWER).tree).toBeNull();
   });
 
-  it("steps aside for OMB Cloud opened by the Cloud link, not for a normal visit there", () => {
+  it("steps aside for SanRemes Cloud opened by the Cloud link, not for a normal visit there", () => {
     vi.stubGlobal("window", LOCAL_PAGE);
     store.state = { ...store.state, appSettingsOpen: true, appSettingsSection: "cloudAccount", appSettingsCloudLink: 0 };
     expect(gate(LOCAL_VIEWER).tree).not.toBeNull();

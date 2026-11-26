@@ -443,7 +443,7 @@ const __APP_VERSION__: string;
       /** The desktop shell's app-menu Preferences… item was activated; open
        * app Settings. Every server's page in the window receives it, and the
        * bridge is absent in the browser. "cloud" is the
-       * sanremes://cloud link (Settings → OMB Cloud, opened by the link). */
+       * sanremes://cloud link (Settings → SanRemes Cloud, opened by the link). */
       onOpenAppSettings?(cb: (section?: "organization" | "cloud" | "cloud-settings" | "cloud-add" | "cloud-add-howto" | "phone" | import("../state/store").SettingsPageId) => void): () => void;
       /** Updates the native Dock/taskbar unread indicator. */
       setUnreadCount?(count: number): void;

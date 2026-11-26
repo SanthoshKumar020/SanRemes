@@ -1209,7 +1209,7 @@ git commit -m "test(ios): shared gesture parity fixture and runner"
 Port `RemoteGestureMappingTests` verbatim in behaviour:
 
 ```kotlin
-package com.openmausbot.companion.core
+package com.sanremes.invalidpanion.core
 
 import kotlin.math.abs
 import kotlin.test.Test
@@ -1398,7 +1398,7 @@ The fixture must exist once, not twice. Copy it in a Gradle `processTestResource
 - [ ] **Step 1: Write the failing test**
 
 ```kotlin
-package com.openmausbot.companion.core
+package com.sanremes.invalidpanion.core
 
 import kotlinx.serialization.json.Json
 import kotlin.test.Test

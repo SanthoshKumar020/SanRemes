@@ -14,7 +14,7 @@ describe("sanremes-docs skill guide", () => {
       "how do I change the approval level for one bot",
       "Open SanRemes 的配置文件在哪",
       "where are my bot's routines stored",
-      "explain OMB settings for connected apps",
+      "explain SanRemes settings for connected apps",
       "SanRemes 设置里记忆开关是什么意思",
     ]) {
       expect(ids(text), text).toContain("sanremes-docs");

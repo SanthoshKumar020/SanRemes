@@ -2113,8 +2113,8 @@
      "k": "BJiFmi3bzpQUayMJErl6eqt24mUOvHEUR6uzutPTHfundIgyZxs3bSzUMydGOfgbWdwQshIyzzlMWqxMkNHnmd0",
      "h": "lz81isB3BuNV6rHgYgG3Wg",
      "r": [
-      "relay1.openmausbot.com",
-      "relay2.openmausbot.com"
+      "relay1.sanremes.com",
+      "relay2.sanremes.com"
      ]
     }
    },
@@ -2136,10 +2136,10 @@
      "k": "BJiFmi3bzpQUayMJErl6eqt24mUOvHEUR6uzutPTHfundIgyZxs3bSzUMydGOfgbWdwQshIyzzlMWqxMkNHnmd0",
      "h": "lz81isB3BuNV6rHgYgG3Wg",
      "r": [
-      "relay1.openmausbot.com",
-      "relay2.openmausbot.com",
-      "relay3.openmausbot.com",
-      "relay99.openmausbot.com"
+      "relay1.sanremes.com",
+      "relay2.sanremes.com",
+      "relay3.sanremes.com",
+      "relay99.sanremes.com"
      ]
     }
    },
@@ -2152,8 +2152,8 @@
      "k": "BJiFmi3bzpQUayMJErl6eqt24mUOvHEUR6uzutPTHfundIgyZxs3bSzUMydGOfgbWdwQshIyzzlMWqxMkNHnmd0",
      "h": "lz81isB3BuNV6rHgYgG3Wg",
      "r": [
-      "relay1.openmausbot.com",
-      "relay2.openmausbot.com"
+      "relay1.sanremes.com",
+      "relay2.sanremes.com"
      ]
     }
    },
@@ -2166,8 +2166,8 @@
      "k": "BJiFmi3bzpQUayMJErl6eqt24mUOvHEUR6uzutPTHfundIgyZxs3bSzUMydGOfgbWdwQshIyzzlMWqxMkNHnmd0",
      "h": "lz81isB3BuNV6rHgYgG3Wg",
      "r": [
-      "relay1.openmausbot.com",
-      "relay2.openmausbot.com"
+      "relay1.sanremes.com",
+      "relay2.sanremes.com"
      ]
     }
    },
@@ -2190,8 +2190,8 @@
      "k": "BJiFmi3bzpQUayMJErl6eqt24mUOvHEUR6uzutPTHfundIgyZxs3bSzUMydGOfgbWdwQshIyzzlMWqxMkNHnmd0",
      "h": "lz81isB3BuNV6rHgYgG3Wg",
      "r": [
-      "relay1.openmausbot.com",
-      "relay2.openmausbot.com"
+      "relay1.sanremes.com",
+      "relay2.sanremes.com"
      ],
      "routes": "any"
     }
@@ -2215,8 +2215,8 @@
      "k": "BJiFmi3bzpQUayMJErl6eqt24mUOvHEUR6uzutPTHfundIgyZxs3bSzUMydGOfgbWdwQshIyzzlMWqxMkNHnmd0",
      "h": "lz81isB3BuNV6rHgYgG3Wg",
      "r": [
-      "relay1.openmausbot.com",
-      "relay2.openmausbot.com"
+      "relay1.sanremes.com",
+      "relay2.sanremes.com"
      ],
      "routes": "local"
     }

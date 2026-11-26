@@ -42,7 +42,7 @@ This builds on the chat widgets branch (PR #2820, `docs/superpowers/specs/2026-1
 | Excalidraw: `create_view` (`readOnlyHint: true`) → `ui://excalidraw/mcp-app.html`, 432 KB, `_meta.ui` on the content item: `csp.resourceDomains` and `csp.connectDomains` both `["https://esm.sh"]`, `permissions.clipboardWrite`, `prefersBorder: true`. It has three app-only tools with no `readOnlyHint`: `export_to_excalidraw`, `save_checkpoint` and `read_checkpoint`. | HTTP probe, no sign-in |
 | Claude Code 2.1.288 advertises only `roots` and `elicitation`, with no UI extension. It first sends `server/discover` with clientCapabilities in `_meta` (protocol 2026-07-28), then `initialize`. It hides app-only tools from the model. It replaces the model's tool_result with `structuredContent` when one is present. Its stream-json `user` event carries `tool_use_result: {content, structuredContent, _meta}`. Its `tools/call` carries `_meta["claudecode/toolUseId"]`. | `claude -p` probe against a fake stdio app server that logs frames |
 | Codex 0.153.4 advertises only `elicitation`. Its exec JSON `mcp_tool_call` result carries `content`, `structured_content` and `_meta`. | `codex exec --json` probe, same fake server |
-| OMB's own `server/mcp-remote-proxy.ts` relays tool `_meta`, the full `tools/call` result (`structuredContent` and `_meta`) and `resources/read` unchanged. It also passes app-only tools to the engine. | Ran the proxy from this branch against `server-debug` over HTTP |
+| SanRemes's own `server/mcp-remote-proxy.ts` relays tool `_meta`, the full `tools/call` result (`structuredContent` and `_meta`) and `resources/read` unchanged. It also passes app-only tools to the engine. | Ran the proxy from this branch against `server-debug` over HTTP |
 | Electron 43.7.9: a `srcdoc` iframe with `sandbox="allow-scripts allow-forms"` and a CSP meta injected first runs correctly inside a page served with `frame-ancestors 'none'` + `X-Frame-Options: DENY`. Inline script runs, and a declared cdnjs script loads. Blocked: undeclared scripts, fetch, WebSocket, images, CSS images, prefetch, form posts (`onsubmit` still fires), eval (no `'unsafe-eval'`), `localStorage`, cookies, the parent DOM, clipboard writes, `window.open` and `target=_blank` (the window-open handler is never called), and top navigation. The preload bridge is `undefined` in the frame, whose origin is `"null"`. A self-navigation fires `will-frame-navigate` with `frame.origin === "null"` and an empty `frame.url`; `preventDefault()` stopped it, and the HTTP sink logged only the host page. | Electron probe in the scratchpad (headless window) |
 
 The product survey is in "Real products" below. Facts that could not be verified are listed at the end.
@@ -59,11 +59,11 @@ The product survey is in "Real products" below. Facts that could not be verified
    - The same module runs in the desktop renderer, and bundled into one static host page that both phones load in their web view. The protocol logic exists once.
 4. **The server builds the frame document.** `srcdoc` is assembled server-side: doctype, the CSP meta as the first element, then (bot HTML only) theme variables and the helper, then the content. Clients set it verbatim. CSP construction and injection are one tested function, not three.
 5. **Frames are `srcdoc` iframes with `sandbox="allow-scripts allow-forms"` and an opaque origin, on every platform.** Phones load a bundled host page that holds the same iframe, so the `window.parent.postMessage` contract that SDK views assume holds everywhere. The spec's double-iframe "sandbox proxy" exists so web hosts can give a View a real but foreign origin. We give it none, which is stricter, at the cost of `localStorage` and `domain` (see "Known limitations").
-6. **MCP traffic is observed inside OMB's own MCP plumbing, not in driver activity.** The remote proxy (`mcp-remote-proxy.ts`, OMB's own client) observes URL servers. The gate (`mcp-gate.ts`, which relays every stdio frame) observes command servers. The chat-completions runtime observes in-process.
+6. **MCP traffic is observed inside SanRemes's own MCP plumbing, not in driver activity.** The remote proxy (`mcp-remote-proxy.ts`, SanRemes's own client) observes URL servers. The gate (`mcp-gate.ts`, which relays every stdio frame) observes command servers. The chat-completions runtime observes in-process.
    - Driver activity is lossy: tool previews are truncated, and only Claude Code exposes `tool_use_result`.
    - The engines do not advertise the UI extension. A server that adapts its tools to the client's capability would never show a UI to an engine's own connection.
-7. **App servers are always mounted through those observers.** An "app server" is one whose catalog has a tool with `_meta.ui`, cached in `server/mcp-app-catalog.ts`. On Claude Code, a URL app server goes through OMB's remote proxy instead of the CLI's native HTTP. This is how every other engine already reaches URL servers, and Claude Code's own tool search still works over stdio (it ran `ToolSearch` against the stdio probe server). On every engine, a command app server goes through the gate even without a tool selection or budget. Servers without apps keep today's mounts exactly.
-8. **OMB advertises the UI extension, with a fallback.** OMB's client (`RemoteMcpClient`, the gate's rewrite of the CLI's `initialize`, the in-process chat client) adds the UI extension capability. If the server refuses that `initialize` (HTTP 400 or a JSON-RPC error), OMB resends the original handshake once without it and records `uiExtension: "refused"`, so strict servers (the Voluum case the fake `strictInitialize` server models) keep working.
+7. **App servers are always mounted through those observers.** An "app server" is one whose catalog has a tool with `_meta.ui`, cached in `server/mcp-app-catalog.ts`. On Claude Code, a URL app server goes through SanRemes's remote proxy instead of the CLI's native HTTP. This is how every other engine already reaches URL servers, and Claude Code's own tool search still works over stdio (it ran `ToolSearch` against the stdio probe server). On every engine, a command app server goes through the gate even without a tool selection or budget. Servers without apps keep today's mounts exactly.
+8. **SanRemes advertises the UI extension, with a fallback.** SanRemes's client (`RemoteMcpClient`, the gate's rewrite of the CLI's `initialize`, the in-process chat client) adds the UI extension capability. If the server refuses that `initialize` (HTTP 400 or a JSON-RPC error), SanRemes resends the original handshake once without it and records `uiExtension: "refused"`, so strict servers (the Voluum case the fake `strictInitialize` server models) keep working.
 9. **The server does `resources/read` and app tool calls on its own pooled connection** (`server/mcp-app-connections.ts`), not through the engine's live connection.
    - That connection ends with the turn on most engines, and an app stays interactive long after.
    - URL servers get `withMcpSignIn` tokens, as turns do. Command servers are spawned on demand like Settings → Test and closed after 5 idle minutes.
@@ -215,21 +215,21 @@ Why these hosts:
 
 ### Who observes, per engine
 
-| Engine | URL servers today | Command servers today | App servers after this change | What OMB sees |
+| Engine | URL servers today | Command servers today | App servers after this change | What SanRemes sees |
 |---|---|---|---|---|
-| Claude Code | CLI's native HTTP (gate + proxy only with a tool selection) | gated if bot-owned with a result budget, or with a selection | URL → OMB remote proxy (stdio); command → gate | everything, through the proxy or gate |
-| Codex | always OMB remote proxy | gated only with a selection | command → gate | everything |
-| ACP family (Gemini, Grok, Qwen, Cursor, Kimi, Droid, OpenCode, Cline, Hermes, custom) and Muse Code (`turn-mcp.ts`) | OMB remote proxy | mounted directly, gated only with a selection | command → gate | everything |
+| Claude Code | CLI's native HTTP (gate + proxy only with a tool selection) | gated if bot-owned with a result budget, or with a selection | URL → SanRemes remote proxy (stdio); command → gate | everything, through the proxy or gate |
+| Codex | always SanRemes remote proxy | gated only with a selection | command → gate | everything |
+| ACP family (Gemini, Grok, Qwen, Cursor, Kimi, Droid, OpenCode, Cline, Hermes, custom) and Muse Code (`turn-mcp.ts`) | SanRemes remote proxy | mounted directly, gated only with a selection | command → gate | everything |
 | Pi | gate / proxy | gate (budget) | adds the apps settings | everything |
-| Chat Completions family (`chat-mcp-tools.ts`) | proxy child, driven by OMB's in-process client | OMB's in-process stdio client | observed in-process | everything |
+| Chat Completions family (`chat-mcp-tools.ts`) | proxy child, driven by SanRemes's in-process client | SanRemes's in-process stdio client | observed in-process | everything |
 
 Harness-owned mounts (agents, browser, computer, composio, data, dweb, phone) never have apps and are never observed.
 
-Only the innermost OMB component on the path reports. The remote proxy reports for URL servers. The gate reports only when its upstream is a command server, never when its upstream is the remote proxy.
+Only the innermost SanRemes component on the path reports. The remote proxy reports for URL servers. The gate reports only when its upstream is a command server, never when its upstream is the remote proxy.
 
 ### Advertising and filtering
 
-- OMB's `initialize` carries `capabilities.extensions["io.modelcontextprotocol/ui"] = { mimeTypes: ["text/html;profile=mcp-app"] }` unless the catalog says `uiExtension: "refused"` or the server's `apps` switch is off.
+- SanRemes's `initialize` carries `capabilities.extensions["io.modelcontextprotocol/ui"] = { mimeTypes: ["text/html;profile=mcp-app"] }` unless the catalog says `uiExtension: "refused"` or the server's `apps` switch is off.
 - `RemoteMcpClient.initialize(name, signal, { extensions })` gains the option and the one-retry fallback. The gate rewrites the CLI's `initialize` the same way. If the server answers that frame with an error, the gate sends the CLI's original frame and relays the second answer.
 - `tools/list` answers through the gate or proxy drop every tool whose `_meta.ui.visibility` is set and lacks `"model"`. A model `tools/call` to such a tool is refused with `-32602 "This tool belongs to an app view."`. Directory mode (`mcp-directory.ts`) applies the same filter before indexing.
 - A tool's UI is `_meta.ui.resourceUri`, else the deprecated `_meta["ui/resourceUri"]`. It must start with `ui://`. Anything else means no UI.
@@ -387,7 +387,7 @@ Survey of 2026-10-14 (vendor docs, launch posts, and unauthenticated probes of e
 | Amplitude | Yes (`render_amplitude_chart`), also in Cursor | `https://mcp.amplitude.com/mcp` | DCR open |
 | Hex | Yes (chart carousel; widgets expire after 24 h) | `https://app.hex.tech/mcp` | DCR open (Team and Enterprise plans) |
 | Clay | Yes in Claude, per Anthropic | `https://api.clay.com/v3/mcp` | DCR open (an admin toggle can block "Unknown" clients) |
-| Atlassian (Rovo) | Yes ("widgets display in iFrames") | `https://mcp.atlassian.com/v2/mcp` | DCR. Redirect domains are admin-allow-listed; the default list includes `http://localhost` and `127.0.0.1`, which OMB's loopback sign-in uses. |
+| Atlassian (Rovo) | Yes ("widgets display in iFrames") | `https://mcp.atlassian.com/v2/mcp` | DCR. Redirect domains are admin-allow-listed; the default list includes `http://localhost` and `127.0.0.1`, which SanRemes's loopback sign-in uses. |
 | Excalidraw | **Yes, checked directly** | `https://mcp.excalidraw.com/mcp` | No auth |
 | tldraw | Yes, checked directly | `https://tldraw-mcp-app.tldraw.workers.dev/mcp` (from third-party directories) | No auth |
 | Linear, HubSpot, Zapier, Stripe | None documented (Stripe unclear) | — | — |
@@ -397,7 +397,7 @@ Hosts that ship MCP Apps include Claude (web, desktop, mobile), ChatGPT (it also
 What this means:
 
 - Excalidraw is the first real target: no sign-in, a 432 KB view, CSP domains, an app-only tool set and a permission request we deny.
-- Amplitude, Hex, Clay and Atlassian need only OMB's existing DCR sign-in.
+- Amplitude, Hex, Clay and Atlassian need only SanRemes's existing DCR sign-in.
 - Asana and Canva need a client id and secret pasted into the existing "pre-registered sign-in app" fields.
 - **Figma, which Omkar named, cannot be reached until SanRemes is in Figma's MCP catalog** (see "Open questions").
 - Notion ships no MCP App UI today.
@@ -715,7 +715,7 @@ Example servers, verified to run on Node 24.14 on 2026-10-14 (put each in its ow
 
 - Command, stdio: `npx -y --silent --registry=https://registry.npmjs.org/ @modelcontextprotocol/server-basic-vanillajs --stdio`. Tool `get-time` returns `structuredContent.time`; the 218 KB view has "Get Server Time", "Send Message", "Send Log" and "Open Link" buttons.
 - Command, stdio: `npx -y --silent --registry=https://registry.npmjs.org/ @modelcontextprotocol/server-debug --stdio`. `debug-tool` (all result shapes, delay, error) plus the app-only `debug-refresh` and `debug-log`; the 235 KB view has buttons for every SDK method.
-- URL, stateless streamable HTTP: `PORT=3911 npx -y --silent --registry=https://registry.npmjs.org/ @modelcontextprotocol/server-debug`, then add `http://127.0.0.1:3911/mcp`. OMB's remote proxy from this branch relayed its `_meta` and full results.
+- URL, stateless streamable HTTP: `PORT=3911 npx -y --silent --registry=https://registry.npmjs.org/ @modelcontextprotocol/server-debug`, then add `http://127.0.0.1:3911/mcp`. SanRemes's remote proxy from this branch relayed its `_meta` and full results.
 - Real: `https://mcp.excalidraw.com/mcp` (no sign-in) and `https://tldraw-mcp-app.tldraw.workers.dev/mcp`.
 
 End-to-end, on an isolated instance (`docs/verification/README.md`, never the installed app):
@@ -741,7 +741,7 @@ Security: the Electron test (S3) and the two phone web-view tests (I1, A1) run e
 ## Known limitations
 
 - **Opaque origin.** Views that require `localStorage`, or a stable origin for CORS (`_meta.ui.domain`, e.g. Claude's `<hash>.claudemcpcontent.com`), will not work fully. Most views reach data through `tools/call`, which works. A per-server real origin (a custom-protocol sandbox page on desktop) is the follow-up if a target app needs it.
-- **Separate app connection.** App calls use OMB's own connection, not the engine's live one. A stateful stdio server that keeps per-process state sees app calls on a different process from the bot's.
+- **Separate app connection.** App calls use SanRemes's own connection, not the engine's live one. A stateful stdio server that keeps per-process state sees app calls on a different process from the bot's.
 - **Protocol version.** Servers moving to the 2026-07-28 protocol (`server/discover`, capabilities in each request's `_meta`) will need `RemoteMcpClient` to speak it. Claude Code 2.1.288 already tries it first.
 - **Sign-in gates.** Figma's client allow-list, and the no-DCR servers (Asana, Slack, Box, HubSpot), are sign-in matters, not rendering ones.
 

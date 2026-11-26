@@ -37,7 +37,7 @@ export function gatedLocalComputer(
     args: ["--experimental-strip-types", SPAWNED_PROXIES.localComputer],
     env: {
       ...connection.env,
-      // Packaged, execPath is Electron: without this the MCP client relaunches OMB instead of the headless gate.
+      // Packaged, execPath is Electron: without this the MCP client relaunches SanRemes instead of the headless gate.
       ELECTRON_RUN_AS_NODE: "1",
       SANREMES_CUA_COMMAND: connection.command,
       SANREMES_CUA_ARGS: JSON.stringify(connection.args),

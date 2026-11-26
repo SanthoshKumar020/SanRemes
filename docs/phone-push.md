@@ -390,7 +390,7 @@ What the owner provides and does, in order. Nothing here has been done.
 
 **Google**
 
-3. Create a Firebase project, add the Android app `com.openmausbot.companion`
+3. Create a Firebase project, add the Android app `com.sanremes.invalidpanion`
    (and the `.next` / `.dev` packages if wanted), and download
    `google-services.json`.
 4. In Project settings → Service accounts, generate a private key (the

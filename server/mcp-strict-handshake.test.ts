@@ -93,7 +93,7 @@ describe("strict initialize fixture", () => {
     expect(fake.initializes).toEqual([SCHEMA_VALIDATION, CODEX]);
   });
 
-  it("accepts OMB's own client, which sends the minimal handshake", async () => {
+  it("accepts SanRemes's own client, which sends the minimal handshake", async () => {
     fake = await startFakeHttpMcp({ strictInitialize: "http-400", tools: TOOLS });
     const client = new RemoteMcpClient({ type: "http", url: fake.url, headers: {} });
     await client.initialize("SanRemes", AbortSignal.timeout(5_000));
@@ -108,7 +108,7 @@ describe("strict initialize fixture", () => {
     ["Claude Code", CLAUDE],
     ["Grok", GROK],
     ["schemaValidation", SCHEMA_VALIDATION],
-  ])("serves %s's handshake through OMB's stdio proxy, forwarding none of its fields", async (_name, handshake) => {
+  ])("serves %s's handshake through SanRemes's stdio proxy, forwarding none of its fields", async (_name, handshake) => {
     fake = await startFakeHttpMcp({ strictInitialize: "http-400", tools: TOOLS });
     const descriptor = mcpStdioServer({ type: "http", url: fake.url, headers: {} })!;
     child = spawn(descriptor.command, ["--experimental-strip-types", "--no-warnings", ...descriptor.args!], { stdio: "pipe", env: { ...process.env, ...descriptor.env } });

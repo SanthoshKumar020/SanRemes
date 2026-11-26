@@ -17,7 +17,7 @@ fi
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 OUT=${OUT:-$(mktemp -d)}
 mkdir -p "$OUT"
-REPO=ghcr.io/milind-soni/openmausbot
+REPO=ghcr.io/SanthoshKumar020/sanremes
 OLD_VERSION=${SANREMES_E2E_OLD_VERSION:-0.1.165}
 NEW_VERSION=${SANREMES_E2E_NEW_VERSION:-0.1.166}
 DIR="$HOME/.local/share/sanremes"

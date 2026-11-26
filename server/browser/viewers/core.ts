@@ -111,7 +111,7 @@ export interface HubHost {
   closeTab(tab: Tab): Promise<void>;
   showTab(tab: Tab): Promise<void>;
   download(id: string): Download | undefined;
-  extensions(): InstalledExtension[]; // installed in this browser's profile with a page to open; empty where OMB keeps none
+  extensions(): InstalledExtension[]; // installed in this browser's profile with a page to open; empty where SanRemes keeps none
   desktop?(): boolean; // its window fills a display the person sees as it is, so no viewer sizes it
 }
 

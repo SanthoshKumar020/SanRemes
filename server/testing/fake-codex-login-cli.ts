@@ -20,7 +20,7 @@ if (args === "--version") {
   process.exitCode = signedIn ? 0 : 1;
 } else if (args === "login --device-auth") {
   writeFileSync(join(home, ".sanremes-fake-codex-device.pid"), String(process.pid), { mode: 0o600 });
-  process.stderr.write("Offline OMB verification fixture — do not enter this code at OpenAI.\n");
+  process.stderr.write("Offline SanRemes verification fixture — do not enter this code at OpenAI.\n");
   process.stderr.write("https://auth.openai.com/codex/device\nTEST-12345\n");
   const timer = setInterval(() => {
     if (!existsSync(approved)) return;

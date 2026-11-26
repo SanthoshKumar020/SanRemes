@@ -39,7 +39,7 @@ const ENTRY_POINTS = [
   "workspace-backup.worker.ts",
   // the stall watch's thread (perf/stall-watch.ts)
   "stall-watch.worker.ts",
-  // the OMB Cloud Pro home image's entry point
+  // the SanRemes Cloud Pro home image's entry point
   "cloud-home-start.ts",
   // a Cloud server's backup runs it in the home before it packs the volume (cloud-backup-stage.ts)
   "cloud-backup-db-snapshot.ts",

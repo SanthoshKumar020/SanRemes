@@ -1,4 +1,4 @@
-// Only a turn-scoped capability crosses into the agent process; engine commands, session names and provider credentials stay in OMB.
+// Only a turn-scoped capability crosses into the agent process; engine commands, session names and provider credentials stay in SanRemes.
 import { pathToFileURL } from "node:url";
 
 import { failure, harnessMcpRequest, MAX_INPUT_BYTES, MAX_OUTPUT_BYTES, parseHarnessMcpKind, type HarnessMcpKind, type RpcId } from "./harness-mcp-request.ts";

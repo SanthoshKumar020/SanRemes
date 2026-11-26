@@ -45,7 +45,7 @@ export interface TraceTool {
   endedAt?: number;
   status: TraceStatus;
   error?: string;
-  /** Who measured it: OMB's own tools are timed by the server on every engine. */
+  /** Who measured it: SanRemes's own tools are timed by the server on every engine. */
   timedBy: "engine" | "sanremes";
   running?: boolean;
 }

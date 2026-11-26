@@ -66,7 +66,7 @@ at the official HTTP endpoint are recognized rather than replaced.
 Whop currently requests admin access across businesses your Whop account can
 manage, and its own consequential-action confirmations still apply. See the
 [official Whop MCP documentation](https://github.com/whopio/whop-mcp-server).
-This is an optional connected tool, not a change to OMB's subscription billing.
+This is an optional connected tool, not a change to SanRemes's subscription billing.
 
 ### Agentcard
 
@@ -192,7 +192,7 @@ in from another computer?** for an SSH tunnel or a browser elsewhere. **Open
 sign-in page** reopens the approval page if your browser blocked the first
 attempt.
 
-Keep the redirect URL private. Complete the flow in the same OMB browser/session
+Keep the redirect URL private. Complete the flow in the same SanRemes browser/session
 that started it, within five minutes. Cancellation or logging out ends the
 pending flow; a URL cannot be reused, and a return to the https address works
 once, for that sign-in only.

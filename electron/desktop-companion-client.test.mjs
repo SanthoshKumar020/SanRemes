@@ -60,11 +60,11 @@ describe("desktop companion endpoint", () => {
     expect(normalizeTailscaleCompanionEndpoint("http://HOST.example-tailnet.ts.net:9910/")).toBe(
       "http://host.example-tailnet.ts.net:9910",
     );
-    expect(normalizeDesktopCompanionEndpoint(`https://${LABEL}.openmausbot.com`)).toBe(
-      `https://${LABEL}.openmausbot.com`,
+    expect(normalizeDesktopCompanionEndpoint(`https://${LABEL}.sanremes.invalid`)).toBe(
+      `https://${LABEL}.sanremes.invalid`,
     );
-    expect(normalizeDesktopCompanionEndpoint(`${LABEL}.openmausbot.com`)).toBe(
-      `https://${LABEL}.openmausbot.com`,
+    expect(normalizeDesktopCompanionEndpoint(`${LABEL}.sanremes.invalid`)).toBe(
+      `https://${LABEL}.sanremes.invalid`,
     );
     // The control plane's second Cloudflare account gives addresses here.
     expect(normalizeDesktopCompanionEndpoint(`https://${LABEL}.sanremes.si`)).toBe(
@@ -75,15 +75,15 @@ describe("desktop companion endpoint", () => {
     );
     for (const endpoint of [
       "https://unrelated.example.com",
-      `http://${LABEL}.openmausbot.com`,
+      `http://${LABEL}.sanremes.invalid`,
       "http://10.0.0.4:8810",
       "http://host.local:8810",
       "https://10.0.0.4",
       "http://host.example-tailnet.ts.net/path",
-      `https://${LABEL}.openmausbot.com/path`,
+      `https://${LABEL}.sanremes.invalid/path`,
       "http://user@host.example-tailnet.ts.net",
       "http://host.example-tailnet.ts.net.evil.test",
-      `https://${LABEL}.openmausbot.com.evil.test`,
+      `https://${LABEL}.sanremes.invalid.evil.test`,
       `http://${LABEL}.sanremes.si`,
       `https://${LABEL}.sanremes.si/path`,
       `https://${LABEL}.sanremes.si.evil.test`,
@@ -93,8 +93,8 @@ describe("desktop companion endpoint", () => {
       `https://${LABEL}.evilsanremes.si`,
       "https://www.sanremes.si",
       "https://app.sanremes.si",
-      "https://accounts.openmausbot.com",
-      "https://c-opaque.openmausbot.com",
+      "https://accounts.sanremes.invalid",
+      "https://c-opaque.sanremes.invalid",
       "https://c-opaque.sanremes.si",
       `https://${LABEL.slice(0, -1)}.sanremes.si`,
       `https://${LABEL}0.sanremes.si`,
@@ -109,7 +109,7 @@ describe("desktop companion endpoint", () => {
   it("accepts one c-<32 hex> label under each listed domain, and only those", () => {
     // The third domain is a one-line change; until the owner names it, nothing new is accepted.
     expect(NEXT_MANAGED_COMPANION_HOST_SUFFIX).toBe("");
-    expect(MANAGED_COMPANION_HOST_SUFFIXES).toEqual(["openmausbot.com", "sanremes.si"]);
+    expect(MANAGED_COMPANION_HOST_SUFFIXES).toEqual(["sanremes.invalid", "sanremes.si"]);
     expect(Object.isFrozen(MANAGED_COMPANION_HOST_SUFFIXES)).toBe(true);
     for (const suffix of MANAGED_COMPANION_HOST_SUFFIXES) {
       expect(suffix).toMatch(/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/);
@@ -133,7 +133,7 @@ describe("desktop companion endpoint", () => {
   });
 
   it("validates, adds, and removes the encrypted credential document field", () => {
-    const hostedAccess = { ...access, endpoint: `https://${LABEL}.openmausbot.com` };
+    const hostedAccess = { ...access, endpoint: `https://${LABEL}.sanremes.invalid` };
     expect(desktopCompanionAccess({ [DESKTOP_COMPANION_FIELD]: hostedAccess })).toEqual(
       hostedAccess,
     );
@@ -193,15 +193,15 @@ describe("desktop companion pairing", () => {
       }),
     );
     const paired = await pairDesktopCompanion({
-      endpoint: `https://${LABEL}.openmausbot.com`,
+      endpoint: `https://${LABEL}.sanremes.invalid`,
       code: "654321",
       deviceName: "Desktop client",
       requestId: "request-https-01",
       fetchImpl,
     });
-    expect(paired).toEqual({ ...access, endpoint: `https://${LABEL}.openmausbot.com` });
+    expect(paired).toEqual({ ...access, endpoint: `https://${LABEL}.sanremes.invalid` });
     expect(fetchImpl).toHaveBeenCalledWith(
-      `https://${LABEL}.openmausbot.com/api/pair`,
+      `https://${LABEL}.sanremes.invalid/api/pair`,
       expect.objectContaining({ method: "POST" }),
     );
 

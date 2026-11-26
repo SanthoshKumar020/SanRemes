@@ -60,8 +60,6 @@ const ALLOWED: ReadonlyArray<{ file: string; snippet?: string; why: string }> = 
   { file: "packages/phone-protocol/src/credential-request.ts", snippet: "when Boat is selected", why: "the card that asks for a person's own Boat key" },
   { file: "server/boat-create-idempotency.ts", snippet: "unnamed Boat", why: "own-key repair: boat.dev's own name for a machine" },
   { file: "src/lib/boat-offer.ts", snippet: "SanRemes introduced me", why: "the email a person sends Boat to claim its credit" },
-  { file: "server/workspace-backup.ts", snippet: "OMB-WORKSPACE-1", why: "a backup file's format marker" },
-  { file: "electron/company-backups.mjs", snippet: "OMB-WORKSPACE-1", why: "a backup file's format marker" },
 ];
 
 function* sources(dir: string): Generator<string> {

@@ -37,7 +37,7 @@ export interface ChromeHost {
 }
 
 export interface ChromeEngine {
-  /** The agent-browser OMB installed and manages; an engine someone named picks its own browser unless a Chrome is named too. */
+  /** The agent-browser SanRemes installed and manages; an engine someone named picks its own browser unless a Chrome is named too. */
   managed: boolean;
 }
 
@@ -81,7 +81,7 @@ export function installedGoogleChrome(host: ChromeHost): string | null {
   return candidates.find((candidate) => host.exists(candidate)) ?? null;
 }
 
-/** Machine policies only: a managed machine runs Chrome for Testing in profiles of OMB's own instead. */
+/** Machine policies only: a managed machine runs Chrome for Testing in profiles of SanRemes's own instead. */
 export function chromePolicyManaged(host: ChromeHost): boolean {
   const { basename, join } = paths(host.platform);
   if (host.platform === "darwin") {

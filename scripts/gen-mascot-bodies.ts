@@ -379,7 +379,7 @@ function emitKotlin(bodies: Baked[]): string {
     })
     .join("\n")
 
-  return `package com.openmausbot.companion.ui
+  return `package com.sanremes.invalidpanion.ui
 
 /**
  * The mascot bodies a bot can wear — the Android half of the same solve that bakes

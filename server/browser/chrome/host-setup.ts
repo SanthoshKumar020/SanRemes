@@ -1,10 +1,10 @@
 // Ported from T3 Code's apps/server/src/preview/PreviewBrowserHost.ts,
 // Copyright 2026 T3 Tools Inc., used under the MIT License
 // (third_party/t3-code/LICENSE). Modified: plain TypeScript instead of Effect,
-// OMB's command and environment names, and an AppArmor profile pinned to one
+// SanRemes's command and environment names, and an AppArmor profile pinned to one
 // exact executable instead of a wildcard path.
 //
-// OMB never turns Chrome's sandbox off by itself on a host. A host that cannot
+// SanRemes never turns Chrome's sandbox off by itself on a host. A host that cannot
 // give it one gets the manual setup steps instead (a container, that switch), and
 // only an operator's explicit SANREMES_BROWSER_SANDBOX=0 launches without it. The
 // computer container image (also run on a VPS) is the exception: it drops

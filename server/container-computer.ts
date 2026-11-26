@@ -1,4 +1,4 @@
-// Cua-backed Local VM: OMB owns only the sandbox boundary; desktop automation is Cua Driver's (`cua-driver mcp` in the container).
+// Cua-backed Local VM: SanRemes owns only the sandbox boundary; desktop automation is Cua Driver's (`cua-driver mcp` in the container).
 import { execFileInGroupAsync } from "./group-exec.ts";
 import { createHash, randomBytes } from "node:crypto";
 import { lstatSync } from "node:fs";
@@ -390,7 +390,7 @@ export function imageLabelsMatch(labels: Record<string, string> | undefined): bo
   );
 }
 
-/** Ownership ignores image/driver versions, so an older OMB container stays removable. */
+/** Ownership ignores image/driver versions, so an older SanRemes container stays removable. */
 function containerOwnershipLabelsMatch(
   labels: Record<string, string> | undefined,
   target: LocalVmTarget,

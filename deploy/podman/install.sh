@@ -20,7 +20,7 @@
 set -eu
 
 settings() {
-  IMAGE_REPO=ghcr.io/milind-soni/openmausbot
+  IMAGE_REPO=ghcr.io/SanthoshKumar020/sanremes
   STABLE_URL=https://raw.githubusercontent.com/SanthoshKumar020/SanRemes/channels/stable.json
   RELEASES_URL=https://api.github.com/repos/SanthoshKumar020/SanRemes/releases/latest
   REPOSITORY_FILES=https://raw.githubusercontent.com/SanthoshKumar020/SanRemes
@@ -529,7 +529,7 @@ run_uninstall() {
   say "To remove the data too (some files belong to the container's other ids, so through Podman):"
   say "  podman unshare rm -rf $INSTALL_DIR"
   say "The copies of the data update.sh kept: podman volume ls --filter label=com.sanremes.role=update-backup"
-  say "The downloaded images: podman image ls ghcr.io/milind-soni/openmausbot"
+  say "The downloaded images: podman image ls ghcr.io/SanthoshKumar020/sanremes"
 }
 
 main() {

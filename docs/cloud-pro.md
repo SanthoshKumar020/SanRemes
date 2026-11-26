@@ -1,6 +1,6 @@
-# OMB Cloud: the home machine
+# SanRemes Cloud: the home machine
 
-OMB Cloud (the Starter, Pro and Max plans) gives one person an always-on
+SanRemes Cloud (the Starter, Pro and Max plans) gives one person an always-on
 SanRemes server of their own (a plan may instead sleep when idle: see
 [Sleeping homes](#sleeping-homes-the-power-read-and-the-sleep-handshake)). The plans differ in machine size, disk and
 included allowances; everything on this page applies to all of them. Each
@@ -8,10 +8,10 @@ customer gets one Fly app with one `home` machine that is always on, a volume
 at `/data`, and TLS at `https://<app>.fly.dev`. The desktop app, the phone and
 the web are windows onto it. Local use of the app is unchanged and free.
 Customers read its name as **SanRemes Cloud** wherever they meet it (the
-app, the Admin's pages, emails); "OMB Cloud" is this page's shorthand, and
+app, the Admin's pages, emails); "SanRemes Cloud" is this page's shorthand, and
 the app itself is still SanRemes.
 
-OMB Cloud includes no AI usage. The person signs in on their machine with their
+SanRemes Cloud includes no AI usage. The person signs in on their machine with their
 own Claude or ChatGPT subscription, or an API key, through the same sign-in
 flows as any SanRemes server. Nothing on a Cloud home is routed to a
 platform model gateway. The one exception is a free trial's Claude credit, a
@@ -460,7 +460,7 @@ the Cloud's address.
 
 ### Open in the app: `sanremes://cloud`
 
-The Cloud page (`https://cloud.openmausbot.com/cloud`) can offer **Open in the
+The Cloud page (`https://cloud.sanremes.invalid/cloud`) can offer **Open in the
 app** as a link to exactly `sanremes://cloud`. The app accepts that string
 and nothing else: no path, query, fragment or trailing slash, and it ignores
 any other form. Like `sanremes://organization`, it is an action, not a
@@ -806,7 +806,7 @@ On the Mac (the authority; `electron/computer-sharing.mjs`,
 - **Bound to the account and the machine.** The grant records the Cloud
   account id and the machine's origin from the verified Cloud session
   (`cloud-account.mjs`), and the Cloud home's environment id on first contact.
-  Signing out of OMB Cloud, another account signing in, the Cloud moving to
+  Signing out of SanRemes Cloud, another account signing in, the Cloud moving to
   another machine, or another server answering at that address ends that
   grant; a new one is made only once the verified session lists that Cloud as
   the person's own again. A Cloud
@@ -1458,7 +1458,7 @@ never echoes a secret.
 | --- | --- | --- |
 | `SANREMES_CLOUD_ROLE` | env | `home`. (`desktop` belongs to the Cloud desktop image and is refused here.) |
 | `SANREMES_CLOUD_MACHINE_ID` | env | The Admin's machine id (a UUID). Binds the volume. |
-| `SANREMES_CLOUD_ADMIN_URL` | secret | The Cloud origin, exact `https://`, e.g. `https://cloud.openmausbot.com`. |
+| `SANREMES_CLOUD_ADMIN_URL` | secret | The Cloud origin, exact `https://`, e.g. `https://cloud.sanremes.invalid`. |
 | `SANREMES_CLOUD_BOOTSTRAP_SECRET` | secret | 43 base64url characters (256 bits): the key the Admin signs pairing requests with. |
 | `SANREMES_PUBLIC_URL` | env | The machine's exact `https://` origin, `https://<app>.fly.dev`. |
 | `SANREMES_CLOUD_LEGACY_ORIGINS` | env | Optional, only for a home that moved to another provider: the exact `https://` origins it answered at before, comma-separated (at most 8, never a loopback name), e.g. `https://<app>.fly.dev`. |
@@ -1472,7 +1472,7 @@ never echoes a secret.
 
 ### No model gateway
 
-OMB Cloud includes no AI, so the contract has no model gateway. If a Cloud
+SanRemes Cloud includes no AI, so the contract has no model gateway. If a Cloud
 home is ever given `SANREMES_HOSTED_MODEL_URL`, `SANREMES_HOSTED_MODEL_TOKEN` or
 `SANREMES_HOSTED_MODELS` (an Admin from before this decision set all three), it
 still boots, logs one warning naming the variables (never their values), and
@@ -1494,16 +1494,16 @@ For each service the Admin has configured, it also sets:
 
 | Variable | Fly | Value |
 | --- | --- | --- |
-| `SANREMES_CLOUD_BOAT_URL` | env | `https://cloud.openmausbot.com/api/cloud/services/boat/api/box/v1`, the Admin's Boat relay. The app speaks Boat's public API v1 (`/sandboxes`, `sandbox` envelopes); this relay still serves Boat's retired box API (`/boxes`, `box` envelopes), so for a base ending in `/api/box/v1` the app translates paths and answers in one place, `server/boat-relay.ts`. A base ending in `/api/v1` gets v1 as it is. Bots use it only for cloud computers, as a tool on their own engine; no turn runs on Boat's own agent, so nothing calls its `/prompt`, `/events`, `/prompts/{id}` or `/interrupt` routes. |
+| `SANREMES_CLOUD_BOAT_URL` | env | `https://cloud.sanremes.invalid/api/cloud/services/boat/api/box/v1`, the Admin's Boat relay. The app speaks Boat's public API v1 (`/sandboxes`, `sandbox` envelopes); this relay still serves Boat's retired box API (`/boxes`, `box` envelopes), so for a base ending in `/api/box/v1` the app translates paths and answers in one place, `server/boat-relay.ts`. A base ending in `/api/v1` gets v1 as it is. Bots use it only for cloud computers, as a tool on their own engine; no turn runs on Boat's own agent, so nothing calls its `/prompt`, `/events`, `/prompts/{id}` or `/interrupt` routes. |
 | `SANREMES_CLOUD_BOAT_TOKEN` | secret | This machine's Boat relay token (`box_omb_…`). It is not a Boat key and works only through the relay. |
-| `SANREMES_CLOUD_VOICE_URL` | env | `https://cloud.openmausbot.com/api/cloud/services/voice/v1`, the Admin's voice relay. |
+| `SANREMES_CLOUD_VOICE_URL` | env | `https://cloud.sanremes.invalid/api/cloud/services/voice/v1`, the Admin's voice relay. |
 | `SANREMES_CLOUD_VOICE_TOKEN` | secret | This machine's voice relay token (`omb_voice_…`). |
 | `SANREMES_TTS_DEFAULT_VOICE` | env | An ElevenLabs voice id, used until the person picks a voice or another speech provider in Settings. |
-| `SANREMES_CLOUD_DECIDER_URL` | env | `https://cloud.openmausbot.com/api/cloud/services/decider`, the Admin's Jev relay. It is a Jev base URL, used as it is: the decider adds `/v1/systemone`, so every included decision goes to exactly `<SANREMES_CLOUD_DECIDER_URL>/v1/systemone`, and extraction adds `/v1/extract`. |
+| `SANREMES_CLOUD_DECIDER_URL` | env | `https://cloud.sanremes.invalid/api/cloud/services/decider`, the Admin's Jev relay. It is a Jev base URL, used as it is: the decider adds `/v1/systemone`, so every included decision goes to exactly `<SANREMES_CLOUD_DECIDER_URL>/v1/systemone`, and extraction adds `/v1/extract`. |
 | `SANREMES_CLOUD_DECIDER_TOKEN` | secret | This machine's decision relay token (`omb_decide_…`). It is not a Jev key and works only through the relay. |
-| `SANREMES_CLOUD_X_URL` | env | `https://cloud.openmausbot.com/api/cloud/services/x`, the Admin's treg relay; the client calls `<SANREMES_CLOUD_X_URL>/call/<endpoint>` for the X tools' eight endpoints, `/research/search`, `/research/endpoints/<id>` and `/research/call/<id>` for the research tools, and `GET /usage` for the month's calls on the Apps page's X card (`GET /api/x/status`). The home asks `GET /research/search` with no job at start, which spends nothing: a 400 means research is on, an off answer hides the research tools (x_search stays) until an hour later or a restart, and a research call refused as off does the same. A person's own treg key (Settings → API keys) wins over it and goes straight to treg. |
+| `SANREMES_CLOUD_X_URL` | env | `https://cloud.sanremes.invalid/api/cloud/services/x`, the Admin's treg relay; the client calls `<SANREMES_CLOUD_X_URL>/call/<endpoint>` for the X tools' eight endpoints, `/research/search`, `/research/endpoints/<id>` and `/research/call/<id>` for the research tools, and `GET /usage` for the month's calls on the Apps page's X card (`GET /api/x/status`). The home asks `GET /research/search` with no job at start, which spends nothing: a 400 means research is on, an off answer hides the research tools (x_search stays) until an hour later or a restart, and a research call refused as off does the same. A person's own treg key (Settings → API keys) wins over it and goes straight to treg. |
 | `SANREMES_CLOUD_X_TOKEN` | secret | This machine's X research relay token (`omb_x_…`). Not a treg key; it works only through the relay, within the plan's monthly X research calls. A signed-in desktop gets its own (`omb_xd_…`) from `POST /api/cloud/desktop/services/x` and hands it to its server in memory. |
-| `SANREMES_CLOUD_HOSTING_URL` | env | `https://cloud.openmausbot.com/api/cloud/services/hosting/v1`, the Admin's app hosting relay, set only where the Admin has included app hosting on and the plan is paid. The server lists the Cloud's apps and the plan's count (`GET /apps`), publishes a bot's folder (`PUT /apps/<key>`, then each file the relay asks for) and deletes (`DELETE /apps/<key>`); `server/host/included-hosting.ts`. Absent: bots publish to the person's own Netlify account, as on a computer. |
+| `SANREMES_CLOUD_HOSTING_URL` | env | `https://cloud.sanremes.invalid/api/cloud/services/hosting/v1`, the Admin's app hosting relay, set only where the Admin has included app hosting on and the plan is paid. The server lists the Cloud's apps and the plan's count (`GET /apps`), publishes a bot's folder (`PUT /apps/<key>`, then each file the relay asks for) and deletes (`DELETE /apps/<key>`); `server/host/included-hosting.ts`. Absent: bots publish to the person's own Netlify account, as on a computer. |
 | `SANREMES_CLOUD_HOSTING_TOKEN` | secret | This machine's app hosting relay token (`omb_host_…`). Not a Netlify token; it works only through the relay, within the plan's apps and monthly publishes. Bots never get it: they call `publish_app`, and the server publishes. |
 
 A service is included only when both its URL and its token are set
@@ -1584,7 +1584,7 @@ computers belong to this machine on every request.
   engine, so a process running as the same user that may trace it (the
   kernel's ptrace policy, `kernel.yama.ptrace_scope`, decides) could read
   them there. That is why a guest's turn gets no shell (above); the complete
-  fix is engines under a user of their own. A relay token is only this customer's own OMB Cloud
+  fix is engines under a user of their own. A relay token is only this customer's own SanRemes Cloud
   allowance: it works only through the Admin, only on this machine's cloud
   computers, voice and decisions, and only up to the monthly caps.
 - A refusal from the Boat or voice relay (for example, the month's cloud
@@ -1631,7 +1631,7 @@ credit, the Admin also sets:
 
 | Variable | Fly | Value |
 | --- | --- | --- |
-| `SANREMES_CLOUD_AI_URL` | env | `https://cloud.openmausbot.com/api/cloud/services/ai/v1`, an OpenAI-compatible base URL with its `/v1` (as the Admin sends it): `POST {url}/chat/completions` and `GET {url}/models` only. Nothing Anthropic-shaped (no `/v1/messages`) answers a credit token. |
+| `SANREMES_CLOUD_AI_URL` | env | `https://cloud.sanremes.invalid/api/cloud/services/ai/v1`, an OpenAI-compatible base URL with its `/v1` (as the Admin sends it): `POST {url}/chat/completions` and `GET {url}/models` only. Nothing Anthropic-shaped (no `/v1/messages`) answers a credit token. |
 | `SANREMES_CLOUD_AI_TOKEN` | secret | This machine's credit token (`omb_ai_…`), sent as `Authorization: Bearer`. It works only through the relay, only for this account's credit, and not at all once it is spent or the Cloud is deleted. |
 
 - **SanRemes's own chat engine, nothing else.** `server/cloud-credit-provider.ts`
@@ -2304,9 +2304,9 @@ launch: What's new comes first, and the Boat card waits for a later one.
    button carries the slide's tag on the Cloud's funnel (`app_whats_new_pro`,
    `app_whats_new_team`): **Get Pro** opens the Add a Cloud dialog with
    `source: app_whats_new_pro`, which its checkout sends; **See the new Cloud**
-   opens `https://cloud.openmausbot.com/cloud?src=app_whats_new_pro` (the plans,
+   opens `https://cloud.sanremes.invalid/cloud?src=app_whats_new_pro` (the plans,
    for someone without one); **Start a Team** opens
-   `https://cloud.openmausbot.com/pro/buy?plan=team&src=app_whats_new_team`, the
+   `https://cloud.sanremes.invalid/pro/buy?plan=team&src=app_whats_new_team`, the
    website's Get Team with this slide's tag (the staging Admin's site for an app
    on staging), and for someone with a plan of their own, whom that page would
    only tell to write in, the Add a Cloud dialog with `source:
@@ -2371,7 +2371,7 @@ descriptor's `capabilities.cloudHome`).
 On the person's own Cloud, open in the app's window, **Settings → SanRemes Cloud**
 shows the plan read only (`cloud-plan:*`: its name and whether it is active,
 **Manage in your browser** and **Switch to this computer**). It is listed only
-on an OMB Cloud home (`config.cloudHome`), never on another server open in the
+on an SanRemes Cloud home (`config.cloudHome`), never on another server open in the
 window. Main answers it for the Cloud this account verified, or last verified
 while a check is failing or the sign-in has ended (`myCloudOrigin`, the rule
 the Cloud's microphone uses too), so that page says
@@ -2646,8 +2646,8 @@ ends the move as before.
 ## Published image
 
 Every push to `main` and every release tag publishes the home machine image as
-`ghcr.io/milind-soni/openmausbot-cloud-home`, tagged `latest` (main only), `sha-<commit>` and the release tag.
+`ghcr.io/SanthoshKumar020/sanremes-cloud-home`, tagged `latest` (main only), `sha-<commit>` and the release tag.
 It is the `Dockerfile`'s `cloud-home` target for the same commit, with Grok and the current Claude Code and
 Codex installed. The Docker workflow's summary prints the digest. Set it in the Admin as
-`SANREMES_CLOUD_HOME_IMAGE=ghcr.io/milind-soni/openmausbot-cloud-home@sha256:…`; changing it rolls the new image
+`SANREMES_CLOUD_HOME_IMAGE=ghcr.io/SanthoshKumar020/sanremes-cloud-home@sha256:…`; changing it rolls the new image
 out to existing machines one at a time, reverting automatically on a failed health check.

@@ -51,7 +51,7 @@ reveals nothing about `psk`: the two are separate HMAC outputs under different l
   `e2e=<b64u(JSON)>`, where the JSON is:
 
 ```json
-{"v":1,"k":"<b64u 65-byte T.pub, 87 chars>","h":"<b64u 16-byte hostId, 22 chars>","r":["relay1.openmausbot.com","relay2.openmausbot.com"]}
+{"v":1,"k":"<b64u 65-byte T.pub, 87 chars>","h":"<b64u 16-byte hostId, 22 chars>","r":["relay1.sanremes.com","relay2.sanremes.com"]}
 ```
 
 - **Field rules:**
@@ -205,7 +205,7 @@ This uses the yamux wire format (`hashicorp/yamux` spec): a 12-byte header of `v
 - **Phone side:**
   - **iOS:** a loopback listener per session, `NWListener` on `127.0.0.1:<random>`. Each accepted TCP connection becomes one stream.
     - Before opening the stream the listener reads the first request head (up to 16 KiB, 2 s deadline). The head MUST carry
-      `X-OMB-Loopback: <b64u 32-byte per-launch secret>`.
+      `X-SanRemes-Loopback: <b64u 32-byte per-launch secret>`.
     - Anything else is closed without opening a stream.
     - `CompanionClient` adds that header on every request for an E2E connection, including `viewerSocketRequest` and `BrowserLiveClient`.
   - **Android:** an in-process `javax.net.SocketFactory` that returns a `java.net.Socket` subclass backed by one stream. There is no port.
@@ -215,7 +215,7 @@ This uses the yamux wire format (`hashicorp/yamux` spec): a 12-byte header of `v
 
 ## 9. Relay protocol (outside the encryption)
 
-- **Hosts.** The relay nodes are `relay1.openmausbot.com` and `relay2.openmausbot.com`, WSS on 443. Caddy terminates TLS and proxies to the
+- **Hosts.** The relay nodes are `relay1.sanremes.com` and `relay2.sanremes.com`, WSS on 443. Caddy terminates TLS and proxies to the
   relay on `127.0.0.1:8080`. Auth is always the **first WebSocket message**, which works with every WebSocket client (Node's built-in client
   included).
 - **Pre-auth rules:**
@@ -267,7 +267,7 @@ own the `sid`, and a `sid` is single-use with a 10 s life. The relay then splice
 **Control plane endpoint:** `POST /v1/installations/self/relay-token` with `Authorization: Bearer <omb_install_…>`.
 - **Request body:** `{"appVersion":"0.1.150","devices":{"e2e":2,"legacy":1}}`. The counts are for adoption gates and carry no
   identifiers.
-- **200 response:** `{"token","hostId","nodes":["relay1.openmausbot.com","relay2.openmausbot.com"],"expiresAt","refreshAfter"}`.
+- **200 response:** `{"token","hostId","nodes":["relay1.sanremes.com","relay2.sanremes.com"],"expiresAt","refreshAfter"}`.
   - `refreshAfter = iat + 1 h`.
   - `nodes` is ordered by rendezvous hash: highest `SHA256(hostId ‖ nodeName)[0:8]` first. A future US node is ranked first when the
     request's `cf.continent` is NA or SA.

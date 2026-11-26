@@ -7,7 +7,7 @@ import nativeText from "./native-text.cjs";
 
 const { englishText } = nativeText;
 
-export const CLOUD_ORIGIN = "https://cloud.openmausbot.com";
+export const CLOUD_ORIGIN = "https://cloud.sanremes.invalid";
 /** The staging Admin (Dodo test mode, real test Clouds): a fixed address, on only with SANREMES_CLOUD_STAGING=1. */
 export const STAGING_CLOUD_ORIGIN = "https://sanremes-cloud-staging.fly.dev";
 /** Which Admin this app signs in to, and the files that depend on it (the sign-in, saved servers with the Cloud's

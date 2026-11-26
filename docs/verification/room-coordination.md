@@ -498,7 +498,7 @@ Two isolated `gpt-5.6-sol` trials used temporary work folders and real tools:
   `/tmp/sanremes-live-team-0913.MwRY2k/nested-gpt-5.6-sol-1789253398198/result.json`.
 
 The first run also exposed a model-quality limitation: Patch claimed Nora had
-verified its work without a corresponding OMB handoff. Clive correctly treated
+verified its work without a corresponding SanRemes handoff. Clive correctly treated
 that claim as insufficient and requested an actual independent check. Prompts
 now explicitly require real coordination receipts for named-bot participation;
 this is guidance, not a guarantee that every model report is truthful. The

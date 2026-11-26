@@ -55,7 +55,7 @@ let companion: CompanionState = {
   connectedDeviceIds: full ? ["iphone", ...(ten ? ["ipad"] : [])] : shown === "one" ? ["iphone"] : [],
   routes: { wifi: { on: full || shown === "one", since: now - 9e8 }, relay: { on: full, since: now - 9e8 }, tailscale: tailRoute, https: { on: false, since: null } },
   tailnetShare: ready && tailscale !== "unshared" ? { on: true, origin: "http://ada-macbook.tail4c2e.ts.net:8799", https: false, problem: null } : undefined,
-  e2e: { enabled: params.get("e2e") !== "0", relay: "connected", node: "relay1.openmausbot.com", descriptor: null },
+  e2e: { enabled: params.get("e2e") !== "0", relay: "connected", node: "relay1.sanremes.invalid", descriptor: null },
   ...(params.get("code") === "1" ? { pairing: { code: "482913", token: "omb_pair_PreviewPreviewPreviewPreviewPreviewPreviewP", expiresAt: now + 10 * MIN } } : {}),
   ...(params.get("notice") === "1" ? { notices: ["wifi" as const] } : {}),
 };
@@ -78,7 +78,7 @@ const companionBridge = {
 };
 const environments: Array<{ id: string; kind: "local" | "remote"; name: string; origin?: string; home?: boolean; color?: string }> = full ? [
   { id: "local", kind: "local" as const, name: "This computer" },
-  { id: "home", kind: "remote" as const, name: "Ada’s Cloud", origin: "https://ada.mausbot.cloud", home: true, color: "violet" },
+  { id: "home", kind: "remote" as const, name: "Ada’s Cloud", origin: "https://ada.sanremes.invalid", home: true, color: "violet" },
   { id: "mini", kind: "remote" as const, name: long ? "Studio Mac mini in the back office (rendering and nightly builds)" : "Studio Mac mini", origin: "http://studio-mini.tail4c2e.ts.net:8799" },
   { id: "vps", kind: "remote" as const, name: "Hetzner box", origin: "https://sanremes.example.com" },
   ...(ten ? [{ id: "lan", kind: "remote" as const, name: "Office NUC", origin: "http://192.168.1.40:8799" }] : []),

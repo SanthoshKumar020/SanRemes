@@ -189,16 +189,16 @@ describe("a Cloud home's pushes through its Admin", () => {
 describe("which transport a server uses", () => {
   const tunnelFile = () => join(dataDir, "tunnel-account.json");
   const source = (env: NodeJS.ProcessEnv, cloudHome: typeof HOME | null) =>
-    new PhonePushAccessSource({ env, tunnelFile: tunnelFile(), defaultControlPlane: "https://accounts.openmausbot.com", cloudHome }).current();
+    new PhonePushAccessSource({ env, tunnelFile: tunnelFile(), defaultControlPlane: "https://accounts.sanremes.invalid", cloudHome }).current();
 
   it("is the Admin only for a Cloud home with no installation credential", () => {
     expect(source({}, null)).toBeNull();
     expect(source({}, HOME)).toEqual({ admin: ADMIN, machineId: MACHINE, secret: SECRET });
     expect(source({}, { ...HOME, adminOrigin: `${ADMIN}/` })).toEqual({ admin: ADMIN, machineId: MACHINE, secret: SECRET });
     // An installation credential wins, from the environment or `sanremes login`'s file.
-    expect(source({ SANREMES_PUSH_CREDENTIAL: CREDENTIAL }, HOME)).toEqual({ controlPlane: "https://accounts.openmausbot.com", credential: CREDENTIAL });
+    expect(source({ SANREMES_PUSH_CREDENTIAL: CREDENTIAL }, HOME)).toEqual({ controlPlane: "https://accounts.sanremes.invalid", credential: CREDENTIAL });
     writeFileSync(tunnelFile(), JSON.stringify({ companionInstallationCredential: CREDENTIAL }));
-    expect(source({}, HOME)).toEqual({ controlPlane: "https://accounts.openmausbot.com", credential: CREDENTIAL });
+    expect(source({}, HOME)).toEqual({ controlPlane: "https://accounts.sanremes.invalid", credential: CREDENTIAL });
     writeFileSync(tunnelFile(), JSON.stringify({}));
     expect(source({}, HOME)).toEqual({ admin: ADMIN, machineId: MACHINE, secret: SECRET });
   });

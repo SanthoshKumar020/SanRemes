@@ -1,5 +1,5 @@
 // Real Grok CLI, disposable HOME, synthetic pixels and a loopback model only.
-// No subscription login, real provider request, or live OMB data is involved.
+// No subscription login, real provider request, or live SanRemes data is involved.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";

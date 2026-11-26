@@ -33,17 +33,17 @@ Stagehand, browser-use, browserless, Lightpanda) is summarised at the end.
 - An MCP stdio server (`agent-browser mcp --tools core`) whose verbs match our
   17 `browser_*` tools almost one to one.
 - A stream server: JPEG frames, the active URL, tabs, and viewport metadata.
-  Upstream does **not** enforce human priority. OMB owns that gate.
+  Upstream does **not** enforce human priority. SanRemes owns that gate.
 
 ## Shape
 
 ```
-bot turn → scoped OMB MCP proxy → profile control gate → agent-browser MCP → Chrome
-owner UI ← authenticated SSE ← OMB ← loopback WebSocket frames ← agent-browser
+bot turn → scoped SanRemes MCP proxy → profile control gate → agent-browser MCP → Chrome
+owner UI ← authenticated SSE ← SanRemes ← loopback WebSocket frames ← agent-browser
 owner UI → authenticated POST → control gate → acknowledged native input → Chrome
 ```
 
-`browserIntegration()` in `server/index.ts` mounts a turn-scoped OMB proxy,
+`browserIntegration()` in `server/index.ts` mounts a turn-scoped SanRemes proxy,
 guarded by the workspace flag, bot switch, and provider's `browserMcp`
 capability. Native session identity and encryption keys stay in the server.
 
@@ -110,7 +110,7 @@ capability. Native session identity and encryption keys stay in the server.
   last for one server run, are not saved, and close on deletion/profile exit.
   Profile edits include a stale-list check; deletion removes only that exact
   profile's saved state. Do not use upstream `state clear --all` for this.
-- These controls gate OMB's browser tools, not arbitrary host shell access.
+- These controls gate SanRemes's browser tools, not arbitrary host shell access.
   Browser profiles are login separation, **not** OS security sandboxes.
 
 See [the native verification recipe](../verification/browser-live.md).
@@ -142,7 +142,7 @@ system prompt teaches them. No adapter.
   Chrome attaches agent-browser to the person's own running Chrome
   (`AGENT_BROWSER_AUTO_CONNECT`: Chrome's `DevToolsActivePort`, then ports
   9222/9229), so the bots act inside their real, signed-in browser. It never
-  restores OMB's saved state into that Chrome or saves its cookies out, never
+  restores SanRemes's saved state into that Chrome or saves its cookies out, never
   closes it at shutdown, and has no signed-in sites list: its sign-ins are
   Chrome's own. The person turns on remote debugging at
   `chrome://inspect/#remote-debugging` (Chrome 144+); Chrome asks before it

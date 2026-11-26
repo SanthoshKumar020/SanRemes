@@ -21,11 +21,11 @@ services:
         ENGINES: ${ENGINES:-}
     # update.sh pins SANREMES_IMAGE in .env to the stable version's digest. Without it: `latest`, prebuilt on every main
     # push; `docker compose up --build` builds from source instead.
-    image: ${SANREMES_IMAGE:-ghcr.io/milind-soni/openmausbot:latest}
+    image: ${SANREMES_IMAGE:-ghcr.io/SanthoshKumar020/sanremes:latest}
     restart: unless-stopped
     # The bots' browsers (docs/browser-packaging.md, "Process hygiene"): an
     # init collects the browser processes whose parents exit, and Chrome
-    # gets the shared memory OMB's desktop containers give it.
+    # gets the shared memory SanRemes's desktop containers give it.
     init: true
     shm_size: 512m
     volumes:

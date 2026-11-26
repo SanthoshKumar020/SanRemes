@@ -74,7 +74,7 @@ The launcher prepares these cases:
   decide to call the tool.
 - **Manual inbox check** is created through the routine API and run twice for
   Pepper. Both fresh executions report into **Fleet health reports**, inside
-  the **OMB management** folder. Its next scheduled occurrence is an hour later.
+  the **SanRemes management** folder. Its next scheduled occurrence is an hour later.
 - **Provider failure example** is created for **Miso** and run once. Miso's
   isolated fake engine deliberately exits early, producing a failure receipt.
 - **Automatic scheduled check** is scheduled for Pepper about twelve seconds
@@ -122,7 +122,7 @@ The final startup JSON includes the server `url`, `previewUrl`, `pepperId`,
 7. Open bot settings → Routines. It must use the same routine editor and central
    logs, without creating a second definition or competing history page.
    Confirm that the chat's model header and Ask composer retain their positions.
-8. Expand Pepper's threads. **OMB management** contains one **Fleet health
+8. Expand Pepper's threads. **SanRemes management** contains one **Fleet health
    reports** thread, not separate sidebar entries for the two executions.
    Right-click the folder (or use its actions menu) → **Mark folder as read**.
    Its unread dots clear without selecting a conversation or resolving any

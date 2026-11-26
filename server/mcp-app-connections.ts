@@ -1,4 +1,4 @@
-// OMB's own connections to MCP app servers: they read an app's UI resource and run its view's calls long
+// SanRemes's own connections to MCP app servers: they read an app's UI resource and run its view's calls long
 // after the turn that called the tool has ended. A command server is spawned with the probe environment, and where the
 // bots' turns are boxed it is started as they start it: in the bot box (as server/mcp-probe.ts does for Test).
 import { createHash } from "node:crypto";

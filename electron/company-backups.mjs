@@ -8,7 +8,7 @@ import { pipeline } from "node:stream/promises";
 const MAX_BYTES = 10 * 1024 ** 3;
 const PART_BYTES = 64 * 1024 ** 2;
 const SPACE_MARGIN = 64 * 1024 ** 2;
-const MAGIC = Buffer.from("OMB-WORKSPACE-1\n");
+const MAGIC = Buffer.from("SANREMES-WORK-1\n");
 const HEADER_BYTES = MAGIC.length + 16 + 12;
 const MIN_BYTES = HEADER_BYTES + 16;
 const UUID = /^[a-f\d]{8}-[a-f\d]{4}-4[a-f\d]{3}-[89ab][a-f\d]{3}-[a-f\d]{12}$/;

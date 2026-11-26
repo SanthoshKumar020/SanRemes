@@ -121,7 +121,7 @@ try {
   assert(restored.tables.some((table: { name: string }) => table.name === "regional_totals"));
   assert.equal((await api("POST", DATA_ROUTES.page(bot.id), { cardId: latest.id, offset: 99_999, limit: 1 })).rows[0][7], "Final order");
 
-  preview = await mountPreview(fixture, { entry: "/scripts/testing/threads-preview.tsx", route: "/__data.html", title: "Isolated OMB Data", logLevel: "warn" });
+  preview = await mountPreview(fixture, { entry: "/scripts/testing/threads-preview.tsx", route: "/__data.html", title: "Isolated SanRemes Data", logLevel: "warn" });
   const { binary, chrome } = await ensureUiBrowser(process.env, (line) => console.error(`Data fixture: ${line}`));
   // The private HOME isolates sessions; one letter fits macOS's socket-path limit.
   handle = { url, previewUrl: preview.previewUrl, binary, chrome, home: dataDir, session: "d", botId: bot.id, logPath };

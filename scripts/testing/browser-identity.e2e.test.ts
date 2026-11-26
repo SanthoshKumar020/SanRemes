@@ -1,6 +1,6 @@
-// agent-browser drives the Chrome OMB resolves, through the generated launcher and the identity connection, as the server
+// agent-browser drives the Chrome SanRemes resolves, through the generated launcher and the identity connection, as the server
 // does. Runs when agent-browser resolves (tools directory, SANREMES_AGENT_BROWSER_PATH or PATH) or SANREMES_UI_E2E=1 asks for the
-// download. The Chrome is SANREMES_CHROME_PATH, else the one OMB picks on this machine (an installed Google Chrome), else the
+// download. The Chrome is SANREMES_CHROME_PATH, else the one SanRemes picks on this machine (an installed Google Chrome), else the
 // Chrome for Testing agent-browser installs into the tools directory, else an installed Google Chrome that policies manage
 // (agent-browser installs nothing where it finds one, as on GitHub's Windows runners).
 import { mkdtempSync } from "node:fs";
@@ -26,7 +26,7 @@ afterAll(async () => { await removeTempDir(out); });
 const home = userInfo().homedir;
 const machineEnv = { ...process.env, HOME: home, USERPROFILE: home };
 
-/** What OMB would run here for its own engine, read without starting anything. */
+/** What SanRemes would run here for its own engine, read without starting anything. */
 function chromeOmbPicks(): string | null {
   const plan = new ChromeLauncher({ dataDir: out, env: machineEnv, engine: () => ({ managed: true }), log: () => {} }).plan();
   return plan.kind === "chrome" ? plan.chrome.path : null;

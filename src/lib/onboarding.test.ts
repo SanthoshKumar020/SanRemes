@@ -102,7 +102,7 @@ describe("welcomeViewer", () => {
   });
 });
 
-describe("first run on an OMB Cloud home", () => {
+describe("first run on an SanRemes Cloud home", () => {
   const connected = welcomeViewer({ kind: "session", scopes: ["admin", "client"], via: "cookie", cloudHome: true });
   const engine = (id: string, authenticated: boolean | undefined, state = "available") => ({ id, state, authenticated });
   const ready = (instance: ReturnType<typeof engine>) => instance.state === "available" && instance.authenticated !== false;

@@ -156,7 +156,7 @@ try {
   writeFileSync(dayFile, [...kept.map(resumeShift), ...spans.map((span) => JSON.stringify(span))].join("\n") + "\n");
 
   await control(["send", "--bot", clive.id, "--task", clive.activeTaskId, "--text", "Draft the launch email for Friday"]);
-  ui = await mountPreview(fixture, { entry: "/scripts/testing/usage-traces-preview.tsx", route: "/__usage-traces.html", title: "Isolated OMB Usage", logLevel: "silent" });
+  ui = await mountPreview(fixture, { entry: "/scripts/testing/usage-traces-preview.tsx", route: "/__usage-traces.html", title: "Isolated SanRemes Usage", logLevel: "silent" });
   console.log(JSON.stringify({ ...fixture.info, previewUrl: ui.previewUrl, gate }));
   await parkUntilSignal();
 } finally {

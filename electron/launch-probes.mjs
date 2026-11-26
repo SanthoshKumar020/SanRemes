@@ -30,8 +30,8 @@ export function hostKind(target) {
   try { host = new URL(typeof target === "string" ? target : target?.url ?? String(target)).hostname.toLowerCase(); } catch { return "other"; }
   if (LOOPBACK.has(host)) return null;
   if (host === "github.com" || host.endsWith(".github.com") || host.endsWith(".githubusercontent.com")) return "updates";
-  if (host === "accounts.openmausbot.com") return "accounts";
-  if (host.endsWith(".openmausbot.com") || host.endsWith(".mausbot.cloud") || host.endsWith(".fly.dev")) return "cloud";
+  if (host === "accounts.sanremes.invalid") return "accounts";
+  if (host.endsWith(".sanremes.invalid") || host.endsWith(".sanremes.invalid") || host.endsWith(".fly.dev")) return "cloud";
   return "other";
 }
 

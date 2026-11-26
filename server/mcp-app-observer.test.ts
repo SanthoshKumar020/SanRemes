@@ -311,7 +311,7 @@ describe("the observer object", () => {
   });
 });
 
-describe("OMB's own client and the UI extension", () => {
+describe("SanRemes's own client and the UI extension", () => {
   it("advertises it, and against a strict server falls back to the plain handshake once and says refused", async () => {
     for (const strictInitialize of ["http-400", "jsonrpc-error"] as const) {
       const fake = await startFakeHttpMcp({ strictInitialize, tools: HTTP_TOOLS });

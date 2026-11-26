@@ -41,6 +41,6 @@ against the built image.
   throwaway signing keys and a temporary home. No real license key, hosted
   tenant or cloud Admin was involved; this is not production qualification.
 - The cloud Admin's own license check (`verifyLicenseKey` called directly) has
-  no grace period; only the OMB server's `register()` path does.
+  no grace period; only the SanRemes server's `register()` path does.
 - The Settings banner is proven from fixtures in
   `src/components/LicenseExpiryBanner.test.ts`, not driven headlessly.

@@ -27,8 +27,8 @@ export function pageHostKind(url: string, own: string): HostKind | null {
   } catch { return "other"; }
   if (host === "127.0.0.1" || host === "localhost") return null;
   if (host === "github.com" || host.endsWith(".github.com") || host.endsWith(".githubusercontent.com")) return "updates";
-  if (host === "accounts.openmausbot.com") return "accounts";
-  if (host.endsWith(".openmausbot.com") || host.endsWith(".mausbot.cloud") || host.endsWith(".fly.dev")) return "cloud";
+  if (host === "accounts.sanremes.invalid") return "accounts";
+  if (host.endsWith(".sanremes.invalid") || host.endsWith(".sanremes.invalid") || host.endsWith(".fly.dev")) return "cloud";
   return "other";
 }
 

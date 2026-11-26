@@ -74,7 +74,7 @@ describe("the fixture's included app hosting relay", () => {
   it("passes a loopback stand-in and its token through together, and neither for any other address", () => {
     expect(childEnv({ SANREMES_CLOUD_HOSTING_URL: " http://127.0.0.1:4400/api/cloud/services/hosting/v1 ", SANREMES_CLOUD_HOSTING_TOKEN: "omb_host_fixture" }))
       .toMatchObject({ SANREMES_CLOUD_HOSTING_URL: "http://127.0.0.1:4400/api/cloud/services/hosting/v1", SANREMES_CLOUD_HOSTING_TOKEN: "omb_host_fixture" });
-    for (const url of ["https://cloud.openmausbot.com/api/cloud/services/hosting/v1", "http://localhost:4400/api/cloud/services/hosting/v1", "http://192.0.2.1:4400", "http://127.0.0.1:4400/../x?y", ""]) {
+    for (const url of ["https://cloud.sanremes.invalid/api/cloud/services/hosting/v1", "http://localhost:4400/api/cloud/services/hosting/v1", "http://192.0.2.1:4400", "http://127.0.0.1:4400/../x?y", ""]) {
       const env = childEnv({ SANREMES_CLOUD_HOSTING_URL: url, SANREMES_CLOUD_HOSTING_TOKEN: "omb_host_real" });
       expect(env, url).not.toHaveProperty("SANREMES_CLOUD_HOSTING_URL");
       expect(env, url).not.toHaveProperty("SANREMES_CLOUD_HOSTING_TOKEN");
@@ -87,7 +87,7 @@ describe("the fixture's X research relay", () => {
   it("passes a loopback relay stub and its token through, the token only with the stub", () => {
     expect(childEnv({ SANREMES_CLOUD_X_URL: " http://127.0.0.1:4200/api/cloud/services/x ", SANREMES_CLOUD_X_TOKEN: "omb_x_fixture" }))
       .toMatchObject({ SANREMES_CLOUD_X_URL: "http://127.0.0.1:4200/api/cloud/services/x", SANREMES_CLOUD_X_TOKEN: "omb_x_fixture" });
-    for (const url of ["https://cloud.openmausbot.com/api/cloud/services/x", "http://localhost:4200/api/cloud/services/x", "http://192.0.2.1:4200", "http://127.0.0.1:4200/../x?y", ""]) {
+    for (const url of ["https://cloud.sanremes.invalid/api/cloud/services/x", "http://localhost:4200/api/cloud/services/x", "http://192.0.2.1:4200", "http://127.0.0.1:4200/../x?y", ""]) {
       const env = childEnv({ SANREMES_CLOUD_X_URL: url, SANREMES_CLOUD_X_TOKEN: "omb_x_real" });
       expect(env, url).not.toHaveProperty("SANREMES_CLOUD_X_URL");
       expect(env, url).not.toHaveProperty("SANREMES_CLOUD_X_TOKEN");
@@ -101,7 +101,7 @@ describe("the fixture's @devs reports", () => {
   it("go to a loopback fake endpoint, else to a closed port: never to the SanRemes team", () => {
     const closed = "http://127.0.0.1:9/api/bug-reports";
     expect(childEnv({ SANREMES_BUG_REPORT_URL: " http://127.0.0.1:4400/api/bug-reports " }).SANREMES_BUG_REPORT_URL).toBe("http://127.0.0.1:4400/api/bug-reports");
-    for (const url of ["https://cloud.openmausbot.com/api/bug-reports", "http://localhost:4400/api/bug-reports", "http://192.0.2.1:4400/x", "http://127.0.0.1:4400/../x?y", ""]) {
+    for (const url of ["https://cloud.sanremes.invalid/api/bug-reports", "http://localhost:4400/api/bug-reports", "http://192.0.2.1:4400/x", "http://127.0.0.1:4400/../x?y", ""]) {
       expect(childEnv({ SANREMES_BUG_REPORT_URL: url }).SANREMES_BUG_REPORT_URL, url).toBe(closed);
     }
     expect(childEnv({}).SANREMES_BUG_REPORT_URL).toBe(closed);

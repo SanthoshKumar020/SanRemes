@@ -9,7 +9,7 @@ import {
 } from "../src/protocol.ts";
 import { generateKeyPair, seal, unseal } from "../src/signed.ts";
 
-const HOME = `ghcr.io/milind-soni/openmausbot-cloud-home@sha256:${"a".repeat(64)}`;
+const HOME = `ghcr.io/SanthoshKumar020/sanremes-cloud-home@sha256:${"a".repeat(64)}`;
 const CONNECTOR = `ghcr.io/SanthoshKumar020/sanremes-connector@sha256:${"b".repeat(64)}`;
 const env = {
   SANREMES_CLOUD_ROLE: "home", SANREMES_CLOUD_MACHINE_ID: "3f9c2a4e-8b1d-4c6e-9a7f-2d5e8c1b0a93", SANREMES_CLOUD_ADMIN_URL: "https://cloud.example.test",
@@ -35,10 +35,10 @@ describe("the connector protocol", () => {
     expect(image("update", HOME)).toBe(true);
     expect(image("self-update", CONNECTOR)).toBe(true);
     for (const value of [
-      "ghcr.io/milind-soni/openmausbot-cloud-home:latest", "ghcr.io/milind-soni/openmausbot-cloud-home:v0.1.130",
+      "ghcr.io/SanthoshKumar020/sanremes-cloud-home:latest", "ghcr.io/SanthoshKumar020/sanremes-cloud-home:v0.1.130",
       `ghcr.io/someone-else/sanremes-cloud-home@sha256:${"a".repeat(64)}`, `docker.io/library/ubuntu@sha256:${"a".repeat(64)}`,
-      `ghcr.io/milind-soni/openmausbot-cloud-home@sha256:${"A".repeat(64)}`, `ghcr.io/milind-soni/openmausbot-cloud-home@sha256:${"a".repeat(63)}`,
-      `ghcr.io/milind-soni/openmausbot-cloud-home@sha256:${"a".repeat(64)} --privileged`, `ghcr.io/milind-soni/openmausbot@sha256:${"a".repeat(64)}`,
+      `ghcr.io/SanthoshKumar020/sanremes-cloud-home@sha256:${"A".repeat(64)}`, `ghcr.io/SanthoshKumar020/sanremes-cloud-home@sha256:${"a".repeat(63)}`,
+      `ghcr.io/SanthoshKumar020/sanremes-cloud-home@sha256:${"a".repeat(64)} --privileged`, `ghcr.io/SanthoshKumar020/sanremes@sha256:${"a".repeat(64)}`,
     ]) {
       expect(image("start", value), value).toBe(false);
       expect(image("update", value), value).toBe(false);

@@ -75,7 +75,7 @@ try {
   } finally { await waitForExit(proxy, { signal: "SIGTERM" }); }
   writeFileSync(gate, "finish the isolated setup turn");
   await control(["wait", "--bot", pepper.id, "--timeout", "15"]);
-  const { project: resultsFolder } = await api("POST", `/api/bots/${pepper.id}/projects`, { name: "OMB management", emoji: "🛠️" });
+  const { project: resultsFolder } = await api("POST", `/api/bots/${pepper.id}/projects`, { name: "SanRemes management", emoji: "🛠️" });
   const { task: resultsTask } = await api("POST", `/api/bots/${pepper.id}/tasks`, { title: "Fleet health reports", projectId: resultsFolder.id });
   await api("POST", `/api/bots/${pepper.id}/tasks/${pepper.threadId}`, {});
   const manual = await api("POST", "/api/routines", {

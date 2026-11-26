@@ -1,4 +1,4 @@
-// Real OMB server and renderer; only the paid Boat provider is an owned local
+// Real SanRemes server and renderer; only the paid Boat provider is an owned local
 // HTTP stand-in. No guest commands execute and no real credentials are read.
 import { createServer } from "node:http";
 import { once } from "node:events";

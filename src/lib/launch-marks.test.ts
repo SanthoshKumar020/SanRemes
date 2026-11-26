@@ -13,7 +13,7 @@ function page(overrides: Partial<LaunchMarkDeps> = {}) {
     resource: [
       { name: `${OWN}/api/bots?messages=200`, startTime: 170, duration: 6, responseEnd: 176 },
       { name: "https://www.google.com/s2/favicons?domain=intranet.acme.test&sz=64", startTime: 128, duration: 19, responseEnd: 147 },
-      { name: "https://accounts.openmausbot.com/session?token=abc", startTime: 200, duration: 80, responseEnd: 280 },
+      { name: "https://accounts.sanremes.invalid/session?token=abc", startTime: 200, duration: 80, responseEnd: 280 },
       { name: "https://sanremes-u-1.fly.dev/api/health", startTime: 900, duration: 10, responseEnd: 910 },
       { name: "data:image/png;base64,AAAA", startTime: 10, duration: 1, responseEnd: 11 },
     ],
@@ -84,8 +84,8 @@ describe("pageHostKind", () => {
     expect(pageHostKind("/api/bots", OWN)).toBeNull();
     expect(pageHostKind("http://localhost:5173/x", OWN)).toBeNull();
     expect(pageHostKind("blob:http://127.0.0.1:8799/abc", OWN)).toBeNull();
-    expect(pageHostKind("https://accounts.openmausbot.com/x", OWN)).toBe("accounts");
-    expect(pageHostKind("https://c-opaque.openmausbot.com/x", OWN)).toBe("cloud");
+    expect(pageHostKind("https://accounts.sanremes.invalid/x", OWN)).toBe("accounts");
+    expect(pageHostKind("https://c-opaque.sanremes.invalid/x", OWN)).toBe("cloud");
     expect(pageHostKind("https://objects.githubusercontent.com/x", OWN)).toBe("updates");
     expect(pageHostKind("https://intranet.acme.test/q?token=abc", OWN)).toBe("other");
   });

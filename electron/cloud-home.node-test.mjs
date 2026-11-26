@@ -472,7 +472,7 @@ test("the Server menu opens My Cloud through the Cloud's own connection, never a
   context.cloudAccount = { homeTarget: () => null, state: () => ({ status: "connected", machine: { status: "stopped" } }) }; context.remember({ accountId: "a1", origin });
   connect = async () => { calls.push("connect"); throw new Error("Your Cloud is not ready to connect yet."); };
   calls.length = 0; await context.switchEnvironment("cloud");
-  assert.deepEqual(calls, ["remember:null", "connect", "settings"], "not signed in there: Settings → OMB Cloud says what to do next");
+  assert.deepEqual(calls, ["remember:null", "connect", "settings"], "not signed in there: Settings → SanRemes Cloud says what to do next");
   signedIn = true; calls.length = 0; await context.switchEnvironment("cloud");
   assert.deepEqual(calls, ["remember:null", "connect", "active:cloud", `navigate:${origin}`], "signed in there already: it opens as any server does");
   context.cloudAccount = null; context.environmentsState = { environments: [entry, other], activeId: environments.LOCAL_ID };

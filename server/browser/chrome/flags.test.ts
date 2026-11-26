@@ -41,7 +41,7 @@ describe("Chrome's command line", () => {
     expect(server).not.toContain("--use-mock-keychain");
   });
 
-  it("goes only through OMB's own local gate, with the gate's own flags and WebRTC kept on it", () => {
+  it("goes only through SanRemes's own local gate, with the gate's own flags and WebRTC kept on it", () => {
     const gated = chromeArgs({ userDataDir: "/p", mode: "headless", host: "desktop", platform: "darwin", egressPort: 41234 });
     expect(gated).toEqual(expect.arrayContaining(gateChromeFlags(41234, "darwin")));
     expect(gated).toEqual(expect.arrayContaining(["--proxy-server=socks5://127.0.0.1:41234", "--proxy-bypass-list=<-loopback>", "--force-webrtc-ip-handling-policy=disable_non_proxied_udp"]));

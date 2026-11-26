@@ -100,7 +100,7 @@ describe("relay host tokens", () => {
     const { credential, id } = await installation("mint@example.test");
     const before = Math.floor(Date.now() / 1000);
     // Two nodes, whatever wrangler.jsonc lists today, so the order is still tested.
-    const twoNodes = relayEnv({ RELAY_NODES: "relay1.openmausbot.com,relay2.openmausbot.com" });
+    const twoNodes = relayEnv({ RELAY_NODES: "relay1.sanremes.com,relay2.sanremes.com" });
     const first = await (await ask(twoNodes, credential)).json<Issued>();
     const second = await (await ask(twoNodes, credential)).json<Issued>();
     expect(second.hostId).toBe(first.hostId);
@@ -113,7 +113,7 @@ describe("relay host tokens", () => {
     expect(claims.iat as number).toBeGreaterThanOrEqual(before);
     expect(first.expiresAt).toBe((claims.exp as number) * 1000);
     expect(first.refreshAfter).toBe(((claims.iat as number) + 3600) * 1000);
-    expect(first.nodes).toEqual(await orderNodes(fromB64u(first.hostId), { nodes: ["relay1.openmausbot.com", "relay2.openmausbot.com"], americasNodes: new Set() }, null));
+    expect(first.nodes).toEqual(await orderNodes(fromB64u(first.hostId), { nodes: ["relay1.sanremes.com", "relay2.sanremes.com"], americasNodes: new Set() }, null));
   });
 
   it("admit by rollout bucket, or by name, and never a blocked installation", async () => {
@@ -203,7 +203,7 @@ describe("relay usage per UTC day", () => {
 });
 
 describe("node order", () => {
-  const nodes = ["relay1.openmausbot.com", "relay2.openmausbot.com", "relay3.openmausbot.com"];
+  const nodes = ["relay1.sanremes.com", "relay2.sanremes.com", "relay3.sanremes.com"];
 
   it("is the rendezvous hash: highest SHA256(hostId ‖ node)[0:8] first", async () => {
     const hostId = crypto.getRandomValues(new Uint8Array(16));
@@ -217,8 +217,8 @@ describe("node order", () => {
 
   it("puts an Americas node first for a computer in the Americas only", async () => {
     const hostId = crypto.getRandomValues(new Uint8Array(16));
-    const settings = { nodes, americasNodes: new Set(["relay3.openmausbot.com"]) };
-    expect((await orderNodes(hostId, settings, "SA"))[0]).toBe("relay3.openmausbot.com");
+    const settings = { nodes, americasNodes: new Set(["relay3.sanremes.com"]) };
+    expect((await orderNodes(hostId, settings, "SA"))[0]).toBe("relay3.sanremes.com");
     expect(await orderNodes(hostId, settings, "EU")).toEqual(await orderNodes(hostId, { nodes, americasNodes: new Set() }, null));
   });
 });

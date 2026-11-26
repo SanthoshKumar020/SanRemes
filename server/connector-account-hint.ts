@@ -17,7 +17,7 @@ const ACCOUNT_ERROR = /not accessible by integration/i;
 const MISSING_ACCOUNT_ERROR = /multiple .* accounts connected/i;
 
 /** Marks the note a frame carries, so a frame that must not get one can be told from one that does. */
-const NOTE = "\u0000omb-account-hint:";
+const NOTE = "\u0000sanremes-account-hint:";
 
 /** A connected account of one app, as the services inventory gives it. */
 export interface ConnectedAccount {

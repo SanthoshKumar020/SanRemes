@@ -107,7 +107,7 @@ export function instanceSettings(folder: string, dataDir: string, duckdbVersion:
     extension_directory: join(dataDir, "duckdb-extensions", duckdbVersion),
     autoinstall_known_extensions: "false",
     autoload_known_extensions: "true",
-    // Persistent secrets sit unencrypted on disk; OMB's broker issues temporary ones.
+    // Persistent secrets sit unencrypted on disk; SanRemes's broker issues temporary ones.
     allow_persistent_secrets: "false",
     preserve_insertion_order: "false",
   };

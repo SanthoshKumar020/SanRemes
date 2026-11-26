@@ -54,7 +54,7 @@ export function launchVoiceLatencyStub(): Promise<VoiceLatencyStub> {
     };
     if (req.method === "GET" && path === "/voices") {
       res.writeHead(200, { "content-type": "application/json" });
-      res.end(JSON.stringify({ voices: [{ voice_id: STUB_VOICE, name: "OMB record stub" }] }));
+      res.end(JSON.stringify({ voices: [{ voice_id: STUB_VOICE, name: "SanRemes record stub" }] }));
       return;
     }
     const streamPath = /^\/text-to-speech\/[^/]+\/stream$/.test(path);

@@ -127,7 +127,7 @@ step "install: the server is healthy behind Caddy, on a pinned release, with its
 install_until_https "$OUT/install.txt"
 image=$(sudo sed -n 's/^SANREMES_IMAGE=//p' "$DIR/.env")
 case "$image" in
-  ghcr.io/milind-soni/openmausbot:stable | ghcr.io/milind-soni/openmausbot:v[0-9]*) ;;
+  ghcr.io/SanthoshKumar020/sanremes:stable | ghcr.io/SanthoshKumar020/sanremes:v[0-9]*) ;;
   *) [ "$image" = "${SANREMES_INSTALL_IMAGE:-}" ] || fail "the install pinned $image" ;;
 esac
 [ "$(sudo stat -c %a "$DIR/.env")" = 600 ] || fail ".env is readable by others"

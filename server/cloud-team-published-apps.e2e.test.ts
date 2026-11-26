@@ -152,11 +152,11 @@ it("refuses a member who only chats with the shared bot for what it published in
 });
 
 it("checks framing only for an address the asker is shown or a public hosting address, and refuses anything else", async () => {
-  const framing = (token: string, url: string) => team.as(token, "GET", `/api/published-apps/framing?url=${encodeURIComponent(url)}&origin=${encodeURIComponent("https://acme.mausbot.cloud")}`);
+  const framing = (token: string, url: string) => team.as(token, "GET", `/api/published-apps/framing?url=${encodeURIComponent(url)}&origin=${encodeURIComponent("https://acme.sanremes.invalid")}`);
   for (const url of ["http://169.254.169.254/latest/meta-data", "http://127.0.0.1:8799/api/bots", "https://example.com/", `${team.base}/api/bots`]) {
     expect((await framing(ben, url)).status, url).toBe(404);
   }
-  expect(await team.as(ben, "GET", "/api/web-panels/framing?url=https%3A%2F%2Fexample.com&origin=https%3A%2F%2Facme.mausbot.cloud")).toMatchObject({ status: 403 });
+  expect(await team.as(ben, "GET", "/api/web-panels/framing?url=https%3A%2F%2Fexample.com&origin=https%3A%2F%2Facme.sanremes.invalid")).toMatchObject({ status: 403 });
 });
 
 it("deletes with the team's saved token for whoever may delete, says so plainly without one, and never for someone else's project", async () => {

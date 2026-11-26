@@ -22,10 +22,10 @@ afterEach(async () => {
 
 describe("propose", () => {
   it("refuses an over-long field and says how to send it again, naming the limit", () => {
-    expect(() => memory.propose("", { kind: "term", name: "OMB", detail: "x".repeat(601) }, source))
+    expect(() => memory.propose("", { kind: "term", name: "SanRemes", detail: "x".repeat(601) }, source))
       .toThrow("detail is over its 600-character limit, so nothing was done. Keep the fact, its context and why it matters, then send it again.");
     expect(() => memory.propose("", { kind: "term", name: "x".repeat(121), detail: "ok" }, source)).toThrow("name is over its 120-character limit");
-    expect(() => memory.propose("", { kind: "term", name: "OMB", detail: "ok", aliases: ["x".repeat(121)] }, source)).toThrow("one of the aliases is over its 120-character limit");
+    expect(() => memory.propose("", { kind: "term", name: "SanRemes", detail: "ok", aliases: ["x".repeat(121)] }, source)).toThrow("one of the aliases is over its 120-character limit");
     expect(() => memory.propose("", { kind: "term", name: "  ", detail: "ok" }, source)).toThrow("name is required");
     expect(memory.list("")).toEqual([]);
   });
@@ -42,7 +42,7 @@ describe("propose", () => {
 
   it.each(["constructor", "__proto__"])("keeps prototype-like section names through updates, rollback and restart: %s", (section) => {
     expect(memory.list(section)).toEqual([]);
-    const first = memory.propose(section, { kind: "term", name: "OMB", detail: "original" }, source);
+    const first = memory.propose(section, { kind: "term", name: "SanRemes", detail: "original" }, source);
     const file = join(dir, "team-memory.json");
     memory = new TeamMemory(file);
     expect(memory.list(section)[0].detail).toBe("original");
@@ -77,12 +77,12 @@ describe("propose", () => {
   });
 
   it("rejects aliases that would make persisted entries unreadable", () => {
-    expect(() => memory.propose("", { kind: "term", name: "OMB", detail: "app", aliases: ["x".repeat(121)] }, source)).toThrow(/aliases/);
+    expect(() => memory.propose("", { kind: "term", name: "SanRemes", detail: "app", aliases: ["x".repeat(121)] }, source)).toThrow(/aliases/);
     expect(memory.list("")).toEqual([]);
   });
 
   it("rolls memory back when a mutation cannot be saved", () => {
-    const first = memory.propose("", { kind: "term", name: "OMB", detail: "original" }, source);
+    const first = memory.propose("", { kind: "term", name: "SanRemes", detail: "original" }, source);
     const file = join(dir, "team-memory.json");
     renameSync(file, file + ".saved");
     mkdirSync(file);
@@ -154,7 +154,7 @@ describe("undoAccept", () => {
   });
 
   it("changes nothing once the entry was edited since", () => {
-    const added = memory.propose("", { kind: "term", name: "OMB", detail: "first" }, source).entry;
+    const added = memory.propose("", { kind: "term", name: "SanRemes", detail: "first" }, source).entry;
     memory.resolve("", added.id, "accept");
     const revision = memory.list("")[0]!.revision!;
     memory.update("", added.id, { detail: "a person's edit" });
@@ -183,7 +183,7 @@ describe("resolve, update, remove", () => {
   });
 
   it("lets the person edit and delete, and keeps the file private", () => {
-    const { entry } = memory.propose("", { kind: "term", name: "OMB", detail: "SanRemes" }, source);
+    const { entry } = memory.propose("", { kind: "term", name: "SanRemes", detail: "SanRemes" }, source);
     const edited = memory.update("", entry.id, { detail: "SanRemes, the app", aliases: ["OpenMaus"] });
     expect(edited?.detail).toBe("SanRemes, the app");
     expect(edited?.aliases).toEqual(["OpenMaus"]);
@@ -193,7 +193,7 @@ describe("resolve, update, remove", () => {
   });
 
   it("survives a restart", () => {
-    memory.propose("", { kind: "term", name: "OMB", detail: "SanRemes" }, source);
+    memory.propose("", { kind: "term", name: "SanRemes", detail: "SanRemes" }, source);
     const reopened = new TeamMemory(join(dir, "team-memory.json"));
     expect(reopened.list("")).toHaveLength(1);
     expect(JSON.parse(readFileSync(join(dir, "team-memory.json"), "utf8")).version).toBe(2);

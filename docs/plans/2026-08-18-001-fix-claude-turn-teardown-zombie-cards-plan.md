@@ -7,7 +7,7 @@ product_contract_source: ce-plan-bootstrap
 
 # fix: Kill the child process and drop late asks on Claude turn teardown
 
-**Origin issue:** [SanthoshKumar020/SanRemes#211](https://github.com/SanthoshKumar020/SanRemes/issues/211) — "Turn teardown discards the permission broker without ensuring child CLI/MCP exit — late approval requests become dead 'zombie' cards"
+**Origin issue:** [SanthoshKumar020/SanRemes#211](https://github.com/milind-soni/OpenMausBot/issues/211) — "Turn teardown discards the permission broker without ensuring child CLI/MCP exit — late approval requests become dead 'zombie' cards"
 
 ---
 

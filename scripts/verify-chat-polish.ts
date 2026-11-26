@@ -44,7 +44,7 @@ try {
   await api("PATCH", "/api/config", { features: { showToolCalls: true }, language: "en" });
   await control(["send", "--bot", bot.id, "--text", `Review these assets and show the tool results.\n<attached-image path="${image.path}" />`]);
   const settled = await control(["wait", "--bot", bot.id, "--timeout", "30"]);
-  ui = await mountPreview(fixture, { entry: "/scripts/testing/threads-preview.tsx", route: "/__chat-polish.html", title: "Isolated OMB UI polish" });
+  ui = await mountPreview(fixture, { entry: "/scripts/testing/threads-preview.tsx", route: "/__chat-polish.html", title: "Isolated SanRemes UI polish" });
   console.log(JSON.stringify({ ...fixture.info, previewUrl: ui.previewUrl, botId: bot.id, settled }));
   await parkUntilSignal();
 } finally {

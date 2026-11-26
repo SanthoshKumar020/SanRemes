@@ -453,7 +453,7 @@ names, addresses or conversations. Turn them off in Settings → General → Usa
 ## Support the project
 
 SanRemes is free and open source under the Apache License 2.0. The upstream project,
-OpenMausBot, is developed by Milind Soni — if it does real work for you, you can support
+SanRemes, is developed by Milind Soni — if it does real work for you, you can support
 its development through [GitHub Sponsors](https://github.com/sponsors/SanthoshKumar020). This fork
 has no sponsorship set up yet.
 
@@ -509,7 +509,7 @@ scratch is [docs/deploy-vps.md](docs/deploy-vps.md).
 
 ## License
 
-[Apache License 2.0](LICENSE). © 2026 Milind Soni and OpenMausBot contributors (upstream);
+[Apache License 2.0](LICENSE). © 2026 Milind Soni and SanRemes contributors (upstream);
 this fork has no `enterprise/` folder — upstream's enterprise layer was removed, so what
 remains is the open-source edition. Details, including how contributions are signed off, are
 in [LICENSING.md](LICENSING.md).
