@@ -2,7 +2,7 @@
 
 To keep SanRemes and its agents on your current computer and use a VPS only as a
 bot’s remote desktop, see [Bring Your Own VPS](byo-vps.md) and the
-[published setup guide](https://docs.openmausbot.com/docs/computers/byo-vps).
+[published setup guide](https://github.com/SanthoshKumar020/SanRemes/blob/master/apps/docs/content/docs/computers/byo-vps.mdx).
 
 From a blank Linux server to SanRemes running on it around the clock, reachable from your laptop, the desktop app and your phone, with your bots working while every laptop is closed. It assumes nothing beyond being able to open a terminal and paste commands. About twenty minutes, most of it waiting.
 

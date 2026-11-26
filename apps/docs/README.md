@@ -38,7 +38,7 @@ Create a second Vercel project beside the existing `sanremes.invalid` project:
 2. Set **Root Directory** to `apps/docs`.
 3. Keep the detected **Next.js** framework settings.
 4. Set the production branch to `main` and deploy.
-5. Add `docs.openmausbot.com` under **Settings → Domains**.
+5. Add the Vercel-assigned domain for the new docs project (for example `sanremes-docs.vercel.app`) under **Settings → Domains**. The docs are not yet deployed under a SanRemes domain; use the Vercel-assigned domain until one is configured.
 
 For an immediate changelog refresh after each desktop release, create a Vercel
 Deploy Hook for the production branch and save it in the GitHub repository as

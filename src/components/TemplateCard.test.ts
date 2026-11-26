@@ -60,7 +60,7 @@ describe("a template's chat card", () => {
 
   it("shows Publishing… while it publishes, and Copy link and View on GitHub once published", () => {
     expect(shown({ ...draft, status: "publishing" })).toContain("Publishing…");
-    const published = shown({ ...draft, status: "published", link: "https://github.com/milind-soni/openmausbot-teams/tree/abc/teams/quill" });
+    const published = shown({ ...draft, status: "published", link: "https://github.com/SanthoshKumar020/sanremes-teams/tree/abc/teams/quill" });
     expect(published).toContain("Published");
     expect(published).toContain("Copy link");
     expect(published).toContain("View on GitHub");

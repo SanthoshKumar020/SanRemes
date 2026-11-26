@@ -8,7 +8,7 @@ passphrase, and never runs an agent remotely.
 
 ## Choosing the backend
 
-The published [Your own VPS guide](https://docs.openmausbot.com/docs/computers/byo-vps)
+The published [Your own VPS guide](https://github.com/SanthoshKumar020/SanRemes/blob/master/apps/docs/content/docs/computers/byo-vps.mdx)
 shows the setup steps and configuration fields. In 0.1.151 and 0.1.152, the Simple layout can
 hide the backend selector for an existing bot (#5225; selector fix #5228). The guide
 includes a stopped-app `bots.json` workaround for affected builds. Do not look for

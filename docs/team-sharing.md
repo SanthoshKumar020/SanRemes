@@ -42,7 +42,7 @@ their interpreter (`python3 scripts/report.py`). Older apps ignore the extra fil
 ## Publishing
 
 **Publish** sends the folder to the SanRemes Admin, which opens a pull request on the community repository
-(`milind-soni/openmausbot-teams`); nobody needs a GitHub account. The card then has **Copy link**, a GitHub folder link
+(`SanthoshKumar020/sanremes-teams`); nobody needs a GitHub account. The card then has **Copy link**, a GitHub folder link
 that **Import…** accepts, and **View on GitHub**. Publishing needs a SanRemes sign-in; without one, the card offers
 **Save folder…** and **Upload on GitHub**, the repository's own upload page. The community repository takes each skill's
 SKILL.md alone for now, so a published template leaves its scripts out; the other targets keep them.

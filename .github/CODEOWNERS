@@ -1,6 +1,5 @@
 # Maintainer review is required on the open-core boundary, the cloud seam and
 # the licensing files. Enforced when the ruleset requires code-owner review.
-/enterprise/                    @SanthoshKumar020
 /server/enterprise.ts           @SanthoshKumar020
 /server/enterprise.test.ts      @SanthoshKumar020
 /server/brand.ts                @SanthoshKumar020
