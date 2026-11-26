@@ -2,10 +2,15 @@ import { useEffect, useRef, useState } from "react";
 
 import { t } from "@/lib/i18n";
 import {
+  fetchJobRun, fetchJobRuns, isRunActive, latestRun, pauseJobRun, resumeJobRun, startJobRun, upsertRun,
+  type JobRun,
+} from "@/lib/jobs-run";
+import {
   applyQueueItem, approveQueueItem, batchApproveQueue, emptyJobsState, fetchJobs, fetchPlatforms, rejectQueueItem,
   saveSettings, sortedJobs, startJobSearch, tailorResume, updateJobStatus,
   type JobPlatformStatus, type JobsJob, type JobsState, type JobStatus,
 } from "@/lib/jobs";
+import { fetchTasks, type Task } from "@/lib/tasks";
 import { useStoreDispatch, useStoreSelector } from "@/state/store-select";
 import { TOOL_PAGE_TITLE, ToolPage, ToolPageHeader } from "../ToolPageShell";
 import { JobSetupWizard } from "./JobSetupWizard";
@@ -16,6 +21,15 @@ const STATUS_ORDER: JobStatus[] = ["new", "queued", "approved", "applied", "inte
 
 function dateText(at: number): string {
   return new Date(at).toLocaleDateString();
+}
+
+function dateTimeText(at: number): string {
+  return new Date(at).toLocaleString();
+}
+
+/** The route's own reason, word for word; the generic line only when it says nothing. */
+function routeReason(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
 }
 
 /** The Jobs hub: setup, profile, resume versions, job matches, approval queue, tracking. */
@@ -31,6 +45,30 @@ export function JobBotPage() {
   const [applying, setApplying] = useState<string | null>(null);
   const [busyQueue, setBusyQueue] = useState<string | null>(null);
   const [pausing, setPausing] = useState(false);
+  const [runs, setRuns] = useState<JobRun[] | null>(null);
+  const [runBusy, setRunBusy] = useState(false);
+  const [queueTasks, setQueueTasks] = useState<Task[] | null>(null);
+  const [queueTasksFailed, setQueueTasksFailed] = useState(false);
+  const [companyPages, setCompanyPages] = useState<string[]>([]);
+  const [newPage, setNewPage] = useState("");
+  const [savingPages, setSavingPages] = useState(false);
+  const runPoll = useRef(0);
+  /** A run takes minutes, so keep asking every 3s until it finishes or stops; a new poll cancels the old one. */
+  const pollRun = async (id: string) => {
+    const token = ++runPoll.current;
+    for (let attempt = 0; attempt < 200; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      if (runPoll.current !== token) return;
+      try {
+        const { run } = await fetchJobRun(id);
+        setRuns((prev) => upsertRun(prev ?? [], run));
+        void fetchTasks().then(({ tasks }) => setQueueTasks(tasks)).catch(() => undefined);
+        if (!isRunActive(run)) return;
+      } catch {
+        return;
+      }
+    }
+  };
   const [diffFor, setDiffFor] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -39,10 +77,21 @@ export function JobBotPage() {
   useEffect(() => {
     let live = true;
     fetchJobs()
-      .then((state) => { if (live) { setJobs(state); setSetupOpen(!state.profile); } })
+      .then((state) => { if (live) { setJobs(state); setSetupOpen(!state.profile); setCompanyPages(state.settings.companyPages ?? []); } })
       .catch(() => { if (live) { setJobs(emptyJobsState()); setLoadFailed(true); setSetupOpen(true); } });
     fetchPlatforms().then((state) => { if (live) setPlatforms(state.platforms); }).catch(() => undefined);
-    return () => { live = false; };
+    fetchJobRuns()
+      .then(({ runs: found }) => {
+        if (!live) return;
+        setRuns(found);
+        const current = latestRun(found);
+        if (current && isRunActive(current)) void pollRun(current.id);
+      })
+      .catch(() => { if (live) setRuns([]); });
+    fetchTasks()
+      .then(({ tasks }) => { if (live) setQueueTasks(tasks); })
+      .catch(() => { if (live) { setQueueTasks([]); setQueueTasksFailed(true); } });
+    return () => { live = false; runPoll.current += 1; };
   }, []);
 
   const profile = jobs?.profile ?? null;
@@ -74,8 +123,8 @@ export function JobBotPage() {
         const after = (await fetchJobs()).jobs.length;
         setNotice(t("jobs.matches.recorded", { count: after - before }));
       }
-    } catch {
-      setError(t("jobs.error.search"));
+    } catch (error) {
+      setError(routeReason(error, t("jobs.error.search")));
     } finally {
       setSearching(false);
     }
@@ -87,8 +136,8 @@ export function JobBotPage() {
     try {
       await tailorResume(job.id);
       await refresh();
-    } catch {
-      setError(t("jobs.error.tailor"));
+    } catch (error) {
+      setError(routeReason(error, t("jobs.error.tailor")));
     } finally {
       setTailoring(null);
     }
@@ -100,8 +149,8 @@ export function JobBotPage() {
     try {
       if (approve) await approveQueueItem(id); else await rejectQueueItem(id);
       await refresh();
-    } catch {
-      setError(t("jobs.error.queue"));
+    } catch (error) {
+      setError(routeReason(error, t("jobs.error.queue")));
     } finally {
       setBusyQueue(null);
     }
@@ -115,8 +164,8 @@ export function JobBotPage() {
     try {
       await batchApproveQueue(pending);
       await refresh();
-    } catch {
-      setError(t("jobs.error.queue"));
+    } catch (error) {
+      setError(routeReason(error, t("jobs.error.queue")));
     } finally {
       setBusyQueue(null);
     }
@@ -131,8 +180,8 @@ export function JobBotPage() {
         const item = state.queue.find((one) => one.id === id);
         return (item?.attempts.length ?? 0) > 0;
       });
-    } catch {
-      setError(t("jobs.error.apply"));
+    } catch (error) {
+      setError(routeReason(error, t("jobs.error.apply")));
     } finally {
       setApplying(null);
     }
@@ -142,8 +191,8 @@ export function JobBotPage() {
     try {
       await updateJobStatus(job.id, status);
       await refresh();
-    } catch {
-      setError(t("jobs.error.status"));
+    } catch (error) {
+      setError(routeReason(error, t("jobs.error.status")));
     }
   };
   const togglePause = async () => {
@@ -152,14 +201,128 @@ export function JobBotPage() {
     setError("");
     try {
       setJobs(await saveSettings({ paused: !paused }));
-    } catch {
-      setError(t("jobs.error.queue"));
+    } catch (error) {
+      setError(routeReason(error, t("jobs.error.queue")));
     } finally {
       setPausing(false);
     }
   };
+  const startRun = async () => {
+    if (runBusy) return;
+    setRunBusy(true);
+    setError("");
+    try {
+      const { run } = await startJobRun();
+      setRuns((prev) => upsertRun(prev ?? [], run));
+      void pollRun(run.id);
+    } catch (error) {
+      setError(routeReason(error, t("jobs.run.startFailed")));
+    } finally {
+      setRunBusy(false);
+    }
+  };
+  const pauseRun = async (run: JobRun) => {
+    if (runBusy) return;
+    setRunBusy(true);
+    setError("");
+    try {
+      const { run: next } = await pauseJobRun(run.id);
+      setRuns((prev) => upsertRun(prev ?? [], next));
+      void pollRun(run.id);
+    } catch (error) {
+      setError(routeReason(error, t("jobs.run.pauseFailed")));
+    } finally {
+      setRunBusy(false);
+    }
+  };
+  const resumeRun = async (run: JobRun) => {
+    if (runBusy) return;
+    setRunBusy(true);
+    setError("");
+    try {
+      const { run: next } = await resumeJobRun(run.id);
+      setRuns((prev) => upsertRun(prev ?? [], next));
+      void pollRun(run.id);
+    } catch (error) {
+      setError(routeReason(error, t("jobs.run.resumeFailed")));
+    } finally {
+      setRunBusy(false);
+    }
+  };
+  const refreshRun = async (run: JobRun) => {
+    if (runBusy) return;
+    setRunBusy(true);
+    setError("");
+    try {
+      const { run: next } = await fetchJobRun(run.id);
+      setRuns((prev) => upsertRun(prev ?? [], next));
+      if (isRunActive(next)) void pollRun(run.id);
+    } catch (error) {
+      setError(routeReason(error, t("jobs.run.refreshFailed")));
+    } finally {
+      setRunBusy(false);
+    }
+  };
+  const pageUrlOk = (value: string): boolean => {
+    try {
+      const url = new URL(value);
+      return url.protocol === "http:" || url.protocol === "https:";
+    } catch {
+      return false;
+    }
+  };
+  const addCompanyPage = async () => {
+    const value = newPage.trim();
+    if (!pageUrlOk(value) || companyPages.includes(value)) {
+      setError(t("jobs.page.companyPagesInvalid"));
+      return;
+    }
+    const next = [...companyPages, value];
+    setSavingPages(true);
+    setError("");
+    try {
+      await saveSettings({ companyPages: next });
+      setCompanyPages(next);
+      setNewPage("");
+      setNotice(t("jobs.page.companyPagesSaved"));
+    } catch (error) {
+      setError(routeReason(error, t("jobs.page.companyPagesSaveFailed")));
+    } finally {
+      setSavingPages(false);
+    }
+  };
+  const removeCompanyPage = async (value: string) => {
+    const next = companyPages.filter((page) => page !== value);
+    setSavingPages(true);
+    setError("");
+    try {
+      await saveSettings({ companyPages: next });
+      setCompanyPages(next);
+      setNotice(t("jobs.page.companyPagesSaved"));
+    } catch (error) {
+      setError(routeReason(error, t("jobs.page.companyPagesSaveFailed")));
+    } finally {
+      setSavingPages(false);
+    }
+  };
 
   const jobById = (id: string) => jobs?.jobs.find((job) => job.id === id);
+  const latest = runs ? latestRun(runs) : null;
+  const runTasks = latest?.applied.filter((entry) => entry.taskId !== undefined) ?? [];
+  const taskById = (id: string) => queueTasks?.find((task) => task.id === id);
+  const botName = (botId: string | null): string => {
+    if (botId === null) return t("jobs.page.taskUnassigned");
+    return bots.find((bot) => bot.id === botId)?.name ?? botId;
+  };
+  const lockAge = (lockedAt: number | null): string => {
+    if (lockedAt === null) return "";
+    const minutes = Math.max(0, Math.floor((Date.now() - lockedAt) / 60000));
+    if (minutes < 1) return t("jobs.page.lockAgeJustNow");
+    if (minutes < 60) return t("jobs.page.lockAgeMinutes", { count: minutes });
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return t("jobs.page.lockAgeHours", { count: hours });
+    return t("jobs.page.lockAgeDays", { count: Math.floor(hours / 24) });
+  };
   const pendingQueue = jobs?.queue.filter((item) => item.state === "pending") ?? [];
 
   return (
@@ -206,6 +369,144 @@ export function JobBotPage() {
                 )}
               </section>
 
+              <section aria-label={t("jobs.run.title")} className={SECTION}>
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="text-[14px] font-semibold text-ink">{t("jobs.run.title")}</h2>
+                  {latest && isRunActive(latest) ? (
+                    <button type="button" onClick={() => void pauseRun(latest)} disabled={runBusy} className="ui-button ui-button-md disabled:opacity-50">
+                      {runBusy ? t("jobs.run.pausing") : t("jobs.run.pause")}
+                    </button>
+                  ) : latest && latest.phase === "stopped" ? (
+                    <button type="button" onClick={() => void resumeRun(latest)} disabled={runBusy} className="ui-button ui-button-md ui-button-primary disabled:opacity-50">
+                      {runBusy ? t("jobs.run.resuming") : t("jobs.run.resume")}
+                    </button>
+                  ) : (
+                    <button type="button" onClick={() => void startRun()} disabled={runBusy} className="ui-button ui-button-md ui-button-primary disabled:opacity-50">
+                      {runBusy ? t("jobs.run.starting") : t("jobs.run.start")}
+                    </button>
+                  )}
+                </div>
+                <p className="mt-1 text-[13px] leading-relaxed text-ink-secondary">{t("jobs.run.body")}</p>
+                {runs === null ? (
+                  <p className="mt-1 text-[13px] text-ink-secondary">{t("jobs.page.loading")}</p>
+                ) : latest === null ? (
+                  <p className="mt-1 text-[13px] text-ink-secondary">{t("jobs.run.none")}</p>
+                ) : (
+                  <div className="mt-2 text-[13px] leading-relaxed text-ink-secondary">
+                    <p>
+                      <span className="font-medium text-ink">{t(`jobs.run.phase.${latest.phase}`)}</span>
+                      {` · ${t("jobs.run.counts", { searched: latest.searched, found: latest.found, applied: latest.applied.length })}`}
+                    </p>
+                    <p className="mt-0.5 text-[12px] text-ink-tertiary">{t("jobs.run.startedAt", { date: dateTimeText(latest.startedAt) })}</p>
+                    <div className="mt-2">
+                      <button type="button" onClick={() => void refreshRun(latest)} disabled={runBusy} className="ui-button ui-button-md disabled:opacity-50">
+                        {t("jobs.run.refresh")}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </section>
+
+              {latest !== null && (latest.applied.length > 0 || latest.skipped.length > 0 || latest.reportText !== "") && (
+                <section aria-label={t("jobs.report.title")} className={SECTION}>
+                  <h2 className="text-[14px] font-semibold text-ink">{t("jobs.report.title")}</h2>
+                  <p className="mt-1 text-[13px] leading-relaxed text-ink-secondary">{t("jobs.report.body")}</p>
+                  {latest.reportText !== "" && <p className="mt-2 text-[13px] leading-relaxed text-ink-secondary">{latest.reportText}</p>}
+                  <h3 className="mt-3 text-[13px] font-medium text-ink">{t("jobs.report.applied")}</h3>
+                  {latest.applied.length === 0 ? (
+                    <p className="mt-1 text-[13px] text-ink-secondary">{t("jobs.report.appliedEmpty")}</p>
+                  ) : (
+                    <div className="mt-1 overflow-x-auto">
+                      <table className="w-full text-left text-[13px] leading-relaxed text-ink-secondary">
+                        <thead>
+                          <tr className="text-[12px] text-ink-tertiary">
+                            <th className="py-1 pe-3 font-medium">{t("jobs.report.colCompany")}</th>
+                            <th className="py-1 pe-3 font-medium">{t("jobs.report.colRole")}</th>
+                            <th className="py-1 pe-3 font-medium">{t("jobs.report.colLocation")}</th>
+                            <th className="py-1 pe-3 font-medium">{t("jobs.report.colAppliedAt")}</th>
+                            <th className="py-1 pe-3 font-medium">{t("jobs.report.colStatus")}</th>
+                            <th className="py-1 pe-3 font-medium">{t("jobs.report.colLink")}</th>
+                            <th className="py-1 font-medium">{t("jobs.report.colTask")}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {latest.applied.map((entry) => {
+                            const task = entry.taskId === undefined ? undefined : taskById(entry.taskId);
+                            return (
+                              <tr key={entry.jobId} className="border-t border-hairline/60 align-top">
+                                <td className="py-2 pe-3 font-medium text-ink">{entry.company}</td>
+                                <td className="py-2 pe-3">{entry.title}</td>
+                                <td className="py-2 pe-3">{entry.location ?? t("jobs.report.notAvailable")}</td>
+                                <td className="py-2 pe-3 tabular-nums">{dateTimeText(entry.appliedAt)}</td>
+                                <td className="py-2 pe-3">{t(`jobs.report.status.${entry.status}`)}</td>
+                                <td className="py-2 pe-3">
+                                  <a href={entry.url} target="_blank" rel="noreferrer" className="text-accent-text underline">{t("jobs.report.openPosting")}</a>
+                                  {entry.requisition && <span className="block text-[12px] text-ink-tertiary">{entry.requisition}</span>}
+                                </td>
+                                <td className="py-2">
+                                  {entry.taskId === undefined ? t("jobs.report.noTask") : task ? t(`jobs.page.taskState.${task.state}`) : t("jobs.page.taskGone")}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  <h3 className="mt-3 text-[13px] font-medium text-ink">{t("jobs.report.skipped")}</h3>
+                  {latest.skipped.length === 0 ? (
+                    <p className="mt-1 text-[13px] text-ink-secondary">{t("jobs.report.skippedEmpty")}</p>
+                  ) : (
+                    <ul className="mt-1 flex flex-col gap-2">
+                      {latest.skipped.map((entry) => (
+                        <li key={entry.jobId} className="rounded-lg border border-hairline/60 p-3">
+                          <p className="text-[13px] font-medium text-ink">{entry.title} · {entry.company}</p>
+                          <p className="mt-0.5 text-[12px] text-ink-secondary">{entry.reason}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <p className="mt-3 text-[13px] leading-relaxed text-ink-secondary" role="status">
+                    {latest.whatsapp === "sent"
+                      ? t("jobs.report.whatsappSent")
+                      : latest.whatsapp === "pending-bridge"
+                        ? t("jobs.report.whatsappPending")
+                        : t("jobs.report.whatsappNotConfigured")}
+                  </p>
+                </section>
+              )}
+
+              <section aria-label={t("jobs.page.taskQueue")} className={SECTION}>
+                <h2 className="text-[14px] font-semibold text-ink">{t("jobs.page.taskQueue")}</h2>
+                {queueTasksFailed && (
+                  <p className="mt-1 text-[13px] text-ink-secondary">{t("jobs.page.taskQueueLoadFailed")}</p>
+                )}
+                {latest === null || runTasks.length === 0 ? (
+                  <p className="mt-1 text-[13px] text-ink-secondary">{t("jobs.page.taskQueueEmpty")}</p>
+                ) : queueTasks === null ? (
+                  <p className="mt-1 text-[13px] text-ink-secondary">{t("jobs.page.loading")}</p>
+                ) : (
+                  <ul className="mt-2 flex flex-col gap-2">
+                    {runTasks.map((entry) => {
+                      const task = entry.taskId === undefined ? undefined : taskById(entry.taskId);
+                      return (
+                        <li key={entry.jobId} className="rounded-lg border border-hairline/60 p-3">
+                          <p className="text-[13px] font-medium text-ink">{entry.title} · {entry.company}</p>
+                          {task === undefined ? (
+                            <p className="mt-0.5 text-[12px] text-ink-secondary">{t("jobs.page.taskGone")}</p>
+                          ) : (
+                            <p className="mt-0.5 text-[12px] text-ink-secondary">
+                              {t(`jobs.page.taskState.${task.state}`)} · {botName(task.assigneeBotId)}
+                              {task.lockedAt !== null && ` · ${t("jobs.page.taskHeldFor", { age: lockAge(task.lockedAt) })}`}
+                            </p>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </section>
+
               <section aria-label={t("jobs.platforms.title")} className={SECTION}>
                 <h2 className="text-[14px] font-semibold text-ink">{t("jobs.platforms.title")}</h2>
                 {platforms.length === 0 ? (
@@ -220,6 +521,34 @@ export function JobBotPage() {
                     ))}
                   </ul>
                 )}
+              </section>
+
+              <section aria-label={t("jobs.page.companyPages")} className={SECTION}>
+                <h2 className="text-[14px] font-semibold text-ink">{t("jobs.page.companyPages")}</h2>
+                <p className="mt-1 text-[13px] leading-relaxed text-ink-secondary">{t("jobs.page.companyPagesBody")}</p>
+                {companyPages.length === 0 ? (
+                  <p className="mt-2 text-[13px] text-ink-secondary">{t("jobs.page.companyPagesEmpty")}</p>
+                ) : (
+                  <ul className="mt-2 flex flex-col gap-2">
+                    {companyPages.map((page) => (
+                      <li key={page} className="flex items-center justify-between gap-2 rounded-lg border border-hairline/60 px-3 py-2">
+                        <span className="min-w-0 truncate text-[13px] text-ink-secondary">{page}</span>
+                        <button type="button" onClick={() => void removeCompanyPage(page)} disabled={savingPages} aria-label={t("jobs.page.companyPagesRemove", { url: page })} className="ui-button ui-button-md shrink-0 disabled:opacity-50">
+                          {t("jobs.page.companyPagesRemoveButton")}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <div className="mt-2 flex gap-2">
+                  <label className="flex min-w-0 flex-1 flex-col gap-1 text-[12px] font-medium text-ink-secondary">
+                    {t("jobs.page.companyPagesLabel")}
+                    <input type="url" autoComplete="off" value={newPage} onChange={(event) => setNewPage(event.target.value)} placeholder={t("jobs.page.companyPagesPlaceholder")} disabled={savingPages} className="w-full min-w-0 rounded-lg border border-hairline/60 bg-inset px-3 py-1.5 text-[13px] text-ink outline-none placeholder:text-ink-tertiary focus:border-accent disabled:opacity-60" />
+                  </label>
+                  <button type="button" onClick={() => void addCompanyPage()} disabled={savingPages || newPage.trim() === ""} className="ui-button ui-button-md self-end disabled:opacity-50">
+                    {t("jobs.page.companyPagesAdd")}
+                  </button>
+                </div>
               </section>
 
               <section aria-label={t("jobs.page.resumes")} className={SECTION}>

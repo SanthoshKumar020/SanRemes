@@ -430,6 +430,7 @@ export async function cuaPermissionsStatus() {
     timeout: 5000,
     killSignal: "SIGKILL",
     maxBuffer: 65_536,
+    windowsHide: true,
     env: { ...process.env, ...CUA_ENV },
   }).catch((error) => ({ stdout: error.stdout }));
   try {

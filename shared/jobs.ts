@@ -35,6 +35,8 @@ export const jobsProfileSchema = z.object({
   salaryExpected: textSchema(100).optional(),
   skills: stringList(200, 100),
   experience: z.array(experienceSchema).max(20).default([]),
+  /** Total years of experience, as the person states it; the resume parser fills this, the tailor does not read it. */
+  yearsOfExperience: z.number().min(0).max(50).optional(),
   education: textSchema(500).optional(),
   links: stringList(20, 500),
   updatedAt: z.number(),
@@ -84,10 +86,51 @@ export const jobsQueueItemSchema = z.object({
   tailoredResumeId: idSchema,
   state: queueStateSchema,
   decidedAt: z.number().optional(),
-  decidedBy: z.literal("user").optional(),
+  decidedBy: z.enum(["user", "auto"]).optional(),
   attempts: z.array(z.object({ at: z.number(), result: textSchema(500) }).strict()).max(50).default([]),
 }).strict();
 export type JobsQueueItem = z.infer<typeof jobsQueueItemSchema>;
+
+export const jobRunPhaseSchema = z.enum(["searching", "tailoring", "applying", "reporting", "done", "stopped"]);
+export type JobRunPhase = z.infer<typeof jobRunPhaseSchema>;
+
+export const jobRunAppliedSchema = z.object({
+  jobId: idSchema,
+  company: textSchema(300),
+  title: textSchema(300),
+  location: textSchema(200).optional(),
+  url: z.string().url().max(2048),
+  appliedAt: z.number(),
+  status: z.enum(["submitted", "not-submitted"]),
+  requisition: textSchema(200).optional(),
+  taskId: z.string().max(128).optional(),
+}).strict();
+export type JobRunApplied = z.infer<typeof jobRunAppliedSchema>;
+
+export const jobRunSkippedSchema = z.object({
+  jobId: idSchema,
+  company: textSchema(300),
+  title: textSchema(300),
+  reason: textSchema(500),
+}).strict();
+export type JobRunSkipped = z.infer<typeof jobRunSkippedSchema>;
+
+export const jobRunSchema = z.object({
+  id: idSchema,
+  kind: z.enum(["auto", "manual"]),
+  startedAt: z.number(),
+  finishedAt: z.number().optional(),
+  phase: jobRunPhaseSchema,
+  searched: z.number().int().min(0).default(0),
+  found: z.number().int().min(0).default(0),
+  applied: z.array(jobRunAppliedSchema).max(500).default([]),
+  skipped: z.array(jobRunSkippedSchema).max(500).default([]),
+  reportText: z.string().max(50_000).default(""),
+  whatsapp: z.enum(["sent", "pending-bridge", "not-configured"]).default("pending-bridge"),
+  /** True when at least one application ran without its queue task because the queue was unavailable. */
+  queueFallback: z.boolean().default(false),
+}).strict();
+export type JobRun = z.infer<typeof jobRunSchema>;
 
 export const platformSettingsSchema = z.object({
   enabled: z.boolean(),
@@ -109,6 +152,10 @@ export const jobsSettingsSchema = z.object({
   paused: z.boolean().default(false),
   /** Whether each platform account has 2FA, as the person answered in setup. */
   twoFactor: z.record(z.string().min(1).max(64), z.boolean()).default({}),
+  /** Apply to ranked matches on their own, up to the daily cap; off restores the approval queue. */
+  autoApply: z.boolean().default(true),
+  /** Company career pages to search alongside the platforms; empty means platforms only. */
+  companyPages: stringList(50, 2048),
 }).strict();
 export type JobsSettings = z.infer<typeof jobsSettingsSchema>;
 
@@ -119,6 +166,7 @@ export const jobsFileSchema = z.object({
   jobs: z.array(jobsJobSchema),
   queue: z.array(jobsQueueItemSchema),
   settings: jobsSettingsSchema,
+  runs: z.array(jobRunSchema).default([]),
 }).strict();
 export type JobsData = z.infer<typeof jobsFileSchema>;
 

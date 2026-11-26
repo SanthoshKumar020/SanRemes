@@ -4,13 +4,14 @@ import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 
 import { json, readBody } from "../harness/http.ts";
 import type { RequestAuth } from "../request-auth.ts";
 import { JobsStore } from "../jobs-store.ts";
 import { dispatchRoutes } from "./table.ts";
 import { createJobBotRoutes, type JobBotRouteDeps } from "./job-bot.ts";
+import { TasksStore } from "../tasks-store.ts";
 import { removeTempDir } from "../testing/cleanup.ts";
 
 const servers: Server[] = [];
@@ -26,6 +27,8 @@ async function serve(extra: Partial<JobBotRouteDeps> = {}) {
   const resumeDir = mkdtempSync(join(tmpdir(), "sanremes-jobs-resumes-"));
   scratch.push(resumeDir);
   const store = new JobsStore({ dataDir, now: () => 1_000 });
+  const tasks = new TasksStore({ dataDir, now: () => 1_000 });
+  const posted: Array<{ threadId: string; text: string }> = [];
   const logins = new Map<string, { bots: string[] | "all" }>([
     ["login-apply", { bots: ["apply-bot"] }],
     ["login-all", { bots: "all" }],
@@ -37,6 +40,9 @@ async function serve(extra: Partial<JobBotRouteDeps> = {}) {
     loginBots: (id) => logins.get(id)?.bots ?? null,
     signedInSites: async () => ({ running: false, sites: [{ site: "naukri.com", cookies: 1, storage: 1 }] }),
     resumeCwd: () => resumeDir,
+    tasksStore: tasks,
+    botThreadId: () => "thread-apply",
+    appendMessage: (threadId, text) => { posted.push({ threadId, text }); },
     ...extra,
   })];
   const server = createServer(async (req, res) => {
@@ -54,7 +60,7 @@ async function serve(extra: Partial<JobBotRouteDeps> = {}) {
     });
     return { status: res.status, body: await res.json() as Record<string, any> };
   };
-  return { api, store, resumeDir };
+  return { api, store, resumeDir, tasks, posted };
 }
 
 function seedProfile(store: JobsStore) {
@@ -321,4 +327,172 @@ it("refuses an unknown Resume Bot id in settings", async () => {
   expect(ok.status).toBe(200);
   expect(ok.body.settings).toMatchObject({ resumeBotId: "resume-bot", paused: true });
   expect(ok.body.appliedToday).toBe(0);
+});
+
+it("saves auto-apply, company pages and years of experience", async () => {
+  const { api } = await serve();
+  const settings = await api("/api/jobs/settings", { method: "PATCH", body: JSON.stringify({ autoApply: false, companyPages: ["https://example.com/careers"] }) });
+  expect(settings.status).toBe(200);
+  expect(settings.body.settings).toMatchObject({ autoApply: false, companyPages: ["https://example.com/careers"] });
+  const profile = await api("/api/jobs/profile", { method: "PATCH", body: JSON.stringify({ name: "Santhoshkumar", yearsOfExperience: 2.5 }) });
+  expect(profile.status).toBe(200);
+  expect(profile.body.profile).toMatchObject({ yearsOfExperience: 2.5 });
+  expect((await api("/api/jobs/profile", { method: "PATCH", body: JSON.stringify({ yearsOfExperience: 60 }) })).status).toBe(400);
+  const read = await api("/api/jobs");
+  expect(read.body.settings).toMatchObject({ autoApply: false, companyPages: ["https://example.com/careers"] });
+  expect(read.body.profile).toMatchObject({ yearsOfExperience: 2.5 });
+});
+
+it("lifts the Apply Bot mode when a run starts with auto-apply on, and not when it is off", async () => {
+  const liftOn = vi.fn();
+  const on = await serve({
+    liftApplyBotMode: liftOn,
+    startSearch: async () => ({ started: true }),
+    startApply: async (input) => { input.onSettled?.(true); return { started: true }; },
+  });
+  seedProfile(on.store);
+  await on.api("/api/jobs/settings", { method: "PATCH", body: JSON.stringify({ applyBotId: "apply-bot", resumeBotId: "resume-bot" }) });
+  expect((await on.api("/api/jobs/runs", { method: "POST", body: "{}" })).status).toBe(201);
+  expect(liftOn).toHaveBeenCalledTimes(1);
+
+  const liftOff = vi.fn();
+  const off = await serve({
+    liftApplyBotMode: liftOff,
+    startSearch: async () => ({ started: true }),
+    startApply: async (input) => { input.onSettled?.(true); return { started: true }; },
+  });
+  seedProfile(off.store);
+  await off.api("/api/jobs/settings", { method: "PATCH", body: JSON.stringify({ applyBotId: "apply-bot", resumeBotId: "resume-bot", autoApply: false }) });
+  expect((await off.api("/api/jobs/runs", { method: "POST", body: "{}" })).status).toBe(201);
+  expect(liftOff).not.toHaveBeenCalled();
+});
+
+it("lifts the Apply Bot mode when settings turn auto-apply on", async () => {
+  const lift = vi.fn();
+  const { api } = await serve({ liftApplyBotMode: lift });
+  expect((await api("/api/jobs/settings", { method: "PATCH", body: JSON.stringify({ autoApply: true }) })).status).toBe(200);
+  expect(lift).toHaveBeenCalledTimes(1);
+  expect((await api("/api/jobs/settings", { method: "PATCH", body: JSON.stringify({ dailyCap: 5 }) })).status).toBe(200);
+  expect(lift).toHaveBeenCalledTimes(1);
+});
+
+function runReport(jobs: Array<{ platform: string; url: string; title: string; company: string }>): string {
+  return [
+    "Found matches.",
+    "```sanremes-jobs",
+    JSON.stringify(jobs.map((job) => ({ ...job, jdKeywords: ["Databricks", "PySpark"] }))),
+    "```",
+  ].join("\n");
+}
+
+async function waitForRun(api: (path: string, init?: RequestInit) => Promise<{ status: number; body: Record<string, any> }>, id: string, phase: string): Promise<Record<string, any>> {
+  let run: Record<string, any> | undefined;
+  await vi.waitFor(async () => {
+    const read = await api(`/api/jobs/runs/${id}`);
+    run = read.body.run as Record<string, any>;
+    if (!run || run.phase !== phase) throw new Error(`still ${run?.phase ?? "missing"}`);
+  }, { timeout: 5_000, interval: 25 });
+  return run!;
+}
+
+it("runs a full auto run over HTTP and records a queue task per application", async () => {
+  const { api, store, tasks, posted } = await serve({
+    startSearch: async (input) => {
+      input.onSettled?.(runReport([
+        { platform: "naukri", url: "https://www.naukri.com/job/1", title: "Data Engineer", company: "Acme" },
+        { platform: "linkedin", url: "https://www.linkedin.com/jobs/2", title: "Data Engineer", company: "Beta" },
+      ]));
+      return { started: true };
+    },
+    startApply: async (input) => { input.onSettled?.(true); return { started: true }; },
+  });
+  seedProfile(store);
+  await api("/api/jobs/settings", { method: "PATCH", body: JSON.stringify({ applyBotId: "apply-bot", resumeBotId: "resume-bot" }) });
+  const started = await api("/api/jobs/runs", { method: "POST", body: "{}" });
+  expect(started.status).toBe(201);
+  expect(started.body.run).toMatchObject({ kind: "auto", phase: "searching", whatsapp: "pending-bridge" });
+  const done = await waitForRun(api, started.body.run.id, "done");
+  expect(done.applied).toHaveLength(2);
+  expect(done.applied[0]).toMatchObject({ company: "Acme", status: "submitted" });
+  expect(done.applied[0].taskId).toMatch(/^[\w-]{1,128}$/u);
+  expect(done).toMatchObject({ searched: 2, found: 2 });
+  expect(tasks.list("done")).toHaveLength(2);
+  expect(posted).toHaveLength(1);
+  expect(posted[0]?.text).toContain("Applied to 2:");
+  const listed = await api("/api/jobs/runs");
+  expect(listed.status).toBe(200);
+  expect(listed.body.runs).toHaveLength(1);
+  expect(listed.body.runs[0].id).toBe(started.body.run.id);
+});
+
+it("refuses a second run while one is going, and answers run lookups", async () => {
+  let settleSearch: ((text: string) => void) | null = null;
+  const { api, store } = await serve({
+    startSearch: async (input) => { settleSearch = input.onSettled ?? null; return { started: true }; },
+    startApply: async (input) => { input.onSettled?.(true); return { started: true }; },
+  });
+  expect((await api("/api/jobs/runs", { method: "POST", body: "{}" })).status).toBe(409);
+  seedProfile(store);
+  await api("/api/jobs/settings", { method: "PATCH", body: JSON.stringify({ applyBotId: "apply-bot", resumeBotId: "resume-bot" }) });
+  const started = await api("/api/jobs/runs", { method: "POST", body: "{}" });
+  expect(started.status).toBe(201);
+  const busy = await api("/api/jobs/runs", { method: "POST", body: "{}" });
+  expect(busy.status).toBe(409);
+  expect(busy.body.error).toBe("A run is already going.");
+  expect((await api("/api/jobs/runs/missing")).status).toBe(404);
+  expect((await api("/api/jobs/runs/missing/pause", { method: "POST", body: "{}" })).status).toBe(404);
+  expect((await api(`/api/jobs/runs/${started.body.run.id}/resume`, { method: "POST", body: "{}" })).status).toBe(409);
+  settleSearch!(runReport([{ platform: "naukri", url: "https://www.naukri.com/job/1", title: "Data Engineer", company: "Acme" }]));
+  const done = await waitForRun(api, started.body.run.id, "done");
+  expect(done.applied).toHaveLength(1);
+  const newer = store.createRun("manual");
+  store.updateRun(newer.id, { startedAt: 2_000, phase: "done" });
+  const listed = await api("/api/jobs/runs");
+  expect(listed.body.runs.map((run: { id: string }) => run.id)).toEqual([newer.id, started.body.run.id]);
+});
+
+it("pauses a run mid-search and resumes it to finish", async () => {
+  let settleSearch: ((text: string) => void) | null = null;
+  let searchCalls = 0;
+  const { api, store } = await serve({
+    startSearch: async (input) => { searchCalls++; settleSearch = input.onSettled ?? null; return { started: true }; },
+    startApply: async (input) => { input.onSettled?.(true); return { started: true }; },
+  });
+  seedProfile(store);
+  await api("/api/jobs/settings", { method: "PATCH", body: JSON.stringify({ applyBotId: "apply-bot", resumeBotId: "resume-bot" }) });
+  const started = await api("/api/jobs/runs", { method: "POST", body: "{}" });
+  const paused = await api(`/api/jobs/runs/${started.body.run.id}/pause`, { method: "POST", body: "{}" });
+  expect(paused.status).toBe(200);
+  expect(paused.body.run.id).toBe(started.body.run.id);
+  settleSearch!(runReport([{ platform: "naukri", url: "https://www.naukri.com/job/1", title: "Data Engineer", company: "Acme" }]));
+  const stopped = await waitForRun(api, started.body.run.id, "stopped");
+  expect(stopped.reportText).toContain("Stopped early — paused.");
+  const resumed = await api(`/api/jobs/runs/${started.body.run.id}/resume`, { method: "POST", body: "{}" });
+  expect(resumed.status).toBe(200);
+  expect(resumed.body.run.phase).toBe("searching");
+  await vi.waitFor(() => {
+    if (searchCalls < 2) throw new Error("resumed search has not started yet");
+  }, { timeout: 5_000, interval: 25 });
+  settleSearch!(runReport([{ platform: "naukri", url: "https://www.naukri.com/job/1", title: "Data Engineer", company: "Acme" }]));
+  const done = await waitForRun(api, started.body.run.id, "done");
+  expect(done.applied).toHaveLength(1);
+});
+
+it("lets an auto-approved queue item through the apply route only while auto-apply is on", async () => {
+  const { api, store } = await serve({
+    startApply: async (input) => { input.onSettled?.(true); return { started: true }; },
+  });
+  const { item } = seed(store);
+  store.addResume({ id: "resume-1", kind: "tailored", path: "/resumes/r.txt", text: "Santhoshkumar" });
+  await api("/api/jobs/settings", { method: "PATCH", body: JSON.stringify({ applyBotId: "apply-bot" }) });
+  store.decideQueue(item.id, "approved");
+  store.update((data) => {
+    const one = data.queue.find((entry) => entry.id === item.id)!;
+    one.decidedBy = "auto";
+  });
+  expect((await api(`/api/jobs/queue/${item.id}/apply`, { method: "POST", body: "{}" })).status).toBe(202);
+  await api("/api/jobs/settings", { method: "PATCH", body: JSON.stringify({ autoApply: false }) });
+  const refused = await api(`/api/jobs/queue/${item.id}/apply`, { method: "POST", body: "{}" });
+  expect(refused.status).toBe(409);
+  expect(refused.body.reason).toBe("not-approved");
 });

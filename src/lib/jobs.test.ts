@@ -20,7 +20,8 @@ describe("job bot souls", () => {
     expect(soulBytes(APPLY_BOT_SOUL)).toBeLessThanOrEqual(BOT_PROFILE_LIMITS.soul);
     expect(RESUME_BOT_SOUL).toContain("one page");
     expect(RESUME_BOT_SOUL).toContain("Never invent skills");
-    expect(APPLY_BOT_SOUL).toContain("Never submit an application without an approved queue item");
+    expect(APPLY_BOT_SOUL).toContain("Apply to ranked matches on your own, up to the daily cap");
+    expect(APPLY_BOT_SOUL).toContain("Report every application");
     expect(APPLY_BOT_SOUL).toContain("Never try to solve a human check or CAPTCHA");
   });
 });
@@ -40,7 +41,7 @@ describe("ensureJobBots", () => {
   const request = vi.fn();
   const bot = (name: string) => ({ id: `${name}-id`, name, section: "Jobs" });
 
-  it("creates both bots under Jobs with ask mode, no alwaysAllow, and the right browser setup", async () => {
+  it("creates both bots under Jobs with the Apply Bot on auto, no alwaysAllow, and the right browser setup", async () => {
     request.mockResolvedValueOnce({ bot: bot(RESUME_BOT_NAME) }).mockResolvedValueOnce({ bot: bot(APPLY_BOT_NAME) });
     const made = await ensureJobBots([], request);
     expect(made.resumeBot.name).toBe(RESUME_BOT_NAME);
@@ -49,7 +50,7 @@ describe("ensureJobBots", () => {
     expect(resumeCall.useDefaults).toBe(false);
     expect(resumeCall.section).toBe("Jobs");
     expect(resumeCall.settings).toEqual({ soul: RESUME_BOT_SOUL, approvalMode: "ask", browser: false, computer: "off" });
-    expect(applyCall.settings).toEqual({ soul: APPLY_BOT_SOUL, approvalMode: "ask", browser: true, computer: "browser" });
+    expect(applyCall.settings).toEqual({ soul: APPLY_BOT_SOUL, approvalMode: "auto", browser: true, computer: "browser" });
     expect(JSON.stringify(resumeCall)).not.toContain("alwaysAllow");
     expect(JSON.stringify(applyCall)).not.toContain("alwaysAllow");
   });

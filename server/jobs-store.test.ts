@@ -32,7 +32,8 @@ describe("jobs.json", () => {
     const { store } = makeStore();
     expect(store.snapshot()).toEqual({
       version: 1, profile: null, resumes: [], jobs: [], queue: [],
-      settings: { platforms: {}, dailyCap: DAILY_CAP_DEFAULT, search: { keywords: [], locations: [] }, twoFactor: {}, paused: false },
+      settings: { platforms: {}, dailyCap: DAILY_CAP_DEFAULT, search: { keywords: [], locations: [] }, twoFactor: {}, paused: false, autoApply: true, companyPages: [] },
+      runs: [],
     });
     expect(DAILY_CAP_DEFAULT).toBe(10);
   });
@@ -192,6 +193,76 @@ describe("found jobs and tailored resumes", () => {
     expect(store.recordQueueAttempt(item.id, "submitted")?.attempts).toHaveLength(1);
     expect(store.setJobTailoredResume("missing", first.id)).toBeNull();
     expect(store.repointQueue("missing", first.id)).toBeNull();
+  });
+});
+
+describe("auto-decide and the auto submit gate", () => {
+  it("auto-approves ranked queue items up to the remaining cap, and only pending ones", () => {
+    const { store } = makeStore();
+    store.setSettings({ dailyCap: 1 });
+    const first = seedJob(store, "job-1");
+    const second = store.addJob({ id: "job-2", platform: "linkedin", url: "https://www.linkedin.com/jobs/2", title: "Data Engineer", company: "Beta" });
+    const firstItem = store.enqueue(first.id, "resume-1")!;
+    const secondItem = store.enqueue(second.id, "resume-1")!;
+    store.decideQueue(secondItem.id, "rejected");
+    const approved = store.autoDecideQueue([first.id, second.id]);
+    expect(approved).toHaveLength(1);
+    expect(approved[0]).toMatchObject({ id: firstItem.id, state: "approved", decidedBy: "auto", decidedAt: START });
+    expect(store.snapshot().queue.find((one) => one.id === secondItem.id)?.state).toBe("rejected");
+    expect(store.autoDecideQueue([first.id])).toHaveLength(0);
+  });
+
+  it("lets an auto-approved item through the gate only while auto-apply is on", () => {
+    const { store } = makeStore();
+    seedJob(store);
+    const item = store.enqueue("job-1", "resume-1")!;
+    store.decideQueue(item.id, "approved");
+    store.update((data) => {
+      const one = data.queue.find((entry) => entry.id === item.id)!;
+      one.decidedBy = "auto";
+    });
+    expect(store.submitGate("job-1")).toEqual({ allowed: true });
+    store.setSettings({ autoApply: false });
+    expect(store.submitGate("job-1")).toEqual({ allowed: false, reason: "not-approved" });
+    store.setSettings({ autoApply: true });
+    expect(store.submitGate("job-1")).toEqual({ allowed: true });
+  });
+
+  it("still lets a user-approved item through when auto-apply is off", () => {
+    const { store } = makeStore();
+    seedJob(store);
+    const item = store.enqueue("job-1", "resume-1")!;
+    store.decideQueue(item.id, "approved");
+    store.setSettings({ autoApply: false });
+    expect(store.submitGate("job-1")).toEqual({ allowed: true });
+  });
+});
+
+describe("run records", () => {
+  it("creates, lists newest first, and updates a run", () => {
+    const { store } = makeStore();
+    const run = store.createRun("auto");
+    expect(run).toMatchObject({ kind: "auto", startedAt: START, phase: "searching", searched: 0, found: 0, applied: [], skipped: [], whatsapp: "pending-bridge", queueFallback: false });
+    expect(store.listRuns()).toHaveLength(1);
+    expect(store.getRun(run.id)?.id).toBe(run.id);
+    expect(store.getRun("missing")).toBeNull();
+    const updated = store.updateRun(run.id, { phase: "done", finishedAt: START, reportText: "Applied to none." })!;
+    expect(updated).toMatchObject({ phase: "done", finishedAt: START, reportText: "Applied to none." });
+    expect(store.updateRun("missing", { phase: "done" })).toBeNull();
+    expect(store.listRuns()[0]?.phase).toBe("done");
+  });
+
+  it("reads a v1 file without runs or the new settings, filling the defaults instead of wiping it", () => {
+    const { dataDir, store } = makeStore();
+    writeFileSync(join(dataDir, "jobs.json"), JSON.stringify({
+      version: 1, profile: { name: "Santhoshkumar", location: "", skills: [], experience: [], links: [], updatedAt: START },
+      resumes: [], jobs: [], queue: [],
+      settings: { platforms: {}, dailyCap: 10, search: { keywords: [], locations: [] }, twoFactor: {}, paused: false },
+    }));
+    const data = store.snapshot();
+    expect(data.runs).toEqual([]);
+    expect(data.settings).toMatchObject({ autoApply: true, companyPages: [] });
+    expect(data.profile?.name).toBe("Santhoshkumar");
   });
 });
 

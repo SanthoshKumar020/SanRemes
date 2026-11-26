@@ -8,12 +8,14 @@ import { join } from "node:path";
 import { z } from "zod";
 
 import type { LoginBots } from "../../shared/logins.ts";
-import { DAILY_CAP_MAX, jobsProfileSchema, type JobsData, type JobsJob, type JobsQueueItem, type JobsSettings, type JobStatus } from "../../shared/jobs.ts";
+import { DAILY_CAP_MAX, jobsProfileSchema, type JobRun, type JobsData, type JobsJob, type JobsQueueItem, type JobStatus } from "../../shared/jobs.ts";
 import { writeFileAtomic } from "../atomic.ts";
 import type { SignedInSites } from "../browser-sites.ts";
 import type { SubmitGate } from "../jobs-store.ts";
 import { JobsStore } from "../jobs-store.ts";
-import { APPLIED_MARKER, parseSearchReport, searchReportInstructions, tailorResumeText } from "../jobs-resume.ts";
+import { applyPrompt, parseSearchReport, searchPrompt, tailorResumeText } from "../jobs-resume.ts";
+import { JobRunDriver } from "../jobs-run.ts";
+import type { TasksStore } from "../tasks-store.ts";
 import { extractResumeText } from "../resume-extract.ts";
 import { PASS, type RouteHandler } from "./table.ts";
 
@@ -37,6 +39,14 @@ export interface JobBotRouteDeps {
   startSearch?(input: { botId: string; prompt: string; onSettled?: (text: string) => void }): Promise<{ started: boolean; reason?: string }>;
   /** Starts a Job Apply Bot turn to submit one approved application; the turn's reply says whether it went out. */
   startApply?(input: { botId: string; jobId: string; prompt: string; onSettled?: (applied: boolean) => void }): Promise<{ started: boolean; reason?: string }>;
+  /** The task queue, so a run records one task per application; absent, runs apply without queue tasks. */
+  tasksStore?: TasksStore | null;
+  /** The Apply Bot's main thread, for the run's end-of-run report. */
+  botThreadId?(id: string): string | null;
+  /** Posts a line into a thread; the run driver uses it for its report. */
+  appendMessage?(threadId: string, text: string): void;
+  /** Lifts the Job Apply Bot from approval mode ask to auto the first time auto-apply runs; never changes any other mode. Absent, the mode is left alone. */
+  liftApplyBotMode?(): void;
 }
 
 const ID = /^[\w-]{1,128}$/u;
@@ -64,6 +74,8 @@ const settingsBody = z.object({
   applyBotId: z.string().max(128).optional(),
   resumeBotId: z.string().max(128).optional(),
   paused: z.boolean().optional(),
+  autoApply: z.boolean().optional(),
+  companyPages: z.array(z.string().max(2048)).max(50).optional(),
   twoFactor: z.record(z.string().min(1).max(64), z.boolean()).optional(),
 }).strict();
 const profileBody = jobsProfileSchema.partial().strict();
@@ -77,35 +89,21 @@ const searchBody = z.object({ applyBotId: z.string().max(128).optional() }).stri
 const extractBody = z.object({ filename: z.string().min(1).max(300), dataBase64: z.string().min(1).max(14_000_000) }).strict();
 const batchApproveBody = z.object({ ids: z.array(z.string().regex(ID)).min(1).max(50) }).strict();
 
-function searchPrompt(settings: JobsSettings): string {
-  const lines = ["Search for Data Engineer jobs and record each match in the Jobs store."];
-  if (settings.search.keywords.length) lines.push(`Keywords: ${settings.search.keywords.join(", ")}.`);
-  if (settings.search.locations.length) lines.push(`Locations: ${settings.search.locations.join(", ")}.`);
-  const platforms = Object.entries(settings.platforms).filter(([, platform]) => platform.enabled).map(([name]) => name);
-  if (platforms.length) lines.push(`Platforms: ${platforms.join(", ")}.`);
-  if (settings.search.minSalary) lines.push(`Minimum salary: ${settings.search.minSalary}.`);
-  lines.push(`Apply to nothing yet: an application goes out only from a queue item the person approved, and at most ${settings.dailyCap} applications a day.`);
-  lines.push(searchReportInstructions());
-  return lines.join(" ");
-}
-
-/** The prompt for one approved application: the bot submits it in its own browser and reports the outcome. */
-function applyPrompt(job: JobsJob, resumePath: string): string {
-  return [
-    `Submit the application for "${job.title}" at ${job.company} (${job.url}) in your own browser profile.`,
-    `Upload the tailored resume at ${resumePath} with the existing agent_browser_upload tool.`,
-    "Fill every field only from the stored job profile; never invent skills, experience, salary, or certificates.",
-    "Never try to solve a human check or CAPTCHA: stop and hand sign-in to the person instead.",
-    `If the application is submitted, end your reply with a line: ${APPLIED_MARKER} ${job.id}`,
-    "If it is not submitted, say plainly what stopped it.",
-  ].join(" ");
-}
-
 export function createJobBotRoutes(deps: JobBotRouteDeps): RouteHandler {
   const { store } = deps;
+  const runs = new JobRunDriver({
+    store,
+    tasks: deps.tasksStore ?? null,
+    botExists: deps.botExists,
+    botThreadId: deps.botThreadId,
+    startSearch: deps.startSearch,
+    startApply: deps.startApply,
+    resumeCwd: deps.resumeCwd,
+    appendMessage: deps.appendMessage,
+  });
   const state = (): Omit<JobsData, "version"> & { version: number; appliedToday: number } => {
     const data = store.snapshot();
-    return { version: store.version, profile: data.profile, resumes: data.resumes, jobs: data.jobs, queue: data.queue, settings: data.settings, appliedToday: store.appliedToday() };
+    return { version: store.version, profile: data.profile, resumes: data.resumes, jobs: data.jobs, queue: data.queue, runs: store.listRuns(), settings: data.settings, appliedToday: store.appliedToday() };
   };
   /** A settings patch is refused whole when a bot id is unknown or a login id is unknown or not scoped to only the Job Apply Bot. */
   const settingsError = (patch: z.infer<typeof settingsBody>): string | null => {
@@ -173,6 +171,7 @@ export function createJobBotRoutes(deps: JobBotRouteDeps): RouteHandler {
       if (settingsPatch) {
         try { store.setSettings(settingsPatch); }
         catch { return json(res, 400, { error: "Send the settings to change." }); }
+        if (settingsPatch.autoApply === true) deps.liftApplyBotMode?.();
       }
       return json(res, 200, state());
     }
@@ -183,6 +182,7 @@ export function createJobBotRoutes(deps: JobBotRouteDeps): RouteHandler {
       if (error) return json(res, 400, { error });
       try { store.setSettings(body.data); }
       catch { return json(res, 400, { error: "Send the settings to change." }); }
+      if (body.data.autoApply === true) deps.liftApplyBotMode?.();
       return json(res, 200, state());
     }
     if (rest === "search" && method === "POST") {
@@ -206,6 +206,36 @@ export function createJobBotRoutes(deps: JobBotRouteDeps): RouteHandler {
       });
       if (!started.started) return json(res, 409, { error: started.reason ?? "The search could not start." });
       return json(res, 202, { started: true, botId: applyBotId });
+    }
+    if (rest === "runs" && method === "POST") {
+      const data = store.snapshot();
+      if (!data.profile) return json(res, 409, { error: "Set up the profile first." });
+      const applyBotId = data.settings.applyBotId;
+      if (!applyBotId) return json(res, 409, { error: "Set up the Job Apply Bot first." });
+      if (!deps.botExists(applyBotId)) return json(res, 404, { error: "No such bot." });
+      if (!deps.startSearch || !deps.startApply) return json(res, 503, { error: "Job runs are not wired up yet." });
+      const active = runs.activeRun();
+      if (active) return json(res, 409, { error: "A run is already going.", run: active });
+      if (data.settings.autoApply) deps.liftApplyBotMode?.();
+      return json(res, 201, { run: runs.start() });
+    }
+    if (rest === "runs" && method === "GET") {
+      return json(res, 200, { runs: runs.listRuns() });
+    }
+    const runRoute = /^runs\/([\w-]{1,128})(?:\/(pause|resume))?$/u.exec(rest);
+    if (runRoute && method === "GET" && !runRoute[2]) {
+      const run: JobRun | null = runs.getRun(runRoute[1]!);
+      return run ? json(res, 200, { run }) : json(res, 404, { error: "No such run." });
+    }
+    if (runRoute && method === "POST" && runRoute[2]) {
+      if (runRoute[2] === "pause") {
+        const run: JobRun | null = runs.pause(runRoute[1]!);
+        return run ? json(res, 200, { run }) : json(res, 404, { error: "No such run." });
+      }
+      const current = runs.getRun(runRoute[1]!);
+      if (!current) return json(res, 404, { error: "No such run." });
+      if (current.phase !== "stopped") return json(res, 409, { error: "That run is not paused.", phase: current.phase });
+      return json(res, 200, { run: runs.resume(runRoute[1]!)! });
     }
     if (rest === "extract" && method === "POST") {
       const body = extractBody.safeParse(await readBody(req, 14_000_000));

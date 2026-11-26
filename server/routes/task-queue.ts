@@ -4,7 +4,7 @@
 import { z } from "zod";
 
 import { taskStateSchema } from "../../shared/tasks.ts";
-import type { TasksStore } from "../tasks-store.ts";
+import { failedAttempts, type TasksStore } from "../tasks-store.ts";
 import { PASS, type RouteHandler } from "./table.ts";
 
 export const TASKS_PATH = "/api/tasks";
@@ -25,12 +25,12 @@ const createBody = z.object({
 }).strict();
 const claimBody = z.object({ botId: z.string().max(128) }).strict();
 const finishBody = z.object({ botId: z.string().max(128), result: z.string().max(500).optional() }).strict();
-const ACTION = /^([\w-]{1,128})\/(claim|complete|fail)$/u;
+const ACTION = /^([\w-]{1,128})\/(claim|complete|fail|start|requeue)$/u;
 
 export function createTaskQueueRoutes(deps: TaskQueueRouteDeps): RouteHandler {
   const { store } = deps;
   const state = () => ({ version: store.version, tasks: store.list() });
-  return async ({ req, res, url, path, method, json, readBody }) => {
+  return async ({ req, res, url, path, method, auth, json, readBody }) => {
     if (path === TASKS_PATH) {
       if (method === "GET") {
         const wanted = url.searchParams.get("state");
@@ -51,11 +51,23 @@ export function createTaskQueueRoutes(deps: TaskQueueRouteDeps): RouteHandler {
     if (!path.startsWith(`${TASKS_PATH}/`)) return PASS;
     const action = ACTION.exec(path.slice(TASKS_PATH.length + 1));
     if (!action) return json(res, 404, { error: "no such task" });
-    const [id, verb] = [action[1]!, action[2]! as "claim" | "complete" | "fail"];
+    const [id, verb] = [action[1]!, action[2]! as "claim" | "complete" | "fail" | "start" | "requeue"];
     if (method !== "POST") return json(res, 405, { error: "Use POST." });
-    if (!isJson(req)) return json(res, 415, { error: "content-type must be application/json" });
+    if (verb === "requeue" && auth.kind === "loopback" && auth.trust === "service") {
+      return json(res, 403, { error: "Only the person can requeue a task." });
+    }
     const task = store.get(id);
     if (!task) return json(res, 404, { error: "no such task" });
+    if (verb === "requeue") {
+      const requeued = store.requeue(id);
+      if (requeued === null) return json(res, 404, { error: "no such task" });
+      if (requeued === "not-failed") return json(res, 409, { error: "That task is not failed.", state: task.state });
+      if (requeued === "retry-cap") {
+        return json(res, 409, { error: "That task has already failed 3 times. Delete it and create a new one.", attempts: failedAttempts(task) });
+      }
+      return json(res, 200, { task: requeued, ...state() });
+    }
+    if (!isJson(req)) return json(res, 415, { error: "content-type must be application/json" });
     if (verb === "claim") {
       const body = claimBody.safeParse(await readBody(req, 4096));
       if (!body.success) return json(res, 400, { error: "Send the bot id claiming the task." });
@@ -69,6 +81,13 @@ export function createTaskQueueRoutes(deps: TaskQueueRouteDeps): RouteHandler {
     const body = finishBody.safeParse(await readBody(req, 4096));
     if (!body.success) return json(res, 400, { error: "Send the bot id finishing the task." });
     if (deps.botExists && !deps.botExists(body.data.botId)) return json(res, 404, { error: "No such bot." });
+    if (verb === "start") {
+      const started = store.start(id, body.data.botId);
+      if (started === null) return json(res, 404, { error: "no such task" });
+      if (started === "not-claimed") return json(res, 409, { error: "That task is not claimed.", state: task.state });
+      if (started === "not-locked-by") return json(res, 409, { error: "That task is locked by another bot.", lockedBy: task.lockedBy });
+      return json(res, 200, { task: started, ...state() });
+    }
     const finished = verb === "complete"
       ? store.complete(id, body.data.botId, body.data.result)
       : store.fail(id, body.data.botId, body.data.result);

@@ -57,12 +57,13 @@ export const RESUME_BOT_SOUL = [
 ].join("\n");
 
 export const APPLY_BOT_SOUL = [
-  "You find jobs and draft applications for one person, from their stored job profile and search settings only.",
-  "Search and draft only. Never submit an application without an approved queue item for that job: the Jobs page approval is the only submit gate.",
+  "You find jobs and apply to them for one person, from their stored job profile and search settings only.",
+  "Apply to ranked matches on your own, up to the daily cap: an auto-approved queue item is the submit gate, and the cap is the limit.",
   "Never invent skills, experience, salary, or certificates in a search, a draft, or a form. Use only what the stored profile says.",
   "Work one job at a time in your own browser profile. Never attach to the person's own signed-in browser.",
   "Never try to solve a human check or CAPTCHA. Stop and hand sign-in to the person instead.",
   "Keep to the daily application cap. When the cap is reached, stop applying and say so.",
+  "Report every application: which company, which role, whether it went out, and what stopped it when it did not.",
 ].join("\n");
 
 export function soulBytes(soul: string): number {
@@ -97,7 +98,7 @@ export async function ensureJobBots(existing: readonly Bot[], request: Request =
     title: "Finds jobs and drafts applications",
     description: "Searches Naukri and LinkedIn and drafts applications. Submits only what you approved in the Jobs page queue.",
     section: JOB_BOTS_SECTION,
-    settings: { soul: APPLY_BOT_SOUL, approvalMode: "ask", browser: true, computer: "browser" },
+    settings: { soul: APPLY_BOT_SOUL, approvalMode: "auto", browser: true, computer: "browser" },
   });
   return { resumeBot, applyBot };
 }
@@ -214,7 +215,8 @@ export function emptyJobsState(): JobsState {
     resumes: [],
     jobs: [],
     queue: [],
-    settings: { platforms: {}, dailyCap: DAILY_CAP_DEFAULT, search: { keywords: [], locations: [] }, twoFactor: {}, paused: false },
+    runs: [],
+    settings: { platforms: {}, dailyCap: DAILY_CAP_DEFAULT, search: { keywords: [], locations: [] }, twoFactor: {}, paused: false, autoApply: true, companyPages: [] },
     appliedToday: 0,
   };
 }

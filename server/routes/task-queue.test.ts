@@ -19,7 +19,7 @@ afterEach(async () => {
   for (const dir of scratch.splice(0)) await removeTempDir(dir);
 });
 
-async function serve(extra: Partial<TaskQueueRouteDeps> = {}) {
+async function serve(extra: Partial<TaskQueueRouteDeps> = {}, authOverride?: RequestAuth) {
   const dataDir = mkdtempSync(join(tmpdir(), "sanremes-task-queue-routes-"));
   scratch.push(dataDir);
   const store = new TasksStore({ dataDir, now: () => 1_000 });
@@ -30,7 +30,7 @@ async function serve(extra: Partial<TaskQueueRouteDeps> = {}) {
   })];
   const server = createServer(async (req, res) => {
     const url = new URL(req.url ?? "/", "http://localhost");
-    const auth = { kind: "loopback", scopes: ["admin"] } as unknown as RequestAuth;
+    const auth = authOverride ?? { kind: "loopback", scopes: ["admin"] } as unknown as RequestAuth;
     if (!await dispatchRoutes(routes, { req, res, url, path: url.pathname, method: req.method ?? "GET", auth, json, readBody })) json(res, 404, {});
   });
   servers.push(server);
@@ -131,4 +131,41 @@ it("passes through paths that are not its own", async () => {
   const { api } = await serve();
   expect((await api("/api/other")).status).toBe(404);
   expect((await api("/api/tasks", { method: "DELETE" })).status).toBe(405);
+});
+
+it("starts a claimed task, only by the bot holding the lock", async () => {
+  const { api } = await serve();
+  const id = await seed(api);
+  expect((await api(`/api/tasks/${id}/start`, { method: "POST", body: JSON.stringify({ botId: "job-bot" }) })).status).toBe(409);
+  await api(`/api/tasks/${id}/claim`, { method: "POST", body: JSON.stringify({ botId: "job-bot" }) });
+  expect((await api(`/api/tasks/${id}/start`, { method: "POST", body: JSON.stringify({ botId: "qa-bot" }) })).status).toBe(409);
+  const started = await api(`/api/tasks/${id}/start`, { method: "POST", body: JSON.stringify({ botId: "job-bot" }) });
+  expect(started.status).toBe(200);
+  expect(started.body.task).toMatchObject({ state: "running", lockedBy: "job-bot" });
+  expect(started.body.task.history).toHaveLength(2);
+  expect((await api(`/api/tasks/${id}/start`, { method: "POST", body: JSON.stringify({ botId: "ghost" }) })).status).toBe(404);
+  expect((await api("/api/tasks/missing/start", { method: "POST", body: JSON.stringify({ botId: "job-bot" }) })).status).toBe(404);
+});
+
+it("requeues a failed task, refuses a live one and a third failure, and refuses service callers", async () => {
+  const { api, store } = await serve();
+  const id = await seed(api);
+  expect((await api(`/api/tasks/${id}/requeue`, { method: "POST", body: "{}" })).status).toBe(409);
+  await api(`/api/tasks/${id}/claim`, { method: "POST", body: JSON.stringify({ botId: "job-bot" }) });
+  await api(`/api/tasks/${id}/fail`, { method: "POST", body: JSON.stringify({ botId: "job-bot", result: "First failure." }) });
+  const requeued = await api(`/api/tasks/${id}/requeue`, { method: "POST", body: "{}" });
+  expect(requeued.status).toBe(200);
+  expect(requeued.body.task).toMatchObject({ state: "queued", assigneeBotId: null, lockedBy: null });
+  for (let attempt = 2; attempt <= 3; attempt++) {
+    await api(`/api/tasks/${id}/claim`, { method: "POST", body: JSON.stringify({ botId: "job-bot" }) });
+    await api(`/api/tasks/${id}/fail`, { method: "POST", body: JSON.stringify({ botId: "job-bot", result: `Failure ${attempt}.` }) });
+    if (attempt < 3) expect((await api(`/api/tasks/${id}/requeue`, { method: "POST", body: "{}" })).status).toBe(200);
+  }
+  const capped = await api(`/api/tasks/${id}/requeue`, { method: "POST", body: "{}" });
+  expect(capped.status).toBe(409);
+  expect(capped.body).toMatchObject({ attempts: 3 });
+  expect((await api("/api/tasks/missing/requeue", { method: "POST", body: "{}" })).status).toBe(404);
+  const service = await serve({}, { kind: "loopback", scopes: ["client"], trust: "service" } as unknown as RequestAuth);
+  expect((await service.api(`/api/tasks/${id}/requeue`, { method: "POST", body: "{}" })).status).toBe(403);
+  expect(store.get(id)?.state).toBe("failed");
 });

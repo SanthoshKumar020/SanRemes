@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { DAILY_CAP_DEFAULT, jobsFileSchema, jobsJobSchema, jobsProfileSchema, jobsResumeSchema, jobsSettingsSchema, type JobPlatformSettings, type JobsData, type JobsJob, type JobsProfile, type JobsQueueItem, type JobsResume, type JobsSettings, type JobStatus, type QueueState } from "../shared/jobs.ts";
+import { DAILY_CAP_DEFAULT, jobRunSchema, jobsFileSchema, jobsJobSchema, jobsProfileSchema, jobsResumeSchema, jobsSettingsSchema, type JobPlatformSettings, type JobRun, type JobsData, type JobsJob, type JobsProfile, type JobsQueueItem, type JobsResume, type JobsSettings, type JobStatus, type QueueState } from "../shared/jobs.ts";
 
 import { writeFileAtomic } from "./atomic.ts";
 
@@ -24,6 +24,8 @@ export interface JobsSettingsPatch {
   resumeBotId?: string;
   paused?: boolean;
   twoFactor?: Record<string, boolean>;
+  autoApply?: boolean;
+  companyPages?: string[];
 }
 
 /** One found job as a search turn reports it, before the store scores and dedupes it. */
@@ -45,7 +47,8 @@ function emptyData(): JobsData {
     resumes: [],
     jobs: [],
     queue: [],
-    settings: { platforms: {}, dailyCap: DAILY_CAP_DEFAULT, search: { keywords: [], locations: [] }, twoFactor: {}, paused: false },
+    settings: { platforms: {}, dailyCap: DAILY_CAP_DEFAULT, search: { keywords: [], locations: [] }, twoFactor: {}, paused: false, autoApply: true, companyPages: [] },
+    runs: [],
   };
 }
 
@@ -246,6 +249,54 @@ export class JobsStore {
     return changed;
   }
 
+  /** Approves still-pending queue items as the run's own decision, best rank first, up to the remaining daily cap. */
+  autoDecideQueue(jobIds: readonly string[]): JobsQueueItem[] {
+    const at = this.now();
+    const approved: JobsQueueItem[] = [];
+    this.update((data) => {
+      const remaining = data.settings.dailyCap - data.jobs.filter((job) => job.status === "applied" && job.appliedAt !== undefined && sameLocalDay(job.appliedAt, at)).length;
+      for (const jobId of jobIds) {
+        if (approved.length >= remaining) break;
+        const item = data.queue.find((one) => one.jobId === jobId && one.state === "pending");
+        if (!item) continue;
+        item.state = "approved";
+        item.decidedAt = at;
+        item.decidedBy = "auto";
+        approved.push({ ...item });
+      }
+    });
+    return approved;
+  }
+
+  createRun(kind: JobRun["kind"]): JobRun {
+    const run: JobRun = jobRunSchema.parse({
+      id: randomUUID(), kind, startedAt: this.now(), phase: "searching",
+      searched: 0, found: 0, applied: [], skipped: [], reportText: "", whatsapp: "pending-bridge",
+    });
+    this.update((data) => { data.runs.push(run); });
+    return run;
+  }
+
+  getRun(id: string): JobRun | null {
+    const run = this.read().runs.find((one) => one.id === id);
+    return run ? structuredClone(run) : null;
+  }
+
+  listRuns(): JobRun[] {
+    return structuredClone(this.read().runs).sort((a, b) => b.startedAt - a.startedAt);
+  }
+
+  updateRun(id: string, patch: Partial<JobRun>): JobRun | null {
+    let changed: JobRun | null = null;
+    this.update((data) => {
+      const run = data.runs.find((one) => one.id === id);
+      if (!run) return;
+      Object.assign(run, jobRunSchema.parse({ ...run, ...patch }));
+      changed = { ...run };
+    });
+    return changed;
+  }
+
   appliedToday(now: number = this.now()): number {
     return this.read().jobs.filter((job) => job.status === "applied" && job.appliedAt !== undefined && sameLocalDay(job.appliedAt, now)).length;
   }
@@ -256,7 +307,9 @@ export class JobsStore {
     if (!data.jobs.some((job) => job.id === jobId)) return { allowed: false, reason: "no-such-job" };
     const item = data.queue.find((one) => one.jobId === jobId);
     if (!item) return { allowed: false, reason: "no-queue-item" };
-    if (item.state !== "approved" || item.decidedBy !== "user") return { allowed: false, reason: "not-approved" };
+    if (item.state !== "approved") return { allowed: false, reason: "not-approved" };
+    if (item.decidedBy === "auto" && !data.settings.autoApply) return { allowed: false, reason: "not-approved" };
+    if (item.decidedBy !== "user" && item.decidedBy !== "auto") return { allowed: false, reason: "not-approved" };
     if (this.appliedToday(now) >= data.settings.dailyCap) return { allowed: false, reason: "daily-cap" };
     return { allowed: true };
   }

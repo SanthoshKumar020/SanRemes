@@ -103,6 +103,7 @@ export class StdioMcp {
     this.remote = def.directory === true;
     this.child = spawn(def.command, def.args ?? [], {
       stdio: ["pipe", "pipe", "pipe"],
+      windowsHide: true,
       env: { ...process.env, ...def.env },
     });
     this.child.stderr.on("data", () => {

@@ -29,7 +29,7 @@ export function openInBrowser(url: string): Promise<boolean> {
     : ["xdg-open", [url]];
   return new Promise((resolve) => {
     try {
-      const child = spawn(command, args, { stdio: "ignore", detached: true });
+      const child = spawn(command, args, { stdio: "ignore", detached: true, windowsHide: true });
       child.once("error", () => resolve(false));
       child.once("spawn", () => { child.unref(); resolve(true); });
     } catch {

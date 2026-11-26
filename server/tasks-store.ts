@@ -10,6 +10,17 @@ import { writeFileAtomic } from "./atomic.ts";
 
 export const TASKS_FILE = "tasks.json";
 
+/** How long a claim holds before another bot may take the task over; a heartbeat may lengthen this later. */
+export const TASK_LOCK_LEASE_MS = 30 * 60_000;
+
+/** History entries the store itself writes; anything else in history is a bot's finish outcome. */
+const SYSTEM_RESULTS = new Set(["claimed", "started", "lock expired", "requeued"]);
+
+/** How many times this task has failed: every finish outcome that is not one of the store's own entries. */
+export function failedAttempts(task: Task): number {
+  return task.history.filter((entry) => !SYSTEM_RESULTS.has(entry.result)).length;
+}
+
 function emptyData(): TasksData {
   return { version: 1, tasks: [] };
 }
@@ -96,6 +107,12 @@ export class TasksStore {
     this.update((data) => {
       const task = data.tasks.find((one) => one.id === id);
       if (!task) return;
+      if (task.state === "claimed" && task.lockedAt !== null && at - task.lockedAt > TASK_LOCK_LEASE_MS) {
+        task.history.push({ at, result: "lock expired", botId: task.lockedBy ?? undefined });
+        task.state = "queued";
+        task.lockedBy = null;
+        task.lockedAt = null;
+      }
       if (task.state !== "queued") { claimed = "not-queued"; return; }
       task.state = "claimed";
       task.assigneeBotId = botId;
@@ -106,6 +123,43 @@ export class TasksStore {
       claimed = structuredClone(task);
     });
     return claimed;
+  }
+
+  /** Moves a claimed task to running, only by the bot holding the lock. */
+  start(id: string, botId: string): Task | null | "not-claimed" | "not-locked-by" {
+    const at = this.now();
+    let started: Task | null | "not-claimed" | "not-locked-by" = null;
+    this.update((data) => {
+      const task = data.tasks.find((one) => one.id === id);
+      if (!task) return;
+      if (task.state !== "claimed") { started = "not-claimed"; return; }
+      if (task.lockedBy !== botId) { started = "not-locked-by"; return; }
+      task.state = "running";
+      task.updatedAt = at;
+      task.history.push({ at, result: "started", botId });
+      started = structuredClone(task);
+    });
+    return started;
+  }
+
+  /** Puts a failed task back in the queue, up to three failures; the person recreates it after that. */
+  requeue(id: string): Task | null | "not-failed" | "retry-cap" {
+    const at = this.now();
+    let requeued: Task | null | "not-failed" | "retry-cap" = null;
+    this.update((data) => {
+      const task = data.tasks.find((one) => one.id === id);
+      if (!task) return;
+      if (task.state !== "failed") { requeued = "not-failed"; return; }
+      if (failedAttempts(task) >= 3) { requeued = "retry-cap"; return; }
+      task.state = "queued";
+      task.assigneeBotId = null;
+      task.lockedBy = null;
+      task.lockedAt = null;
+      task.updatedAt = at;
+      task.history.push({ at, result: "requeued" });
+      requeued = structuredClone(task);
+    });
+    return requeued;
   }
 
   /** Finishes a task a bot holds: the lock is released and the outcome joins the history. */

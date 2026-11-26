@@ -126,4 +126,58 @@ describe("tasks.json", () => {
     const disk = tasksFileSchema.parse(JSON.parse(readFileSync(join(dataDir, "tasks.json"), "utf8")));
     expect(disk.tasks.map((task) => task.state)).toEqual(["done", "queued"]);
   });
+
+  it("moves a claimed task to running, only by the bot holding the lock", () => {
+    const { store } = makeStore();
+    const queued = store.create({ title: "Still queued" });
+    expect(store.start(queued.id, "job-bot")).toBe("not-claimed");
+    const task = store.create({ title: "Held" });
+    store.claim(task.id, "job-bot");
+    expect(store.start(task.id, "qa-bot")).toBe("not-locked-by");
+    const started = store.start(task.id, "job-bot");
+    expect(started).toMatchObject({ state: "running", lockedBy: "job-bot" });
+    expect(started !== "not-claimed" && started !== "not-locked-by" && started !== null ? started.history : []).toEqual([
+      { at: START, result: "claimed", botId: "job-bot" },
+      { at: START, result: "started", botId: "job-bot" },
+    ]);
+    expect(store.start("missing", "job-bot")).toBeNull();
+    expect(store.complete(task.id, "job-bot", "Done from running.")).toMatchObject({ state: "done" });
+  });
+
+  it("lets another bot reclaim a claim whose 30-minute lease expired", () => {
+    let now = START;
+    const { store } = makeStore(() => now);
+    const task = store.create({ title: "Stale claim" });
+    store.claim(task.id, "job-bot");
+    expect(store.claim(task.id, "qa-bot")).toBe("not-queued");
+    now = START + 30 * 60_000;
+    expect(store.claim(task.id, "qa-bot")).toBe("not-queued");
+    now = START + 30 * 60_000 + 1;
+    const reclaimed = store.claim(task.id, "qa-bot");
+    expect(reclaimed).toMatchObject({ state: "claimed", lockedBy: "qa-bot", lockedAt: now });
+    expect(reclaimed !== "not-queued" && reclaimed !== null ? reclaimed.history : []).toEqual([
+      { at: START, result: "claimed", botId: "job-bot" },
+      { at: now, result: "lock expired", botId: "job-bot" },
+      { at: now, result: "claimed", botId: "qa-bot" },
+    ]);
+  });
+
+  it("requeues a failed task, and refuses after three failures", () => {
+    const { store } = makeStore();
+    const task = store.create({ title: "Flaky" });
+    expect(store.requeue(task.id)).toBe("not-failed");
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      store.claim(task.id, "job-bot");
+      store.fail(task.id, "job-bot", `Attempt ${attempt} failed.`);
+      if (attempt < 3) {
+        const requeued = store.requeue(task.id);
+        expect(requeued).toMatchObject({ state: "queued", assigneeBotId: null, lockedBy: null, lockedAt: null });
+        expect(requeued !== "not-failed" && requeued !== "retry-cap" && requeued !== null
+          ? requeued.history[requeued.history.length - 1] : {}).toMatchObject({ result: "requeued" });
+      }
+    }
+    expect(store.requeue(task.id)).toBe("retry-cap");
+    expect(store.get(task.id)).toMatchObject({ state: "failed" });
+    expect(store.requeue("missing")).toBeNull();
+  });
 });

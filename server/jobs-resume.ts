@@ -109,3 +109,29 @@ export function tailorResumeText(profile: JobsProfile, job: Pick<JobsJob, "title
 export function searchReportInstructions(): string {
   return `End your reply with one fenced block listing every match you found, nothing else inside it: \`\`\`${SEARCH_REPORT_FENCE}\n[{"platform":"naukri","url":"...","title":"...","company":"...","location":"...","salaryText":"...","jdText":"...","jdKeywords":["..."]}]\n\`\`\``;
 }
+
+/** The prompt for a search turn: the stored keywords, locations and platforms, plus the company career pages. */
+export function searchPrompt(settings: { search: { keywords: string[]; locations: string[]; minSalary?: string }; platforms: Record<string, { enabled: boolean }>; dailyCap: number; companyPages: string[] }): string {
+  const lines = ["Search for Data Engineer jobs and record each match in the Jobs store."];
+  if (settings.search.keywords.length) lines.push(`Keywords: ${settings.search.keywords.join(", ")}.`);
+  if (settings.search.locations.length) lines.push(`Locations: ${settings.search.locations.join(", ")}.`);
+  const platforms = Object.entries(settings.platforms).filter(([, platform]) => platform.enabled).map(([name]) => name);
+  if (platforms.length) lines.push(`Platforms: ${platforms.join(", ")}.`);
+  if (settings.companyPages.length) lines.push(`Also check these company career pages: ${settings.companyPages.join(", ")}.`);
+  if (settings.search.minSalary) lines.push(`Minimum salary: ${settings.search.minSalary}.`);
+  lines.push(`Apply to nothing yet: an application goes out only from a queue item the person approved, and at most ${settings.dailyCap} applications a day.`);
+  lines.push(searchReportInstructions());
+  return lines.join(" ");
+}
+
+/** The prompt for one approved application: the bot submits it in its own browser and reports the outcome. */
+export function applyPrompt(job: Pick<JobsJob, "id" | "title" | "company" | "url">, resumePath: string): string {
+  return [
+    `Submit the application for "${job.title}" at ${job.company} (${job.url}) in your own browser profile.`,
+    `Upload the tailored resume at ${resumePath} with the existing agent_browser_upload tool.`,
+    "Fill every field only from the stored job profile; never invent skills, experience, salary, or certificates.",
+    "Never try to solve a human check or CAPTCHA: stop and hand sign-in to the person instead.",
+    `If the application is submitted, end your reply with a line: ${APPLIED_MARKER} ${job.id}`,
+    "If it is not submitted, say plainly what stopped it.",
+  ].join(" ");
+}

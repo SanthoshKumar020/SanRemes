@@ -37,6 +37,17 @@ describe("bridge child processes", () => {
     expect(spawned).toEqual([{ command: "cua-driver", options: expect.objectContaining({ windowsHide: false }) }]);
   });
 
+  it("hides the console on Windows even for a child started without the flag", () => {
+    const platform = process.platform;
+    Object.defineProperty(process, "platform", { value: "win32" });
+    try {
+      spawnBridgeChild("cua-driver", ["mcp"], { PATH: "" }, false);
+      expect(spawned).toEqual([{ command: "cua-driver", options: expect.objectContaining({ windowsHide: true }) }]);
+    } finally {
+      Object.defineProperty(process, "platform", { value: platform });
+    }
+  });
+
   it("starts the liveness probe without a console window", async () => {
     await expect(runLivenessProbe({ command: "docker", args: ["exec", "sanremes-vm", "true"] }, 1_000, { PATH: "" })).resolves.toBe(true);
     expect(spawned).toEqual([{ command: "docker", options: expect.objectContaining({ shell: false, windowsHide: true }) }]);
