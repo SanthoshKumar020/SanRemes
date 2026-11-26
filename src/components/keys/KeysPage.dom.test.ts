@@ -445,6 +445,36 @@ describe("the Ollama row", () => {
     expect(fx.api.mock.calls.at(-1)![0]).toBe(`/api/instances/ollama?url=${encodeURIComponent("http://gpu-box.local:11434")}`);
   });
 
+  it("downloads qwen3:4b from the panel and refreshes to ready", async () => {
+    const url = "http://127.0.0.1:11434";
+    let ollama: { state: string; url: string; models: unknown[] } = { state: "no-models", url, models: [] };
+    const pulls: unknown[] = [];
+    const pullStates: Array<Record<string, unknown>> = [{ state: "pulling", percent: 42 }, { state: "ready" }];
+    fx.api.mockImplementation(async (path: string, init?: { method?: string; body?: string }) => {
+      if (path === "/api/instances/ollama/pull" && init?.method === "POST") {
+        pulls.push(JSON.parse(init?.body ?? "{}"));
+        return { pull: { state: "pulling", percent: 0 } };
+      }
+      if (path.startsWith("/api/instances/ollama/pull")) return { pull: pullStates.shift() ?? { state: "ready" } };
+      if (path.startsWith("/api/instances/ollama")) return { status: ollama };
+      return { instances: [] };
+    });
+    page();
+    openServers();
+    await found("no-models");
+    const pullButton = () => [...row("ollama")!.querySelectorAll("button")].find((candidate) => candidate.textContent?.startsWith("Download"))!;
+    expect(pullButton().textContent).toBe("Download qwen3:4b");
+    flushSync(() => pullButton().click());
+    expect(pullButton().disabled).toBe(true);
+    expect(pulls).toEqual([{ url }]);
+    await vi.waitFor(() => expect(row("ollama")!.textContent).toContain("Downloading qwen3:4b… 42%"), { timeout: 5000 });
+    expect(row("ollama")!.querySelector('[role="progressbar"]')?.getAttribute("aria-valuenow")).toBe("42");
+    ollama = { state: "ready", url, models: [{ name: "qwen3:4b" }] };
+    await vi.waitFor(() => expect(row("ollama")!.textContent).toContain("Pulled models: 1."), { timeout: 5000 });
+    expect(row("ollama")!.textContent).not.toContain("Download qwen3:4b");
+    expect(fx.api.mock.calls.map(([path]) => path)).toContain("/api/instances/ollama/pull");
+  }, 15000);
+
   it("offers nothing to add while Ollama isn't running, only how to start or get it", async () => {
     answer("not-running");
     page();

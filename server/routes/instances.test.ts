@@ -1,7 +1,7 @@
 // A finished sign-in step changes what an engine reports: the next engine list probes its CLI again.
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { instanceConfigs, type AppConfig } from "../config.ts";
 import type { ProviderAuthenticationStart, ProviderAuthenticationStatus } from "../contracts.ts";
@@ -410,5 +410,58 @@ describe("looking for Ollama", () => {
     expect((await fetch(`${shell.base}/api/instances/ollama?url=${encodeURIComponent("http://127.0.0.1:9")}`)).status).toBe(403);
     const hosted = await serve({ hostedModels: true });
     expect((await fetch(`${hosted.base}/api/instances/ollama`)).status).toBe(403);
+  });
+});
+
+describe("downloading qwen3:4b for Ollama", () => {
+  const URL = "http://127.0.0.1:11434";
+  const post = (base: string, body?: unknown) => fetch(`${base}/api/instances/ollama/pull`, {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body ?? { url: URL }),
+  });
+  const pullState = async (base: string, query = `?url=${encodeURIComponent(URL)}`) =>
+    ((await fetch(`${base}/api/instances/ollama/pull${query}`)).json() as Promise<{ pull: unknown }>).then((body) => body.pull);
+
+  it("starts the pull in the background, reports its progress, and lands on ready", async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    const pulled: Array<{ url: string; model: string }> = [];
+    const pullModel = async (url: string, model: string, _fetchImpl: typeof fetch, onProgress?: (percent: number) => void) => {
+      pulled.push({ url, model });
+      onProgress?.(42);
+      await gate;
+    };
+    const { base } = await serve({ pullModel });
+    const started = await post(base);
+    expect(started.status).toBe(202);
+    expect(await started.json()).toEqual({ pull: { state: "pulling", percent: 0 } });
+    expect(pulled).toEqual([{ url: URL, model: "qwen3:4b" }]);
+    expect(await pullState(base)).toEqual({ state: "pulling", percent: 42 });
+    const again = await post(base);
+    expect(again.status).toBe(409);
+    expect(await again.json()).toEqual({ error: "qwen3:4b is already downloading from this Ollama." });
+    release();
+    await vi.waitFor(async () => expect(await pullState(base)).toEqual({ state: "ready" }));
+  });
+
+  it("reports a pull that fails, and lets the panel try again", async () => {
+    const pullModel = async () => { throw new Error("no space left"); };
+    const { base } = await serve({ pullModel });
+    expect((await post(base)).status).toBe(202);
+    await vi.waitFor(async () => expect(await pullState(base)).toEqual({ state: "failed", error: "no space left" }));
+    expect((await post(base)).status).toBe(202);
+  });
+
+  it("refuses an address that is not one, and a download with no pull yet is idle", async () => {
+    const { base } = await serve({ pullModel: async () => {} });
+    expect((await post(base, { url: "ftp://127.0.0.1:11434" })).status).toBe(400);
+    expect(await pullState(base)).toEqual({ state: "idle" });
+    expect((await fetch(`${base}/api/instances/ollama/pull?url=${encodeURIComponent("ftp://x")}`)).status).toBe(400);
+    expect((await fetch(`${base}/api/instances/ollama/pull`)).status).toBe(400);
+  });
+
+  it("is only for the owner: a hosted workspace can't start a download or read one", async () => {
+    const hosted = await serve({ hostedModels: true, pullModel: async () => {} });
+    expect((await post(hosted.base)).status).toBe(403);
+    expect((await fetch(`${hosted.base}/api/instances/ollama/pull?url=${encodeURIComponent(URL)}`)).status).toBe(403);
   });
 });

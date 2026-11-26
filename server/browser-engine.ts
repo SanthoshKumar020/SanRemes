@@ -88,7 +88,7 @@ function runBrowserCommand(binaryPath: string, env: NodeJS.ProcessEnv, args: str
     const finish = (ok: boolean) => { if (!settled) { settled = true; done({ ok, output }); } };
     let child: ReturnType<typeof spawn>;
     try { child = spawnBotWork(() => spawn(binaryPath, args, { env, stdio: capture ? ["ignore", "pipe", "ignore"] : "ignore", windowsHide: true })); }
-    catch { return finish(false); }
+    catch (error) { console.warn(`browser engine: could not start ${binaryPath}: ${error instanceof Error ? error.message : String(error)}`); return finish(false); }
     let exited = false;
     let killTimer: NodeJS.Timeout | undefined;
     const timer = setTimeout(() => {
@@ -102,21 +102,24 @@ function runBrowserCommand(binaryPath: string, env: NodeJS.ProcessEnv, args: str
       output += String(chunk);
       if (output.length > 262_144) { clearTimeout(timer); child.kill(); finish(false); }
     });
-    child.on("error", () => { exited = true; clearTimeout(timer); clearTimeout(killTimer); finish(false); });
+    child.on("error", (error) => { console.warn(`browser engine: could not start ${binaryPath}: ${error.message}`); exited = true; clearTimeout(timer); clearTimeout(killTimer); finish(false); });
     // exit can precede the last piped stdout chunk; close follows stdio.
     child.on("close", (code) => { exited = true; clearTimeout(timer); clearTimeout(killTimer); finish(code === 0); });
   });
 }
 
-async function runningBrowserSessions(binaryPath: string, controlEnv: NodeJS.ProcessEnv, deadline: number): Promise<string[] | null> {
-  const status = await runBrowserCommand(binaryPath, controlEnv, ["session", "list", "--json"], deadline, true);
-  if (!status.ok) return null;
+function parseBrowserSessions(output: string): string[] | null {
   try {
-    const result = JSON.parse(status.output);
+    const result = JSON.parse(output);
     const sessions: unknown = result?.data?.sessions;
     if (result?.success !== true || !Array.isArray(sessions) || !sessions.every((name) => typeof name === "string")) return null;
     return sessions;
   } catch { return null; }
+}
+
+async function runningBrowserSessions(binaryPath: string, controlEnv: NodeJS.ProcessEnv, deadline: number): Promise<string[] | null> {
+  const status = await runBrowserCommand(binaryPath, controlEnv, ["session", "list", "--json"], deadline, true);
+  return status.ok ? parseBrowserSessions(status.output) : null;
 }
 
 export function runningBrowserSessionNames(binaryPath: string, env: NodeJS.ProcessEnv, timeoutMs = 15_000): Promise<string[] | null> {
@@ -154,13 +157,16 @@ async function closeOnce(binaryPath: string, env: NodeJS.ProcessEnv, session: st
   const pidFile = browserDaemonFile(env, ".pid");
   const daemonPid = () => { try { return readFileSync(pidFile, "utf8").trim(); } catch { return null; } };
   // `close` to a stopped session starts a daemon only to stop it again and leaves its .config file behind.
-  const running = await runningBrowserSessions(binaryPath, closeEnv, deadline);
+  const list = await runBrowserCommand(binaryPath, closeEnv, ["session", "list", "--json"], deadline, true);
+  const running = list.ok ? parseBrowserSessions(list.output) : null;
   if (running && !running.includes(session)) return true;
   const closing = daemonPid();
   // Read first: once the daemon exits, its Chrome is re-parented and can no longer be found under it.
   const tree = closing === null ? null : await browserProcessTree(binaryPath, Number(closing), session).catch(() => null);
-  // The list could not be read: on a box out of processes, every agent-browser command fails to start, so the daemon
-  // the pid file names (checked to be this session's own, from /proc where there is one) is stopped directly.
+  // The list command never ran: on a box out of processes, every agent-browser command fails to start, so the daemon
+  // the pid file names (checked to be this session's own, from /proc where there is one) is stopped directly. With
+  // no pid file at all there is no daemon of this session to stop.
+  if (!list.ok) return tree ? stopBrowserProcesses(tree) : closing === null;
   if (!running) return tree ? stopBrowserProcesses(tree) : false;
   if ((await runBrowserCommand(binaryPath, closeEnv, ["close"], deadline)).ok) {
     // Native close answers before the daemon exits, and Chrome's helper processes can outlive the answer.

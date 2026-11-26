@@ -4,7 +4,7 @@ import { api, useStore, type InstanceInfo } from "@/state/store";
 import { t } from "@/lib/i18n";
 import { keySaved } from "@/lib/product-events";
 import { addedServers, isAddedServer } from "@/lib/openai-compat-endpoints";
-import type { OllamaStatus } from "../../shared/local-model";
+import type { OllamaPull, OllamaStatus } from "../../shared/local-model";
 import { KEY_FIELD } from "./keys/KeyRow";
 import { OllamaStatusLine } from "./OllamaStatusLine";
 
@@ -22,6 +22,7 @@ export function OllamaServer({ visible }: { visible: boolean }) {
   const [status, setStatus] = useState<OllamaStatus | null>(null);
   const [checking, setChecking] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [pull, setPull] = useState<OllamaPull>({ state: "idle" });
   const [error, setError] = useState<string | null>(null);
 
   const latest = useRef(0);
@@ -43,6 +44,38 @@ export function OllamaServer({ visible }: { visible: boolean }) {
     check("");
   }, [visible, check]);
 
+  const pulling = pull.state === "pulling";
+  const pullPercent = pull.state === "pulling" ? pull.percent : 0;
+  const pullModel = useCallback(() => {
+    if (!status || status.state !== "no-models" || pulling) return;
+    setError(null);
+    setPull({ state: "pulling", percent: 0 });
+    void api<{ pull: OllamaPull }>("/api/instances/ollama/pull", {
+      method: "POST",
+      body: JSON.stringify({ url: status.url }),
+    }).catch((cause: Error) => {
+      setPull({ state: "idle" });
+      setError(cause.message || t("apiInstances.failed"));
+    });
+  }, [status, pulling]);
+  useEffect(() => {
+    if (!pulling || !status) return;
+    const url = status.url;
+    const timer = window.setInterval(() => {
+      void api<{ pull: OllamaPull }>(`/api/instances/ollama/pull?url=${encodeURIComponent(url)}`, { background: true })
+        .then((result) => {
+          setPull(result.pull);
+          if (result.pull.state === "ready") check(url);
+          if (result.pull.state === "failed") setError(result.pull.error);
+        })
+        .catch((cause: Error) => {
+          setPull({ state: "idle" });
+          setError(cause.message || t("apiInstances.failed"));
+        });
+    }, 2000);
+    return () => window.clearInterval(timer);
+  }, [pulling, status, check]);
+
   // The added Ollama keeps the list it got when added; a model pulled since shows only in the check until that list reloads.
   const compatUrl = state.config?.openaiCompat?.url;
   const reloaded = useRef<OllamaStatus | null>(null);
@@ -58,7 +91,7 @@ export function OllamaServer({ visible }: { visible: boolean }) {
 
   const target = status ? ollamaBaseUrl(status.url) : null;
   const present = Boolean(target && (addedServers(state.instances).some((server) => server.url === target) || sameBase(compatUrl, target)));
-  const canAdd = Boolean(target && !present && !busy && !checking && (status?.state === "ready" || status?.state === "no-models"));
+  const canAdd = Boolean(target && !present && !busy && !checking && !pulling && (status?.state === "ready" || status?.state === "no-models"));
 
   const add = () => {
     if (!canAdd || !target) return;
@@ -99,18 +132,31 @@ export function OllamaServer({ visible }: { visible: boolean }) {
           placeholder="http://127.0.0.1:11434"
           aria-label={t("ollama.address")}
           spellCheck={false}
-          disabled={busy}
+          disabled={busy || pulling}
           className={KEY_FIELD}
         />
         <p className="text-[12px] leading-4 text-ink-secondary">{t("ollama.addressHint")}</p>
         <div className="flex flex-wrap items-center justify-end gap-2">
+          {status?.state === "no-models" && (
+            <button type="button" onClick={pullModel} disabled={pulling || checking || busy} className="ui-button">
+              {pulling ? t("ollama.pulling", { percent: pullPercent }) : t("ollama.pull")}
+            </button>
+          )}
           <button type="button" onClick={add} disabled={!canAdd} className="ui-button">
             {busy ? t("ollama.adding") : t("ollama.add")}
           </button>
-          <button type="button" onClick={() => check(address.trim())} disabled={checking || busy} className="settings-quiet cursor-pointer">
+          <button type="button" onClick={() => check(address.trim())} disabled={checking || busy || pulling} className="settings-quiet cursor-pointer">
             {t("common.checkAgain")}
           </button>
         </div>
+        {pulling && (
+          <div className="flex flex-col gap-1">
+            <p role="status" className="text-[12px] leading-4 text-ink-secondary tabular-nums">{t("ollama.pulling", { percent: pullPercent })}</p>
+            <div role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pullPercent} aria-valuetext={t("ollama.pulling", { percent: pullPercent })} className="h-2 w-full rounded-full bg-raised">
+              <div className="h-full rounded-full bg-success" style={{ width: `${pullPercent}%` }} />
+            </div>
+          </div>
+        )}
         {present && <p className="text-[12px] text-ink-secondary">{t("ollama.added")}</p>}
       </div>
       {error && <div role="alert" className="mt-1 text-[12px] text-danger">{error}</div>}

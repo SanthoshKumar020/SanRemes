@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
 import { EventEmitter } from "node:events";
-import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, statSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, statSync, symlinkSync, unlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join, resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -450,6 +450,14 @@ describe("a browser daemon that will not close (#2603)", () => {
     expect(closes).toBe(0);
     // TERM to the daemon first, so it still saves its sign-ins from its browser.
     expect(readFileSync(join(env.HOME, "browser.pid.saved"), "utf8")).toBe("saved");
+    for (const pid of Object.values(pids)) expect(gone(actual, pid), String(pid)).toBe(true);
+  });
+
+  it.skipIf(!posix)("reports a session closed when its daemon already exited and the list cannot be read", async () => {
+    const { actual, binaryPath, env, pids } = await engine({ close: () => 1, listFails: true });
+    for (const pid of Object.values(pids)) process.kill(pid, "SIGKILL");
+    unlinkSync(browserDaemonFile(env, ".pid"));
+    expect(await closeBrowserSession(binaryPath, env, 1_000)).toBe(true);
     for (const pid of Object.values(pids)) expect(gone(actual, pid), String(pid)).toBe(true);
   });
 

@@ -36,3 +36,10 @@ export interface OllamaStatus {
 
 /** Why an Ollama cannot answer now, for the engine list to say in the reader's language. */
 export type OllamaProblem = Pick<OllamaStatus, "state" | "url" | "problem">;
+
+/** A qwen3:4b download started from the Ollama panel (POST /api/instances/ollama/pull). */
+export type OllamaPull =
+  | { state: "idle" }
+  | { state: "pulling"; percent: number }
+  | { state: "ready" }
+  | { state: "failed"; error: string };

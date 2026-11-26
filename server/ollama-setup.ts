@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { win32 } from "node:path";
 
 import type { InstanceConfigMap, ModelSelection } from "./contracts.ts";
-import { OLLAMA_PLACEHOLDER_KEY, probeOllama, type OllamaStatus } from "./drivers/ollama.ts";
+import { OLLAMA_PLACEHOLDER_KEY, OLLAMA_PORT, probeOllama, type OllamaStatus } from "./drivers/ollama.ts";
 import { addEndpoint, endpointDisplayUrl, isAddedEndpoint, type AddEndpoint } from "./openai-compat-endpoints.ts";
 
 /** The model the packaged app installs first: small enough for 8 GB RAM, with native tool calling. */
@@ -25,6 +25,12 @@ export interface OllamaSetupDeps {
   findOnPath?: () => string | null;
   /** Start `ollama serve`; the default spawns it detached so it outlives the server. */
   startServer?: (exe: string) => ChildProcess;
+  /** The process listening on a port, with its image name; the default reads `netstat` and `tasklist` on Windows. */
+  findPortOwner?: (port: number) => { pid: number; image: string } | null;
+  /** Terminate a process by PID; the default sends the platform's terminate signal. */
+  killProcess?: (pid: number) => void;
+  /** How long a fresh `ollama serve` gets to answer, across the first start and one stale replacement. */
+  startupWaitMs?: number;
   fetchImpl?: typeof fetch;
   probe?: (url: string) => Promise<OllamaStatus>;
   /** The saved provider instances, as the add-server route reads them. */
@@ -62,6 +68,45 @@ function findOnPathDefault(): string | null {
   } catch {
     return null;
   }
+}
+
+/** The PID in `LISTENING` state on 127.0.0.1 or 0.0.0.0 for a port, from `netstat -ano -p TCP`; null when none listens. */
+export function portOwnerPidFromNetstat(output: string, port: number): number | null {
+  for (const line of output.split(/\r?\n/)) {
+    const match = line.match(/^\s*TCP\s+(?:127\.0\.0\.1|0\.0\.0\.0):(\d+)\s+\S+\s+LISTENING\s+(\d+)\s*$/i);
+    if (match && Number(match[1]) === port) return Number(match[2]);
+  }
+  return null;
+}
+
+/** The image name in the first row of `tasklist /FO CSV /NH`; null when the output names no task. */
+export function imageFromTasklist(output: string): string | null {
+  const match = output.match(/^\s*"([^"]+)"/m);
+  return match?.[1] ?? null;
+}
+
+function findPortOwnerDefault(port: number): { pid: number; image: string } | null {
+  if (process.platform !== "win32") return null;
+  let netstat: string;
+  try {
+    netstat = execFileSync("netstat", ["-ano", "-p", "TCP"], { encoding: "utf8", timeout: 10_000, windowsHide: true });
+  } catch {
+    return null;
+  }
+  const pid = portOwnerPidFromNetstat(netstat, port);
+  if (pid === null) return null;
+  let tasklist: string;
+  try {
+    tasklist = execFileSync("tasklist", ["/FI", `PID eq ${pid}`, "/FO", "CSV", "/NH"], { encoding: "utf8", timeout: 10_000, windowsHide: true });
+  } catch {
+    return null;
+  }
+  const image = imageFromTasklist(tasklist);
+  return image ? { pid, image } : null;
+}
+
+function isOllamaImage(image: string): boolean {
+  return (image.split(/[\\/]/).pop() ?? image).toLowerCase() === "ollama.exe";
 }
 
 /** Pull a model through Ollama's API, reporting overall download progress; throws when the pull fails. */
@@ -131,19 +176,43 @@ export async function ensureLocalQwen(deps: OllamaSetupDeps): Promise<OllamaSetu
       return { ok: false, reason };
     }
     let status = await probe(LOCAL_QWEN_URL);
-    if (status.state === "not-running") {
+    const start = deps.startServer ?? ((binary: string) => spawn(binary, ["serve"], { detached: true, stdio: "ignore", windowsHide: true, env: { ...process.env, OLLAMA_HOST: "127.0.0.1:11434" } }));
+    const deadline = Date.now() + (deps.startupWaitMs ?? 60_000);
+    const startAndWait = async (): Promise<OllamaStatus> => {
       onState({ state: "starting" });
       log(`starting Ollama from ${exe}`);
-      const start = deps.startServer ?? ((binary: string) => spawn(binary, ["serve"], { detached: true, stdio: "ignore", windowsHide: true, env: { ...process.env, OLLAMA_HOST: "127.0.0.1:11434" } }));
       const child = start(exe);
       child.unref?.();
-      const deadline = Date.now() + 60_000;
+      let current = status;
       while (Date.now() < deadline) {
         await sleep(1_000);
-        status = await probe(LOCAL_QWEN_URL);
-        if (status.state !== "not-running") break;
+        current = await probe(LOCAL_QWEN_URL);
+        if (current.state !== "not-running") break;
       }
-    }
+      return current;
+    };
+    const replaceStale = (): boolean => {
+      const owner = (deps.findPortOwner ?? findPortOwnerDefault)(Number(OLLAMA_PORT));
+      if (!owner) {
+        log(`no process holds ${LOCAL_QWEN_URL}, so there is no stale Ollama to replace`);
+        return false;
+      }
+      if (!isOllamaImage(owner.image)) {
+        log(`leaving ${owner.image} (PID ${owner.pid}) alone: it holds ${LOCAL_QWEN_URL} but is not Ollama`);
+        return false;
+      }
+      log(`stopping stale Ollama (PID ${owner.pid}) holding ${LOCAL_QWEN_URL}`);
+      try {
+        (deps.killProcess ?? ((pid: number) => process.kill(pid)))(owner.pid);
+      } catch (error) {
+        log(`could not stop stale Ollama (PID ${owner.pid}): ${error instanceof Error ? error.message : String(error)}`);
+        return false;
+      }
+      log(`stale Ollama (PID ${owner.pid}) stopped, starting the bundled one`);
+      return true;
+    };
+    if (status.state === "not-running") status = await startAndWait();
+    if (status.state === "unreachable" && replaceStale()) status = await startAndWait();
     if (status.state === "unreachable") {
       const reason = `Ollama at ${LOCAL_QWEN_URL} did not answer: ${status.problem ?? "unreachable"}`;
       log(`local Qwen setup failed: ${reason}`);

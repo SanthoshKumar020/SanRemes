@@ -30,6 +30,8 @@ import { updateClaudeCli } from "../claude-update.ts";
 import { persistableInstanceConfigs, saveConfig, withInstanceCli, type AppConfig } from "../config.ts";
 import { addEndpoint, addEndpointSchema, changeEndpointAddress, endpointBaseUrl, endpointModelsReadable, isAddedEndpoint, localServerAlreadyAdded, withEndpointUrls } from "../openai-compat-endpoints.ts";
 import { findOllama, probeOllama } from "../drivers/ollama.ts";
+import { LOCAL_QWEN_MODEL, pullOllamaModel } from "../ollama-setup.ts";
+import type { OllamaPull } from "../../shared/local-model.ts";
 import type { InstanceConfigMap, ModelSelection, ProviderInstance } from "../contracts.ts";
 import { removeAntigravityProfile } from "../drivers/antigravity-acp.ts";
 import { BUILT_IN_DRIVERS } from "../drivers/builtIn.ts";
@@ -68,6 +70,8 @@ export interface InstanceRouteDeps {
   checkInstance?(instance: ProviderInstance): Promise<EngineCheck>;
   /** Whether an added server lists its models (server/openai-compat-endpoints.ts); replaced in tests. */
   endpointModelsReadable?(config: { url: string; key: string; catalog?: unknown }): Promise<boolean>;
+  /** Pull a model from an Ollama server; replaced in tests. */
+  pullModel?: (url: string, model: string, fetchImpl: typeof fetch, onProgress?: (percent: number) => void) => Promise<void>;
 }
 
 export function createInstanceRoutes(deps: InstanceRouteDeps): RouteHandler {
@@ -111,6 +115,9 @@ export function createInstanceRoutes(deps: InstanceRouteDeps): RouteHandler {
   registry?.onWrongCli?.((instanceId, cli) => useAppCopy(instanceId, cli));
   // One updater per executable: Claude instances can share an install, and two self-updates would race its files.
   const claudeUpdatesInFlight = new Set<string>();
+  const pullModel = deps.pullModel ?? pullOllamaModel;
+  /** One qwen3:4b download per Ollama address, kept so the panel can poll it; a finished one stays until the next. */
+  const ollamaPulls = new Map<string, OllamaPull>();
   return async ({ req, res, url, path, method, auth, json, readBody }) => {
     if (method === "GET" && path === "/api/instances/hidden") {
       const hidden = Object.entries(persistableInstanceConfigs(cfg)).filter(([, entry]) => entry.hidden === true);
@@ -130,6 +137,38 @@ export function createInstanceRoutes(deps: InstanceRouteDeps): RouteHandler {
       const address = asked ? endpointBaseUrl(asked) : null;
       if (asked && !address) return json(res, 400, { error: "Enter an http or https address, such as http://127.0.0.1:11434." });
       return json(res, 200, { status: address ? await probeOllama(address) : await findOllama() });
+    }
+    if (method === "GET" && path === "/api/instances/ollama/pull") {
+      if (hostedModels || !ownerOrAdmin(auth)) return json(res, 403, { error: "Only the owner of this server can download a model for Ollama." });
+      const asked = url.searchParams.get("url")?.trim();
+      const address = asked ? endpointBaseUrl(asked) : null;
+      if (asked && !address) return json(res, 400, { error: "Enter an http or https address, such as http://127.0.0.1:11434." });
+      if (!address) return json(res, 400, { error: "Enter the Ollama address to download from." });
+      return json(res, 200, { pull: ollamaPulls.get(address) ?? { state: "idle" } });
+    }
+    if (method === "POST" && path === "/api/instances/ollama/pull") {
+      if (hostedModels || !ownerOrAdmin(auth)) return json(res, 403, { error: "Only the owner of this server can download a model for Ollama." });
+      if (!String(req.headers["content-type"] ?? "").toLowerCase().startsWith("application/json")) {
+        return json(res, 415, { error: "content-type must be application/json" });
+      }
+      const body = await readBody(req, 8192);
+      const asked = typeof body?.url === "string" ? body.url.trim() : "";
+      const address = asked ? endpointBaseUrl(asked) : null;
+      if (asked && !address) return json(res, 400, { error: "Enter an http or https address, such as http://127.0.0.1:11434." });
+      let target = address;
+      if (!target) {
+        const found = await findOllama();
+        if (found.state === "not-running" || found.state === "unreachable") return json(res, 409, { error: "Ollama isn’t running. Start it, then download again." });
+        target = found.url;
+      }
+      if (ollamaPulls.get(target)?.state === "pulling") return json(res, 409, { error: "qwen3:4b is already downloading from this Ollama." });
+      ollamaPulls.set(target, { state: "pulling", percent: 0 });
+      void pullModel(target, LOCAL_QWEN_MODEL, fetch, (percent) => { ollamaPulls.set(target, { state: "pulling", percent }); })
+        .then(
+          () => { ollamaPulls.set(target, { state: "ready" }); },
+          (cause: unknown) => { ollamaPulls.set(target, { state: "failed", error: cause instanceof Error ? cause.message : String(cause) }); },
+        );
+      return json(res, 202, { pull: { state: "pulling", percent: 0 } });
     }
     // How many engines could start a bot now, never which: the check an update makes that the new version still can
     // (deploy/update.sh), which a shared server lets a local caller without a session make (SERVICE_ALLOW).

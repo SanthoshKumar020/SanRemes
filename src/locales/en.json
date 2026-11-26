@@ -4158,6 +4158,8 @@
   "ollama.adding": "Adding…",
   "ollama.added": "Ollama at this address is already added.",
   "ollama.download": "Download Ollama",
+  "ollama.pull": "Download qwen3:4b",
+  "ollama.pulling": "Downloading qwen3:4b… {percent}%",
   "ollama.short.notRunning": "Not running",
   "ollama.short.noModels": "No models yet",
   "ollama.short.unreachable": "Can’t be reached",

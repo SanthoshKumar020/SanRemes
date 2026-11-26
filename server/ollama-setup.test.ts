@@ -6,8 +6,10 @@ import {
   botsOnBootPick,
   bundledOllamaExe,
   ensureLocalQwen,
+  imageFromTasklist,
   LOCAL_QWEN_MODEL,
   LOCAL_QWEN_URL,
+  portOwnerPidFromNetstat,
   pullOllamaModel,
   startLocalQwenOnBoot,
   startLocalQwenSetup,
@@ -23,6 +25,7 @@ const status = (state: OllamaStatus["state"], models: string[] = []): OllamaStat
 
 function harness(overrides: Partial<OllamaSetupDeps> & { probes?: OllamaStatus[]; pullLines?: string[] } = {}) {
   const states: OllamaSetupState[] = [];
+  const logs: string[] = [];
   const instances: InstanceConfigMap = {};
   const probeQueue = [...(overrides.probes ?? [status("ready", [LOCAL_QWEN_MODEL])])];
   const probe = vi.fn(async () => probeQueue.shift() ?? status("ready", [LOCAL_QWEN_MODEL]));
@@ -39,6 +42,8 @@ function harness(overrides: Partial<OllamaSetupDeps> & { probes?: OllamaStatus[]
   const persist = vi.fn(async () => {});
   const saveDefault = vi.fn(() => {});
   const startServer = vi.fn(() => ({ unref: () => {} }) as never);
+  const findPortOwner = vi.fn(() => null);
+  const killProcess = vi.fn(() => {});
   const deps: OllamaSetupDeps = {
     findOnPath: () => "/usr/bin/ollama",
     probe,
@@ -48,10 +53,13 @@ function harness(overrides: Partial<OllamaSetupDeps> & { probes?: OllamaStatus[]
     defaultSelection: () => null,
     saveDefault,
     startServer,
+    findPortOwner,
+    killProcess,
     onState: (state) => states.push(state),
+    log: (line) => logs.push(line),
     ...overrides,
   };
-  return { deps, states, instances, probe, fetchImpl, persist, saveDefault, startServer };
+  return { deps, states, logs, instances, probe, fetchImpl, persist, saveDefault, startServer, findPortOwner, killProcess };
 }
 
 describe("bundledOllamaExe", () => {
@@ -73,6 +81,33 @@ describe("botsOnBootPick", () => {
       bot("other-model", "claude", "claude-opus-5"),
       bot("other-instance", "codex", "codex-default"),
     ], bootPick)).toEqual(["empty", "boot"]);
+  });
+});
+
+describe("portOwnerPidFromNetstat", () => {
+  const netstat = [
+    "Active Connections",
+    "",
+    "  Proto  Local Address          Foreign Address        State           PID",
+    "  TCP    127.0.0.1:11434        0.0.0.0:0              LISTENING       4242",
+    "  TCP    127.0.0.1:11434        127.0.0.1:50000        ESTABLISHED     4242",
+    "  TCP    127.0.0.1:8080         0.0.0.0:0              LISTENING       7777",
+    "  TCP    0.0.0.0:11434          0.0.0.0:0              LISTENING       5151",
+  ].join("\r\n");
+  it("finds the listener on the loopback port and ignores established connections and other ports", () => {
+    expect(portOwnerPidFromNetstat(netstat, 11434)).toBe(4242);
+    expect(portOwnerPidFromNetstat(netstat, 8080)).toBe(7777);
+    expect(portOwnerPidFromNetstat(netstat, 9999)).toBeNull();
+  });
+  it("finds a listener bound to all interfaces", () => {
+    expect(portOwnerPidFromNetstat("  TCP    0.0.0.0:11434          0.0.0.0:0              LISTENING       5151\r\n", 11434)).toBe(5151);
+  });
+});
+
+describe("imageFromTasklist", () => {
+  it("reads the image name from the first CSV row and nothing from an empty result", () => {
+    expect(imageFromTasklist(`"ollama.exe","4242","Console","1","45,204 K"\r\n`)).toBe("ollama.exe");
+    expect(imageFromTasklist("INFO: No tasks are running which match the specified criteria.\r\n")).toBeNull();
   });
 });
 
@@ -142,6 +177,83 @@ describe("ensureLocalQwen", () => {
     expect(result.ok).toBe(true);
     expect(startServer).toHaveBeenCalledWith("/usr/bin/ollama");
     expect(probe.mock.calls.length).toBeGreaterThan(1);
+  });
+
+  it("replaces a stale Ollama holding the port, killing it before the fresh spawn", async () => {
+    const order: string[] = [];
+    const killProcess = vi.fn(() => { order.push("killed"); });
+    const startServer = vi.fn(() => { order.push("started"); return { unref: () => {} }; }) as never;
+    const { deps, logs } = harness({
+      probes: [status("unreachable"), status("not-running"), status("ready", [LOCAL_QWEN_MODEL])],
+      startupWaitMs: 2500,
+      findPortOwner: () => ({ pid: 4242, image: "Ollama.EXE" }),
+      killProcess,
+      startServer,
+    });
+    const result = await ensureLocalQwen(deps);
+    expect(result.ok).toBe(true);
+    expect(order).toEqual(["killed", "started"]);
+    expect(killProcess).toHaveBeenCalledWith(4242);
+    expect(startServer).toHaveBeenCalledWith("/usr/bin/ollama");
+    expect(logs.join("\n")).toContain("stale Ollama (PID 4242)");
+  });
+
+  it("replaces a wedged Ollama from the fresh spawn too", async () => {
+    const order: string[] = [];
+    const killProcess = vi.fn(() => { order.push("killed"); });
+    const startServer = vi.fn(() => { order.push("started"); return { unref: () => {} }; }) as never;
+    const { deps } = harness({
+      probes: [status("not-running"), status("unreachable"), status("ready", [LOCAL_QWEN_MODEL])],
+      startupWaitMs: 2500,
+      findPortOwner: () => ({ pid: 4242, image: "ollama.exe" }),
+      killProcess,
+      startServer,
+    });
+    const result = await ensureLocalQwen(deps);
+    expect(result.ok).toBe(true);
+    expect(order).toEqual(["started", "killed", "started"]);
+    expect(killProcess).toHaveBeenCalledTimes(1);
+  });
+
+  it("fails when Ollama still does not answer after the replacement, trying the replacement once", async () => {
+    const killProcess = vi.fn(() => {});
+    const findPortOwner = vi.fn(() => ({ pid: 4242, image: "ollama.exe" }));
+    const { deps, startServer } = harness({
+      probe: vi.fn(async () => status("unreachable")),
+      startupWaitMs: 2500,
+      findPortOwner,
+      killProcess,
+    });
+    const result = await ensureLocalQwen(deps);
+    expect(result.ok).toBe(false);
+    expect((result as { reason: string }).reason).toContain("did not answer");
+    expect(findPortOwner).toHaveBeenCalledTimes(1);
+    expect(killProcess).toHaveBeenCalledTimes(1);
+    expect(startServer).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not kill a process that is not Ollama", async () => {
+    const killProcess = vi.fn(() => {});
+    const startServer = vi.fn(() => ({ unref: () => {} }) as never);
+    const { deps, logs } = harness({
+      probes: [status("unreachable")],
+      findPortOwner: () => ({ pid: 9999, image: "node.exe" }),
+      killProcess,
+      startServer,
+    });
+    const result = await ensureLocalQwen(deps);
+    expect(result.ok).toBe(false);
+    expect(killProcess).not.toHaveBeenCalled();
+    expect(startServer).not.toHaveBeenCalled();
+    expect(logs.join("\n")).toContain("node.exe (PID 9999)");
+  });
+
+  it("fails without killing when nothing holds the port", async () => {
+    const { deps, killProcess, startServer } = harness({ probes: [status("unreachable")] });
+    const result = await ensureLocalQwen(deps);
+    expect(result.ok).toBe(false);
+    expect(killProcess).not.toHaveBeenCalled();
+    expect(startServer).not.toHaveBeenCalled();
   });
 
   it("a failed pull leaves the default untouched", async () => {

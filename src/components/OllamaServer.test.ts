@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import type { OllamaStatus } from "../../shared/local-model";
 import { KEY_CATALOG, keyMatches } from "./keys/key-catalog";
+import { t } from "@/lib/i18n";
 import { ollamaBaseUrl } from "./OllamaServer";
 import { OllamaModels, ollamaShortStatus, ollamaStatusText, OllamaStatusLine, OLLAMA_PULL } from "./OllamaStatusLine";
 
@@ -52,6 +53,11 @@ describe("the Ollama card's states", () => {
 
   it("adds the OpenAI-compatible routes under /v1", () => {
     expect(ollamaBaseUrl(`${URL}/`)).toBe(`${URL}/v1`);
+  });
+
+  it("labels the one-click download and its progress", () => {
+    expect(t("ollama.pull")).toBe("Download qwen3:4b");
+    expect(t("ollama.pulling", { percent: 42 })).toBe("Downloading qwen3:4b… 42%");
   });
 
   it("is what a search for Ollama finds in Connections", () => {
