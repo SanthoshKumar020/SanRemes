@@ -1,12 +1,18 @@
 import { describe, expect, it } from "vitest";
 
-import { EngineProgress, statusReadMs } from "./live-start.ts";
+import { EngineProgress, memoryPressureFactor, statusReadMs } from "./live-start.ts";
 
 describe("the status read's limit", () => {
   it("is 10 s on a machine with processors to spare, and grows with load up to three times that", () => {
     expect(statusReadMs(0.5, 4)).toBe(10_000);
     expect(statusReadMs(8, 4)).toBe(20_000);
     expect(statusReadMs(40, 4)).toBe(30_000);
+  });
+  it("grows with memory pressure, the signal where the OS reports no load average", () => {
+    expect(memoryPressureFactor(0.5)).toBe(1);
+    expect(memoryPressureFactor(0.25)).toBe(1);
+    expect(memoryPressureFactor(0.125)).toBe(2);
+    expect(memoryPressureFactor(0)).toBe(3);
   });
 });
 

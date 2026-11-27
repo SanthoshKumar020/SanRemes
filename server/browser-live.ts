@@ -520,6 +520,11 @@ export class BrowserLive {
     }
   }
 
+  private botMidRun(session: string): boolean {
+    const lastUsed = this.runtime.lastUsedMs(session);
+    return lastUsed !== null && lastUsed < BUSY_LIMIT_MS;
+  }
+
   /** Discards the session's daemon once; connecting waits for it, then starts a fresh one. */
   private resetSession(viewer: Viewer, why: string): void {
     if (this.sessionResets.has(viewer.session)) return;
@@ -547,7 +552,9 @@ export class BrowserLive {
       // A bot call or a person's action can hold the engine past this read; with neither, it is starting, slow or hung.
       if (!(error instanceof BrowserBusyError) || this.runtime.working(viewer.session)) throw error;
       const env = browserRuntimeEnv({ ...viewer.spec.env, AGENT_BROWSER_SESSION: viewer.session });
-      if (this.progress.verdict(viewer.session, { alive: this.engineAlive(env), held: Boolean(this.runtime.heldBy(viewer.session)) }) === "slow") throw new BrowserStartingError();
+      const alive = this.engineAlive(env);
+      if (this.progress.verdict(viewer.session, { alive, held: Boolean(this.runtime.heldBy(viewer.session)) }) === "slow") throw new BrowserStartingError();
+      if (alive && this.botMidRun(viewer.session)) throw new BrowserStartingError();
       this.progress.forget(viewer.session);
       const restarting = new BrowserUnresponsiveError();
       // Every other view of it, its holder's included, hears why before its stream ends.
@@ -760,6 +767,7 @@ export class BrowserLive {
       viewer.waiting = false;
       this.send(viewer, { type: "ready", viewerId: viewer.id, inputBatch: INPUT_BATCH_LIMIT });
       this.control(viewer.session);
+      let opened = false;
       socket.addEventListener("message", (event) => {
         if (!this.current(viewer)) { this.close(viewer, true, true); return; }
         if (typeof event.data !== "string" || event.data.length > MAX_BUFFER) { this.close(viewer); return; }
@@ -775,15 +783,15 @@ export class BrowserLive {
         if (message.type === "frame") this.frame(viewer, message);
         else this.send(viewer, message);
       });
-      socket.addEventListener("error", () => { if (!viewer.restarting) { this.send(viewer, { type: "error", retryable: true, message: "The browser stream disconnected." }); this.close(viewer); } });
-      socket.addEventListener("close", () => { if (!viewer.restarting) this.close(viewer); });
+      socket.addEventListener("error", () => { if (!viewer.restarting && opened) this.close(viewer); });
+      socket.addEventListener("close", () => { if (!viewer.restarting && opened) this.close(viewer); });
       // Handlers go on before awaiting the upgrade: upstream sends its cached status, tabs and first frame right after opening.
       await new Promise<void>((resolve, reject) => {
         const timer = setTimeout(() => reject(new BrowserLiveError("The browser stream did not connect. Reopen the browser panel.", 503)), 10_000);
         const failed = () => { clearTimeout(timer); reject(new BrowserLiveError("The browser stream did not connect. Reopen the browser panel.", 503)); };
         socket.addEventListener("error", failed, { once: true });
         socket.addEventListener("close", failed, { once: true });
-        socket.addEventListener("open", () => { clearTimeout(timer); socket.removeEventListener("error", failed); socket.removeEventListener("close", failed); resolve(); }, { once: true });
+        socket.addEventListener("open", () => { opened = true; clearTimeout(timer); socket.removeEventListener("error", failed); socket.removeEventListener("close", failed); resolve(); }, { once: true });
       });
       if (!this.current(viewer)) { this.close(viewer); return; }
       viewer.heartbeat = setInterval(() => {

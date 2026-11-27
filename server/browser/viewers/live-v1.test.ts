@@ -180,6 +180,16 @@ describe("the v1 live view on the new browser", () => {
     expect(backend.chromes).toHaveLength(1);
   });
 
+  it("closes a view quietly when its browser crashes, so the phone reconnects without an error toast", async () => {
+    const { open, backend } = setup();
+    const { sse } = await open();
+    await sleep(25);
+    backend.chrome.close();
+    await sleep(50);
+    expect(sse.events.filter((event) => event.type === "error")).toEqual([]);
+    expect(sse.writableEnded).toBe(true);
+  });
+
   it("restarts the browser for the person, closes every view of it, and the bot hears it on its next call", async () => {
     const { open, service, backend } = setup();
     const { sse, action } = await open();

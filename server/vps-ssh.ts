@@ -121,7 +121,7 @@ function runWakeScript(file: string, alias: string, pathValue: string, timeoutMs
   return new Promise((resolve, reject) => {
     if (timeoutMs <= 0) { reject(new Error("VPS SSH initialization timed out")); return; }
     const group = process.platform !== "win32";
-    const child = spawn(file, [alias], { env: { ...process.env, PATH: pathValue }, stdio: ["ignore", "ignore", "pipe"], detached: group });
+    const child = spawn(file, [alias], { env: { ...process.env, PATH: pathValue }, stdio: ["ignore", "ignore", "pipe"], detached: group, windowsHide: true });
     let stderr = "";
     let timedOut = false;
     child.stderr?.on("data", (chunk: Buffer) => { stderr = (stderr + chunk.toString()).slice(-1000); });
@@ -165,6 +165,7 @@ export async function ensureVpsSshMaster(
         timeout: remaining,
         killSignal: "SIGKILL",
         maxBuffer: 64 * 1024,
+        windowsHide: true,
       }, (error, _stdout, stderr) => {
         if (!error) { resolve(); return; }
         const killed = (error as { killed?: boolean }).killed === true;

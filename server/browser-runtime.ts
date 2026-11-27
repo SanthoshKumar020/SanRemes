@@ -834,6 +834,12 @@ export class BrowserRuntime {
     return Boolean(gate && (gate.calls || gate.agents || gate.humans || gate.owner !== null || gate.closing || gate.releasing || this.lanes.held(session)));
   }
 
+  /** Milliseconds since this session's browser was last used by a bot call, a person or a view; null before any use. */
+  lastUsedMs(session: string): number | null {
+    const gate = this.gates.get(session);
+    return gate ? Date.now() - gate.lastUsed : null;
+  }
+
   /** Told just before an idle close stops a session's browser. */
   onIdleClose(listener: (session: string) => void): void { this.idleCloseListeners.add(listener); }
 

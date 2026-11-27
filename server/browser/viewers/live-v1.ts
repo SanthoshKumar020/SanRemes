@@ -166,10 +166,7 @@ export class LiveV1 {
         this.#control(viewer);
         return;
       case "gone":
-        if (!viewer.restarting) {
-          this.#send(viewer, { type: "error", retryable: true, message: "The browser stream disconnected." });
-          this.#close(viewer);
-        }
+        if (!viewer.restarting) this.#close(viewer);
         return;
       case "asleep":
         this.#send(viewer, BROWSER_ASLEEP_ERROR);

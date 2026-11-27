@@ -1,7 +1,7 @@
 // Whether an engine that left a view's status read unanswered has hung, or is only slow: starting on a busy machine, or
 // on a Cloud whose shared CPU is throttled. Only a hung one is reset.
 import { readFileSync } from "node:fs";
-import { availableParallelism, loadavg } from "node:os";
+import { availableParallelism, freemem, loadavg, totalmem } from "node:os";
 
 import { browserDaemonFile } from "../browser-engine.ts";
 import { processAlive } from "../browser-processes.ts";
@@ -16,8 +16,16 @@ const SLOW_LIMIT_MS = { progressing: 3 * 60_000, silent: 30_000 };
 
 /** The status read's limit: longer while the machine runs more work than it has processors for. */
 export function statusReadMs(load = loadavg()[0] ?? 0, processors = availableParallelism()): number {
-  const factor = Math.min(MOST_LOAD_FACTOR, Math.max(1, load / Math.max(1, processors)));
+  const loadFactor = Math.min(MOST_LOAD_FACTOR, Math.max(1, load / Math.max(1, processors)));
+  const factor = process.platform === "win32" ? Math.max(loadFactor, memoryPressureFactor(freemem() / Math.max(1, totalmem()))) : loadFactor;
   return Math.round(STATUS_READ_MS * factor);
+}
+
+/** Free memory below a quarter of the machine is the pressure signal where the OS reports no load average (Windows):
+ * the read waits up to three times longer, the same cap as load. */
+export function memoryPressureFactor(freeRatio: number): number {
+  const FREE_FLOOR = 0.25;
+  return Math.min(MOST_LOAD_FACTOR, Math.max(1, 1 + (2 * Math.max(0, FREE_FLOOR - freeRatio)) / FREE_FLOOR));
 }
 
 /** The engine's daemon for a session is starting (no pid file yet) or running; false once its process is gone. */

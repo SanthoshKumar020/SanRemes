@@ -79,6 +79,7 @@ beforeEach(() => {
     onIdleClose: vi.fn(),
     settled: vi.fn(async () => {}),
     working: vi.fn(() => true),
+    lastUsedMs: vi.fn(() => null),
     launchReady: vi.fn(async () => {}),
     launched: vi.fn(async () => {}),
     pageSizes: { resize: vi.fn(async () => {}) },
@@ -171,6 +172,12 @@ describe("authenticated browser viewer relay", () => {
     expect(b.socket.readyState).toBe(3);
     expect(other.res.writableEnded).toBe(false);
     expect(other.socket.readyState).toBe(1);
+  });
+  it("closes a view quietly when its stream drops, so the panel reconnects without an error toast", async () => {
+    const { res, socket } = await open();
+    socket.dispatchEvent(new Event("error"));
+    expect(res.events("error")).toEqual([]);
+    expect(res.writableEnded).toBe(true);
   });
   it("keeps opening status, tabs and the seed frame even if they arrive immediately with the WebSocket upgrade", async () => {
     SocketFixture.initialMessages = [{ type: "status", connected: true }, { type: "tabs", tabs: [] }, frame];
@@ -1370,6 +1377,39 @@ describe("opening a view while the bot holds the browser", () => {
     expect(nativeClose).not.toHaveBeenCalled();
     again.res.destroy();
     await vi.advanceTimersByTimeAsync(10_000);
+  });
+
+  it("keeps waiting, and resets nothing, while a bot used the browser recently between calls", async () => {
+    vi.useFakeTimers();
+    let now = 0;
+    live = new BrowserLive({ runtime, engine: { alive: () => true, now: () => now, statusReadMs: () => 10_000 } });
+    vi.mocked(runtime.working).mockReturnValue(false);
+    vi.mocked(runtime.lastUsedMs).mockReturnValue(60_000);
+    execute.mockImplementation(async () => { now += 10_000; throw busy(); });
+    const { res, opening } = start();
+    void opening.catch(() => undefined);
+    await vi.advanceTimersByTimeAsync(200_000);
+    // Three minutes of an engine that never answered, with a bot still mid-run: wait, do not reset.
+    expect(now).toBeGreaterThanOrEqual(180_000);
+    expect(res.events("waiting").length).toBeGreaterThan(10);
+    expect(res.events("error")).toEqual([]);
+    expect(nativeClose).not.toHaveBeenCalled();
+    res.destroy();
+    await vi.advanceTimersByTimeAsync(10_000);
+  });
+
+  it("still resets a silent engine when no bot has used the browser for a while", async () => {
+    vi.useFakeTimers();
+    let now = 0;
+    live = new BrowserLive({ runtime, engine: { alive: () => true, now: () => now, statusReadMs: () => 10_000 } });
+    vi.mocked(runtime.working).mockReturnValue(false);
+    vi.mocked(runtime.lastUsedMs).mockReturnValue(660_000);
+    execute.mockImplementation(async () => { now += 10_000; throw busy(); });
+    const { res, opening } = start();
+    await vi.advanceTimersByTimeAsync(200_000);
+    await opening;
+    expect(res.events("error")).toEqual([expect.objectContaining({ errorKey: "serverError.browser.restartingUnresponsive" })]);
+    expect(nativeClose).toHaveBeenCalledOnce();
   });
 
   it("keeps waiting, and resets nothing, while a bot call still works in the browser", async () => {

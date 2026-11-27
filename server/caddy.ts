@@ -83,7 +83,7 @@ export async function ensureCaddy(options: {
   try {
     const archive = join(scratch, asset.name);
     writeFileSync(archive, body, { mode: 0o600 });
-    const extracted = spawnSync("tar", ["-xzf", archive, "-C", scratch, "caddy"], { stdio: "ignore" });
+    const extracted = spawnSync("tar", ["-xzf", archive, "-C", scratch, "caddy"], { stdio: "ignore", windowsHide: true });
     if (extracted.status !== 0) throw new Error("the Caddy archive could not be extracted (is `tar` installed?)");
     const staging = `${destination}.${randomBytes(6).toString("hex")}.part`;
     renameSync(join(scratch, "caddy"), staging);
