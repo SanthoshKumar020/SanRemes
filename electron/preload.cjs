@@ -2,8 +2,6 @@
 const { contextBridge, ipcRenderer, webFrame, webUtils } = require("electron");
 
 // Sandboxed preloads get Electron's restricted `require`, which cannot load sibling CommonJS files.
-const desktopRemoteClient = process.argv.includes("--sanremes-remote-client");
-
 let pendingPackageInstallUrl = null;
 const packageInstallListeners = new Set();
 ipcRenderer.on("package:install", (_event, url) => {
@@ -50,7 +48,7 @@ ipcRenderer.on("desktop-notifications:open", (_event, target) => {
 
 // Only fixed actions are retained, never a destination supplied by a renderer.
 const FIXED_SETTINGS_ACTIONS = new Set(["organization", "cloud", "cloud-settings", "cloud-add", "cloud-add-howto",
-  "overview", "devices", "phone", "ai", "bots", "desktops", "vault", "usage", "transfer", "storage", "data", "people", "installations", "account", "plan", "app", "general", "appearance", "features"]);
+  "overview", "devices", "ai", "bots", "desktops", "vault", "usage", "transfer", "storage", "data", "people", "installations", "account", "plan", "app", "general", "appearance", "features"]);
 let pendingSettingsAction = null;
 const appSettingsListeners = new Set();
 ipcRenderer.on("app:open-settings", (_event, section) => {
@@ -127,7 +125,7 @@ const COMPANY_BACKUP_CLIENT_KEYS = [
   "sanremes.sidebarCollapsedSections.v1", "sanremes.sidebarSectionOrder.v1",
   "sanremes-analytics-opt-out", "sanremes.remote-voice.v1",
 ];
-if (isLocalPage && !desktopRemoteClient && process.argv.includes("--sanremes-company-desktop=1")) {
+if (isLocalPage && process.argv.includes("--sanremes-company-desktop=1")) {
   ipcRenderer.on("company-backups:collect-client-state", (_event, request) => {
     if (!request || typeof request.requestId !== "string" || !/^[a-f0-9-]{36}$/.test(request.requestId)) return;
     try {
@@ -279,44 +277,11 @@ const bridge = {
     ipcRenderer.on("desktop:capabilities-changed", handler);
     return () => ipcRenderer.removeListener("desktop:capabilities-changed", handler);
   },
-  /** The bearer stays in the main process and is never returned over this bridge. */
-  remoteClient: {
-    active: desktopRemoteClient,
-    state: () => ipcRenderer.invoke("desktop-remote:state"),
-    pair: (endpoint, code) => ipcRenderer.invoke("desktop-remote:pair", endpoint, code),
-    disconnect: () => ipcRenderer.invoke("desktop-remote:disconnect"),
-  },
-  companion: {
-    state: () => ipcRenderer.invoke("companion:state"),
-    start: (routes) => ipcRenderer.invoke("companion:start", Array.isArray(routes) ? routes.filter((route) => typeof route === "string") : undefined),
-    stop: () => ipcRenderer.invoke("companion:stop"),
-    keepAwake: (enabled) => ipcRenderer.invoke("companion:keep-awake", enabled),
-    refreshTailscale: () => ipcRenderer.invoke("companion:refresh-tailscale"),
-    setTailscale: (on) => ipcRenderer.invoke("companion:tailscale", on === true),
-    setTailscaleComputers: (on) => ipcRenderer.invoke("companion:tailscale-computers", on === true),
-    setRoute: (route, on) => ipcRenderer.invoke("companion:route", String(route), on === true),
-    dismissNotice: (route) => ipcRenderer.invoke("companion:notice-dismiss", String(route)),
-    pairing: (open, expectedToken) => ipcRenderer.invoke("companion:pairing", open, expectedToken),
-    cloudDesktop: (deviceId, allowed) => ipcRenderer.invoke("companion:cloud-desktop", deviceId, allowed),
-    browserControl: (deviceId, allowed) => ipcRenderer.invoke("companion:browser-control", deviceId, allowed),
-    revoke: (deviceId) => ipcRenderer.invoke("companion:revoke", deviceId),
-    renewPairing: () => ipcRenderer.invoke("companion:pairing-renew"),
-    routes: (deviceId, routes) => ipcRenderer.invoke("companion:routes", deviceId, routes),
-  },
-  routines: {
+    routines: {
     wakeState: () => ipcRenderer.invoke("routines:wake-state"),
     keepAwake: (enabled) => ipcRenderer.invoke("routines:keep-awake", enabled),
   },
-  /** Secrets stay in the main process; the renderer sees only status and narrow actions. */
-  companionAccount: {
-    state: () => ipcRenderer.invoke("companion-account:state"),
-    requestCode: (email) => ipcRenderer.invoke("companion-account:request-code", email),
-    verifyCode: (email, code) => ipcRenderer.invoke("companion-account:verify-code", email, code),
-    retry: () => ipcRenderer.invoke("companion-account:retry"),
-    prepare: () => ipcRenderer.invoke("companion-account:prepare"),
-    signOut: () => ipcRenderer.invoke("companion-account:sign-out"),
-  },
-  /** Full/Custom never go through the loopback API, only the embedded server's private utilityProcess port. */
+    /** Full/Custom never go through the loopback API, only the embedded server's private utilityProcess port. */
   approvals: {
     setMode: (botId, mode, options) => ipcRenderer.invoke("approvals:set-trusted-mode", botId, mode, options),
   },
@@ -329,14 +294,7 @@ const bridge = {
   /** Arms exactly one display-media request from the current renderer frame. */
   beginScreenPreviewIntent: () => ipcRenderer.sendSync("screen:preview-intent"),
   screenFrame: () => ipcRenderer.invoke("screen:frame"),
-  /** Physical USB devices only; network ADB is deliberately excluded. */
-  androidDevice: {
-    status: () => ipcRenderer.invoke("android-device:status"),
-    frame: (serial) => ipcRenderer.invoke("android-device:frame", serial),
-    input: (serial, payload) =>
-      ipcRenderer.invoke("android-device:input", serial, payload).then(() => undefined),
-  },
-  speechStart: (options) => ipcRenderer.invoke("speech:start", options),
+    speechStart: (options) => ipcRenderer.invoke("speech:start", options),
   speechStop: () => ipcRenderer.invoke("speech:stop"),
   speechFinish: () => ipcRenderer.invoke("speech:finish"),
   onSpeechTranscript: (cb) => {
@@ -536,7 +494,6 @@ const bridge = {
     sheet: open => ipcRenderer.invoke("cloud-account:sheet", open === true),
     readySeen: () => ipcRenderer.invoke("cloud-account:readySeen"),
     connectHome: () => ipcRenderer.invoke("cloud-account:connectHome"),
-    connectHomeForPhone: () => ipcRenderer.invoke("cloud-account:connectHomeForPhone"),
     openTeam: teamId => ipcRenderer.invoke("cloud-account:openTeam", String(teamId)),
     // Cancel trial / Cancel plan and Keep my plan: the survey's words only; main names the Cloud from the verified session.
     cancelPlan: survey => ipcRenderer.invoke("cloud-account:cancelPlan", survey ?? null),

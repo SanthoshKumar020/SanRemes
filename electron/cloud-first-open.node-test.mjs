@@ -149,13 +149,13 @@ test("asked for while the Admin sets it up: the setup screen with its step, noth
 
 test("a payment the Admin is still confirming shows the setup screen too, at its first step", async () => {
   const w = world({ state: { status: "connected", account: ACCOUNT, purchase: { state: "confirming", tier: "pro" } } });
-  await w.home.openCloud("phone");
+  await w.home.openCloud();
   assert.deepEqual(w.home.view(), { screen: "setup" });
   w.url = SCREEN;
   await w.says(settingUp({ step: "reserving" }));
   assert.deepEqual(w.home.view(), { screen: "setup", step: "reserving" });
   await w.says(ready());
-  assert.deepEqual(w.went.at(-1), [`${CLOUD}/?desktop-settings=phone&pair=open`, CLOUD], "what was asked for (its phone pairing) is what opens");
+  assert.deepEqual(w.went.at(-1), [CLOUD, CLOUD], "what was asked for is what opens");
   assert.equal(w.cloudLookups(), 3, "looked up only once ready: its look, its session, its page");
 });
 

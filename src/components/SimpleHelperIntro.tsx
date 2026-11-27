@@ -53,13 +53,12 @@ function thinksWith(bot: Bot | undefined, instances: readonly InstanceInfo[]): H
 
 interface Look {
   apps: string[] | null;
-  phonePaired?: boolean;
   importFound?: boolean;
   settled: boolean;
 }
 
-/** A real look around, without asking an AI: the apps connected here, a paired phone, skills to bring in. Settles within
- * LOOK_MS; anything not known by then is left out. `deep` also looks for skills on this computer. */
+/** A real look around, without asking an AI: the apps connected here, skills to bring in. Settles within LOOK_MS;
+ * anything not known by then is left out. `deep` also looks for skills on this computer. */
 function useLookAround(deep: boolean): Look {
   const [found, setFound] = useState<Look>({ apps: null, settled: false });
   useEffect(() => {
@@ -68,11 +67,10 @@ function useLookAround(deep: boolean): Look {
       .then(([inventory, cards]) => Object.entries(inventory.services).filter(([, status]) => status.connected)
         .map(([slug]) => cards.get(slug)?.label ?? slug))
       .catch(() => null);
-    const phones = api<{ phones?: unknown[] }>("/api/phones").then((response) => (response.phones?.length ?? 0) > 0).catch(() => undefined);
     const look = deep && localSetupImport(false) ? detectSetupWithin(setupImportApi) : null;
     const timer = setTimeout(() => { if (active) setFound((now) => ({ ...now, settled: true })); }, LOOK_MS);
-    void Promise.all([apps, phones, look?.found ?? null]).then(([appNames, phonePaired, detection]) => {
-      if (active) setFound({ apps: appNames, phonePaired, importFound: Boolean(detection), settled: true });
+    void Promise.all([apps, look?.found ?? null]).then(([appNames, detection]) => {
+      if (active) setFound({ apps: appNames, importFound: Boolean(detection), settled: true });
     });
     return () => {
       active = false;
@@ -164,7 +162,6 @@ export function SimpleHelperIntro({ botId, threadId, message, answered, followup
     team: Boolean(state.config?.team),
     remote: typeof window !== "undefined" && window.ogb?.remoteClient?.active === true,
     appsConnected: Boolean(look.apps?.length),
-    phonePaired: look.phonePaired,
     importFound: look.importFound,
   });
   const typing = staged && ai !== "none" && shown === 4 && Boolean(bot);

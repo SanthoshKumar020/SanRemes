@@ -21,8 +21,8 @@ const line = (move: OneHomeView, page: "local" | "cloud" = "local") => moveLine(
 
 const notice: CloudSendNotice = { ready: true, bots: ["Ember"], updatedBots: [], skills: 2, logins: 0, onePassword: true, settings: 0, signature: "sig-1", dismissed: false, running: false, last: null, whole: null };
 let page: CloudSendPageBridge;
-const pair = vi.fn(), open = vi.fn();
-const hook = (cloudHome = false) => { f.index = 0; f.effects = []; return useAccountMove(cloudHome, { onOpen: open, onPairPhone: pair }); };
+const open = vi.fn();
+const hook = (cloudHome = false) => { f.index = 0; f.effects = []; return useAccountMove(cloudHome, { onOpen: open }); };
 const lineHook = (cloudHome = false) => { f.index = 0; f.effects = []; return useAccountMoveLine(cloudHome); };
 async function shown(value: CloudSendNotice, cloudHome = false) {
   page = { notice: vi.fn().mockResolvedValue(value), dismiss: vi.fn().mockResolvedValue({ ...value, move: undefined }), onNotice: vi.fn(() => () => {}) };
@@ -31,7 +31,7 @@ async function shown(value: CloudSendNotice, cloudHome = false) {
   return hook(cloudHome);
 }
 
-beforeEach(() => { f.values = []; f.index = 0; f.effects = []; setLocale("en"); pair.mockReset(); open.mockReset(); });
+beforeEach(() => { f.values = []; f.index = 0; f.effects = []; setLocale("en"); open.mockReset(); });
 afterEach(() => { vi.unstubAllGlobals(); });
 
 describe("the move's words on the account", () => {
@@ -161,18 +161,15 @@ describe("the move's row in the account menu", () => {
     expect(onOpen).toHaveBeenCalledOnce();
   });
 
-  it("done: what arrived and what was held, the phone to pair, and Got it", () => {
-    const onPairPhone = vi.fn(), onClose = vi.fn();
+  it("done: what arrived and what was held, and Got it", () => {
+    const onClose = vi.fn();
     const done = line({ phase: "done", counts: { bots: 4, skills: 2, logins: 2, onePassword: true, chats: 148, routines: 2 }, phone: true, held: ["OPENAI_API_KEY"] }, "cloud");
-    const items = rows(done, { onPairPhone, onClose });
-    expect(items.map((item) => item.key)).toEqual(["cloud-move", "cloud-move-phone", "cloud-move-close"]);
+    const items = rows(done, { onClose });
+    expect(items.map((item) => item.key)).toEqual(["cloud-move", "cloud-move-close"]);
     expect(items[0]!.label).toBe("Everything from this computer is here: 4 bots, 2 skills, 2 logins, 1Password, 148 chats, and 2 routines.");
     expect(items[0]!.note).toContain("OPENAI_API_KEY");
-    expect(items[1]!.label).toBe("Pair your phone with My Cloud");
-    expect(items[2]!.label).toBe("Got it");
+    expect(items[1]!.label).toBe("Got it");
     items[1]!.onSelect();
-    items[2]!.onSelect();
-    expect(onPairPhone).toHaveBeenCalledOnce();
     expect(onClose).toHaveBeenCalledOnce();
     expect(rows(done).map((item) => item.key)).toEqual(["cloud-move", "cloud-move-close"]);
     expect(rows(line({ phase: "home-again" })).map((item) => item.key)).toEqual(["cloud-move", "cloud-move-close"]);
@@ -242,12 +239,10 @@ describe("useAccountMove", () => {
     expect(lineHook()).toEqual({ kind: "sending", retry: null });
   });
 
-  it("My Cloud's page says once what arrived, with the phone to pair, until Got it", async () => {
+  it("My Cloud's page says once what arrived, until Got it", async () => {
     const done = await shown({ ...notice, move: { phase: "done", counts: { bots: 4, skills: 2, logins: 2, onePassword: true, chats: 148, routines: 2 }, phone: true, held: [] } }, true);
     expect(done.kind).toBe("done");
     expect(lineHook(true)).toEqual({ kind: "done", retry: null });
-    done.items.find((item) => item.key === "cloud-move-phone")!.onSelect();
-    expect(pair).toHaveBeenCalledOnce();
     done.items.find((item) => item.key === "cloud-move-close")!.onSelect(); await flush();
     expect(page.dismiss).toHaveBeenCalledWith("one-home");
     expect(hook(true)).toEqual({ kind: null, items: [] });

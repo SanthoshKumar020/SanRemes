@@ -2,7 +2,7 @@
 // short segment in the account's name, a line by the account (above it in Simple, under the name in Advanced), a dot
 // on the avatar, and the move's own row at the top of the account menu. In the desktop app only, never in a browser.
 import { useSyncExternalStore } from "react";
-import { CloudAlert, CloudCheck, CloudUpload, Loader2, RefreshCw, Smartphone, X } from "lucide-react";
+import { CloudAlert, CloudCheck, CloudUpload, Loader2, RefreshCw, X } from "lucide-react";
 import type { CloudSendPageBridge } from "../../electron/cloud-send.mjs";
 import { MOVE_LINE } from "../../electron/cloud-send-parts.mjs";
 import { ipcErrorText, moveLine } from "@/lib/cloud-send";
@@ -33,14 +33,13 @@ function failingWhy(line: AccountMoveLine, unanswered: string | null): string {
 }
 
 /** The move's rows at the top of the account menu. Failed: Try again, with why written under it (and in its tooltip),
- * and a spinner while it runs. On its way: one row, the progress in its tooltip. Done: what arrived, the
- * phone to pair, and Got it, which closes it for good. A row that does not retry opens My Cloud in Settings. */
-export function moveMenuItems(line: AccountMoveLine | null, { retrying = false, unanswered = null, onOpen, onRetry, onPairPhone, onClose }: {
+ * and a spinner while it runs. On its way: one row, the progress in its tooltip. Done: what arrived, and Got it,
+ * which closes it for good. A row that does not retry opens My Cloud in Settings. */
+export function moveMenuItems(line: AccountMoveLine | null, { retrying = false, unanswered = null, onOpen, onRetry, onClose }: {
   retrying?: boolean;
   unanswered?: string | null;
   onOpen: () => void;
   onRetry: () => void;
-  onPairPhone?: () => void;
   onClose: () => void;
 }): SidebarMenuItem[] {
   if (!line) return [];
@@ -62,7 +61,6 @@ export function moveMenuItems(line: AccountMoveLine | null, { retrying = false, 
   if (line.kind === "sending") return [{ key: "cloud-move", label: accountMoveWords("sending", line.place)!, title: line.text, icon: <Loader2 size={16} className="animate-spin" />, onSelect: onOpen }];
   return [
     { key: "cloud-move", label: line.text, ...(line.extra.length ? { note: line.extra.join(" ") } : {}), wrap: true, icon: <CloudCheck size={16} />, onSelect: onOpen },
-    ...(line.phone && onPairPhone ? [{ key: "cloud-move-phone", label: t("cloudSend.move.phone"), icon: <Smartphone size={16} />, onSelect: onPairPhone }] : []),
     { key: "cloud-move-close", label: t("sidebar.account.moveDismiss"), icon: <X size={16} />, onSelect: onClose },
   ];
 }
@@ -110,7 +108,7 @@ function useMove(cloudHome: boolean) {
 }
 
 /** The move as the account menu shows it: its kind and its rows, with the move's own Try again and close. */
-export function useAccountMove(cloudHome: boolean, { onOpen, onPairPhone }: { onOpen: () => void; onPairPhone?: () => void }): {
+export function useAccountMove(cloudHome: boolean, { onOpen }: { onOpen: () => void }): {
   kind: AccountMoveKind | null;
   items: SidebarMenuItem[];
   place?: string;
@@ -118,7 +116,7 @@ export function useAccountMove(cloudHome: boolean, { onOpen, onPairPhone }: { on
   const move = useMove(cloudHome);
   if (!move) return { kind: null, items: [] };
   const { line, retrying, unanswered, retry, close } = move;
-  return { kind: line.kind, items: moveMenuItems(line, { retrying, unanswered, onOpen, onRetry: retry, onPairPhone, onClose: close }), ...(line.place ? { place: line.place } : {}) };
+  return { kind: line.kind, items: moveMenuItems(line, { retrying, unanswered, onOpen, onRetry: retry, onClose: close }), ...(line.place ? { place: line.place } : {}) };
 }
 
 /** The line's Try again: what it runs, whether it is running, and why the move failed. */

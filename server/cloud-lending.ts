@@ -52,6 +52,9 @@ export function answersOwnersLine(turn: CloudLendingTurn): boolean {
 
 export type CloudLendingRefusal = "unproven" | "not-owner" | "someone-else";
 
+/** In-flight card answerer when the caller is provably not the owner. */
+export const NOT_THE_OWNER = "not-the-owner";
+
 /** What a refused call hears after the words for the person, since a bot told "start a new conversation" does it itself. */
 export const ONLY_THE_PERSON = "Only the person can change this. Stop trying to reach it: asking again, a conversation you open yourself and work you hand to another bot can't use it either. Tell them the above in their language, then end your turn.";
 

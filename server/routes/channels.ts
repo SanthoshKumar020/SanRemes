@@ -21,7 +21,6 @@ import type { RoomThreadSummariesResponse } from "../../shared/room-threads.ts";
 import { messageTextRefusal } from "../message-text.ts";
 import { prepareRoomPointed, roomPickBots, type RoomPick } from "../room-pointed.ts";
 import { refusalBody } from "../user-errors.ts";
-import type { PhoneSecretSubmissionRegistry } from "../phone-secret.ts";
 import { promptWithReply, type PersonName } from "../replies.ts";
 import { clientGroupPatchViolation, requestSource, type RequestAuth } from "../request-auth.ts";
 import type { RoomContextTracker } from "../room-context.ts";
@@ -63,7 +62,6 @@ export interface ChannelRouteDeps {
   notificationListed: NotificationListed;
   actorKey(auth: RequestAuth & { kind: "session" }): string;
   threadStarters: Pick<ThreadStarters, "set">;
-  phoneSecretSubmissions: Pick<PhoneSecretSubmissionRegistry, "hasGroup" | "hasThread">;
   sendSequencer: Pick<SendSequencer, "run">;
   roomMemberContexts: Pick<RoomContextTracker, "request">;
   skillReview: Pick<SkillReview, "dropThread">;
@@ -120,7 +118,7 @@ type StopAnswer = { status: 200 | 403 | 409; body: { ok: true } | { error: strin
 
 export function createChannelRoutes(deps: ChannelRouteDeps): RouteHandler {
   const {
-    store, cfg, broadcast, notificationListed, actorKey, threadStarters, phoneSecretSubmissions, sendSequencer, roomMemberContexts, skillReview,
+    store, cfg, broadcast, notificationListed, actorKey, threadStarters, sendSequencer, roomMemberContexts, skillReview,
     groupSpeakers, groupTurnOperations, lastReply, cloudThreadRefusal, messageSender, usageTriggerFor, publicGroupState,
     groupWithThread, updateChannel, groupIsWorking, groupThreadIsWorking, readCursor, pageSize, messagePage,
     resolveReplyTarget, runningTurnInstance, startGroupTurn, engineSteersImages, applyRoomHoldsFromMessage, cancelGroupTurnOperations,
@@ -130,9 +128,6 @@ export function createChannelRoutes(deps: ChannelRouteDeps): RouteHandler {
   const DESKTOP_MANAGED = deps.desktopManaged;
   const roomStops = new StopReceipts<StopAnswer>();
   const deleteRefusal = (auth: RequestAuth, groupId: string, threadId: string): { status: 403 | 404 | 409; error: string } | null => {
-    if (phoneSecretSubmissions.hasThread(threadId)) {
-      return { status: 409, error: "this task is securely saving a credential — try again when it finishes" };
-    }
     if (groupThreadIsWorking(groupId, threadId)) return { status: 409, error: "this task is running — stop it first" };
     if (!store.groupTaskByThread(groupId, threadId)) return { status: 404, error: "no such channel task" };
     const notYours = cloudThreadRefusal(auth, threadId);
@@ -176,9 +171,6 @@ export function createChannelRoutes(deps: ChannelRouteDeps): RouteHandler {
       const group = store.group(m[1]);
       if (!group) return json(res, 404, { error: "no such channel" });
       if (group.dm) return json(res, 400, { error: "bot-to-bot channels keep one canonical conversation" });
-      if (phoneSecretSubmissions.hasGroup(group.id)) {
-        return json(res, 409, { error: "this channel is securely saving a credential — try again when it finishes" });
-      }
       if (!body || typeof body !== "object" || Array.isArray(body)) {
         return json(res, 400, { error: "body must be a JSON object" });
       }
@@ -225,9 +217,6 @@ export function createChannelRoutes(deps: ChannelRouteDeps): RouteHandler {
       const group = store.group(m[1]);
       if (!group) return json(res, 404, { error: "no such channel" });
       if (group.dm) return json(res, 400, { error: "bot-to-bot channels keep one canonical conversation" });
-      if (phoneSecretSubmissions.hasGroup(group.id)) {
-        return json(res, 409, { error: "this channel is securely saving a credential — try again when it finishes" });
-      }
       // Parsed before the switch: a rejected parameter must not leave the channel on another thread.
       const requestedMessages = url.searchParams.get("messages");
       const switchLimit = pageSize(requestedMessages);
@@ -347,9 +336,6 @@ export function createChannelRoutes(deps: ChannelRouteDeps): RouteHandler {
     if (m && method === "DELETE") {
       const group = store.group(m[1]);
       if (!group) return json(res, 404, { error: "no such room" });
-      if (phoneSecretSubmissions.hasGroup(group.id)) {
-        return json(res, 409, { error: "this channel is securely saving a credential — try again when it finishes" });
-      }
       if (groupIsWorking(group)) {
         return json(res, 409, { error: "this channel is working — stop that turn first" });
       }

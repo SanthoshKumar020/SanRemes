@@ -1,57 +1,39 @@
 // @vitest-environment happy-dom
-// The Devices page over a fake desktop bridge and a fake server: what the map draws, what its buttons call, the private
-// network's states and Add a device's pairing link, with nothing reaching a real server or Tailscale.
+// The Devices page over a fake desktop bridge and a fake server: what the map draws, what its buttons call, and Add a
+// device's pairing code, with nothing reaching a real server.
 import { act, createElement, useState, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { CompanionState } from "@/lib/companion-types";
 import { setLocale } from "@/lib/i18n";
-import { takePhonePairingRequest } from "@/lib/phone-pairing";
 import { forgetSharedSession } from "@/lib/session-reuse";
 import { initialState, StoreContext } from "@/state/store";
-import { fullContext, resolveSettingsTarget, searchSettings } from "../settings-index";
+import { fullContext } from "../settings-index";
 import { SettingsShellContext, type SettingsShell } from "../settings-shell";
 import { setDevicesSignal, useDevicesSignal } from "../devices-signal";
-import { DevicesPage, nextNetworkStep, tailscaleDownload } from "./DevicesPage";
+import { DevicesPage } from "./DevicesPage";
 import { overrideDeviceMap, SHOW_DEVICE_MAP } from "../../devices/DeviceMap";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const NOW = Date.now();
-const off = { on: false, since: null };
 
 let host: HTMLDivElement;
 let root: Root;
-let companion: CompanionState;
 let session: unknown;
 let sessions: Array<{ id: string; label: string; scopes: string[]; lastSeenAt: number }>;
 let openCodes: string[];
 let requests: string[];
 let botRows: unknown[] | "forbidden";
 let config: Record<string, unknown>;
-let bridge: Record<string, ReturnType<typeof vi.fn>>;
 let environments: Record<string, ReturnType<typeof vi.fn>>;
 let go: ReturnType<typeof vi.fn<SettingsShell["go"]>>;
 let setSub: ReturnType<typeof vi.fn<NonNullable<SettingsShell["setSub"]>>>;
 let workspaces: Record<string, ReturnType<typeof vi.fn>>;
 let lendWish: ReturnType<typeof vi.fn>;
-let phoneApps: unknown[];
 let saved: Array<{ id: string; kind: string; name: string; origin?: string; home?: boolean }>;
-let account: Record<string, unknown>;
 let vpsState: string;
 let alwaysOn: Record<string, unknown> | null;
 
-const reply = async () => companion;
-function install(tailscaleProblem?: CompanionState["tailscaleProblem"]) {
-  bridge = {
-    state: vi.fn(reply), start: vi.fn(reply), stop: vi.fn(reply), keepAwake: vi.fn(reply), refreshTailscale: vi.fn(reply), pairing: vi.fn(reply),
-    cloudDesktop: vi.fn(reply), browserControl: vi.fn(reply), routes: vi.fn(reply), setRoute: vi.fn(reply), setTailscale: vi.fn(reply),
-    revoke: vi.fn(async (id: string) => { companion = { ...companion, devices: companion.devices.filter((device) => device.id !== id) }; return companion; }),
-    setTailscaleComputers: vi.fn(async () => {
-      if (tailscaleProblem) return { ...companion, tailscaleProblem };
-      companion = { ...companion, routes: { ...companion.routes!, tailscale: { on: true, since: NOW, name: "ada.tail1.ts.net", computers: true } }, tailnetShare: { on: true, origin: "http://ada.tail1.ts.net:8799", https: false, problem: null } };
-      return companion;
-    }),
-  };
+function install() {
   saved = [
     { id: "local", kind: "local", name: "This computer" },
     { id: "home", kind: "remote", name: "Ada’s Cloud", origin: "https://ada.sanremes.invalid", home: true },
@@ -73,8 +55,7 @@ function install(tailscaleProblem?: CompanionState["tailscaleProblem"]) {
   lendWish = vi.fn(async () => true);
   vi.stubGlobal("ogb", undefined);
   (window as unknown as { ogb: unknown }).ogb = {
-    platform: "darwin", app: { version: "0.1.180" }, companion: bridge, environments, workspaces, lendComputer: { wish: lendWish, state: async () => null, set: async () => null },
-    companionAccount: { state: async () => account, prepare: vi.fn(async () => account) },
+    platform: "darwin", app: { version: "0.1.180" }, environments, workspaces, lendComputer: { wish: lendWish, state: async () => null, set: async () => null },
     ...(alwaysOn ? { alwaysOnHome: { state: async () => alwaysOn, set: vi.fn(async () => alwaysOn) } } : {}),
   };
 }
@@ -83,24 +64,13 @@ beforeEach(() => {
   setLocale("en");
   forgetSharedSession();
   requests = [];
-  phoneApps = [];
   session = { kind: "loopback", trust: "owner" };
   sessions = [];
   openCodes = ["p1"];
   botRows = [];
   config = { profile: { email: "ada@example.com" }, managedPolicy: null };
-  account = { available: true, status: "ready", email: "ada@example.com" };
   vpsState = "cantReach";
   alwaysOn = null;
-  companion = {
-    enabled: true, keepAwake: false, port: 8810, pairing: null,
-    devices: [
-      { id: "iphone", name: "Ada’s iPhone", createdAt: NOW, lastSeenAt: NOW, cloudDesktopAccess: false, route: "wifi" },
-      { id: "pixel", name: "Pixel 9", createdAt: NOW, lastSeenAt: NOW - 86_400_000, cloudDesktopAccess: false, route: null },
-    ],
-    connectedDeviceIds: ["iphone"],
-    routes: { wifi: { on: true, since: NOW }, relay: off, tailscale: off, https: off },
-  };
   install();
   vi.stubGlobal("fetch", vi.fn(async (input: string, init?: RequestInit) => {
     const path = new URL(input, "http://127.0.0.1").pathname;
@@ -109,7 +79,6 @@ beforeEach(() => {
     if (path === "/api/auth/sessions") return Response.json({ sessions, current: null });
     if (path === "/api/auth/pairing" && init?.method === "POST") return Response.json({ id: "p1", code: "7KQ2-M9XD-H4TP", expiresAt: NOW + 600_000, url: null, hint: null });
     if (path === "/api/auth/pairing") return Response.json({ pairings: openCodes.map((id) => ({ id })) });
-    if (path === "/api/phones") return Response.json({ phones: phoneApps });
     if (path === "/api/computers/bots") return botRows === "forbidden" ? Response.json({ error: "admin only" }, { status: 403 }) : Response.json({ now: NOW, rows: botRows });
     if (path === "/api/config" && init?.method === "PUT") return Response.json({ notice: "GPU box is no longer used. Its desktops stay on it.", vps: { configured: false, sshAlias: "", servers: [] } });
     if (path === "/api/config") return Response.json({ membership: { authority: "local", pairingCodes: true } });
@@ -165,9 +134,9 @@ function WithHeader({ shell }: { shell: SettingsShell }) {
   return createElement(SettingsShellContext.Provider, { value: { ...shell, setHeaderAction: setAction } },
     createElement("header", { "data-settings-header": "" }, action), createElement(DevicesPage));
 }
-async function render(over: Partial<SettingsShell["ctx"]> = {}, shellOver: Partial<SettingsShell> = {}, pairRequest = 0, header = true) {
+async function render(over: Partial<SettingsShell["ctx"]> = {}, shellOver: Partial<SettingsShell> = {}, header = true) {
   const shell: SettingsShell = { ctx: fullContext({ advanced: false, ...over }), place: { name: "This computer", kind: "computer", color: null, named: false }, page: "devices", anchor: null, go, ...shellOver };
-  const state = { ...initialState, config: config as never, bots: BOTS as never, appSettingsPhonePairing: pairRequest };
+  const state = { ...initialState, config: config as never, bots: BOTS as never };
   dispatch = vi.fn();
   act(() => root.render(createElement(StoreContext.Provider, { value: { state, dispatch } as never },
     header ? createElement(WithHeader, { shell }) : createElement(SettingsShellContext.Provider, { value: shell }, createElement(DevicesPage)))));
@@ -176,59 +145,29 @@ async function render(over: Partial<SettingsShell["ctx"]> = {}, shellOver: Parti
 
 describe("the Devices page", () => {
   it("lists this computer first, then each group by what a person calls it, every row with its state in a mark and words", async () => {
+    sessions = [{ id: "s1", label: "Safari on iPhone", scopes: ["admin", "client"], lastSeenAt: NOW }];
     await render();
     expect($("[data-device-node=here]")?.textContent).toContain("This computer");
     expect([...document.querySelectorAll("section:is([data-settings-block=phones], [data-settings-block^=group-]) > div h3")].map((heading) => heading.textContent))
       .toEqual(["Phones and tablets", "Computers", "Clouds and your own servers"]);
-    const iphone = $("[data-device-row='phone:iphone']")!;
+    const iphone = $("[data-device-row='session:s1']")!;
     expect(iphone.getAttribute("data-device-status")).toBe("online");
     expect(iphone.querySelector("[data-device-state]")?.getAttribute("data-device-state")).toBe("online");
     expect(iphone.querySelector("[data-device-state]")?.textContent).toContain("Online");
-    expect(iphone.querySelector("[data-device-route]")?.textContent).toBe("Same Wi-Fi");
-    expect($("[data-device-row='phone:pixel']")?.textContent).toContain("Seen");
     const vps = $("[data-device-row='place:vps'] [data-device-state]")!;
     expect(vps.textContent).toContain("Can’t reach it");
     expect(vps.getAttribute("data-device-state")).toBe("attention");
     expect($("[data-devices-empty=computers]")?.textContent).toBe("No other computers yet");
   });
-
-  it("names a phone's way in only while that way is on", async () => {
-    companion = { ...companion, routes: { wifi: off, relay: { on: true, since: NOW }, tailscale: off, https: off } };
-    await render();
-    expect($("[data-device-row='phone:iphone'] [data-device-route]")?.textContent).toBe("Anywhere, through SanRemes");
-  });
-
-  it("names no way for a phone kept to home whose ways are off, while Anywhere is on, and asks nothing of the person", async () => {
-    companion = { ...companion, devices: [{ ...companion.devices[0]!, routes: "local" }], routes: { wifi: off, relay: { on: true, since: NOW }, tailscale: off, https: off } };
-    await render();
-    const iphone = $("[data-device-row='phone:iphone']")!;
-    expect(iphone.querySelector("[data-device-route]")).toBeNull();
-    expect(iphone.querySelector("[data-row-action]")).toBeNull();
-    expect(iphone.getAttribute("data-device-status")).not.toBe("attention");
-  });
-
-  it("marks a phone as needing the person while no way in is on, and its button goes to the ways in", async () => {
-    companion = { ...companion, routes: { wifi: off, relay: off, tailscale: off, https: off } };
-    await render();
-    const iphone = $("[data-device-row='phone:iphone']")!;
-    expect(iphone.querySelector("[data-device-state]")?.textContent).toBe("No way in is on");
-    expect(iphone.querySelector("[data-device-route]")).toBeNull();
-    await click("[data-device-row='phone:iphone'] [data-row-action=turn-on-way]");
-    await wait(20);
-    expect(document.activeElement?.closest("[data-settings-block=reach]")).not.toBeNull();
-    expect($("[data-remote-access-headline]")?.textContent).toBeTruthy();
-  });
-
   it("puts the one thing a device needs on its row, and leads its details with it once they are open", async () => {
     await render();
     await click("[data-device-row='place:vps'] [data-row-action=retry]");
     expect(environments.retry).toHaveBeenCalledWith("vps");
-    expect($("[data-device-row='phone:iphone'] [data-row-action]")).toBeNull();
+    expect($("[data-device-row='place:home'] [data-row-action]")).toBeNull();
     await click("[data-device-node='place:vps']");
     expect($("[data-device-row='place:vps'] [data-row-action]")).toBeNull();
     expect($("[data-device-details='place:vps'] [data-device-action]")?.getAttribute("data-device-action")).toBe("retry");
   });
-
   it("opens a device's details under its own row, whose buttons call the actions that already exist, with one Remove last", async () => {
     await render();
     await click("[data-device-node='place:vps']");
@@ -241,46 +180,21 @@ describe("the Devices page", () => {
     await click("[data-device-details='place:vps'] [data-device-action=remove]");
     expect(environments.forget).toHaveBeenCalledWith("vps");
     expect($("[data-devices-notice]")?.textContent).toBe("Hetzner box was removed.");
-    await click("[data-device-node='phone:pixel']");
-    await click("[data-device-details='phone:pixel'] [data-device-action=remove]");
-    expect(bridge.revoke).toHaveBeenCalledWith("pixel");
-    expect($("[data-device-node='phone:pixel']")).toBeNull();
-    await click("[data-device-node='phone:iphone']");
-    expect($("[data-device-details='phone:iphone'] [data-device-action=manage]")).toBeNull();
-    expect($("[data-device-details='phone:iphone'] [data-phone-controls=iphone]")).not.toBeNull();
     expect(go).not.toHaveBeenCalled();
   });
-
   it("closes the open details on Escape, gives focus back to its row, and never lets that Escape close Settings", async () => {
     await render();
-    await click("[data-device-node='phone:iphone']");
-    expect(await press("[data-device-details='phone:iphone'] button", "Escape")).toBe(false);
+    await click("[data-device-node='place:vps']");
+    expect(await press("[data-device-details='place:vps'] button", "Escape")).toBe(false);
     expect($("[data-device-details]")).toBeNull();
     await new Promise((resolve) => window.requestAnimationFrame(() => resolve(null)));
-    expect(document.activeElement?.getAttribute("data-device-node")).toBe("phone:iphone");
+    expect(document.activeElement?.getAttribute("data-device-node")).toBe("place:vps");
     // Nothing open: Escape is Settings' own.
-    expect(await press("[data-device-node='phone:iphone']", "Escape")).toBe(true);
+    expect(await press("[data-device-node='place:vps']", "Escape")).toBe(true);
   });
-
-  it("never says a phone was removed when the computer could not remove it", async () => {
-    bridge.revoke.mockRejectedValueOnce(new Error("phone link is not running"));
-    await render();
-    await click("[data-device-node='phone:pixel']");
-    await click("[data-device-details='phone:pixel'] [data-device-action=remove]");
-    expect($("[data-devices-notice]")).toBeNull();
-    expect($("[role=alert]")?.textContent).toBeTruthy();
-    expect($("[data-device-node='phone:pixel']")).not.toBeNull();
-  });
-
-  it("removes a phone whole, its pairing and its app together, and keeps a computer's sign-in its own action", async () => {
-    phoneApps = [{ key: "k1", registration: { installId: "i1", name: "Ada’s iPhone", platform: "ios", appVersion: "2.4.0", timeZone: "UTC", capabilities: {} }, registeredAt: NOW, seen: NOW, lastUsedAt: null, online: true, busy: false }];
+  it("removes a saved server whole, and keeps its sign-in its own action", async () => {
     sessions = [{ id: "s-vps", label: "Hetzner box", scopes: ["admin", "client"], lastSeenAt: NOW }];
     await render();
-    await click("[data-device-node='phone:iphone']");
-    expect(document.querySelectorAll("[data-device-details='phone:iphone'] [data-device-action=remove]")).toHaveLength(1);
-    await click("[data-device-details='phone:iphone'] [data-device-action=remove]");
-    expect(bridge.revoke).toHaveBeenCalledWith("iphone");
-    expect(requests.some((request) => request.startsWith("DELETE /api/phones"))).toBe(true);
     await click("[data-device-node='place:vps']");
     const details = $("[data-device-details='place:vps']")!;
     // One red Remove, last in the one action row, with nothing written under any button.
@@ -302,7 +216,6 @@ describe("the Devices page", () => {
     expect(environments.forget).toHaveBeenCalledWith("vps");
     expect(requests).not.toContain("DELETE /api/auth/sessions/s-vps");
   });
-
   it("ends a saved server's sign-in here from its Connected by line, and keeps the saved server", async () => {
     sessions = [{ id: "s-vps", label: "Hetzner box", scopes: ["admin", "client"], lastSeenAt: NOW }];
     await render();
@@ -343,9 +256,8 @@ describe("the Devices page", () => {
     const nodes = [...document.querySelectorAll<HTMLElement>("[data-device-node]")];
     expect(nodes.map((node) => node.tagName)).toEqual(nodes.map(() => "BUTTON"));
     expect(nodes.every((node) => node.tabIndex === 0 && node.getAttribute("aria-label") && node.hasAttribute("aria-expanded"))).toBe(true);
-    expect(nodes.map((node) => node.getAttribute("data-device-node"))).toEqual(["here", "phone:iphone", "phone:pixel", "place:vps", "place:home"]);
+    expect(nodes.map((node) => node.getAttribute("data-device-node"))).toEqual(["here", "place:vps", "place:home"]);
   });
-
   it("shows which bots use each device, and their names in its details", async () => {
     config = { ...config, vps: gpu };
     botRows = [
@@ -367,9 +279,8 @@ describe("the Devices page", () => {
     botRows = "forbidden";
     await render();
     expect(document.querySelector("[data-device-bots]")).toBeNull();
-    expect($("[data-device-node='phone:iphone']")).not.toBeNull();
+    expect($("[data-device-node=here]")).not.toBeNull();
   });
-
   it("marks a device nothing here checks with a grey dot and says when it is checked, so every row's words start at one edge", async () => {
     config = { ...config, vps: gpu };
     await render();
@@ -383,10 +294,9 @@ describe("the Devices page", () => {
 
   it("offers each empty group's own Add once, in its card, in the same quiet look as a section's Add", async () => {
     saved = [{ id: "local", kind: "local", name: "This computer" }];
-    companion = { ...companion, devices: [], connectedDeviceIds: [] };
     await render();
     expect([...document.querySelectorAll("[data-add-empty]")].map((one) => [one.getAttribute("data-add-empty"), one.textContent]))
-      .toEqual([["phones", "Add a phone"], ["computers", "Add a computer"], ["servers", "Add a Cloud or own server"]]);
+      .toEqual([["computers", "Add a computer"], ["servers", "Add a Cloud or own server"]]);
     expect($("[data-add-empty=computers]")?.closest("[data-settings-empty]")?.querySelector("[data-devices-empty=computers]")).not.toBeNull();
     expect(document.querySelectorAll("[data-add-group=computers]")).toHaveLength(1);
     expect($("[data-add-empty=computers]")?.className).toContain("settings-quiet");
@@ -395,22 +305,11 @@ describe("the Devices page", () => {
     await click("[data-add-empty=computers]");
     expect($("[data-add-panel]")?.getAttribute("data-add-step")).toBe("computer");
   });
-
   it("puts a group's quiet Add beside its title while it has devices, on the title's line however long the title", async () => {
     await render();
-    expect($("[data-add-group=phones]")?.className).toContain("settings-quiet");
-    expect($("[data-add-group=phones]")?.closest("[data-settings-actions]")?.parentElement?.className).not.toContain("flex-wrap");
+    expect($("[data-add-group=servers]")?.className).toContain("settings-quiet");
+    expect($("[data-add-group=servers]")?.closest("[data-settings-actions]")?.parentElement?.className).not.toContain("flex-wrap");
   });
-
-  it("gives a phone's own switches the page's switch-row type", async () => {
-    await render();
-    await click("[data-device-node='phone:iphone']");
-    const controls = $("[data-phone-controls=iphone]")!;
-    const desktops = controls.querySelector("[data-phone-cloud-desktop]")!.parentElement!.firstElementChild!;
-    expect(desktops.firstElementChild?.className).toContain("text-[14px]");
-    expect(desktops.lastElementChild?.className).toContain("text-[13px]");
-  });
-
   it("opens a named SSH server's row from its link on AI, once, and names its kind as AI does", async () => {
     config = { ...config, vps: gpu };
     await render({}, { anchor: "ssh:gpu" });
@@ -421,13 +320,6 @@ describe("the Devices page", () => {
     expect(document.activeElement).toBe($("[data-device-node='vps:gpu']"));
     await click("[data-device-node='vps:gpu']");
     expect($("[data-device-details]"), "closes like any row").toBeNull();
-  });
-
-  it("says a phone uses the bots here", async () => {
-    phoneApps = [];
-    await render();
-    await click("[data-device-node='phone:pixel']");
-    expect($("[data-device-details='phone:pixel']")?.textContent).toContain("Uses the bots here");
   });
 
   it("opens a server bots reach over SSH in its editor, in place, and closes with the server's notice once it is removed", async () => {
@@ -443,56 +335,19 @@ describe("the Devices page", () => {
   });
 });
 
-describe("the private network", () => {
-  it("never asks Tailscale on its own, and shows the check's answer and its next step after Set up", async () => {
-    install("not-installed");
-    await render();
-    expect($("[data-network-state]")?.getAttribute("data-network-state")).toBe("unknown");
-    expect(bridge.setTailscaleComputers).not.toHaveBeenCalled();
-    expect(bridge.refreshTailscale).not.toHaveBeenCalled();
-    await click("[data-network-action]");
-    expect(bridge.setTailscaleComputers).toHaveBeenCalledWith(true);
-    expect($("[data-network-state]")?.textContent).toBe("Not installed");
-    expect($<HTMLAnchorElement>("a[data-network-action]")?.href).toBe("https://tailscale.com/download/mac");
-    expect($("[data-network-line]")?.textContent).toContain("free app");
-  });
-
-  it("says when it is ready, by this computer's short name, with nothing left to press but Manage", async () => {
-    companion = {
-      ...companion, routes: { ...companion.routes!, tailscale: { on: true, since: NOW, name: "ada.tail1.ts.net", computers: true } },
-      devices: [...companion.devices, { id: "tab", name: "Tablet", createdAt: NOW, lastSeenAt: NOW, cloudDesktopAccess: false, route: "tailscale" }], connectedDeviceIds: ["iphone", "tab"],
-    };
-    await render();
-    expect($("[data-network-state]")?.textContent).toBe("On");
-    expect($("[data-device-row='phone:tab'] [data-device-route]")?.textContent).toBe("Private network");
-    expect($("[data-network-line]")?.textContent).toBe("Your other computers on Tailscale can connect here, as ada.");
-    expect($("[data-network-action]")).toBeNull();
-    expect(bridge.setTailscaleComputers).not.toHaveBeenCalled();
-  });
-
-  it("asks Tailscale again, rather than sharing again, once its route is on", async () => {
-    companion = { ...companion, routes: { ...companion.routes!, tailscale: { on: true, since: NOW, name: null, computers: true } } };
-    await render();
-    expect($("[data-network-state]")?.getAttribute("data-network-state")).toBe("magicdns");
-    await click("[data-network-action]");
-    expect(bridge.refreshTailscale).toHaveBeenCalled();
-    expect(bridge.setTailscaleComputers).not.toHaveBeenCalled();
-  });
-});
-
 describe("Add a device, in the page", () => {
   it("opens from Add a device, from each group and from search's anchor, and never puts a layer over Settings", async () => {
     await render();
     expect($("[data-settings-block=add] [data-add-device]")).not.toBeNull();
     expect($("[data-settings-block=here] [data-add-device]"), "You're here has no Add of its own").toBeNull();
-    for (const [opener, step] of [["[data-add-device]", "choose"], ["[data-add-group=phones]", "phone"], ["[data-add-group=computers]", "computer"], ["[data-add-group=servers]", "choose"]] as const) {
+    for (const [opener, step] of [["[data-add-device]", "choose"], ["[data-add-group=computers]", "computer"], ["[data-add-group=servers]", "choose"]] as const) {
       await click(opener);
       expect($("[data-add-panel]")?.getAttribute("data-add-step")).toBe(step);
       expect(layers()).toBe(0);
       await click("[data-add-back]");
       expect($("[data-add-panel]")).toBeNull();
     }
-    for (const kind of ["phone", "computer", "server", "cloud"]) {
+    for (const kind of ["computer", "server", "cloud"]) {
       await click("[data-add-device]");
       await click(`[data-add-kind=${kind}]`);
       expect($("[data-add-panel]")?.getAttribute("data-add-step")).toBe(kind);
@@ -501,7 +356,6 @@ describe("Add a device, in the page", () => {
       await click("[data-add-back]");
     }
   });
-
   it("steps back one level on Escape, to the choice just left and then to the list, never closing Settings", async () => {
     await render();
     await click("[data-add-device]");
@@ -544,11 +398,10 @@ describe("Add a device, in the page", () => {
     act(() => root.render(createElement(StoreContext.Provider, { value: { state: { ...initialState, config: config as never, bots: BOTS as never }, dispatch: vi.fn() } as never },
       createElement(SettingsShellContext.Provider, { value: shell }, createElement(DevicesPage)))));
     act(() => $("[data-add-device]")!.click());
-    act(() => $("[data-add-kind=phone]")!.click());
+    act(() => $("[data-add-kind=computer]")!.click());
     await settle();
     expect($("[data-add-connected]")).toBeNull();
   });
-
   it("names each step in a narrow window's own header, with its way back, and leaves out the page's copy of it", async () => {
     await render({}, { narrow: true, setSub });
     await click("[data-add-device]");
@@ -559,7 +412,7 @@ describe("Add a device, in the page", () => {
     act(() => setSub.mock.lastCall![0]!.onBack());
     await settle();
     expect($("[data-add-panel]")?.getAttribute("data-add-step")).toBe("choose");
-    await click("[data-add-kind=phone]");
+    await click("[data-add-kind=computer]");
     act(() => setSub.mock.lastCall![0]!.onBack());
     await settle();
     act(() => setSub.mock.lastCall![0]!.onBack());
@@ -567,68 +420,10 @@ describe("Add a device, in the page", () => {
     expect($("[data-add-panel]")).toBeNull();
     expect(setSub).toHaveBeenLastCalledWith(null);
   });
-
-  it("pairs a phone on This computer with Pair a phone's own steps, in the page, never a server code", async () => {
-    companion = { ...companion, routes: { wifi: off, relay: off, tailscale: off, https: off } };
+  it("gives another computer a code, says when it connected, and confirms it in the page", async () => {
     await render();
-    await click("[data-add-group=phones]");
-    expect($("[data-add-panel] [data-pair-turn-on]")).not.toBeNull();
-    expect(document.querySelectorAll("[data-add-panel] [role=group] input[type=checkbox]")).toHaveLength(2);
-    expect($("[data-pair-dialog]")).toBeNull();
-    expect(layers()).toBe(0);
-    expect(requests).not.toContain("POST /api/auth/pairing");
-  });
-
-  it("goes straight to the phone's code when a way in is already on, asking the phone link for it once", async () => {
-    companion = { ...companion, lan: "192.168.1.5", hosts: ["192.168.1.5"] };
-    bridge.pairing.mockImplementation(async (open: boolean) => {
-      companion = { ...companion, pairing: open ? { code: "482913", token: `omb_pair_${"a".repeat(43)}`, expiresAt: NOW + 600_000 } : null };
-      return companion;
-    });
-    await render();
-    await click("[data-add-group=phones]");
-    expect($("[data-pair-turn-on]")).toBeNull();
-    expect(bridge.pairing).toHaveBeenCalledOnce();
-    expect($("[data-add-panel] [data-pair-panel=phone] [data-pair-qr]")).not.toBeNull();
-    expect($("[data-pairing-code]")?.textContent).toBe("482913");
-    expect($("[data-add-panel] [data-copy-link]")).not.toBeNull();
-    expect(layers()).toBe(0);
-    expect(requests).not.toContain("POST /api/auth/pairing");
-  });
-
-  it("offers Copy link and until when the encrypted QR works, which has no code to type", async () => {
-    companion = { ...companion, lan: "192.168.1.5", hosts: ["192.168.1.5"], e2e: { enabled: true, relay: "connected", node: "relay1", descriptor: null } };
-    bridge.pairing.mockImplementation(async (open: boolean) => {
-      companion = { ...companion, pairing: open ? { code: "482913", token: `omb_pair_${"a".repeat(43)}`, expiresAt: NOW + 600_000 } : null };
-      return companion;
-    });
-    await render();
-    await click("[data-add-group=phones]");
-    expect($("[data-pair-qr]")).not.toBeNull();
-    expect($("[data-pairing-code]")).toBeNull();
-    expect($("[data-pair-encrypted]")?.textContent).toBe("This code is encrypted for your phone, so there’s nothing to type. Scan it in the app, or copy the link.");
-    expect($("[data-add-panel] [data-copy-link]")?.textContent).toBe("Copy link");
-    expect($("[data-pair-until]")?.textContent).toBeTruthy();
-    const foot = $("[data-pair-reach]")!;
-    expect(foot.className).toContain("text-ink-secondary");
-    expect($("[data-add-panel] [data-copy-link]")?.nextElementSibling).toBe(foot);
-  });
-
-  it("asks for the private network first when Add a computer comes before it, with the later steps shown but quiet", async () => {
-    install("signed-out");
-    await render();
-    await click("[data-add-group=computers]");
-    expect($("[data-add-network]")?.getAttribute("data-add-network")).toBe("unknown");
-    expect([...document.querySelectorAll("[data-step]")].map((step) => step.getAttribute("data-step-state"))).toEqual(["now", "later", "later"]);
-    expect(requests).not.toContain("POST /api/auth/pairing");
-  });
-
-  it("gives another computer a link over the private network, says when it connected, and confirms it in the page", async () => {
-    await render();
-    await click("[data-network-action]");
     await click("[data-add-group=computers]");
     expect(requests).toContain("POST /api/auth/pairing");
-    expect($("[data-pair-link]")?.getAttribute("data-pair-link")).toBe("http://ada.tail1.ts.net:8799/pair#code=7KQ2-M9XD-H4TP");
     expect($("[data-pairing-code]")?.textContent).toBe("7KQ2-M9XD-H4TP");
     expect($("[data-pair-state]")?.getAttribute("data-pair-state")).toBe("waiting");
     sessions = [{ id: "s-other", label: "Chrome on Windows", scopes: ["admin", "client"], lastSeenAt: NOW }];
@@ -644,30 +439,18 @@ describe("Add a device, in the page", () => {
     expect($("[data-add-panel]")).toBeNull();
     expect($("[data-device-details]")).not.toBeNull();
   }, 20_000);
-
   it("cancels a code nobody used when the person goes back", async () => {
     await render();
-    await click("[data-network-action]");
     await click("[data-add-group=computers]");
     await click("[data-add-back]");
     expect(requests).toContain("DELETE /api/auth/pairing/p1");
   });
-
-  it("says the private network is still starting, with Check again, when it is on but nothing answers yet", async () => {
-    companion = { ...companion, routes: { ...companion.routes!, tailscale: { on: true, since: NOW, name: "ada.tail1.ts.net", computers: true } }, tailnetShare: { on: true, origin: null, https: false, problem: "not-listening" } };
-    await render();
-    await click("[data-add-group=computers]");
-    expect($("[data-add-network]")?.getAttribute("data-add-network")).toBe("waiting");
-    expect($("[data-add-network] [data-network-action]")?.textContent).toBe("Check again");
-    expect(requests).not.toContain("POST /api/auth/pairing");
-  });
-
   it("adds your own server in two steps: the line to run, then Connect to another computer's own form with its lend switch, and confirms it", async () => {
     await render();
     await click("[data-add-device]");
     await click("[data-add-kind=server]");
     expect([...document.querySelectorAll("[data-server-command]")].map((line) => line.textContent)).toEqual([
-      "npx sanremes account login && npx sanremes serve --tunnel", "npx sanremes serve --tailscale",
+      "npx sanremes account login && npx sanremes serve --tunnel",
     ]);
     const why = $("[data-add-server-why]")!;
     expect(why.textContent).toBe("These start SanRemes on that machine. They need Node.js 24 or later; a terminal is the window where you type commands.");
@@ -684,7 +467,6 @@ describe("Add a device, in the page", () => {
     expect(workspaces.add).toHaveBeenCalledWith("link", "https://sanremes.example.org/pair#code=7KQ2-M9XD-H4TP", "");
     expect($("[data-add-connected='place:nuc']")?.textContent).toContain("Garage NUC is connected");
   });
-
   it("gets a Cloud by closing Settings for the plans, the one place this page hands over to something else", async () => {
     await render();
     await click("[data-add-device]");
@@ -696,228 +478,16 @@ describe("Add a device, in the page", () => {
   });
 
   it("offers a chat-only session no code at all", async () => {
-    delete (window as unknown as { ogb?: unknown }).ogb;
     session = { kind: "session", id: "s1", label: "Chrome on Mac", scopes: ["client"], expiresAt: 0 };
-    await render({ here: false, desktop: false, home: false });
+    await render();
     await click("[data-add-device]");
-    expect($("[data-add-kind=cloud]")).toBeNull();
-    await click("[data-add-kind=phone]");
+    expect($("[data-add-kind=cloud]")).not.toBeNull();
+    await click("[data-add-kind=computer]");
     expect($("[data-pair-blocked]")).not.toBeNull();
+    expect($("[data-pair-blocked]")?.textContent).toBe("This device has chat and approvals only, so it can't pair others.");
+    expect($("[data-pairing-code]")).toBeNull();
     expect(requests.filter((request) => request.startsWith("POST"))).toEqual([]);
-    expect(requests).not.toContain("GET /api/auth/sessions");
-    expect(requests).not.toContain("GET /api/phones");
-    expect(document.querySelector("[data-device-action=remove]")).toBeNull();
-    expect(requests).not.toContain("GET /api/computers/bots");
-  });
-});
-
-describe("the private network's next step", () => {
-  const run = { check: vi.fn() };
-  it("is one button per state, none once everything is on, and none where an organization turned remote access off", () => {
-    const step = (state: Parameters<typeof nextNetworkStep>[0], blocked = false) => nextNetworkStep(state, run, { busy: false, blocked, platform: "win32" });
-    expect(step({ state: "unknown", name: null, shared: false })?.label).toBe("Set up Tailscale");
-    expect(step({ state: "not-installed", name: null, shared: false })?.href).toBe("https://tailscale.com/download/windows");
-    expect(step({ state: "needs-approval", name: null, shared: false })?.href).toBe("https://login.tailscale.com/admin/machines");
-    expect(step({ state: "signed-out", name: null, shared: false })?.label).toBe("Check again");
-    expect(step({ state: "ready", name: "a", shared: false })?.label).toBe("Allow my other computers");
-    expect(step({ state: "ready", name: "a", shared: true })).toBeNull();
-    expect(step({ state: "unknown", name: null, shared: false }, true)).toBeNull();
-    expect(tailscaleDownload("linux")).toBe("https://tailscale.com/download/linux");
-  });
-});
-
-describe("phones and how they reach this computer, on Devices", () => {
-  it("lays the page out in one order: here, phones, how they reach it, computers, servers, always-on home, other places", async () => {
-    alwaysOn = { available: true, on: false, platform: "darwin", openAtLogin: false, awake: "off", updates: "by-itself" };
-    install();
-    await render();
-    const blocks = [...document.querySelectorAll("section[data-settings-block]")].map((section) => section.getAttribute("data-settings-block"));
-    expect(blocks).toEqual(["attention", "here", "phones", "reach", "group-computers", "group-servers", "always-on", "other-places"]);
-    expect($("[data-settings-header] [data-settings-block=add]")?.compareDocumentPosition($("[data-settings-block=attention]")!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    expect($("[data-settings-block=phones] [data-add-group=phones]")?.hasAttribute("data-phone-pairing-action")).toBe(true);
-  });
-
-  it("keeps each phone's own controls in its details, and each one calls the phone link with nothing over the page", async () => {
-    companion = { ...companion, e2e: { enabled: true, relay: "connected" }, devices: companion.devices.map((device) => ({ ...device, e2eAt: NOW, routes: "any" })) } as CompanionState;
-    await render();
-    await click("[data-device-node='phone:iphone']");
-    await click("[data-phone-cloud-desktop]");
-    expect(bridge.cloudDesktop).toHaveBeenCalledWith("iphone", true);
-    await click("[data-phone-browser]");
-    expect(bridge.browserControl).toHaveBeenCalledWith("iphone", true);
-    await click("[data-phone-routes=local]");
-    expect(bridge.routes).toHaveBeenCalledWith("iphone", "local");
-    expect(layers()).toBe(0);
-  });
-
-  it("shows a phone app's capabilities in its details", async () => {
-    phoneApps = [{ key: "k2", registration: { installId: "i2", name: "Ada’s iPad", platform: "ios", appVersion: "2.4.0", timeZone: "UTC", capabilities: { calendar: true, reminders: true } }, registeredAt: NOW, seen: NOW, lastUsedAt: null, online: true, busy: false }];
-    await render();
-    await click("[data-device-node='phone-app:k2']");
-    expect($("[data-device-details='phone-app:k2'] [data-phone-app-chips]")?.textContent).toBe("CalendarReminders");
-  });
-
-  it("pairs a phone with an older app again in the page, from its details", async () => {
-    account = { ...account, tunnelRetired: true };
-    await render();
-    expect($("[data-devices-notice=tunnel-retired]")).not.toBeNull();
-    await click("[data-device-node='phone:pixel']");
-    await click("[data-device-details='phone:pixel'] [data-pair-again]");
-    expect($("[data-add-panel]")?.getAttribute("data-add-step")).toBe("phone");
-    expect(layers()).toBe(0);
-  });
-
-  it("lists a code still open above the phones, with Revoke", async () => {
-    companion = { ...companion, pairing: { code: "482913", token: `omb_pair_${"a".repeat(43)}`, expiresAt: NOW + 600_000 } };
-    await render();
-    expect($("[data-settings-block=phones] [data-open-code]")).not.toBeNull();
-    await click("[data-open-code] button");
-    expect(bridge.pairing).toHaveBeenCalledWith(false, `omb_pair_${"a".repeat(43)}`);
-  });
-
-  it("says once, under Phones and tablets, that an organization turned remote access off, and offers no Add a phone", async () => {
-    config = { ...config, managedPolicy: { remoteAccess: false, organizationName: "Acme" } };
-    await render();
-    expect($("[data-phone-policy]")?.textContent).toContain("Acme");
-    expect($("[data-add-group=phones]")).toBeNull();
-  });
-
-  it("reads as one closed row while nothing is paired and no way is on, and opens in place", async () => {
-    companion = { ...companion, devices: [], connectedDeviceIds: [], routes: { wifi: off, relay: off, tailscale: off, https: off } };
-    await render();
-    expect($("[data-settings-block=reach] [data-reach-fold]")).not.toBeNull();
-    expect($("[data-settings-block=more-ways]")).not.toBeNull();
-    await click("[data-reach-fold]");
-    expect($("[data-route-row=wifi]")).not.toBeNull();
-  });
-
-  it("turns each way in on and off with the calls the phone link already has", async () => {
-    await render({ advanced: true });
-    await click("[data-route-row=wifi] [role=switch]");
-    expect(bridge.setRoute).toHaveBeenCalledWith("wifi", false);
-    await click("[data-settings-block=reach] [role=switch][aria-label^='Keep this computer awake']");
-    expect(bridge.keepAwake).toHaveBeenCalledWith(true);
-    expect($("[data-route-row=tailscale]")).toBeNull();
-    expect($("[data-settings-disclosure=more-ways]")).toBeNull();
-    expect(layers()).toBe(0);
-  });
-
-  it("opens Add a phone in the page from Anywhere's Sign in, at the sign-in", async () => {
-    account = { available: true, status: "signed-out" };
-    await render();
-    await click("[data-relay-sign-in]");
-    expect($("[data-add-panel]")?.getAttribute("data-add-step")).toBe("phone");
-    expect($("[data-pair-turn-on]")).toBeNull();
-    expect(layers()).toBe(0);
-  });
-
-  it("opens Add a phone in the page from the HTTPS address's Set up, never a Wi-Fi code", async () => {
-    await render({ advanced: true });
-    await click("[data-route-row=https] button");
-    expect($("[data-add-panel]")?.getAttribute("data-add-step")).toBe("phone");
-    expect($("[data-pair-turn-on]")).toBeNull();
-    expect(layers()).toBe(0);
-  });
-
-  it("keeps the update's route notes at the top, with Turn off", async () => {
-    companion = { ...companion, notices: ["wifi"] };
-    await render();
-    expect(document.querySelector("[data-route-notices]")?.compareDocumentPosition($("section[data-settings-block]")!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    await click("[data-route-notice=wifi] button");
-    expect(bridge.setRoute).toHaveBeenCalledWith("wifi", false);
-  });
-});
-
-describe("a paused web address", () => {
-  it("comes back once when Devices opens with a phone paired, and says so in the phone's details", async () => {
-    account = { ...account, paused: true };
-    install();
-    await render();
-    const prepare = (window as unknown as { ogb: { companionAccount: { prepare: ReturnType<typeof vi.fn> } } }).ogb.companionAccount.prepare;
-    expect(prepare).toHaveBeenCalledOnce();
-    await click("[data-device-node='phone:iphone']");
-    expect($("[data-phone-controls=iphone]")?.textContent).toContain("Paused after 30 days unused.");
-    await render({}, { anchor: "reach" });
-    expect(prepare).toHaveBeenCalledOnce();
-  });
-
-  it("is never asked for while nothing is paired", async () => {
-    account = { ...account, paused: true };
-    companion = { ...companion, devices: [], connectedDeviceIds: [] };
-    install();
-    await render();
-    expect((window as unknown as { ogb: { companionAccount: { prepare: ReturnType<typeof vi.fn> } } }).ogb.companionAccount.prepare).not.toHaveBeenCalled();
-  });
-});
-
-describe("Your other computers, on the private network row", () => {
-  it("is the row's switch once Tailscale is on, and turning it off asks for exactly that", async () => {
-    companion = { ...companion, routes: { ...companion.routes!, tailscale: { on: true, since: NOW, name: "ada.tail1.ts.net", computers: true } } };
-    await render();
-    expect($("[data-network-share]")?.getAttribute("aria-checked")).toBe("true");
-    expect($("[data-network-action]")).toBeNull();
-    await click("[data-network-share]");
-    expect(bridge.setTailscaleComputers).toHaveBeenCalledWith(false);
-    expect(bridge.refreshTailscale).not.toHaveBeenCalled();
-  });
-
-  it("turns on from the same switch when Tailscale is on but the share is not", async () => {
-    companion = { ...companion, routes: { ...companion.routes!, tailscale: { on: true, since: NOW, name: "ada.tail1.ts.net", computers: false } } };
-    await render();
-    expect($("[data-network-share]")?.getAttribute("aria-checked")).toBe("false");
-    await click("[data-network-share]");
-    expect(bridge.setTailscaleComputers).toHaveBeenCalledWith(true);
-  });
-
-  it("says in words that agree with the switch when Tailscale is on but the share is off, and turns it off for phones from one button", async () => {
-    companion = { ...companion, routes: { ...companion.routes!, tailscale: { on: true, since: NOW, name: "ada.tail1.ts.net", computers: false } } };
-    await render();
-    const row = $("[data-private-network]")!;
-    // The same shape as every state: a short status beside the title, then one line.
-    const state = $("[data-network-state]")!;
-    expect(state.textContent).toBe("On · your other computers can’t connect yet");
-    expect(state.querySelector(".bg-success")).not.toBeNull();
-    expect(state.parentElement?.firstChild?.textContent).toBe("Private network");
-    const line = row.querySelector("[data-network-line]")!;
-    expect(line.textContent).toBe("Phones can reach this computer through Tailscale.");
-    expect(row.querySelector("label")?.textContent).toBe("Let my other computers connect");
-    expect(row.textContent).not.toMatch(/tailnet|\.ts\.net|\bhost\b/);
-    expect(row.textContent).not.toContain("Turn on Let my other computers connect");
-    const off = row.querySelector<HTMLButtonElement>("[data-network-phones-off]")!;
-    expect(line.contains(off)).toBe(false);
-    expect(off.className).toContain("ui-button ui-button-sm");
-    expect(off.className).not.toContain("ui-button-primary");
-    expect(off.textContent).toBe("Turn Tailscale off");
-    expect(off.title).toBe("Phones stop reaching this computer through Tailscale.");
-    await click("[data-network-phones-off]");
-    expect(bridge.setTailscale).toHaveBeenCalledWith(false);
-    expect(bridge.setTailscaleComputers).not.toHaveBeenCalled();
-  });
-
-  it("keeps a Tailscale problem's own words and next step while Tailscale is still on for phones", async () => {
-    install("signed-out");
-    companion = { ...companion, routes: { ...companion.routes!, tailscale: { on: true, since: NOW, name: "ada.tail1.ts.net", computers: false } } };
-    await render();
-    await click("[data-network-share]");
-    expect($("[data-network-state]")?.textContent).toBe("Signed out");
-    expect($("[data-network-line]")?.textContent).toContain("sign in");
-  });
-
-  it("is the one place Tailscale is turned on or off: How your phone reaches it has no switch of its own", async () => {
-    companion = { ...companion, routes: { ...companion.routes!, tailscale: { on: true, since: NOW, name: "ada.tail1.ts.net", computers: true } } };
-    await render({ advanced: true });
-    expect($("[data-settings-block=reach]")?.textContent).not.toContain("Tailscale");
-    expect($("[data-network-phones-off]")).toBeNull();
-    expect(document.body.textContent).not.toMatch(/tailnet|\.ts\.net|\bhost\b|being paired/);
-  });
-
-  it("still turns off where an organization keeps remote access off, though it never turns on there", async () => {
-    config = { ...config, managedPolicy: { remoteAccess: false, organizationName: "Acme" } };
-    companion = { ...companion, routes: { ...companion.routes!, tailscale: { on: true, since: NOW, name: "ada.tail1.ts.net", computers: true } } };
-    await render();
-    expect($<HTMLButtonElement>("[data-network-share]")?.disabled).toBe(false);
-    await click("[data-network-share]");
-    expect(bridge.setTailscaleComputers).toHaveBeenCalledWith(false);
+    expect(requests).not.toContain("POST /api/auth/pairing");
   });
 });
 
@@ -933,62 +503,17 @@ describe("Always-on home, on Devices", () => {
     expect(layers()).toBe(0);
   });
 
-  it("adds a phone or another computer to this home with the page's own steps", async () => {
+  it("adds another computer to this home with the page's own steps", async () => {
     alwaysOn = { ...home, on: true };
     install();
     await render();
-    await click("[data-always-on-add-phone]");
-    expect($("[data-add-panel]")?.getAttribute("data-add-step")).toBe("phone");
-    await click("[data-add-back]");
     await click("[data-always-on-add-computer]");
     expect($("[data-add-panel]")?.getAttribute("data-add-step")).toBe("computer");
-    expect(bridge.setTailscaleComputers).not.toHaveBeenCalled();
-    expect(layers()).toBe(0);
-  });
-});
-
-describe("pairing asked for from elsewhere", () => {
-  it("opens Add a phone in the page once, and keeps it when the window then names the phones section", async () => {
-    takePhonePairingRequest("http://127.0.0.1/?desktop-settings=phone&pair=open", true);
-    await render({}, {}, 1);
-    expect($("[data-add-panel]")?.getAttribute("data-add-step")).toBe("phone");
-    expect(layers()).toBe(0);
-    await render({}, { anchor: "phones" }, 1);
-    expect($("[data-add-panel]")?.getAttribute("data-add-step")).toBe("phone");
-    await render({}, { anchor: "reach" }, 1);
-    expect($("[data-add-panel]")).toBeNull();
-    expect($("[data-settings-block=reach]")).not.toBeNull();
-  });
-
-  it("brings Phones and tablets' Add a phone forward without opening it when no link asked for the code", async () => {
-    await render({}, { anchor: "phones" }, 1);
-    expect($("[data-add-panel]")).toBeNull();
-    await new Promise((resolve) => window.requestAnimationFrame(() => resolve(null)));
-    expect(document.activeElement?.getAttribute("data-add-group")).toBe("phones");
-  });
-
-  it("makes a code in the page on a Cloud's page", async () => {
-    delete (window as unknown as { ogb?: unknown }).ogb;
-    takePhonePairingRequest("http://127.0.0.1/?desktop-settings=phone&pair=open", true);
-    await render({ here: false, cloud: true }, {}, 1);
-    expect($("[data-add-panel]")?.getAttribute("data-add-step")).toBe("phone");
-    expect(requests).toContain("POST /api/auth/pairing");
-    expect($("[data-pairing-code]")?.textContent).toBe("7KQ2-M9XD-H4TP");
     expect(layers()).toBe(0);
   });
 });
 
 describe("what a Cloud's or server's page says about pairing", () => {
-  it("shows a team member their own phone card on the page", async () => {
-    delete (window as unknown as { ogb?: unknown }).ogb;
-    session = { kind: "session", id: "s1", label: "Chrome", scopes: ["client"], expiresAt: 0, team: { id: "t", name: "Acme", role: "member" } };
-    config = { ...config, team: { name: "Acme" } };
-    await render({ here: false, cloud: true, team: true, admin: false });
-    expect($("[data-settings-block=phones] [data-team-phone]")).not.toBeNull();
-    expect($("[data-add-group=phones]")).toBeNull();
-    expect(layers()).toBe(0);
-  });
-
   it("says pairing codes are off where an organization's Admin signs people in", async () => {
     delete (window as unknown as { ogb?: unknown }).ogb;
     vi.mocked(fetch).mockImplementation(async (input) => {
@@ -997,66 +522,10 @@ describe("what a Cloud's or server's page says about pairing", () => {
       if (path === "/api/config") return Response.json({ membership: { authority: "portal", pairingCodes: false } });
       return Response.json({ sessions: [], current: null });
     });
-    await render({ here: false });
-    expect($("[data-settings-block=phones] [data-server-pairing-portal]")).not.toBeNull();
-    expect($("[data-add-group=phones]")).toBeNull();
-  });
-
-  it("offers a chat-only code in Advanced, and says what a phone can't do there", async () => {
-    delete (window as unknown as { ogb?: unknown }).ogb;
-    vi.mocked(fetch).mockImplementation(async (input, init) => {
-      const path = new URL(String(input), "http://127.0.0.1").pathname;
-      requests.push(`${init?.method ?? "GET"} ${path} ${init?.body ?? ""}`);
-      if (path === "/api/auth/session") return Response.json(session);
-      if (path === "/api/config") return Response.json({ membership: { authority: "local", pairingCodes: true }, computerName: "garage" });
-      if (path === "/api/auth/pairing" && init?.method === "POST") return Response.json({ id: "p2", code: "7KQ2-M9XD-H4TP", expiresAt: NOW + 600_000, url: "http://192.168.1.9:8799/pair#code=7KQ2", hint: null, phoneSecrets: false });
-      return Response.json({ sessions: [], current: null, pairings: [] });
-    });
-    await render({ here: false, advanced: true });
-    expect($<HTMLInputElement>("[data-computer-name] input")?.value).toBe("garage");
-    await click("[data-add-group=phones]");
-    expect($("[data-pair-no-phone-secrets]")).not.toBeNull();
-    expect($("[data-pair-same-wifi]")).not.toBeNull();
-    expect($("[data-copy-link]")).not.toBeNull();
-    const scope = $<HTMLSelectElement>("[data-pair-scope]")!;
-    await act(async () => { scope.value = "client"; scope.dispatchEvent(new Event("change", { bubbles: true })); });
-    await settle();
-    expect(requests).toContain('POST /api/auth/pairing {"scopes":["client"]}');
-    expect(requests.some((request) => request.startsWith("DELETE /api/auth/pairing/p2"))).toBe(true);
-  });
-});
-
-describe("Settings sends every old phone address to its block on Devices", () => {
-  const ctx = fullContext({ advanced: false });
-  it.each([
-    ["phone", "phones"], ["companion", "phones"], ["remote", "reach"],
-  ] as const)("the old section %s opens Devices at %s, and that block is on the page in every state", async (section, anchor) => {
-    expect(resolveSettingsTarget(section, ctx)).toMatchObject({ page: "devices", anchor });
-    companion = { ...companion, devices: [], connectedDeviceIds: [], routes: { wifi: off, relay: off, tailscale: off, https: off } };
     await render();
-    expect($(`[data-settings-block=${anchor}]`)).not.toBeNull();
-    await click("[data-add-device]");
-    await render({}, { anchor });
-    expect($("[data-add-panel]")).toBeNull();
-    expect($(`[data-settings-block=${anchor}]`)).not.toBeNull();
-  });
-
-  it.each([
-    ["phone", "phones"], ["pair", "phones"], ["tailscale", "network"], ["wifi", "reach"], ["always on", "always-on"],
-  ] as const)("search for %s lands on Devices at %s first", async (query, anchor) => {
-    const [first] = searchSettings(query, ctx, (entry) => entry.id, (page) => page.id);
-    expect(first?.entry).toMatchObject({ page: "devices", anchor });
-    alwaysOn = { available: true, on: false, platform: "darwin", openAtLogin: false, awake: "off", updates: "by-itself" };
-    install();
-    await render();
-    expect($(`[data-settings-block=${anchor}]`)).not.toBeNull();
-  });
-
-  it("finds the HTTPS address under Devices, shown when asked for even in Simple", async () => {
-    expect(searchSettings("https", { ...ctx, advanced: true }, (entry) => entry.id, (page) => page.id).find((hit) => hit.entry.id === "https-address")?.entry)
-      .toMatchObject({ page: "devices", anchor: "more-ways" });
-    await render({}, { anchor: "more-ways" });
-    expect($("[data-settings-block=more-ways] [data-route-row=https]")).not.toBeNull();
+    await click("[data-add-group=computers]");
+    expect($("[data-pair-blocked]")).not.toBeNull();
+    expect($("[data-pair-blocked]")?.textContent).toBe("People sign in through your organization's Admin, so pairing codes are off.");
   });
 });
 
@@ -1086,49 +555,6 @@ describe("one way back for each kind of trouble", () => {
     expect($("[data-device-row='place:vps'] [data-row-action]")).toBeNull();
     await click("[data-device-node='place:vps']");
     expect(actionsOf("place:vps").filter((type) => type === "retry" || type === "pair-again")).toEqual([]);
-  });
-});
-
-describe("Add a computer's words", () => {
-  it("says why the private network is needed before it is on", async () => {
-    install("signed-out");
-    await render();
-    await click("[data-add-group=computers]");
-    expect($("[data-add-network-why]")?.textContent).toContain("only through Tailscale");
-  });
-
-  it("gives one way, the link, says where it goes and how to send it, and folds the address and code under Type it in instead", async () => {
-    await render();
-    await click("[data-network-action]");
-    await click("[data-add-group=computers]");
-    const panel = $("[data-pair-panel=computer]")!;
-    expect(panel.textContent).toContain("choose ＋ then Connect to another computer, and paste this link.");
-    expect(panel.textContent).not.toContain("connects computers too");
-    expect($("[data-pair-send-link]")?.textContent).toBe("The link opens this computer, ada, on your private network. Send it to the other computer, for example by email or chat.");
-    const fold = $<HTMLButtonElement>("[data-pair-type-instead] button[aria-expanded]")!;
-    expect(fold.textContent).toBe("Type it in instead");
-    expect(fold.getAttribute("aria-expanded")).toBe("false");
-    expect(fold.querySelector("svg")?.getAttribute("width")).toBe("12");
-    const typed = document.getElementById(fold.getAttribute("aria-controls")!)!;
-    expect(typed.hidden).toBe(true);
-    expect(panel.querySelector("details, summary")).toBeNull();
-    await click("[data-pair-type-instead] button[aria-expanded]");
-    expect(fold.getAttribute("aria-expanded")).toBe("true");
-    expect(typed.hidden).toBe(false);
-    expect(typed.querySelector("[data-pairing-address]")?.textContent).toBe("http://ada.tail1.ts.net:8799");
-    expect(typed.querySelector("[data-pairing-code]")?.textContent).toBe("7KQ2-M9XD-H4TP");
-  });
-
-  it("reads step 2 as getting the other computer ready and step 3 as the action, and says once why Tailscale", async () => {
-    await render();
-    await click("[data-network-action]");
-    await click("[data-add-group=computers]");
-    expect([...document.querySelectorAll("[data-step]")].map((step) => step.getAttribute("data-step-state"))).toEqual(["done", "now", "now"]);
-    expect($("[data-step='2']")?.textContent).toContain("On the other computer, install SanRemes and Tailscale");
-    expect($("[data-add-install-why]")?.textContent).toContain("another computer reaches this one only through Tailscale");
-    expect($("[data-add-network-why]")).toBeNull();
-    expect($("[data-step='3'] [data-copy-link]")?.className).toContain("ui-button-primary");
-    expect($("[data-step='2'] .ui-button-primary")).toBeNull();
   });
 });
 
@@ -1184,16 +610,14 @@ describe("a server bots reach over SSH, in its details", () => {
 
 describe("the top of the page", () => {
   it("names what needs the person in its own status words, and a name opens that row with focus on it", async () => {
-    companion = { ...companion, routes: { wifi: off, relay: off, tailscale: off, https: off } };
     await render();
     const line = $("[data-devices-attention]")!;
     expect(line.closest("[data-settings-rows]"), "a quiet row in its own card").not.toBeNull();
     expect(line.closest("section")?.compareDocumentPosition($("[data-settings-block=here]")!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect([...line.querySelectorAll("[data-attention-device]")].map((item) => item.getAttribute("data-attention-device")))
-      .toEqual(["phone:iphone", "phone:pixel", "place:vps"]);
+      .toEqual(["place:vps"]);
     expect(line.querySelector("[data-attention-device='place:vps']")?.textContent).toBe("Hetzner box: Can’t reach it");
-    expect(line.querySelector("[data-attention-device='phone:pixel']")?.textContent).toBe("Pixel 9: No way in is on");
-    expect([...line.querySelectorAll("li")].map((item) => item.getAttribute("data-attention-device")), "one item a line").toHaveLength(3);
+    expect([...line.querySelectorAll("li")].map((item) => item.getAttribute("data-attention-device")), "one item a line").toHaveLength(1);
     expect(line.textContent).not.toContain("·");
     await click("[data-attention-device='place:vps'] button");
     await wait(20);
@@ -1201,7 +625,6 @@ describe("the top of the page", () => {
     expect(document.activeElement).toBe($("[data-device-node='place:vps']"));
     expect(layers()).toBe(0);
   });
-
   it("puts Add a device in the page's header, as its one primary button, and leaves no band when nothing needs the person", async () => {
     vpsState = "connected";
     await render();
@@ -1220,24 +643,11 @@ describe("the top of the page", () => {
   });
 
   it("keeps Add a device in the page where the window has no header for it", async () => {
-    await render({}, {}, 0, false);
+    await render({}, {}, false);
     expect($("[data-settings-block=add] [data-add-device]")).not.toBeNull();
   });
 
-  it("names a private network problem first, as the private network, and its name goes to the network row", async () => {
-    install("not-installed");
-    vpsState = "connected";
-    await render();
-    await click("[data-network-action]");
-    const item = $("[data-attention-device=network]")!;
-    expect(item.textContent).toBe("Private network: Not installed");
-    expect($("[data-devices-attention] [data-attention-device]")).toBe(item);
-    await click("[data-attention-device=network] button");
-    await wait(20);
-    expect(document.activeElement?.closest("[data-private-network]")).not.toBeNull();
-  });
-
-  it("tells the nav to mark Devices amber while anything needs the person, and green while a phone is connected and nothing does", async () => {
+  it("tells the nav to mark Devices amber while anything needs the person, and clears it when nothing does", async () => {
     setDevicesSignal(null);
     const key = "computer:This computer";
     let seen: ReturnType<typeof useDevicesSignal> = null;
@@ -1246,15 +656,14 @@ describe("the top of the page", () => {
     const probe = createRoot(probeHost);
     act(() => probe.render(createElement(Probe)));
     await render();
-    expect(seen).toEqual({ place: key, needsYou: true, phoneConnected: true });
+    expect(seen).toEqual({ place: key, needsYou: true });
     vpsState = "connected";
     act(() => root.unmount());
     root = createRoot(host);
     await render();
-    expect(seen).toEqual({ place: key, needsYou: false, phoneConnected: true });
+    expect(seen).toEqual({ place: key, needsYou: false });
     act(() => probe.unmount());
   });
-
   it("puts the rows that need the person first in each group, the rest in their own order", async () => {
     saved = [...saved, { id: "nas", kind: "remote", name: "Attic box", origin: "https://attic.example.com" }];
     environments.status.mockImplementation(async () => [
@@ -1264,36 +673,6 @@ describe("the top of the page", () => {
     await render();
     expect([...document.querySelectorAll("[data-settings-block=group-servers] [data-device-node]")].map((node) => node.getAttribute("data-device-node")))
       .toEqual(["place:vps", "place:home", "place:nas"]);
-  });
-});
-
-describe("Add a phone's ways in", () => {
-  it("lets the person pick both ways, turns on each one picked, then shows the code", async () => {
-    companion = { ...companion, routes: { wifi: off, relay: off, tailscale: off, https: off } };
-    await render();
-    await click("[data-add-group=phones]");
-    const box = (route: string) => $<HTMLInputElement>(`[data-route-card=${route}] input[type=checkbox]`)!;
-    expect(box("relay").checked, "signed in: Anywhere is picked").toBe(true);
-    expect(box("wifi").checked).toBe(false);
-    await act(async () => box("relay").click());
-    expect($<HTMLButtonElement>("[data-pair-turn-on]")?.disabled, "at least one way").toBe(true);
-    await act(async () => box("wifi").click());
-    await act(async () => box("relay").click());
-    expect(box("wifi").checked && box("relay").checked).toBe(true);
-    await click("[data-pair-turn-on]");
-    expect(bridge.setRoute.mock.calls).toEqual([["wifi", true], ["relay", true]]);
-    expect($("[data-pair-turn-on]")).toBeNull();
-  });
-
-  it("draws the ways as plain rows in the step's card, not cards of their own", async () => {
-    companion = { ...companion, routes: { wifi: off, relay: off, tailscale: off, https: off } };
-    await render();
-    await click("[data-add-group=phones]");
-    for (const row of document.querySelectorAll("[data-route-card]")) {
-      expect(row.closest("[data-add-card]")).not.toBeNull();
-      expect(row.className).not.toMatch(/rounded|bg-menu/);
-    }
-    expect(document.querySelectorAll("[data-route-card]")).toHaveLength(2);
   });
 });
 
@@ -1313,10 +692,9 @@ describe("the map above the list", () => {
     await render();
     expect($("[data-settings-block=here] h3")).toBeNull();
     expect($("[data-map-legend]")?.textContent).toBe("Solid: connected now · Dashed: away");
-    expect([...document.querySelectorAll("[data-map-group] > span[id]")].map((label) => label.textContent)).toEqual(["Phones", "Clouds and servers"]);
+    expect([...document.querySelectorAll("[data-map-group] > span[id]")].map((label) => label.textContent)).toEqual(["Clouds and servers"]);
     expect($("[data-map-node='place:vps'] .truncate")).toBeNull();
   });
-
   it("opens a node's row below, with its details open and focus on its row, and nothing over the page", async () => {
     overrideDeviceMap(true);
     await render();
@@ -1325,7 +703,7 @@ describe("the map above the list", () => {
     expect(map.getAttribute("aria-label")).toBe("Your devices and how they connect");
     expect(map.compareDocumentPosition($("[data-settings-block=here]")!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect([...map.querySelectorAll("[data-map-node]")].map((node) => node.getAttribute("data-map-node")))
-      .toEqual(["here", "phone:iphone", "phone:pixel", "place:home", "place:vps"]);
+      .toEqual(["here", "place:home", "place:vps"]);
     expect(map.querySelector("[data-map-node='place:vps']")?.getAttribute("aria-label")).toBe("Hetzner box, Your own server, Can’t reach it, Over the internet");
     await click("[data-map-node='place:vps']");
     await wait(20);
@@ -1334,27 +712,22 @@ describe("the map above the list", () => {
     expect([...map.querySelectorAll("button, a, input, [role=switch]")].every((control) => control.hasAttribute("data-map-node")), "the map has no actions of its own").toBe(true);
     expect(layers()).toBe(0);
   });
-
-  it("puts the private network on the hub, draws an away device's line dashed, and says it all in one line for a narrow window", async () => {
+  it("draws an away device's line dashed, and says it all in one line for a narrow window", async () => {
     overrideDeviceMap(true);
+    sessions = [{ id: "s1", label: "Pixel 9", scopes: ["admin", "client"], lastSeenAt: NOW - 86_400_000 }];
     await render();
-    expect($("[data-map-node=here] [data-map-network]")).not.toBeNull();
-    expect($("[data-map-node=here]")?.getAttribute("aria-label")).toContain("Private network: Not set up");
-    expect($("[data-map-node='phone:pixel']")?.getAttribute("data-map-line")).toBe("away");
-    expect($("[data-map-node='phone:iphone']")?.getAttribute("data-map-line")).toBe("on");
-    expect($("[data-map-summary]")?.textContent).toBe("2 phones · 2 Clouds and your own servers");
+    expect($("[data-map-node='session:s1']")?.getAttribute("data-map-line")).toBe("away");
+    expect($("[data-map-node='place:home']")?.getAttribute("data-map-line")).toBe("on");
+    expect($("[data-map-summary]")?.textContent).toBe("1 phone · 2 Clouds and your own servers");
   });
-
   it("with nothing else connected, draws the hub alone and says so", async () => {
     overrideDeviceMap(true);
-    companion = { ...companion, devices: [], connectedDeviceIds: [] };
     saved = [{ id: "local", kind: "local", name: "This computer" }];
     await render();
     expect([...document.querySelectorAll("[data-map-node]")].map((node) => node.getAttribute("data-map-node"))).toEqual(["here"]);
     expect($("[data-map-empty]")?.textContent).toBe("Nothing else is connected yet");
     expect($("[data-map-summary]")?.textContent).toBe("Nothing else is connected yet");
   });
-
   it("draws nothing while it is turned off", async () => {
     overrideDeviceMap(false);
     await render();

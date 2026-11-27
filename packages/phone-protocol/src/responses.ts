@@ -1,21 +1,5 @@
 import type { EnvironmentDescriptor } from "./environment.ts";
-import type { CompanionEndpoint, PairingE2EDescriptor } from "./pairing-link.ts";
 import type { BotQueuedMessages, ComputerHelpRef, GroupTask, WireBot, WireGroup, WireMessage, WireTask } from "./wire.ts";
-
-/** The encrypted-link descriptor a paired phone is sent. `routes: "local"` restricts it to Wi-Fi and Tailscale; absent
- * means any route. */
-export interface CompanionE2EDescriptor extends PairingE2EDescriptor {
-  routes?: "any" | "local";
-}
-
-/** GET /api/companion/endpoints, and the body of a `companion.endpoints` frame: where a paired phone may connect. */
-export interface CompanionEndpointsSnapshot {
-  serverName: string;
-  endpoints: CompanionEndpoint[];
-  /** The desktop app's or server's release version (x.y.z, maybe with a suffix); absent from older versions. */
-  version?: string;
-  e2e?: CompanionE2EDescriptor;
-}
 
 /** A paired phone. A computer's companion sends its whole record; a server or Cloud sends only the first four fields. */
 export interface PairedDevice {
@@ -43,14 +27,12 @@ export interface PairRequest {
   replacesToken?: string;
 }
 
-/** POST /api/pair: 201 from a computer's companion, 200 from a server or Cloud. */
+/** POST /api/pair: 200 from a server or Cloud. */
 export interface PairResponse {
   token: string;
   device: PairedDevice;
   serverName: string;
   hosts?: string[];
-  endpoints?: CompanionEndpoint[];
-  e2e?: CompanionE2EDescriptor;
 }
 
 /** A signed-in session as the server describes it, never with its token. */

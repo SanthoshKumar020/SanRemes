@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { stagedCloudflaredPath } from "../electron/managed-companion-tunnel.mjs";
+import { stagedCloudflaredPath } from "./tunnel-connector.ts";
 import { runLogin, runLogout, runStatus, type CliIo, type CliOptions } from "./cli.ts";
 import { removeTempDir } from "./testing/cleanup.ts";
 import { startControlPlaneStub, type ControlPlaneStub } from "./testing/control-plane-stub.ts";
@@ -296,7 +296,7 @@ describe("where the pieces are", () => {
     } finally {
       void removeTempDir(bundled);
     }
-    expect(guardianEntry()).toMatch(/managed-companion-guardian-main\.mjs$/);
+    expect(guardianEntry()).toMatch(/tunnel-guardian-main\.mjs$/);
   });
 
   it("describes tunnel states in one line each", () => {

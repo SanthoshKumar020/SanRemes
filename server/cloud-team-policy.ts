@@ -14,7 +14,6 @@ import type { CloudHomeConfig } from "./cloud-home.ts";
 import type { CloudTeam } from "./cloud-team.ts";
 import type { ManagedDesktopPolicy, ManagedPolicy } from "./managed-policy.ts";
 import { CLI_LOGIN_PATH } from "../shared/cli-login.ts";
-import { TEAM_PHONE_PAIRING_PATH } from "./routes/team-phone.ts";
 import type { SessionRegistry } from "./sessions.ts";
 
 export const TEAM_POLICY_SCHEMA = 1;
@@ -84,11 +83,11 @@ export function teamManagedPolicy(document: TeamPolicyDocument, team: Pick<Cloud
   };
 }
 
-/** The POST paths the remote-access limit refuses. On a Team Cloud the Admin-signed pairing is how every member's app, and
+/** The POST paths the remote-access limit refuses. On a Team Cloud the pairing code is how every member's app, and
  * the Admin itself, reach it, so refusing `/api/auth/pair` would lock the whole team out: there, only what a member's own
  * code opens counts as remote access (the sessions of those codes end when the limit lands: `closeMemberPhones`). */
 export function remoteAccessPaths(team: boolean): readonly string[] {
-  return team ? ["/api/auth/pairing", TEAM_PHONE_PAIRING_PATH, CLI_LOGIN_PATH] : ["/api/auth/pair", "/api/pair", "/api/auth/pairing", "/api/auth/email/start", "/api/auth/email/verify", CLI_LOGIN_PATH];
+  return team ? ["/api/auth/pairing", CLI_LOGIN_PATH] : ["/api/auth/pair", "/api/pair", "/api/auth/pairing", "/api/auth/email/start", "/api/auth/email/verify", CLI_LOGIN_PATH];
 }
 
 /** What a document's refusal says of itself, for the Rules page: which key, never a value. */

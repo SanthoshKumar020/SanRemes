@@ -98,16 +98,15 @@ There is no separate message broker; the server is the bus.
 - **WebSocket upgrades.** `server/routes/upgrades.ts`
   (`createUpgrades`) attaches upgrade handling to the HTTP server
   (`upgrades.attach(server, handleRequest)` in `server/index.ts`);
-  it is used for live surfaces such as the phone screen / live call
+  it is used for live surfaces such as the live call
   paths. The exact set of upgrade routes was not enumerated here.
 - **Wire types.** All client-visible shapes live in `shared/` and in
   `packages/phone-protocol/src/` (§6). `shared/wire.ts` re-exports
   the protocol's `wire.ts` (bots, messages, rooms, tasks, frames).
-  Server code imports those same types, so the server, desktop and
-  phone clients agree on the shape by construction.
+  Server code imports those same types, so the server and desktop
+  agree on the shape by construction.
 - **Inbound from outside.** External messages arrive only through
-  fenced doors: the Bot API (§7), the companion sidecar (§9), or the
-  phone relay — never by talking to the harness socket directly.
+  fenced doors: the Bot API (§7) — never by talking to the harness socket directly.
 
 ## 4. Computer claim / computer use
 
@@ -173,7 +172,7 @@ daily-cap | paused`.
 `packages/phone-protocol/` (`@sanremes/phone-protocol`) is the shared
 wire contract: frame and response types, cards, widgets, mascot,
 pairing modules. Its `package.json` describes it as "the wire contract
-a SanRemes phone app shares with the desktop". Key modules:
+the desktop and server share". Key modules:
 
 - `src/wire.ts` — the client-visible model for tasks, bots, messages
   and rooms (what the server emits in every response and SSE frame);
@@ -184,15 +183,13 @@ a SanRemes phone app shares with the desktop". Key modules:
   `src/computer-ask.ts` — approval and computer-use cards;
 - `src/bot-avatar.ts`, `src/mascot-bodies.ts`,
   `src/bot-body.ts` — mascot / avatar / body shapes;
-- `src/pairing-code.ts`, `src/pairing-link.ts`,
-  `src/phone-secret-envelope.ts` — pairing and the encrypted
-  credential relay;
+- `src/pairing-code.ts` — pairing codes and links, and the sentences
+  for a wrong kind of code;
 - `src/responses.ts` — response shapes, including
-  `CompanionEndpointsSnapshot` and `PairedDevice`.
+  `PairedDevice`.
 
-It is **shared by the desktop, the server and the phone clients**:
-`shared/wire.ts` re-exports it for server and desktop code, and the
-phone app speaks the same types. That is why it is KEPT in Phase 1 —
+It is **shared by the desktop and the server**:
+`shared/wire.ts` re-exports it for server and desktop code. That is why it is KEPT in Phase 1 —
 it is not phone-only code, and deleting it would break the desktop
 and server wire contract.
 
@@ -260,21 +257,13 @@ commit `d5bdd06f`); the rest of the tree is upstream-derived.
   sandbox, self-improvement loop — commits `801f9a8a`,
   `a1c767aa`, `06bf41c9`, `7867a801`.
 
-## 9. Companion sidecar — SLATED FOR REMOVAL in Phase 1
+## 9. Companion sidecar — REMOVED in Phase 1
 
-`companion/` is a separate process that sits in front of the
-loopback-only harness so a paired phone can reach it: phone →
-companion on `:8810` (LAN / tailnet / hosted HTTPS) → harness on
-`:8799` over loopback. It owns pairing (QR credential + six-digit
-fallback, single-use, two minutes; device tokens stored only as
-SHA-256 digests), per-device authorisation (computer access is a
-separate per-device capability, off by default), a default-deny
-method/path allowlist, response scrubbing (provider session ids
-never reach a device), Bonjour discovery, and an HPKE credential
-relay. **This sidecar is SLATED FOR REMOVAL in Phase 1.** A
-separate removal workstream is running; nothing in this document
-deletes it, and the harness's loopback-only bind is not to be
-weakened as part of that removal.
+`companion/` was a separate process that sat in front of the
+loopback-only harness so a paired phone could reach it. It was
+removed with the phone system: there is no companion process, no
+`:8810`/`:8811` listener, and no per-device credential relay. The
+harness's loopback-only bind stands.
 
 ## Unverified / open questions
 
@@ -284,6 +273,6 @@ weakened as part of that removal.
   the mode table in `approval-mode.ts` were not traced.
 - The "terminal-window fix" named in the roadmap could not be tied
   to a specific SanRemes commit (see §8).
-- `server/index.ts` is 15,258 lines and still growing; the route
+- `server/index.ts` is 15,124 lines and still growing; the route
   list above is representative, not exhaustive (there are ~150 files
   under `server/routes/`).

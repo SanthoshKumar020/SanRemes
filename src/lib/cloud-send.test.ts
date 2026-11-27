@@ -137,9 +137,9 @@ describe("the one-time move's line", () => {
     expect(moveLine({ phase: "done", phone: false, held: [], left, place: "Garage server" }, "local")).toBeNull();
   });
 
-  it("says once on My Cloud's page what arrived, a key kept for after the trial, and the phone to pair; on this computer, coming home", () => {
+  it("says once on My Cloud's page what arrived and a key kept for after the trial; on this computer, coming home", () => {
     const done = moveLine({ phase: "done", counts: { bots: 4, skills: 2, logins: 2, onePassword: true, chats: 148, routines: 2 }, phone: true, held: ["OpenRouter"] }, "cloud");
-    expect(done).toMatchObject({ kind: "done", text: "Everything from this computer is here: 4 bots, 2 skills, 2 logins, 1Password, 148 chats, and 2 routines.", phone: true,
+    expect(done).toMatchObject({ kind: "done", text: "Everything from this computer is here: 4 bots, 2 skills, 2 logins, 1Password, 148 chats, and 2 routines.",
       extra: ["Your OpenRouter key is saved on My Cloud. Your bots use it once the trial's Claude credit runs out."] });
     expect(moveLine({ phase: "done", phone: false, held: [] }, "cloud")).toMatchObject({ text: "Everything from this computer is here.", extra: [] });
     expect(moveLine({ phase: "done", phone: true, held: [] }, "local"), "the done line is My Cloud's").toBeNull();

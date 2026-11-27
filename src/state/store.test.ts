@@ -416,18 +416,6 @@ describe("Settings opened by the Cloud link", () => {
   });
 });
 
-describe("Settings opened on the phone pairing", () => {
-  it("counts each request, and clears on any other Settings navigation", () => {
-    expect(initialState.appSettingsPhonePairing).toBe(0);
-    const phone = { type: "toggleAppSettings", open: true, section: "companion", phonePairing: true } as const;
-    const opened = reducer(initialState, phone);
-    expect(opened).toMatchObject({ appSettingsOpen: true, appSettingsSection: "companion", appSettingsPhonePairing: 1 });
-    expect(reducer(opened, phone).appSettingsPhonePairing).toBe(2);
-    expect(reducer(opened, { type: "toggleAppSettings", open: true, section: "companion" }).appSettingsPhonePairing).toBe(0);
-    expect(reducer(opened, { type: "toggleAppSettings", open: false }).appSettingsPhonePairing).toBe(0);
-    expect(reducer(initialState, { ...phone, open: false }).appSettingsPhonePairing).toBe(0);
-  });
-});
 
 describe("connector grants persistence", () => {
   const announcement = () => ({
@@ -1691,27 +1679,6 @@ describe("browser profile announcements", () => {
     });
     expect(next.bots[0]?.browserProfile).toBe(profile);
     expect(next.bots[0]?.messages).toBe(messages);
-  });
-});
-
-describe("phone grant announcements", () => {
-  const granted: Bot = {
-    id: "phone-bot", threadId: "phone-thread", name: "Pepper", title: "", description: "",
-    notifications: true, color: "green", unread: false,
-    modelSelection: { instanceId: "codex", model: "default" }, phoneApps: { location: "read" },
-    messages: [{ id: "message", role: "user", kind: "text", at: 1, text: "Keep this conversation" }],
-  };
-  const { messages, phoneApps: _old, ...announcement } = granted;
-
-  it("clears a stale grant when a complete frame omits it", () => {
-    const next = reducer({ ...initialState, bots: [granted] }, { type: "botPatched", bot: announcement });
-    expect(next.bots[0]?.phoneApps).toBeUndefined();
-    expect(next.bots[0]?.messages).toBe(messages);
-  });
-
-  it("clears it on the thread-snapshot path too", () => {
-    const next = reducer({ ...initialState, bots: [{ ...granted, awaitingThreadSnapshot: true }] }, { type: "botPatched", bot: { ...announcement, messages } });
-    expect(next.bots[0]?.phoneApps).toBeUndefined();
   });
 });
 

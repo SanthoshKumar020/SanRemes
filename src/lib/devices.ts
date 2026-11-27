@@ -1,8 +1,6 @@
 import { serverTransport } from "../../electron/server-address.mjs";
 import { vpsServerId, type BotComputerState } from "../../shared/bot-computers";
 import type { ServerInstall, ServerStatus } from "../../electron/server-status.mjs";
-import type { CompanionState, PhoneDevice } from "./companion-types";
-import type { PublicPhone } from "./phones";
 
 /** What a device is, for its icon and its group on the map. `vm` is a bot's cloud desktop. */
 export type DeviceKind = "laptop" | "desktop" | "server" | "cloud" | "phone" | "vm";
@@ -11,15 +9,12 @@ export type DeviceStatus = "online" | "offline" | "attention" | "unknown";
 /** How a device reaches the place on screen: `here` is the place itself. `paired` is a device signed in with a code,
  * whose way in the server does not record. */
 export type DeviceRoute = "here" | "local" | "tailscale" | "relay" | "cloud" | "internet" | "ssh" | "paired";
-/** What needs the person, when `status` is `attention` (or `offline` with a way to try again). `no-way-in`: a phone with
- * none of its ways to this computer turned on. */
-export type DeviceNote = "update" | "signed-out" | "insecure" | "unreachable" | "reconnecting" | "no-way-in";
+/** What needs the person, when `status` is `attention` (or `offline` with a way to try again). */
+export type DeviceNote = "update" | "signed-out" | "insecure" | "unreachable" | "reconnecting";
 
 /** Where a device was read from, and its id there: what every action acts on. */
 export type DeviceSource =
   | { type: "place"; id: string }
-  | { type: "phone"; id: string }
-  | { type: "phone-app"; id: string }
   | { type: "session"; id: string }
   | { type: "lent"; id: string }
   | { type: "vps"; id: string }
@@ -103,8 +98,6 @@ export interface DeviceSources {
   statuses?: readonly ServerStatus[] | null;
   /** The saved places this desktop lets use it, as `computerSharing.servers()` says. */
   lending?: ReadonlyArray<{ id: string; enabled: boolean }> | null;
-  companion?: Pick<CompanionState, "devices" | "connectedDeviceIds" | "routes"> | null;
-  phoneApps?: readonly PublicPhone[] | null;
   sessions?: { sessions: readonly SignedInDevice[]; current: string | null } | null;
   lent?: readonly LentDevice[] | null;
   /** The servers bots reach over SSH: the SSH alias, and the name the person gave it. */
@@ -174,43 +167,6 @@ function fromPlace(entry: SavedPlace, status: ServerStatus | undefined, lends: b
     ...(hand && status?.version ? { version: status.version } : {}), ...(hand && entry.origin ? { address: entry.origin } : {}),
     sources: [{ type: "place", id: entry.id }], canRunBots: true, canHostComputer: false, ...(entry.home ? { home: true as const } : {}),
     ...(lends ? { usesThisComputer: true } : {}), ...(state.status === "online" ? { live: true as const } : {}), actions,
-  };
-}
-
-/** The ways a phone may use to reach this computer right now; null where the phone link doesn't say (an older build). */
-function phoneWays(device: PhoneDevice, routes: CompanionState["routes"] | undefined): DeviceRoute[] | null {
-  if (!routes) return null;
-  const anywhere = device.routes !== "local";
-  return [
-    ...(anywhere && routes.relay?.on ? ["relay" as const] : []),
-    ...(routes.wifi?.on ? ["local" as const] : []),
-    ...(routes.tailscale?.on ? ["tailscale" as const] : []),
-    ...(anywhere && routes.https?.on ? ["internet" as const] : []),
-  ];
-}
-
-const RECORDED: Record<NonNullable<PhoneDevice["route"]>, DeviceRoute> = { wifi: "local", tailscale: "tailscale", relay: "relay" };
-
-function fromPhone(device: PhoneDevice, connected: ReadonlySet<string>, routes: CompanionState["routes"] | undefined): Device {
-  const ways = phoneWays(device, routes);
-  const recorded = device.route ? RECORDED[device.route] : null;
-  const route = recorded && (!ways || ways.includes(recorded)) ? recorded : ways?.[0] ?? "local";
-  const closed = ways?.length === 0 && !Object.values(routes ?? {}).some((way) => way.on);
-  const now = !closed && (connected.has(device.id) || Boolean(device.route));
-  return {
-    id: `phone:${device.id}`, kind: "phone", name: device.name, status: closed ? "attention" : now ? "online" : "offline", ...(closed ? { note: "no-way-in" as const } : {}),
-    ...(now ? { live: true as const } : {}), route, routes: ways?.length === 0 ? [] : [route], lastSeen: device.lastSeenAt, sources: [{ type: "phone", id: device.id }],
-    canRunBots: false, canHostComputer: false,
-    actions: [...(closed ? [{ type: "turn-on-way" as const }] : []), { type: "remove", source: { type: "phone", id: device.id } }],
-  };
-}
-
-function fromPhoneApp(phone: PublicPhone): Device {
-  return {
-    id: `phone-app:${phone.key}`, kind: "phone", name: phone.registration.name, status: phone.online ? "online" : "offline", ...(phone.online ? { live: true as const } : {}),
-    route: "paired", routes: ["paired"],
-    lastSeen: phone.seen, version: phone.registration.appVersion, sources: [{ type: "phone-app", id: phone.key }], canRunBots: false, canHostComputer: false,
-    actions: [{ type: "remove", source: { type: "phone-app", id: phone.key } }],
   };
 }
 
@@ -297,39 +253,14 @@ export function buildDevices(sources: DeviceSources): Device[] {
       if (host) aliases.set(device.id, [host]);
       return device;
     });
-  const connected = new Set(sources.companion?.connectedDeviceIds ?? []);
-  const phones = (sources.companion?.devices ?? []).map((device) => fromPhone(device, connected, sources.companion?.routes));
-  const apps = (sources.phoneApps ?? []).map(fromPhoneApp);
-  const remote: DeviceRoute = here.kind === "computer" ? (sources.companion?.routes?.tailscale?.on ? "tailscale" : "local") : here.kind === "server" ? "internet" : "cloud";
-  // A Cloud lists only the devices that can manage it: its chat-only sessions are teammates' (ServerPairingCard's rule).
+  const remote: DeviceRoute = here.kind === "computer" ? "local" : here.kind === "server" ? "internet" : "cloud";
+  // A Cloud lists only the devices that can manage it: its chat-only sessions are teammates'.
   const signedIn = (sources.sessions?.sessions ?? [])
     .filter((session) => session.id !== sources.sessions?.current && !session.token && (here.kind === "computer" || here.kind === "server" || session.scopes.includes("admin")))
     .map((session) => fromSession(session, remote, now));
   const lent = (sources.lent ?? []).filter((computer) => computer.lent).map((computer) => fromLent(computer, here.kind === "computer" || here.kind === "server" ? "paired" : "cloud"));
   const vps = (sources.vps ?? []).filter((server, index, all) => server.alias && all.findIndex((other) => other.alias === server.alias) === index).map(fromVps);
-  return [self, ...mergeAll([places, lent, phones, apps, signedIn, vps], aliases)];
-}
-
-/** The private network as the map draws it. `unknown`: not asked yet, since the app asks Tailscale only when told to. */
-export type PrivateNetworkState = "unknown" | "not-installed" | "no-cli" | "signed-out" | "not-running" | "needs-approval" | "needs-permission" | "magicdns" | "ready";
-
-export interface PrivateNetwork {
-  state: PrivateNetworkState;
-  /** This computer's name on it, once ready. */
-  name: string | null;
-  /** Other computers on it may open this one (Your other computers is on). */
-  shared: boolean;
-}
-
-/** `problem`: the reason the last Turn on or Check again gave, which only that answer carries. */
-export function privateNetwork(companion: Pick<CompanionState, "routes" | "tailnetShare"> | null | undefined, problem: CompanionState["tailscaleProblem"] | null): PrivateNetwork | null {
-  if (!companion) return null;
-  const route = companion.routes?.tailscale;
-  const shared = route?.on === true && route.computers === true;
-  if (problem) return { state: problem, name: null, shared };
-  if (!route?.on) return { state: "unknown", name: null, shared: false };
-  if (!route.name) return { state: "magicdns", name: null, shared };
-  return { state: "ready", name: route.name, shared };
+  return [self, ...mergeAll([places, lent, signedIn, vps], aliases)];
 }
 
 /** The map's groups, by what a person calls each device. */

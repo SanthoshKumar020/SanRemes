@@ -25,13 +25,12 @@ import { placeManagedBy, worksOnChoices, WorksOnGrid, worksOnHintKey, worksOnSel
 import { useDesktopCapabilities } from "./DesktopCapabilities";
 import { RoutinesSection } from "./bot-settings/RoutinesSection";
 import { routineRunLabel, routineRunTone } from "@/lib/routine-display";
-import { AndroidDevicePanel, useAndroidUsbDevices } from "./AndroidDevicePanel";
 import { BrowserPanel, type BrowserSignIn } from "./BrowserPanel";
 import { usePanelPage, type PanelPage } from "@/lib/page-open";
 const DataPanel = lazy(() => import("./data/DataPanel").then((module) => ({ default: module.DataPanel })));
 const loadLiveDesktop = () => import("./LiveDesktop").then((module) => ({ default: module.LiveDesktop }));
 const LiveDesktop = lazy(loadLiveDesktop);
-import { browserAvailable, browserUnavailableReason, builtInBrowserEnabled, usbPhoneTakeoverEnabled } from "@/lib/feature-flags";
+import { browserAvailable, browserUnavailableReason, builtInBrowserEnabled } from "@/lib/feature-flags";
 import { parseComputerHelp, transitionComputerControlLease, type ComputerControlAction } from "@/lib/computer-control";
 import { openProviderDesktop, useComputerTakeover } from "./computer-takeover";
 import { SignInBanner } from "./SignInRequestCard";
@@ -40,7 +39,7 @@ import { LinuxLocalControl } from "./LinuxLocalControl";
 import { MacLocalControl } from "./MacLocalControl"; import { WindowsLocalControl } from "./WindowsLocalControl";
 import { LocalComputerAutoWarning } from "./LocalComputerAutoWarning";
 import { busyBoatView, instanceSupportsLocalComputer, localComputerDisabledReason, localComputerSelectable, pageOnRemoteServer, persistedComputerSelectionMatches, isReadyBoatState, resolveBoatPanelAction, shouldPollCloudPreview } from "@/lib/local-computer"; import { LendHere } from "./LendComputerSwitch";
-import { moveBetweenTabs, PANEL_TABS, panelTabProps, scrollTabsWithWheel, TAB_PANEL_FOCUS, tabPanelProps, useAndroidTabFallback } from "./computer-panel-tabs";
+import { moveBetweenTabs, PANEL_TABS, panelTabProps, scrollTabsWithWheel, TAB_PANEL_FOCUS, tabPanelProps } from "./computer-panel-tabs";
 import { releaseComputerPanelFocus, useComputerPanelEntry } from "@/lib/computer-panel-focus";
 import { PANEL_MIN_WIDTH, useComputerPanelResize } from "./computer-panel-resize";
 import {
@@ -252,10 +251,8 @@ export function ComputerPanel({
   const [storedPanelView, setPanelView] = useState<ComputerPanelView>(() => readComputerPanelView(bot.id));
   const requestedDataResult = state.dataResultFocus?.botId === bot.id ? state.dataResultFocus : undefined;
   const [dataRequest, setDataRequest] = useState<{ id: string; requestId: number }>();
-  const androidStatus = useAndroidUsbDevices(usbPhoneTakeoverEnabled(state.config));
-  const androidConnected = androidStatus.devices.length > 0;
-  const panelTabs = computerPanelTabs({ advanced, androidConnected });
-  const panelView = resolveComputerPanelView(storedPanelView, { advanced, androidConnected });
+  const panelTabs = computerPanelTabs({ advanced });
+  const panelView = resolveComputerPanelView(storedPanelView, { advanced });
   const panelRef = useComputerPanelEntry(profileBot.id, panelView);
   const browserAvailableHere = browserAvailable(state.config);
   const browserEnabled = builtInBrowserEnabled(state.config) && bot.browser !== false
@@ -356,7 +353,6 @@ export function ComputerPanel({
     };
   }, [bot.id]);
 
-  useAndroidTabFallback(bot.id, androidStatus, setPanelView);
   useEffect(() => {
     vmReadinessAttempts.current = 0;
   }, [bot.id, bot.computer]);
@@ -1294,10 +1290,6 @@ export function ComputerPanel({
       ) : panelView === "files" ? (
         <div {...tabPanelProps("files")} className={cn("flex min-h-0 flex-1 flex-col", TAB_PANEL_FOCUS)}>
           <ComputerFilesPane bot={bot} />
-        </div>
-      ) : panelView === "android" && androidConnected ? (
-        <div {...tabPanelProps("android")} className={cn("flex-1 overflow-y-auto px-4 pt-2", TAB_PANEL_FOCUS)}>
-          <AndroidDevicePanel status={androidStatus} serverPhones={usbPhoneTakeoverEnabled(state.config)} />
         </div>
       ) : (
       <div {...tabPanelProps("computer")} className={cn("flex-1 overflow-y-auto px-5 pb-5", TAB_PANEL_FOCUS)}>

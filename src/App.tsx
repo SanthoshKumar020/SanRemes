@@ -80,7 +80,7 @@ import { botCycleStep, shouldOpenKeyboardShortcuts } from "@/lib/keyboard-shortc
 import { useThreadCycleKeys } from "@/components/thread-cycle";
 import { effectiveLanguage, useLanguageChoice, usePageLanguage } from "@/lib/language-preference";
 import { botUnreadCount, showBrowserUnread } from "@/lib/bot-unread";
-import { phonePairingSettingsAction, takePhonePairingRequest } from "@/lib/phone-pairing"; import { useConnectLink } from "@/lib/use-connect-link";
+import { useConnectLink } from "@/lib/use-connect-link";
 import { isSettingsPage } from "@/components/settings/settings-index";
 import { useBotListDrawer } from "@/hooks/use-bot-list-drawer";
 import { usePhoneBack } from "@/hooks/use-phone-back";
@@ -156,12 +156,6 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
       else open();
     }
     return window.ogb.environments.onOpenSettings?.(open);
-  }, [dispatch]);
-  useEffect(() => {
-    const rest = takePhonePairingRequest(window.location.href);
-    if (rest === null) return;
-    replaceUrl(rest);
-    dispatch(phonePairingSettingsAction());
   }, [dispatch]);
   useConnectLink(dispatch, Boolean(state.config?.team));
   useExternalChatLinks(state, dispatch); useDesktopNotificationOpens(state, dispatch); useNewBotFromOtherPlace(state.hydrated === true, useCallback(() => dispatch({ type: "newBot" }), [dispatch]));
@@ -352,7 +346,7 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
     state.pluginsOpen;
 
   useEffect(() => {
-    return window.ogb?.onOpenAppSettings?.(section => dispatch(section === "phone" ? phonePairingSettingsAction() : (section === "cloud-add" || section === "cloud-add-howto") && window.ogb?.cloudAccount && !remoteClient
+    return window.ogb?.onOpenAppSettings?.(section => dispatch((section === "cloud-add" || section === "cloud-add-howto") && window.ogb?.cloudAccount && !remoteClient
       ? { type: "openCloudAdd", source: section === "cloud-add" ? "app_menu" : "app_howto" }
       : section === "cloud" && window.ogb?.cloudAccount && !remoteClient
         ? CLOUD_LINK_SETTINGS

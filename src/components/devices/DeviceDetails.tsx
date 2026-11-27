@@ -27,11 +27,6 @@ export function actionLabel(action: DeviceAction, device?: Device): string {
   }
 }
 
-export interface DeviceExtra {
-  facts?: ReactNode;
-  controls?: ReactNode;
-}
-
 /** A server bots reach over SSH: the id its editor takes. */
 export const vpsOf = (device: Device): string | null => {
   const source = device.sources.find((one) => one.type === "vps");
@@ -108,13 +103,11 @@ function BotsDetail({ device }: { device: Device }) {
  * A device's details, open under its row: what it is, how it connects and which bots work on it; the update command when
  * it needs one; the lend switch or a server's own editor; then its other actions. Pair again opens its form right here.
  */
-export function DeviceDetails({ device, onAction, onRemoved, now, pairing, onPairing, extra }: {
+export function DeviceDetails({ device, onAction, onRemoved, now, pairing, onPairing }: {
   device: Device; onAction: (device: Device, action: DeviceAction) => void; onRemoved: (notice: string | null) => void; now: number;
   /** Pair again's form is open in place of the actions. */
   pairing: boolean;
   onPairing: (open: boolean, connected?: boolean) => void;
-  /** What only the page knows of it: more facts for the list, and its own controls (a paired phone's). */
-  extra?: DeviceExtra;
 }) {
   const need = needOf(device);
   const update = device.actions.find((action) => action.type === "copy-update");
@@ -139,11 +132,9 @@ export function DeviceDetails({ device, onAction, onRemoved, now, pairing, onPai
         {device.lastSeen && device.status !== "online" && <Detail label={t("devicesPage.detail.lastSeen")}>{lastSeen(device.lastSeen, now)}</Detail>}
         {device.access && <Detail label={t("devicesPage.detail.access")}>{t(device.access === "full" ? "remote.serverPairing.scope.admin" : "remote.serverPairing.scope.client")}</Detail>}
         {device.email && <Detail label={t("devicesPage.detail.email")}><span className="select-text">{device.email}</span></Detail>}
-        {extra?.facts}
         <Detail label={t("devicesPage.detail.bots")}><BotsDetail device={device} /></Detail>
       </dl>
       {device.note === "unreachable" && <p data-device-unreachable="" className="text-[13px] leading-[18px] text-ink-secondary">{t("devicesPage.detail.unreachableLine", { name: device.name })}</p>}
-      {extra?.controls}
       {update?.type === "copy-update" && (
         <div data-device-update="" className="flex flex-col gap-1.5">
           <p className="text-[13px] leading-[18px] text-ink">{t("devicesPage.update.runPlain", { name: device.name, app: productName() })}</p>

@@ -29,7 +29,6 @@ import {
   recordInstallationKind,
   recordReportedAppVersion,
   requireInstallation,
-  storedInstallationKind,
   requireInstallationAndRead,
 } from "./installations";
 import { idleTunnelReason } from "./tunnel-activity";
@@ -42,8 +41,7 @@ import {
   releaseCleanedCapacity,
   type AccountCleanup,
 } from "./tunnel-capacity";
-import { belowMinimum, readsTunnelReason, readTunnelPolicy, relayCapableVersion } from "./tunnel-release";
-import { relayStanding, type RelayStanding } from "./relay";
+import { belowMinimum, readTunnelPolicy } from "./tunnel-release";
 
 type EndpointStatus = "pending" | "provisioning" | "ready" | "deleting" | "deleted" | "error";
 
@@ -247,42 +245,24 @@ async function shouldLeave(allocation: Allocation, account: EndpointAccount): Pr
 
 const provisionRequestSchema = z.strictObject({
   appVersion: printableVersion.optional(),
-  /** Paired phones that can't use the encrypted connection yet; only they still need a tunnel. */
-  legacyDevices: z.number().int().min(0).max(100).optional(),
   kind: installationKindSchema.optional(),
 });
 
 interface ProvisionRequest {
   appVersion: string | null;
   kind: InstallationKind | null;
-  legacyDevices: number | null;
 }
 
-/** POST may carry `{ "appVersion": "0.1.103", "legacyDevices": 1, "kind": "desktop" }`, or no body. */
+/** POST may carry `{ "appVersion": "0.1.103", "kind": "desktop" }`, or no body. */
 async function provisionRequest(request: Request): Promise<ProvisionRequest> {
   const body = await readOptionalBoundedJSON(request);
-  if (body === undefined) return { appVersion: null, kind: null, legacyDevices: null };
+  if (body === undefined) return { appVersion: null, kind: null };
   const parsed = provisionRequestSchema.safeParse(body);
   if (!parsed.success) throw new HTTPError(400, "invalid_request");
   return {
     appVersion: parsed.data.appVersion ?? null,
     kind: parsed.data.kind ?? null,
-    legacyDevices: parsed.data.legacyDevices ?? null,
   };
-}
-
-/** Why a relay-capable desktop goes without a tunnel. The code stays `relay_capable`, which every such desktop
- * already takes as "carry on over the relay"; `tunnel` tells a newer one what to say about it:
- * - absent: no old phone needs one;
- * - `retired`: old phone apps no longer hold a tunnel (TUNNEL_LEGACY_PHONE_CUTOFF);
- * - `full`: an old phone would have had one, but every account is at its limit. */
-function relayCapableResponse(tunnel?: "full" | "retired"): Response {
-  return json(tunnel ? { error: "relay_capable", tunnel } : { error: "relay_capable" }, 409);
-}
-
-/** The row holds a tunnel that works, as far as this Worker knows. */
-function holdsTunnel(row: EndpointRow | null): boolean {
-  return row !== null && row.tunnel_id !== null && row.status !== "deleting" && row.status !== "deleted";
 }
 
 async function enforceEndpointRateLimit(
@@ -1225,7 +1205,7 @@ export async function provisionManagedEndpoint(
 ): Promise<Response> {
   const installation = await requireInstallation(request, env);
   await enforceEndpointRateLimit(env, installation.installation_id, "reconcile_endpoint");
-  const { appVersion: reportedVersion, kind: reportedKind, legacyDevices } = await provisionRequest(request);
+  const { appVersion: reportedVersion, kind: reportedKind } = await provisionRequest(request);
   if (reportedVersion !== null && reportedVersion !== installation.app_version) {
     await recordReportedAppVersion(env, installation.installation_id, reportedVersion);
   }
@@ -1235,38 +1215,7 @@ export async function provisionManagedEndpoint(
   const policy = readTunnelPolicy(env);
   // Below the minimum version a desktop neither gets nor keeps a tunnel; the cron removes one it still holds.
   if (belowMinimum(policy, reportedVersion ?? installation.app_version)) throw new HTTPError(426, "update_required");
-  // The relay first: a desktop it can carry gets a tunnel only for an old phone, and only while old phones may
-  // still hold one. A desktop the relay cannot carry (an older release, the relay off, outside the rollout,
-  // blocked) falls through to a tunnel, as before the relay existed. So does a self-hosted server: its tunnel is
-  // its public address, so it is never answered relay_capable. One that does not say what it is is known by what
-  // every released server does: it reports no phones and has never asked for a relay token.
-  let standing: RelayStanding | null = null;
-  let kind: InstallationKind | null | undefined = reportedKind ?? undefined;
-  const onRelay = async () => {
-    if (!relayCapableVersion(policy, reportedVersion)) return null;
-    if (kind === undefined) kind = await storedInstallationKind(env, installation.installation_id);
-    if (kind === "server") return null;
-    standing ??= await relayStanding(env, installation.installation_id);
-    if (!standing.serves) return null;
-    return kind === null && legacyDevices === null && !standing.asked ? null : standing;
-  };
-  if (policy.legacyCutoffPercent > 0) {
-    const relay = await onRelay();
-    // A tunnel that works is given up only by a computer the relay is known to be carrying (the cron's rule).
-    if (
-      relay && relay.bucket !== null && relay.bucket < policy.legacyCutoffPercent
-      && (relay.proven || !holdsTunnel(existing))
-    ) {
-      return relayCapableResponse(legacyDevices === 0 ? undefined : "retired");
-    }
-  }
-  if (legacyDevices === 0 && !holdsTunnel(existing) && await onRelay()) return relayCapableResponse();
-  // At the limit a desktop on the relay still pairs new phones over it, and only its old phones wait. Only a
-  // release that reads `tunnel` is told so: an earlier one takes any relay_capable as "nothing more to do" and
-  // would stop retrying, so it keeps the 503 it shows and retries on.
-  const atCapacity = async () => (
-    readsTunnelReason(policy, reportedVersion) && await onRelay() ? relayCapableResponse("full") : capacityResponse()
-  );
+  const atCapacity = async () => capacityResponse();
   // Only a new row chooses its account; an existing one keeps its own.
   const row = existing
     ?? await ensureEndpointRow(env, installation.installation_id, await newEndpointAccount(config, allocation));

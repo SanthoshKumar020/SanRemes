@@ -1,37 +1,24 @@
 // Settings → Features: Skill Burger off takes its chat card, its menu entries, its page and the bot panel's saved list
 // away. Nothing saved is touched, so on brings it all back.
 import { readFileSync } from "node:fs";
-import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { setLocale } from "@/lib/i18n";
 import { skillBurgerEnabled, threadTabsEnabled } from "@/lib/feature-flags";
+import { toolMenuItems } from "../SidebarProfileMenu";
 
-const fixture = vi.hoisted(() => ({ config: {} as Record<string, unknown>, items: [] as Array<{ key: string }> }));
-vi.mock("@/state/store", async (importOriginal) => ({
-  ...await importOriginal<typeof import("@/state/store")>(),
-  useStore: () => ({ state: { config: fixture.config, activeView: "chat", pluginsOpen: false, bots: [] }, dispatch: vi.fn() }),
-}));
-vi.mock("@/lib/cloud-files", () => ({ useCloudFilesReady: () => false }));
-vi.mock("../SidebarFooterNav", () => ({ useAutomationsNeedYou: () => false }));
-vi.mock("../CloudRoomCard", () => ({ CloudRoomCard: () => null }));
-vi.mock("../CloudUsageMeter", () => ({ CloudUsageCard: () => null }));
-vi.mock("../UpdateIndicator", () => ({ UpdateIndicator: () => null }));
-vi.mock("../SidebarPopoverMenu", () => ({ SidebarPopoverMenu: ({ items }: { items: Array<{ key: string }> }) => { fixture.items = items; return null; } }));
-
-const { SidebarPhoneBar } = await import("../SidebarPhoneBar");
+const fixture = { config: {} as Record<string, unknown> };
 
 beforeEach(() => {
   fixture.config = {};
-  fixture.items = [];
   setLocale("en");
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {});
 
-const phoneTools = () => {
-  renderToStaticMarkup(createElement(SidebarPhoneBar, { query: "", onQuery: () => {} }));
-  return fixture.items.map((item) => item.key);
-};
+/** The tools menu as the sidebar builds it, with the Skill Burger entry only while the flag is on. */
+const phoneTools = () => toolMenuItems({
+  activeView: "chat", automationsNeedYou: false, onAutomations: () => {}, onTeamMap: () => {},
+  onPublishedApps: () => {}, onSkillBurgers: skillBurgerEnabled(fixture.config as never) ? () => {} : undefined,
+}).map((item) => item.key);
 
 describe("the Skill Burger switch", () => {
   it("is on, and thread tabs off, until the place's config.json says otherwise", () => {

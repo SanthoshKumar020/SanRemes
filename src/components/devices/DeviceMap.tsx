@@ -1,12 +1,10 @@
 import { useId, type ReactNode } from "react";
-import { Waypoints } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
-import { groupByKind, type Device, type DeviceGroup, type PrivateNetwork } from "@/lib/devices";
+import { groupByKind, type Device, type DeviceGroup } from "@/lib/devices";
 import type { LocaleKey } from "@/locales";
-import { networkMark } from "./DeviceRows";
 import { BotFaces, botsLabel, markOf, routeOf, StatusMark, useBotsOn } from "./device-parts";
-import { kindLabel, networkShort, statusText } from "./device-words";
+import { kindLabel, statusText } from "./device-words";
 
 /** The picture of this place's devices above the list. Flip to false to ship the page without it. */
 export const SHOW_DEVICE_MAP = true;
@@ -30,10 +28,10 @@ const COUNT: Record<DeviceGroup, [LocaleKey, LocaleKey]> = {
 
 const NODE = "relative flex min-w-0 max-w-full cursor-pointer items-center gap-1.5 rounded-full text-start transition-colors hover:bg-ink/[0.05] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus motion-reduce:transition-none";
 
-/** This place, where every line starts: its mark, name, the bots on it and, on This computer, the private network as part of it. */
-function Hub({ device, mark, network, onOpen }: { device: Device; mark: ReactNode; network: PrivateNetwork | null; onOpen: (id: string) => void }) {
+/** This place, where every line starts: its mark, name and the bots on it. */
+function Hub({ device, mark, onOpen }: { device: Device; mark: ReactNode; onOpen: (id: string) => void }) {
   const bots = useBotsOn(device);
-  const label = [device.name, t("devicesPage.status.here"), network && `${t("devicesPage.network.title")}: ${networkShort(network)}`, botsLabel(bots)].filter(Boolean).join(", ");
+  const label = [device.name, t("devicesPage.status.here"), botsLabel(bots)].filter(Boolean).join(", ");
   return (
     <button type="button" data-map-node="here" aria-label={label} title={device.name} onClick={() => onOpen(device.id)}
       className={cn(NODE, "-m-1.5 w-[calc(100%+0.75rem)] max-w-none flex-wrap gap-x-3 gap-y-1 rounded-xl p-1.5")}>
@@ -42,9 +40,6 @@ function Hub({ device, mark, network, onOpen }: { device: Device; mark: ReactNod
         <span className="truncate text-[14px] font-medium leading-5 text-ink">{device.name}</span>
         <span className="text-[12px] leading-4 text-ink-tertiary">{t("devicesPage.status.here")}</span>
       </span>
-      {network && <span data-map-network={network.state} className="flex shrink-0 items-center gap-1.5 rounded-full bg-ink/[0.05] px-2 py-0.5 text-[12px] leading-4 text-ink-secondary">
-        <Waypoints size={12} aria-hidden="true" />{t("devicesPage.network.title")}<StatusMark status={networkMark(network)} />
-      </span>}
       <BotFaces bots={bots} size={20} />
     </button>
   );
@@ -93,12 +88,12 @@ export function mapSummary(devices: readonly Device[]): string {
 }
 
 /**
- * A compact picture at the top of Devices: this place as the hub with the private network on it, and every other device
- * as a small node in its group, joined by a line that is solid while it is reachable and dashed while it is away. It has
- * no actions of its own: a node opens that device's row below. In a narrow window it is one line of words.
+ * A compact picture at the top of Devices: this place as the hub, and every other device as a small node in its group,
+ * joined by a line that is solid while it is reachable and dashed while it is away. It has no actions of its own: a node
+ * opens that device's row below. In a narrow window it is one line of words.
  */
-export function DeviceMap({ devices, mark, network, loaded, onOpen, now = Date.now() }: {
-  devices: readonly Device[]; mark: ReactNode; network: PrivateNetwork | null;
+export function DeviceMap({ devices, mark, loaded, onOpen, now = Date.now() }: {
+  devices: readonly Device[]; mark: ReactNode;
   /** every source has answered: until then nothing is said about what isn't there */
   loaded: boolean;
   onOpen: (id: string) => void;
@@ -111,7 +106,7 @@ export function DeviceMap({ devices, mark, network, loaded, onOpen, now = Date.n
   return (
     <div data-settings-block="map" role="group" aria-label={t("devicesPage.mapLabel")} className="@container/map">
       <div data-device-map="" className="settings-card relative flex flex-col rounded-[12px] bg-menu p-4 shadow-[inset_0_0_0_0.5px_var(--settings-edge)] @max-[519px]/map:hidden">
-        <Hub device={here} mark={mark} network={network} onOpen={onOpen} />
+        <Hub device={here} mark={mark} onOpen={onOpen} />
         {groups.length > 0 && <>
           <span aria-hidden="true" className={cn("ms-4 mt-1.5 h-3 border-s", LINE, everyoneAway && "border-dashed")} />
           <div data-map-groups="" className="grid items-start gap-x-4" style={{ gridTemplateColumns: `repeat(${groups.length}, minmax(0, 1fr))` }}>

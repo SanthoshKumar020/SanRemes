@@ -17,7 +17,7 @@ import { isRemoteMcpServer, mcpServerNotFound, parseStoredMcpServer } from "../m
 import { personKey } from "../person-key.ts";
 import { provesSameOrigin, requestOrigin, type RequestAuth } from "../request-auth.ts";
 import { APP_SLUG, appLabel, MCP_NAME, personKeyHeader } from "../team-connections.ts";
-import { sessionMember } from "./team-phone.ts";
+import { sessionMember } from "../sessions.ts";
 import { PASS, type RouteHandler } from "./table.ts";
 import type * as Composio from "../composio.ts";
 

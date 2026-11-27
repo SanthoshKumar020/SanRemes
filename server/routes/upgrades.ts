@@ -21,8 +21,8 @@ export interface Upgrades {
   /** Upgrades to a path `owns` accepts reach the request handler; any other is answered 404. */
   route(owns: (path: string) => boolean): void;
   attach(server: Server, handle: Handle): void;
-  /** One upgrade from a stream no listener accepted: a phone's end-to-end encrypted relay stream, which answers the
-   * Socket calls a handshake makes (setTimeout, setNoDelay, setKeepAlive; companion/src/e2e/origin.ts). */
+  /** One upgrade from a stream no listener accepted, which answers the
+   * Socket calls a handshake makes (setTimeout, setNoDelay, setKeepAlive). */
   accept(req: IncomingMessage, socket: Duplex, head: Buffer, handle: Handle): void;
   pending(req: IncomingMessage): PendingUpgrade | undefined;
   /** Refuses new upgrades and drops every one not answered yet. */

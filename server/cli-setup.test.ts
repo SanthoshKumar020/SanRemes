@@ -690,8 +690,8 @@ describe("CLI startup preferences", () => {
       instances: { codex: { driver: "codex", config: { cli: "/fixture/codex" } } }, futureSetting: { keep: true },
     };
     persist(existing);
-    saveCliStartup(DATA_DIR, { access: "tailscale", phone: "ios" });
-    expect(readCliStartup(DATA_DIR)).toEqual({ access: "tailscale", phone: "ios" });
+    saveCliStartup(DATA_DIR, { access: "tailscale" });
+    expect(readCliStartup(DATA_DIR)).toEqual({ access: "tailscale" });
     expect(JSON.parse(readFileSync(configPath, "utf8"))).toMatchObject(existing);
     expectLeaseReleased();
   });
@@ -700,7 +700,7 @@ describe("CLI startup preferences", () => {
     const original = persist({ cliStartup: { access: "local" } });
     const lease = acquireDataDirLease(DATA_DIR);
     try {
-      expect(() => saveCliStartup(DATA_DIR, { access: "tunnel", phone: "android" })).toThrow(/already using this data directory/);
+      expect(() => saveCliStartup(DATA_DIR, { access: "tunnel" })).toThrow(/already using this data directory/);
       expect(readFileSync(configPath, "utf8")).toBe(original);
     } finally { lease.release(); }
   });

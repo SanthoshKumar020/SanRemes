@@ -6,7 +6,7 @@ import type { BotRecord, TaskRecord } from "./store.ts";
 
 export const BOT_SAFETY_FIELDS = [
   "approvalMode", "autoApprove", "alwaysAllow", "approvalGrant", "toolScope", "toolsOff", "connectorTools", "connectorScopes",
-  "outbound", "composio", "computer", "cloudBackend", "browser", "browserProfile", "mcpServers", "phoneApps", "cwd",
+  "outbound", "composio", "computer", "cloudBackend", "browser", "browserProfile", "mcpServers", "cwd",
   "chiefOfStaff", "managedSections", "reportsTo", "visibility", "access", "onlyPeopleAdded", "createdBy", "hidden",
 ] as const satisfies readonly (keyof BotRecord)[];
 

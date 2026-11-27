@@ -1,24 +1,24 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { RelayLink, RelayRequest } from "./e2e/relay-link";
 import { openLiveEvents } from "./live-events";
 import { api } from "@/state/api";
-import { relayEventSource, serverFetch, setRelayLink } from "./relay-server";
+import { relayEventSource, serverFetch, setRelayLink, type ServerLink } from "./relay-server";
 
-type Sent = { path: string; request: RelayRequest };
+type LinkRequest = NonNullable<Parameters<ServerLink["fetch"]>[1]>;
+type Sent = { path: string; request: LinkRequest };
 
-/** A RelayLink that answers each request with `answer`, recording what it was asked. */
+/** A ServerLink that answers each request with `answer`, recording what it was asked. */
 function fakeLink(answer: (sent: Sent) => Response | Promise<Response>) {
   const sent: Sent[] = [];
   const link = {
-    fetch: vi.fn(async (path: string, request: RelayRequest = {}) => {
+    fetch: vi.fn(async (path: string, request: LinkRequest = {}) => {
       const one = { path, request };
       sent.push(one);
       return answer(one);
     }),
     close: vi.fn(),
   };
-  return { link: link as unknown as RelayLink, sent, close: link.close };
+  return { link: link as unknown as ServerLink, sent, close: link.close };
 }
 
 /** An event stream whose chunks the test pushes. */

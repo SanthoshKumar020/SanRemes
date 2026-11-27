@@ -15,7 +15,6 @@ describe("places", () => {
     expect(placePath("keys")).toBe("Settings → AI → Other services");
     expect(placePath("language")).toBe("Settings → General → Language (in Simple mode it is at Settings → This app → Language)");
     expect(placePath("send-key")).toBe("Settings → General → Send messages with (shown in Advanced mode only; app_settings set appearance.advanced true turns it on)");
-    expect(placePath("wifi")).toMatch(/\(only in the desktop app, on this computer's own page\)$/);
   });
 
   it("find a place by the person's words", () => {
@@ -75,7 +74,7 @@ describe("menu paths in our own text", () => {
   it("tell a stale path from a real one", () => {
     expect(inventedPaths('"Add it in Settings → API keys."')).toEqual(["Settings → API keys.\""]);
     expect(inventedPaths('"Sign in again in Settings → AI to keep using it."')).toEqual([]);
-    expect(inventedPaths('"open Settings → Devices → Private network → Your other computers in SanRemes"')).toEqual([]);
+    expect(inventedPaths('"open Settings → Devices in SanRemes"')).toEqual([]);
     expect(inventedPaths('"open Settings → AI → API keys"')).toEqual(["Settings → AI → API keys\""]);
     expect(inventedPaths('"in System Settings → Privacy & Security"')).toEqual([]);
     expect(inventedPaths("// Settings → Computers, a comment only")).toEqual([]);

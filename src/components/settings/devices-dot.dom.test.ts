@@ -38,31 +38,24 @@ const dot = () => host.querySelector<HTMLElement>("[data-settings-page=devices] 
 const tell = (next: Parameters<typeof setDevicesSignal>[0]) => act(() => setDevicesSignal(next));
 
 describe("the mark beside Devices", () => {
-  it("is amber while anything on Devices needs the person, even with a phone connected, and says so", () => {
-    tell({ place: "computer:This computer", needsYou: true, phoneConnected: true });
+  it("is amber while anything on Devices needs the person, and says so", () => {
+    tell({ place: "computer:This computer", needsYou: true });
     expect(dot()?.getAttribute("data-settings-dot")).toBe("warning");
-    expect(dot()?.getAttribute("aria-label")).toBe("A device or the private network needs you");
-    expect(dot()?.title).toBe("A device or the private network needs you");
-  });
-
-  it("is green while a phone is connected and nothing needs the person, and says both", () => {
-    tell({ place: "computer:This computer", needsYou: false, phoneConnected: true });
-    expect(dot()?.getAttribute("data-settings-dot")).toBe("success");
-    expect(dot()?.getAttribute("aria-label")).toBe("A phone is connected, and nothing needs you");
+    expect(dot()?.getAttribute("aria-label")).toBe("A device needs you");
+    expect(dot()?.title).toBe("A device needs you");
   });
 
   it("is not there with nothing to say, nor for what another place's Devices saw", () => {
-    tell({ place: "computer:This computer", needsYou: false, phoneConnected: false });
+    tell({ place: "computer:This computer", needsYou: false });
     expect(dot()).toBeNull();
-    tell({ place: "cloud:My Cloud", needsYou: true, phoneConnected: false });
+    tell({ place: "cloud:My Cloud", needsYou: true });
     expect(dot()).toBeNull();
   });
 });
 
 describe("devicesDot", () => {
-  it("puts what needs the person before a connected phone", () => {
-    expect(devicesDot({ place: "x", needsYou: true, phoneConnected: false })).toBe("warning");
-    expect(devicesDot({ place: "x", needsYou: false, phoneConnected: true })).toBe("success");
-    expect(devicesDot({ place: "x", needsYou: false, phoneConnected: false })).toBeNull();
+  it("is amber while anything needs the person, and nothing otherwise", () => {
+    expect(devicesDot({ place: "x", needsYou: true })).toBe("warning");
+    expect(devicesDot({ place: "x", needsYou: false })).toBeNull();
   });
 });

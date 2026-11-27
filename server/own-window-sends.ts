@@ -5,9 +5,9 @@
 // again, which only takes the owner's lent computers away.
 import { createHash } from "node:crypto";
 
-import { createPhoneSends } from "./phones/sends.ts";
+import { createNotedSends } from "./typed-sends.ts";
 
-const sends = createPhoneSends();
+const sends = createNotedSends();
 const proof = (threadId: string, sendId: string, text: string): string =>
   createHash("sha256").update(JSON.stringify(["own-window", threadId, sendId, text])).digest("base64");
 

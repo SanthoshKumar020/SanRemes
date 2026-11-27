@@ -55,7 +55,6 @@ export type BotUpdatePatch = Partial<
   computer?: Bot["computer"] | null;
   connectorTools?: Bot["connectorTools"] | null;
   connectorScopes?: Bot["connectorScopes"] | null;
-  phoneApps?: Bot["phoneApps"] | null;
   /** null demotes a default bot to a regular one; the server clears the mark. Body only: bot state drops the field. */
   defaultBot?: Bot["defaultBot"] | null;
   /** The server's proof the local-auto warning was shown: wire-only, never folded into bot state. */
@@ -70,13 +69,12 @@ export type BotUpdatePatch = Partial<
 
 export type BotStatePatch = Omit<
   BotUpdatePatch,
-  "computer" | "connectorTools" | "connectorScopes" | "phoneApps" | "defaultBot" | "acknowledgeLocalAuto" | "applyToAllThreads" | "keepThreadModels" | "threadId" | "mainThreadChoice"
+  "computer" | "connectorTools" | "connectorScopes" | "defaultBot" | "acknowledgeLocalAuto" | "applyToAllThreads" | "keepThreadModels" | "threadId" | "mainThreadChoice"
 > & {
   mainThreadId?: string;
   computer?: Bot["computer"];
   connectorTools?: Bot["connectorTools"];
   connectorScopes?: Bot["connectorScopes"];
-  phoneApps?: Bot["phoneApps"];
   defaultBot?: Bot["defaultBot"];
 };
 
@@ -135,7 +133,6 @@ const stateOverlay = (patch: BotUpdatePatch): BotStatePatch => {
     computer,
     connectorTools,
     connectorScopes,
-    phoneApps,
     defaultBot,
     ...fields
   } = patch;
@@ -148,8 +145,6 @@ const stateOverlay = (patch: BotUpdatePatch): BotStatePatch => {
   else if (connectorTools !== undefined) normalized.connectorTools = connectorTools;
   if (connectorScopes === null) normalized.connectorScopes = undefined;
   else if (connectorScopes !== undefined) normalized.connectorScopes = connectorScopes;
-  if (phoneApps === null) normalized.phoneApps = undefined;
-  else if (phoneApps !== undefined) normalized.phoneApps = phoneApps;
   // A pending choice shows as the bot's main thread, so a broadcast during the save does not revert it.
   if (typeof mainThreadChoice === "string") normalized.mainThreadId = mainThreadChoice;
   return normalized;

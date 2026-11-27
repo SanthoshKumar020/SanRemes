@@ -13,8 +13,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { minimalCloudflaredEnvironment } from "../electron/managed-companion-guardian.mjs";
-import { resolveCloudflaredBinary } from "../electron/managed-companion-tunnel.mjs";
+import { minimalCloudflaredEnvironment, resolveCloudflaredBinary } from "./tunnel-connector.ts";
 import { GROK_EXPORT_MAX_CHARS } from "../shared/grok-import.ts";
 import { createMoveInbox, moveMcp, moveRpcError, type MoveInbox, type MoveMcpAnswer } from "./grok-move-mcp.ts";
 import { readBody } from "./harness/http.ts";

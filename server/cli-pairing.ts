@@ -3,13 +3,12 @@
 import qrcode from "qrcode-terminal";
 
 import { cliCommand } from "./cli-invocation.ts";
-import type { PhoneRelayStatus } from "./phone-relay.ts";
 
 /** The desktop app owns this server, so only the app (or a paired device) may mint a code: say where pairing works instead. */
 export function desktopOwnedRefusal(status: number, body: unknown): string | null {
   const error = (body as { error?: unknown } | null)?.error;
   if (status !== 403 || typeof error !== "string" || !error.includes("must come from the desktop app")) return null;
-  return `The SanRemes desktop app runs this server, so a command here needs you signed in first: run ${cliCommand("login")} once and press Allow in the app. To pair a phone or another computer, use Settings → Devices in the app.`;
+  return `The SanRemes desktop app runs this server, so a command here needs you signed in first: run ${cliCommand("login")} once and press Allow in the app. To pair another computer, use Settings → Devices in the app.`;
 }
 
 /** A clock time a code works until: "11:22", or "tomorrow 11:22" / a date when it runs past today. */
@@ -25,7 +24,7 @@ export function untilText(expiresAt: number, now = Date.now()): string {
 /**
  * What `serve` and `pair` print for one pairing code. `link`: the address other devices reach this server at, with the
  * code (null when it has no way in); `localLink`: a browser on this machine (or the Docker host, `localPlace`);
- * `inviteUrl`: the phone-app link only Android's scanner needs; `prefix`: how the CLI was started, so commands paste.
+ * `prefix`: how the CLI was started, so commands paste.
  */
 export function pairingBlock(input: {
   code: string;
@@ -34,8 +33,6 @@ export function pairingBlock(input: {
   link: string | null;
   localLink?: string | null;
   localPlace?: "machine" | "docker";
-  inviteUrl?: string | null;
-  phone?: "ios" | "android";
   prefix: string;
   now?: number;
 }): string {
@@ -47,14 +44,12 @@ export function pairingBlock(input: {
     lines.push(`  Other devices               pick a way in first: ${input.prefix} serve --help`);
     return lines.join("\n");
   }
-  const scanInvite = input.phone === "android" && Boolean(input.inviteUrl);
   lines.push(`Link           ${input.link}`);
   lines.push("");
   lines.push("  Desktop app   ＋ → Connect to another computer, paste the link");
-  lines.push(scanInvite ? "  Phone         scan this with the SanRemes app" : "  Phone         scan with your camera or the SanRemes app");
+  lines.push("  Phone         scan with your camera");
   lines.push("");
-  lines.push(qrToString(scanInvite ? input.inviteUrl! : input.link));
-  if (!input.chatOnly) lines.push(`For a phone (chat and approvals only)   ${input.prefix} pair --phone`);
+  lines.push(qrToString(input.link));
   return lines.join("\n");
 }
 
@@ -87,66 +82,3 @@ export function formatSessions(sessions: Array<{ id: string; label: string; scop
   return [line(head), ...rows.map(line), "", `sign one out with: ${cliCommand("devices revoke <id>")}`].join("\n");
 }
 
-const isStatus = (value: unknown): value is PhoneRelayStatus =>
-  typeof value === "object" && value !== null && typeof (value as PhoneRelayStatus).grant === "string" && typeof (value as PhoneRelayStatus).relay === "string";
-
-/** Until the control plane tells a server from a desktop, a machine that takes a relay token gives back its tunnel. */
-export const RELAY_NOT_WITH_TUNNEL = "--relay cannot be used on a machine whose saved choice is a tunnel address: a relay token would make the tunnel go for good. Start with --local, or use the relay on a machine signed in with `sanremes login --relay`.";
-
-/** Why phones cannot pair through the relay yet, in words for the person at the terminal; empty when they can. */
-export function relayProblemLines(status: PhoneRelayStatus | null, prefix: string): string[] {
-  if (!status) return [`SanRemes Relay is off on this server. Start it with: ${prefix} serve --relay`];
-  if (status.grant === "tunnel") return [`SanRemes Relay stays off here: ${status.reason ?? "this machine holds a tunnel address"}. A relay token would make that tunnel go for good; use the relay on a machine signed in with ${prefix} login --relay.`];
-  if (status.grant === "signed-out") return [`SanRemes Relay needs this machine signed in to a SanRemes account: ${prefix} login --relay (then leave the server running; it connects within a minute).`];
-  if (status.grant === "unavailable") return ["SanRemes Relay is not available for this machine right now. The server keeps working here; it asks again every half hour."];
-  if (status.grant === "failed") return ["The SanRemes account service did not answer. The server keeps working here and keeps trying."];
-  if (status.grant === "waiting") return ["Still asking the SanRemes account service for a relay pass…"];
-  if (status.relay !== "connected") return ["Can't reach SanRemes Relay yet. The server keeps working here and keeps trying; phones pair once it connects."];
-  return [];
-}
-
-/** The relay block for a phone code, or null when the server did not answer with a relay link. */
-export function relayPairingBlock(body: Record<string, unknown>, chatOnly: boolean, prefix: string, now = Date.now()): string | null {
-  const invite = typeof body.inviteUrl === "string" && body.inviteUrl.includes("&e2e=") ? body.inviteUrl : null;
-  if (!chatOnly || !isStatus(body.relay) || !invite || typeof body.expiresAt !== "number") return null;
-  const lines = [
-    `Phone pairing   works once, until ${untilText(body.expiresAt, now)} · chat and approvals`,
-    "  Scan with the SanRemes app. It connects through SanRemes Relay, end-to-end encrypted: no address, open port or VPN needed.",
-    "",
-    qrToString(invite),
-    ...relayProblemLines(body.relay, prefix),
-    `Paired phones: ${body.relay.phones} of ${body.relay.maxPhones}. Remove one: ${prefix} devices revoke ID`,
-  ];
-  return lines.join("\n");
-}
-
-/** Waits for the relay to connect, then prints a phone code; otherwise says why not. True when it printed a code. A
- * service's output lands in its log on every start, so the one-time credential is printed only at a terminal. */
-export async function showRelayPairing(input: {
-  tty: boolean;
-  status: () => Promise<unknown>;
-  mint: () => Promise<string>;
-  log: (line: string) => void;
-  prefix: string;
-  waitMs?: number;
-}): Promise<boolean> {
-  if (!input.tty) {
-    input.log(`Pair a phone: ${input.prefix} pair --phone`);
-    return false;
-  }
-  const deadline = Date.now() + (input.waitMs ?? 20_000);
-  let status: PhoneRelayStatus | null = null;
-  for (;;) {
-    const read = await input.status().catch(() => null);
-    status = isStatus(read) ? read : null;
-    if (!status || (status.grant === "ok" && status.relay === "connected") || Date.now() > deadline) break;
-    await new Promise((resolve) => setTimeout(resolve, 500));
-  }
-  if (status?.grant === "ok") {
-    input.log(await input.mint());
-    return true;
-  }
-  for (const line of relayProblemLines(status, input.prefix)) input.log(line);
-  if (status?.grant !== "tunnel") input.log(`Then: ${input.prefix} pair --phone`);
-  return false;
-}

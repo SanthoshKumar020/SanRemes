@@ -1,20 +1,14 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Check, ChevronLeft, Cloud, Laptop, Server, Smartphone } from "lucide-react";
+import { Check, ChevronLeft, Cloud, Laptop, Server } from "lucide-react";
 import { productName } from "@/lib/brand";
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
-import type { Device, PrivateNetwork } from "@/lib/devices";
+import type { Device } from "@/lib/devices";
 import { DESKTOP_DOWNLOAD_URL } from "../../../shared/computer-ask";
 import { OwnServerLink } from "../PlaceAddSheet";
 import { SettingsLinkRow, SettingsMark, SettingsRows } from "../SettingsPrimitives";
-import { networkLine, networkShort } from "./device-words";
 import type { SettingsShell } from "../settings/settings-shell";
-import type { NetworkAction } from "./DeviceRows";
 import { CommandRow, PairCodePanel, SERVER_COMMANDS } from "./PairCodePanel";
-import { StatusMark } from "./device-parts";
-
-const TAILSCALE_GET = "https://tailscale.com/download";
-
 let pointerAt = 0, keyAt = 0;
 if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
   window.addEventListener("pointerdown", () => { pointerAt = Date.now(); }, true);
@@ -28,7 +22,7 @@ export const lastInputWasKeys = () => keyAt > pointerAt;
 export const withinPage = (element: Element | null) =>
   !element || element === document.body || Boolean(element.closest("[data-settings-page-body], [data-settings-header], [data-add-panel], [data-devices-page]"));
 
-export type AddKind = "phone" | "computer" | "server" | "cloud";
+export type AddKind = "computer" | "server" | "cloud";
 
 const CARD = "settings-card relative flex flex-col gap-5 rounded-[12px] bg-menu p-4 after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:shadow-[inset_0_0_0_0.5px_var(--settings-edge)] after:content-['']";
 const BODY = "text-[13px] leading-[18px] text-ink-secondary";
@@ -55,26 +49,6 @@ function Steps({ children }: { children: ReactNode }) {
   return <ol className="flex flex-col gap-5">{children}</ol>;
 }
 
-/** Under the step's own why, the next step alone: what Tailscale is was said once already. */
-const stepLine = (network: PrivateNetwork) => (network.state === "unknown" ? t("devicesPage.network.line.setUpChecks")
-  : network.state === "not-installed" ? t("devicesPage.network.line.notInstalled") : networkLine(network));
-
-/** The private network's state and its one button, as a step of adding a computer. */
-function NetworkStep({ network, action, waiting, onCheck, checking }: { network: PrivateNetwork; action: NetworkAction | null; waiting: boolean; onCheck?: () => void; checking: boolean }) {
-  return (
-    <div data-add-network={waiting ? "waiting" : network.state} className="flex flex-col items-start gap-2">
-      <span className="flex items-center gap-1.5 text-[13px] leading-[18px] text-ink"><StatusMark status={network.state === "ready" ? "online" : network.state === "unknown" ? "unknown" : "attention"} />{networkShort(network)}</span>
-      <span className={BODY}>{waiting ? t("devices.computers.waiting", { app: productName() }) : stepLine(network)}</span>
-      <span className="flex flex-wrap items-center gap-2">
-        {action && (action.href
-          ? <a href={action.href} target="_blank" rel="noreferrer" className="ui-button ui-button-sm" data-network-action="">{action.label}</a>
-          : <button type="button" className="ui-button ui-button-sm" data-network-action="" disabled={action.busy} onClick={action.run}>{action.label}</button>)}
-        {action?.href && onCheck && <button type="button" className="settings-quiet cursor-pointer" disabled={checking} onClick={onCheck}>{checking ? t("common.checking") : t("remote.checkAgain")}</button>}
-      </span>
-    </div>
-  );
-}
-
 /** A device that joined while this panel was open: the confirmation, and Done back to the list with it open. */
 function Connected({ device, onDone }: { device: Device; onDone: (id: string) => void }) {
   const done = useRef<HTMLButtonElement>(null);
@@ -92,7 +66,6 @@ function Connected({ device, onDone }: { device: Device; onDone: (id: string) =>
 }
 
 const GROUP_OF: Record<AddKind, (device: Device) => boolean> = {
-  phone: (device) => device.kind === "phone",
   computer: (device) => device.kind === "laptop" || device.kind === "desktop",
   server: (device) => device.kind === "server" || device.kind === "desktop",
   cloud: (device) => device.kind === "cloud",
@@ -106,22 +79,12 @@ export interface AddDeviceProps {
   devices: readonly Device[];
   /** Every source has answered at least once. */
   loaded: boolean;
-  network: PrivateNetwork | null;
-  networkAction: NetworkAction | null;
-  /** Where another computer on the private network opens this one. */
-  tailnetAddress: string | null;
   start: AddKind | null;
   /** Back to the list; with an id, that new device's row opens. */
   onBack: (opened?: string) => void;
   onConnected: () => void;
-  /** On This computer: its own steps for a phone, shown here in place of a code. */
-  phoneSteps: ReactNode | null;
-  /** Advanced mode: a Cloud's or server's phone code may be for chat and approvals only. */
-  advanced?: boolean;
   canConnectServer: boolean;
   onGetCloud: (() => void) | null;
-  onCheck?: () => void;
-  checking?: boolean;
   /** A phone-narrow window: its header names this step and goes back, so the page leaves out its own. */
   setSub?: SettingsShell["setSub"];
   /** Opened from the keyboard. */
@@ -131,10 +94,10 @@ export interface AddDeviceProps {
 /**
  * Add a device, in the page: what kind, then that kind's few steps, numbered, with the next one always in view, and a
  * confirmation once the new device shows up. Back (or Escape) goes up one step and then to the list. Nothing opens over
- * Settings: a phone on This computer gets its own steps, a server Connect to another computer's own form.
+ * Settings: a server gets Connect to another computer's own form.
  */
 export function AddDevicePanel(props: AddDeviceProps) {
-  const { here, cloud, devices, network, networkAction, tailnetAddress, start, onBack, onConnected, phoneSteps, canConnectServer, onGetCloud, onCheck, checking = false, setSub } = props;
+  const { here, cloud, devices, start, onBack, onConnected, canConnectServer, onGetCloud, setSub } = props;
   const [kind, setKind] = useState<AddKind | null>(start);
   // The devices there before this step, read once every source has answered: one that joins after is the new one.
   const [known, setKnown] = useState<ReadonlySet<string> | null>(() => (props.loaded ? new Set(devices.map((device) => device.id)) : null));
@@ -158,10 +121,6 @@ export function AddDevicePanel(props: AddDeviceProps) {
   };
   const backTo = kind && !start ? t("devicesPage.add") : t("settings.page.devices");
   const joined = kind && known ? devices.find((device) => !known.has(device.id) && GROUP_OF[kind](device)) : undefined;
-  const shared = network?.state === "ready" && network.shared;
-  const networkReady = Boolean(shared && tailnetAddress);
-  // On and shared, but nothing answers at the address yet: the step is to check again.
-  const stepAction: NetworkAction | null = shared && !tailnetAddress ? (onCheck ? { label: t("remote.checkAgain"), run: onCheck, busy: checking } : null) : networkAction;
   const title = kind ? t(TITLE[kind]) : t("devicesPage.add");
   const lede = kind ? t(LEDE[kind], { app: productName() }) : t("devicesPage.addFlow.chooseLede");
   const backRef = useRef(back);
@@ -195,7 +154,6 @@ export function AddDevicePanel(props: AddDeviceProps) {
       </div>
       {!kind && (
         <SettingsRows icons>
-          <SettingsLinkRow leading={<SettingsMark><Smartphone /></SettingsMark>} title={t("devicesPage.add.phone")} subtitle={t("devicesPage.add.phoneLine", { app: productName() })} onClick={() => choose("phone")} data={{ "data-add-kind": "phone" }} />
           <SettingsLinkRow leading={<SettingsMark><Laptop /></SettingsMark>} title={t("devicesPage.add.computer")} subtitle={t("devicesPage.add.computerLine")} onClick={() => choose("computer")} data={{ "data-add-kind": "computer" }} />
           <SettingsLinkRow leading={<SettingsMark><Server /></SettingsMark>} title={t("devicesPage.add.server")} subtitle={t("devicesPage.add.serverLine")} onClick={() => choose("server")} data={{ "data-add-kind": "server" }} />
           {onGetCloud && <SettingsLinkRow leading={<SettingsMark><Cloud /></SettingsMark>} title={t("devicesPage.add.cloud")} subtitle={t("devicesPage.add.cloudAlwaysOn")} onClick={() => choose("cloud")} data={{ "data-add-kind": "cloud" }} />}
@@ -204,32 +162,22 @@ export function AddDevicePanel(props: AddDeviceProps) {
       {kind && (
         <div data-add-card="" className={CARD}>
           {joined ? <Connected device={joined} onDone={(id) => onBack(id)} /> : <>
-            {kind === "phone" && (phoneSteps ?? <PairCodePanel kind="phone" address={null} onConnected={onConnected} cloudHome={cloud} advanced={props.advanced} />)}
             {kind === "computer" && (cloud
               ? <p className={BODY}>{t("devicesPage.addFlow.computerCloud", { app: productName() })}</p>
               : <Steps>
-                {here && network && <Step n={1} title={t("devicesPage.addFlow.networkFirst")} state={networkReady ? "done" : "now"}>
-                  {!networkReady && <>
-                    <p data-add-network-why="" className={BODY}>{t("devicesPage.addFlow.networkWhy", { app: productName() })}</p>
-                    <NetworkStep network={network} action={stepAction} waiting={Boolean(shared && !tailnetAddress)} onCheck={onCheck} checking={checking} />
-                  </>}
-                </Step>}
-                <Step n={here && network ? 2 : 1} title={t(here && network ? "devicesPage.addFlow.installOther" : "devicesPage.addFlow.installStep", { app: productName() })} state={!here || networkReady ? "now" : "later"}>
-                  {here && network && <p data-add-install-why="" className={BODY}>{t("devicesPage.addFlow.installOtherLine")}</p>}
+                <Step n={1} title={t("devicesPage.addFlow.installStep", { app: productName() })} state={!here ? "later" : "now"}>
                   <span className="flex flex-wrap gap-2">
                     <a href={DESKTOP_DOWNLOAD_URL} target="_blank" rel="noreferrer" className="ui-button ui-button-sm w-fit">{t("computerAsk.action.getApp", { app: productName() })}</a>
-                    {here && network && <a href={TAILSCALE_GET} target="_blank" rel="noreferrer" className="ui-button ui-button-sm w-fit">{t("remote.tailscale.getIt")}</a>}
                   </span>
                 </Step>
-                <Step n={here && network ? 3 : 2} title={t("devicesPage.addFlow.pasteStep")} state={!here || networkReady ? "now" : "later"}>
-                  <PairCodePanel kind="computer" address={tailnetAddress} onConnected={onConnected} />
+                <Step n={2} title={t("devicesPage.addFlow.pasteStep")} state={!here ? "later" : "now"}>
+                  <PairCodePanel address={null} onConnected={onConnected} />
                 </Step>
               </Steps>)}
             {kind === "server" && <Steps>
               <Step n={1} title={t("devicesPage.addFlow.serverRunTerminal")}>
                 <p data-add-server-why="" className={BODY}>{t("devicesPage.addFlow.serverCommandsLine", { app: productName() })}</p>
                 <CommandRow label={t("devicesPage.route.anywhere", { app: productName() })} command={SERVER_COMMANDS.anywhere} />
-                <CommandRow label={t("devicesPage.addFlow.serverPrivate")} command={SERVER_COMMANDS.tailscale} />
               </Step>
               <Step n={2} title={t("devicesPage.addFlow.pasteLink")}>
                 {canConnectServer
@@ -251,5 +199,5 @@ export function AddDevicePanel(props: AddDeviceProps) {
   );
 }
 
-const TITLE = { phone: "devicesPage.add.phoneTitle", computer: "devicesPage.add.computerTitle", server: "devicesPage.add.serverTitle", cloud: "devicesPage.add.cloudAdd" } as const;
-const LEDE = { phone: "devicesPage.addFlow.phoneLede", computer: "devicesPage.addFlow.computerLede", server: "devicesPage.addFlow.serverLede", cloud: "devicesPage.addFlow.cloudLede" } as const;
+const TITLE = { computer: "devicesPage.add.computerTitle", server: "devicesPage.add.serverTitle", cloud: "devicesPage.add.cloudAdd" } as const;
+const LEDE = { computer: "devicesPage.addFlow.computerLede", server: "devicesPage.addFlow.serverLede", cloud: "devicesPage.addFlow.cloudLede" } as const;

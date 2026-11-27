@@ -27,10 +27,6 @@ Pick one home, then open it from your other devices. There are three ways:
 | **Your own server** | A VPS or always-on machine you run yourself | Pair each device with it, then right-click the server's circle at the window's left edge and choose **Make <server> my home** to move this computer's bots there. See [self-hosting.md](self-hosting.md). |
 | **One of your computers** | Two desktops on the same Tailscale network, no Cloud | On the computer with the bots, turn on **Settings → Devices → Private network → Your other computers** and choose **Add a computer**; on the other, choose **＋ → Connect to another computer**. The bots stay on the first computer, which must be on. See [desktop-companion.md](desktop-companion.md). |
 
-A phone is paired separately. For My Cloud, use **Settings → SanRemes Cloud → Use My Cloud on your phone**; for this
-computer, **Settings → Devices → Phones and tablets → Add a phone** (a six-digit code). The phone opens the home it paired
-with. See [ios-companion.md](ios-companion.md).
-
 After a move to My Cloud or your own server, the computer you moved from stops running its copy, so no routine runs
 twice. The computer still lends the new home its folders, screen and Chrome while the desktop app runs and is signed in.
 On your own server this happens by itself only when you are its one owner; on a server with other members or admins,

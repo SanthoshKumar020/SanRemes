@@ -8,7 +8,7 @@ import { GITHUB_SIGN_IN_PATH } from "../../shared/github-sign-in.ts";
 import { GithubSignInError, type GithubSignIn } from "../github/sign-in.ts";
 import { personKey } from "../person-key.ts";
 import { fromBrowser, isSameOrigin, ownerOrAdmin, type RequestAuth } from "../request-auth.ts";
-import { sessionMember } from "./team-phone.ts";
+import { sessionMember } from "../sessions.ts";
 import { PASS, type RouteHandler } from "./table.ts";
 
 export interface GithubSignInRouteDeps {

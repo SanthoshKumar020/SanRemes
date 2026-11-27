@@ -7,37 +7,39 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
-  COMPANION_ACCOUNT_EMAIL_FIELD,
-  COMPANION_INSTALLATION_ID_FIELD,
-  createCompanionAccountService,
-  resolveCompanionControlPlaneURL,
-  type CompanionAccountService,
-  type CredentialDocument,
-} from "../electron/companion-account-service.mjs";
+  ControlPlaneError,
+  createControlPlaneClient,
+} from "../electron/control-plane-client.mjs";
+import { createSecureCredentialState, type CredentialDocument } from "../electron/secure-credential-state.mjs";
+import { writeFileAtomic } from "./atomic.ts";
 import {
-  cleanupCompanionOriginEndpoint,
-  createCompanionOriginEndpoint,
-  MANAGED_COMPANION_ORIGIN_PORT,
-  type CompanionOriginEndpoint,
-} from "../electron/companion-origin-gateway.mjs";
-import { ControlPlaneError, createControlPlaneClient } from "../electron/control-plane-client.mjs";
+  createTunnelAccountService,
+  resolveControlPlaneURL,
+  TUNNEL_ACCOUNT_EMAIL_FIELD,
+  TUNNEL_INSTALLATION_ID_FIELD,
+  tunnelAccess,
+  type TunnelAccountService,
+} from "./tunnel-account.ts";
 import {
-  createManagedCompanionTunnel,
-  managedCompanionTunnelAccess,
+  createManagedTunnel,
   resolveCloudflaredBinary,
   stagedCloudflaredPath,
   type ManagedTunnelAccess,
   type ManagedTunnelState,
-} from "../electron/managed-companion-tunnel.mjs";
-import { createSecureCredentialState } from "../electron/secure-credential-state.mjs";
-import { writeFileAtomic } from "./atomic.ts";
+} from "./tunnel-connector.ts";
+import {
+  cleanupOriginEndpoint,
+  createOriginEndpoint,
+  TUNNEL_ORIGIN_PORT,
+  type TunnelOriginEndpoint,
+} from "./tunnel-origin.ts";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
 export const TUNNEL_CREDENTIALS_FILE = "tunnel-account.json";
 export const TUNNEL_RUNTIME_DIR = "tunnel-runtime";
 
-export type { CompanionOriginEndpoint, ManagedTunnelAccess, ManagedTunnelState };
+export type { TunnelOriginEndpoint as CompanionOriginEndpoint, ManagedTunnelAccess, ManagedTunnelState };
 
 export interface TunnelCredentials {
   file: string;
@@ -99,22 +101,20 @@ function stringField(document: CredentialDocument, field: string): string | null
 
 export function describeTunnelAccount(document: CredentialDocument): TunnelAccountSummary {
   return {
-    email: stringField(document, COMPANION_ACCOUNT_EMAIL_FIELD),
-    address: managedCompanionTunnelAccess(document)?.endpoint ?? null,
-    installationId: stringField(document, COMPANION_INSTALLATION_ID_FIELD),
+    email: stringField(document, TUNNEL_ACCOUNT_EMAIL_FIELD),
+    address: tunnelAccess(document)?.endpoint ?? null,
+    installationId: stringField(document, TUNNEL_INSTALLATION_ID_FIELD),
   };
 }
 
-export function tunnelAccess(document: CredentialDocument): ManagedTunnelAccess | null {
-  return managedCompanionTunnelAccess(document);
-}
+export { tunnelAccess };
 
 export function platformName(platform: NodeJS.Platform = process.platform): "darwin" | "windows" | "linux" {
   return platform === "darwin" ? "darwin" : platform === "win32" ? "windows" : "linux";
 }
 
 export interface TunnelAccount {
-  service: CompanionAccountService;
+  service: TunnelAccountService;
   credentials: TunnelCredentials;
   controlPlane: string;
 }
@@ -133,8 +133,6 @@ export function createTunnelAccount(options: {
   fetchImpl?: typeof fetch;
   machineName?: string;
   recovery?: TunnelRecovery;
-  /** `login --relay`: sign in without reserving a public address; phones reach this machine through SanRemes Relay. */
-  relayOnly?: boolean;
   log?: (line: string) => void;
   clock?: {
     setTimer: (callback: () => void, milliseconds: number) => unknown;
@@ -144,21 +142,20 @@ export function createTunnelAccount(options: {
 }): TunnelAccount {
   const env = options.env ?? process.env;
   const credentials = openTunnelCredentials(options.dataDir);
-  const controlPlane = resolveCompanionControlPlaneURL({ isPackaged: true, environment: env });
+  const controlPlane = resolveControlPlaneURL({ isPackaged: true, environment: env });
   const client = controlPlane ? createControlPlaneClient({ baseURL: controlPlane, fetchImpl: options.fetchImpl }) : null;
   const recovery = options.recovery;
-  const service = createCompanionAccountService({
+  const service = createTunnelAccountService({
     client,
     readCredentials: () => credentials.read(),
     updateCredentials: (derive, afterPersist) => credentials.update(derive, afterPersist),
     identity: { name: options.machineName ?? hostname(), platform: platformName(), appVersion: options.version, kind: "server" },
     newClientInstanceId: () => randomUUID(),
     ...(options.log ? { log: options.log } : {}),
-    ...(options.relayOnly ? { onDemand: true, managedEndpointNeeded: async () => false, relay: { capable: () => true, legacyDevices: async () => 0 } } : {}),
     ...(recovery
       ? {
           autoRecover: true,
-          companionIsOn: () => recovery.running() !== null,
+          tunnelIsOn: () => recovery.running() !== null,
           managedConnectionState: () => recovery.running()?.state() ?? STOPPED_TUNNEL,
           activatePersistedEndpoint: async () => {
             const tunnel = recovery.running();
@@ -183,7 +180,7 @@ export function fleetCredential(env: NodeJS.ProcessEnv = process.env): string | 
 
 export async function fleetAccess(options: { credential: string; version?: string; env?: NodeJS.ProcessEnv; fetchImpl?: typeof fetch }): Promise<ManagedTunnelAccess> {
   const env = options.env ?? process.env;
-  const controlPlane = resolveCompanionControlPlaneURL({ isPackaged: true, environment: env });
+  const controlPlane = resolveControlPlaneURL({ isPackaged: true, environment: env });
   if (!controlPlane) throw new Error("SANREMES_CONTROL_PLANE_URL is set but is not an https address");
   const client = createControlPlaneClient({ baseURL: controlPlane, fetchImpl: options.fetchImpl });
   try {
@@ -212,7 +209,7 @@ export function prepareEntry(here = HERE): string {
 export function guardianEntry(here = HERE): string | null {
   const bundled = join(here, "tunnel-guardian.js");
   if (existsSync(bundled)) return bundled;
-  const source = resolve(here, "..", "electron", "managed-companion-guardian-main.mjs");
+  const source = resolve(here, "tunnel-guardian-main.mjs");
   return existsSync(source) ? source : null;
 }
 
@@ -245,12 +242,12 @@ export async function ensureCloudflared(options: {
   return prepared;
 }
 
-export function createTunnelOrigin(): CompanionOriginEndpoint {
-  return createCompanionOriginEndpoint({ processId: process.pid });
+export function createTunnelOrigin(): TunnelOriginEndpoint {
+  return createOriginEndpoint({ processId: process.pid });
 }
 
-export function cleanupTunnelOrigin(origin: CompanionOriginEndpoint): void {
-  cleanupCompanionOriginEndpoint(origin);
+export function cleanupTunnelOrigin(origin: TunnelOriginEndpoint): void {
+  cleanupOriginEndpoint(origin);
 }
 
 export interface RunningTunnel {
@@ -273,9 +270,9 @@ export function startTunnel(options: {
   onState?: (state: ManagedTunnelState) => void;
 }): RunningTunnel {
   const env = options.env ?? process.env;
-  const originPort = Number(env.SANREMES_TUNNEL_ORIGIN_PORT || MANAGED_COMPANION_ORIGIN_PORT);
+  const originPort = Number(env.SANREMES_TUNNEL_ORIGIN_PORT || TUNNEL_ORIGIN_PORT);
   let current: ManagedTunnelState = { status: "stopped", ready: false };
-  const tunnel = createManagedCompanionTunnel({
+  const tunnel = createManagedTunnel({
     binaryPath: options.binaryPath,
     guardianEntry: options.guardian,
     runtimeRoot: join(options.dataDir, TUNNEL_RUNTIME_DIR),

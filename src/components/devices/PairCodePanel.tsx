@@ -9,15 +9,12 @@ import type { SessionState } from "@/lib/session";
 import { readSharedSessionState } from "@/lib/shared-session";
 import { api } from "@/state/api";
 import { useStoreSelector } from "@/state/store-select";
-import { canPairDevices, computerLink, pairingBlockedReason, phoneSecretNote, sameWifiOnlyLink, type PairingOffer } from "../ServerPairingCard";
-import { Select } from "../Select";
-import { TeamPhoneCard } from "../TeamPhoneCard";
-import { PhoneCodeCard, TypedCode, Waiting } from "./CodeCard";
+import { canPairDevices, computerLink, pairingBlockedReason, type PairingOffer } from "../../lib/pairing";
+import { TypedCode, Waiting } from "./CodeCard";
 
 /** One copyable line to run on a new server: the sign-in a tunnel needs, then the server, in one go. */
 export const SERVER_COMMANDS = {
   anywhere: "npx sanremes account login && npx sanremes serve --tunnel",
-  tailscale: "npx sanremes serve --tailscale",
 } as const;
 
 /** How often an open code checks whether a device has used it. */
@@ -84,21 +81,16 @@ export function usePairAccess(): { session: SessionState | null; pairingCodes: b
   return { session, pairingCodes };
 }
 
-/** What a device paired with a code may do here: everything, or chat and approvals only. */
-type Scope = "admin" | "client";
-
 /**
  * A pairing code for another device: only the owner or an admin may make one, never a chat-only session, a team member
  * or a place whose organization turned remote access off. It watches the signed-in devices until one more appears, and
- * cancels a code still unused when it closes or a new one replaces it. `advanced` offers a chat-only code (never on a
- * Cloud, where every device is its owner's).
+ * cancels a code still unused when it closes or a new one replaces it.
  */
-export function PairCodePanel({ kind, address, onConnected, cloudHome = false, advanced = false }: {
-  kind: "phone" | "computer"; address: string | null; onConnected: () => void; cloudHome?: boolean; advanced?: boolean;
+export function PairCodePanel({ address, onConnected }: {
+  address: string | null; onConnected: () => void;
 }) {
   const config = useStoreSelector((state) => state.config);
   const { session, pairingCodes } = usePairAccess();
-  const [scope, setScope] = useState<Scope>("admin");
   const [offer, setOffer] = useState<PairingOffer | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [connected, setConnected] = useState<string | null>(null);
@@ -107,9 +99,8 @@ export function PairCodePanel({ kind, address, onConnected, cloudHome = false, a
   const open = useRef<PairingOffer | null>(null);
   const policyBlocked = config?.managedPolicy?.remoteAccess === false ? t("policy.remoteBlocked", { organization: config.managedPolicy.organizationName }) : null;
   const allowed = canPairDevices(session) && pairingCodes === true && !policyBlocked && !(session?.kind === "session" && session.team);
-  const chooseScope = advanced && !cloudHome && kind === "phone";
 
-  const create = useCallback(async (asked: Scope = "admin") => {
+  const create = useCallback(async () => {
     setError(null);
     setConnected(null);
     const unused = open.current;
@@ -118,7 +109,7 @@ export function PairCodePanel({ kind, address, onConnected, cloudHome = false, a
     try {
       const before = await api<{ sessions?: Array<{ id: string }> }>("/api/auth/sessions");
       known.current = new Set((before.sessions ?? []).map((one) => one.id));
-      const body = await api<PairingOffer>("/api/auth/pairing", { method: "POST", body: JSON.stringify({ scopes: asked === "admin" ? ["admin", "client"] : ["client"] }) });
+      const body = await api<PairingOffer>("/api/auth/pairing", { method: "POST", body: JSON.stringify({ scopes: ["admin", "client"] }) });
       open.current = body;
       setOffer(body);
       setNow(Date.now());
@@ -159,12 +150,10 @@ export function PairCodePanel({ kind, address, onConnected, cloudHome = false, a
     if (unused) void api(`/api/auth/pairing/${encodeURIComponent(unused.id)}`, { method: "DELETE" }).catch(() => {});
   }, []);
 
-  const link = offer ? (kind === "computer" ? computerLink(offer, address) : offer.url ? { link: offer.url, address: "" } : null) : null;
+  const link = offer ? computerLink(offer, address) : null;
   const { state: copied, copy } = useCopyFeedback(link?.link ?? "");
 
-  if (session?.kind === "session" && session.team && config?.team?.name) {
-    return <TeamPhoneCard team={config.team.name} blocked={config.managedPolicy?.remoteAccess === false ? t("policy.teamRemoteBlocked", { organization: config.managedPolicy.organizationName }) : null} />;
-  }
+  if (session?.kind === "session" && session.team) return null;
   if (session && !canPairDevices(session)) {
     return <p data-pair-blocked="" className="text-[13px] leading-[18px] text-ink-secondary">{t(pairingBlockedReason(session) === "chat-only" ? "remote.serverPairing.chatOnlyShort" : "devicesPage.addFlow.adminOnly")}</p>;
   }
@@ -175,34 +164,11 @@ export function PairCodePanel({ kind, address, onConnected, cloudHome = false, a
   if (offer.expiresAt <= now && !connected) {
     return <div className="flex flex-col items-start gap-3">
       <p className="text-[13px] leading-[18px] text-ink-secondary">{t("remote.serverPairing.expired")}</p>
-      <button type="button" className="ui-button" onClick={() => void create(scope)}>{t("remote.serverPairing.create")}</button>
-    </div>;
-  }
-  if (kind === "phone") {
-    const secretNote = phoneSecretNote(offer);
-    const notes = <>
-      {link && <button type="button" onClick={copy} data-copy-link="" className="ui-button ui-button-sm w-fit">
-        {t(copied === "copied" ? "remote.serverPairing.copied" : copied === "failed" ? "common.copyFailed" : "remote.serverPairing.copyLink")}
-      </button>}
-      {chooseScope && <Select variant="ghost" value={scope} aria-label={t("remote.serverPairing.title")} data-pair-scope=""
-        onChange={(event) => { const next: Scope = event.target.value === "client" ? "client" : "admin"; setScope(next); void create(next); }}>
-        <option value="admin">{t("remote.serverPairing.scope.admin")}</option>
-        <option value="client">{t("remote.serverPairing.scope.client")}</option>
-      </Select>}
-      <p className="text-[12px] leading-4 text-ink-secondary">{t(cloudHome ? "phone.pair.cloudPersonal" : "remote.serverPairing.subtitle", { app: productName() })}</p>
-      {secretNote && <p data-pair-no-phone-secrets="" className="text-[12px] leading-4 text-ink-secondary">{secretNote}</p>}
-      {sameWifiOnlyLink(offer.url) && <p data-pair-same-wifi="" className="text-[12px] leading-4 text-ink-secondary">{t("remote.serverPairing.sameWifiOnly", { app: productName() })}</p>}
-    </>;
-    if (link) return <PhoneCodeCard link={link.link} code={offer.code} expiresAt={offer.expiresAt} connected={connected}>{notes}</PhoneCodeCard>;
-    return <div className="flex flex-col gap-3" data-pair-panel="phone">
-      <p className="text-[13px] leading-[18px] text-ink">{t("phone.code.typeIntro", { app: productName() })}</p>
-      <TypedCode label={t("connect.code")} code={offer.code} expiresAt={offer.expiresAt} />
-      <Waiting connected={connected} waiting={t("devicesPage.addFlow.waitingPhone")} />
-      {notes}
+      <button type="button" className="ui-button" onClick={() => void create()}>{t("remote.serverPairing.create")}</button>
     </div>;
   }
   return (
-    <div className="flex flex-col gap-3" data-pair-panel={kind}>
+    <div className="flex flex-col gap-3" data-pair-panel="computer">
       <p className="text-[13px] leading-[18px] text-ink-secondary">{t("devicesPage.addFlow.computerPasteOther", { app: productName() })}</p>
       {link && <>
         <button type="button" onClick={copy} data-copy-link="" data-pair-link={link.link} className="ui-button ui-button-primary w-fit">

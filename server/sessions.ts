@@ -76,7 +76,7 @@ const sessionSchema = z.object({
   membershipAuthority: z.enum(["portal", "team"]).optional(),
   /** A Team Cloud session's role in the team, from the Admin's claim. */
   teamRole: z.enum(["owner", "admin", "member"]).optional(),
-  /** A team session opened with a code its member made (their phone): when the Admin last vouched for that member. The
+  /** A team session opened with a code its member made (their device): when the Admin last vouched for that member. The
    * session ends within the hour of it; each new Admin-signed pairing of the same member, in the same role, moves it. */
   memberCheckedAt: z.number().optional(),
   /** A team session the Admin's roster check (cloud-team-roster.ts) last found its member in the team, at this role: it ends
@@ -233,6 +233,12 @@ export interface SessionStoreOptions {
   /** Between membershipChanged() calls, the hot paths (each request, stream frame and liveness check) recheck email
    * membership at most this often. Default 0: every call. */
   recheckMs?: number;
+}
+
+/** The member a team session was opened for, and when the Admin last vouched for them; null for any other session. */
+export function sessionMember(session: Pick<SessionRecord, "membershipAuthority" | "email" | "teamRole" | "createdAt" | "memberCheckedAt">): { member: TeamMember; checkedAt: number } | null {
+  if (session.membershipAuthority !== "team" || !session.email || !session.teamRole) return null;
+  return { member: { email: session.email, role: session.teamRole }, checkedAt: session.memberCheckedAt ?? session.createdAt };
 }
 
 export class SessionRegistry {
@@ -506,7 +512,7 @@ export class SessionRegistry {
     return result;
   }
 
-  /** The Admin vouched for a member just now: the sessions their own codes opened (their phones) live on another hour.
+  /** The Admin vouched for a member just now: the sessions their own codes opened (their devices) live on another hour.
    * One whose role changed since is left to end. */
   private memberChecked(member: TeamMember, now: number): void {
     for (const session of this.sessions) {
@@ -536,7 +542,7 @@ export class SessionRegistry {
 
   /** The Admin's roster check found this member in the team at `role` just now. Their sessions at another role end (a role
    * change the Admin's own pairing didn't reach; never an upgrade). Each of their sessions at that role that was used within
-   * the hour, phones included, ends no later than an hour after its last use: an idle one, left on another computer, still
+   * the hour ends no later than an hour after its last use: an idle one, left on another computer, still
    * ends on schedule however much the person uses another device. */
   vouchMember(email: string, role: TeamRole): void {
     const address = email.trim().toLowerCase(), now = this.now();
@@ -708,7 +714,7 @@ export class SessionRegistry {
     return this.sessions.some((s) => s.id === sessionId && !this.personal(s.scopes));
   }
 
-  /** A live session by id: what a paired phone with no stream open may still be shown (server/phone-push.ts). */
+  /** A live session by id: what a paired device with no stream open may still be shown. */
   record(sessionId: string): SessionRecord | null {
     this.prune();
     return this.sessions.find((s) => s.id === sessionId && s.expiresAt > this.now() && !this.personal(s.scopes)) ?? null;
@@ -720,7 +726,7 @@ export class SessionRegistry {
     return this.sessions.map((record) => publicSession(record, personName));
   }
 
-  /** The stored digest of each live bearer session among `ids`: the phone relay derives a phone's keys from it. */
+  /** The stored digest of each live bearer session among `ids`. */
   bearerDigests(ids: ReadonlySet<string>): Array<{ id: string; tokenHash: string }> {
     this.prune();
     return this.sessions.filter((s) => ids.has(s.id) && !s.cookieOnly && !this.personal(s.scopes)).map((s) => ({ id: s.id, tokenHash: s.tokenHash }));
@@ -732,13 +738,13 @@ export class SessionRegistry {
     return this.pairings.filter((p) => !p.browser).sort((a, b) => b.createdAt - a.createdAt).slice(0, max).map((p) => p.credentialHash);
   }
 
-  /** The live sessions a Team Cloud member's own codes opened: their phones. Never an Admin-signed pairing (an app). */
+  /** The live sessions a Team Cloud member's own codes opened: their devices. Never an Admin-signed pairing (an app). */
   memberPhones(): PublicSession[] {
     this.prune();
     return this.sessions.filter((s) => s.membershipAuthority === "team" && s.memberCheckedAt !== undefined).map((record) => publicSession(record));
   }
 
-  /** Every code a member made for a phone stops working, and every phone such a code opened signs out. Never an Admin-signed pairing (an app). */
+  /** Every code a member made for a device stops working, and every device such a code opened signs out. Never an Admin-signed pairing (an app). */
   closeMemberPhones(): number {
     this.pairings = this.pairings.filter((pairing) => !(pairing.member && pairing.memberCheckedAt !== undefined));
     return this.memberPhones().filter((phone) => this.revoke(phone.id)).length;
@@ -767,7 +773,7 @@ export class SessionRegistry {
       .filter((id) => this.revoke(id)).length;
   }
 
-  /** A person who left a Team Cloud: every session of theirs (app windows, phones) ends now, and no open code of theirs
+  /** A person who left a Team Cloud: every session of theirs (app windows, devices) ends now, and no open code of theirs
    * can open another. With `keepRole` (the Admin vouched for them at that role), only those at another role end. Returns
    * how many sessions ended. */
   revokeMember(email: string, keepRole?: TeamRole): number {

@@ -33,7 +33,7 @@ beforeEach(() => {
     signInAgain: vi.fn().mockResolvedValue({ status: "connecting" }),
     reopen: vi.fn().mockResolvedValue({ status: "connecting" }), cancel: vi.fn().mockResolvedValue({ status: "signed-out" }),
     refresh: vi.fn().mockResolvedValue(free), signOut: vi.fn().mockResolvedValue({ status: "signed-out" }), openDashboard: vi.fn().mockResolvedValue(free),
-    connectHome: vi.fn().mockResolvedValue(free), connectHomeForPhone: vi.fn().mockResolvedValue(free), onState: vi.fn(callback => { push = callback; return () => {}; }) };
+    connectHome: vi.fn().mockResolvedValue(free), onState: vi.fn(callback => { push = callback; return () => {}; }) };
   vi.stubGlobal("window", { ogb: { cloudAccount: bridge } }); vi.stubGlobal("fetch", vi.fn()); setLocale("en");
 });
 afterEach(() => { vi.unstubAllGlobals(); setLocale("en"); });
@@ -458,7 +458,6 @@ it("has no phone card: pairing with My Cloud is on Devices, whatever the Cloud's
     const html = render().html;
     none(html, [PHONE, "data-cloud-phone", "is not ready yet"]);
   }
-  expect(bridge.connectHomeForPhone).not.toHaveBeenCalled();
 });
 it("is not offered without a paid plan", async () => {
   await ready(free); expect(render().html).not.toContain(PHONE);

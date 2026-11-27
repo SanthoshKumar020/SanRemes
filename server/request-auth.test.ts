@@ -30,7 +30,6 @@ import {
   sessionCookieName,
 } from "./request-auth.ts";
 import { SESSION_TTL_MS, SessionRegistry } from "./sessions.ts";
-import { webSessionHeaders } from "../companion/src/session-route.ts";
 
 function request(headers: Record<string, string>, method = "GET"): IncomingMessage {
   // SAFETY: the resolver reads only headers and method; a bare object is the whole contract here
@@ -289,71 +288,20 @@ describe("resolveRequestAuth", () => {
   });
   afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
-  it("treats a request the companion carries for a web session as remote: only its own session counts", () => {
-    // The companion's real headers (companion/src/session-route.ts), however the device dressed the request.
-    const carried = (headers: Record<string, string>) =>
-      webSessionHeaders(request({ host: "127.0.0.1:8799", ...headers }), "web-1") as Record<string, string>;
+  it("treats a request a relay carries for a web session as remote: only its own session counts", () => {
+    // The headers a relayed request arrives with: every header that names a client or carries this machine's
+    // trust dropped, the host rewritten to the relay, and x-forwarded-for naming the relaying device.
+    const carried = (headers: Record<string, string>) => {
+      const { host: _host, origin: _origin, cookie: _cookie, "x-forwarded-for": _xff, "x-real-ip": _xrip, ...kept } = headers;
+      return { ...kept, host: "companion-relay.invalid", "x-forwarded-for": "relay-web-1" };
+    };
     const forged = { "x-forwarded-for": "127.0.0.1", "x-real-ip": "127.0.0.1", cookie: `${cookieName}=stolen`, origin: "http://127.0.0.1:8799" };
     expect(resolve(carried(forged)).auth).toBeNull();
     expect(resolve(carried({ ...forged, authorization: "Bearer omb_sess_wrong" })).auth).toBeNull();
     const { token } = sessions.issue({ label: "web", scopes: ["admin", "client"] });
     expect(resolve(carried({ ...forged, authorization: `Bearer ${token}` })).auth?.kind).toBe("session");
-    // From the companion on this machine, the lockout counts this device, never every device as one.
+    // From the relay on this machine, the lockout counts this device, never every device as one.
     expect(requestSource({ headers: carried(forged), socket: { remoteAddress: "127.0.0.1" } } as unknown as IncomingMessage)).toBe("relay-web-1");
-  });
-
-  it("accepts authenticated relay mutations without exposing the desktop owner capability", () => {
-    const headers = {
-      host: "127.0.0.1:8799",
-      "x-sanremes-companion": "1",
-      "x-sanremes-companion-device": "phone-1",
-      "x-sanremes-companion-auth": "relay-secret",
-    };
-    const check = (method: string, path: string, overrides: Record<string, string> = {}, relay = "relay-secret") =>
-      resolveRequestAuth(request({ ...headers, ...overrides }, method), {
-        sessions, cookieName, streamPath: "/api/events", url: new URL(path, "http://localhost"),
-        loopbackMutationToken: "desktop-secret", companionMutationToken: relay,
-      });
-    for (const [method, path] of [
-      ["POST", "/api/bots"], ["POST", "/api/bots/b/messages"],
-      ["POST", "/api/bots/b/read"], ["POST", "/api/bots/b/respond"],
-      ["POST", "/api/bots/b/secret-cards/card/provide"],
-      ["GET", "/api/events"], ["PATCH", "/api/bots/b/profile"],
-      ["GET", "/api/bots/b/browser/live"], ["POST", "/api/bots/b/browser/action"],
-    ]) expect(check(method, path).auth?.kind, path).toBe("loopback");
-    expect(check("GET", "/api/phones/self/jobs").auth).toEqual({ kind: "loopback", scopes: ["admin", "client"], companionDevice: "phone-1" });
-    expect(check("GET", "/api/bots/b/skills").auth?.kind).toBe("loopback");
-    expect(check("POST", "/api/bots/b/skills").auth).toBeNull();
-    expect(check("DELETE", "/api/attachments/abc-1.jpg").auth).toEqual({ kind: "loopback", scopes: ["admin", "client"], companionDevice: "phone-1" });
-    expect(check("DELETE", "/api/attachments/..%2Fconfig.json").auth).toBeNull();
-    const plain = resolveRequestAuth(request({ host: "127.0.0.1:8799", "x-sanremes-companion": "1", "x-sanremes-companion-device": "phone-1" }, "GET"), {
-      sessions, cookieName, streamPath: "/api/events", url: new URL("/api/phones/self/jobs", "http://localhost"),
-      loopbackMutationToken: "desktop-secret", companionMutationToken: "relay-secret",
-    });
-    expect(plain.auth).toEqual({ kind: "loopback", scopes: ["admin", "client"] });
-    for (const [method, path] of [
-      ["POST", "/api/bots/b/browser/live"], ["GET", "/api/bots/b/browser/action"],
-      ["POST", "/api/bots/b/browser/restart"],
-    ]) expect(check(method, path).auth?.kind, path).not.toBe("loopback");
-    const forged: Record<string, string>[] = [
-      { "x-sanremes-companion-auth": "" },
-      { "x-sanremes-companion-auth": "desktop-secret" },
-      { "x-sanremes-companion-device": "" },
-      { "x-sanremes-companion": "0" },
-      { origin: "https://evil.example" },
-      { "x-forwarded-for": "203.0.113.1" },
-      { host: "remote.example" },
-    ];
-    for (const overrides of forged) expect(check("POST", "/api/bots/b/read", overrides).auth).toBeNull();
-    expect(check("POST", "/api/bots/b/read", {}, "").auth).toBeNull();
-    for (const [method, path] of [
-      ["PATCH", "/api/config"], ["POST", "/api/auth/pairing"],
-      ["POST", "/api/internal/anything"], ["GET", "/api/auth/sessions"],
-      ["POST", "/api/not-yet-supported"],
-    ]) expect(check(method, path).auth, path).toBeNull();
-    expect(check("POST", "/api/live/device-revoked").auth?.kind).toBe("loopback");
-    for (const overrides of forged) expect(check("POST", "/api/live/device-revoked", overrides).auth).toBeNull();
-    expect(check("GET", "/api/live/device-revoked").auth).toBeNull();
   });
 
   function pairedToken(scopes: Array<"admin" | "client"> = ["admin", "client"]): string {
@@ -455,7 +403,7 @@ describe("resolveRequestAuth", () => {
     expect(connectorRefresh.auth).toBeNull();
     expect(connectorRefresh.status).toBe(403);
     for (const path of ["/api/desktop-viewer/vps/bot-1", "/api/desktop-viewer/local/shared/websockify", "/api/webhooks/hook-1/address", "/api/setup-import/grok",
-      "/api/local-computer", "/api/bots/bot-1/local-computer", "/api/usb-phones/PHONE1/stream", "/api/usb-phones/emulator-5554/stream", "/api/usb-phones/SM.G991B/stream",
+      "/api/local-computer", "/api/bots/bot-1/local-computer",
       "/api/bots/bot-1/browser/stream", "/api/bots/bot-1/browser/desktop"]) {
       expect(resolveRequestAuth(request({ host: "127.0.0.1:8799" }, "GET"), options(path)).status, path).toBe(403);
       expect(resolveRequestAuth(request({ host: "127.0.0.1:8799", "x-sanremes-desktop-owner": "owner-token-123" }, "GET"), options(path)).auth?.kind, path)
@@ -851,7 +799,7 @@ describe("a browser on this machine is not the owner", () => {
   const check = (headers: Record<string, string>, path = "/api/bots", method = "GET", options: { desktopToken?: string; trust?: "owner" | "service"; localBrowsers?: boolean } = {}) =>
     resolveRequestAuth(request(headers, method), {
       sessions, cookieName, streamPath: "/api/events", url: new URL(path, "http://x"),
-      ...(options.desktopToken !== undefined ? { loopbackMutationToken: options.desktopToken, companionMutationToken: "relay-secret" } : {}),
+      ...(options.desktopToken !== undefined ? { loopbackMutationToken: options.desktopToken } : {}),
       ...(options.trust ? { loopbackTrust: options.trust } : {}),
       ...(options.localBrowsers ? { trustLocalBrowser: true } : {}),
     });
@@ -903,10 +851,8 @@ describe("a browser on this machine is not the owner", () => {
     }
     // Before the desktop app has sent its capability, nothing a browser sends matches.
     expect(check({ ...ownUi, "x-sanremes-desktop-owner": "" }, "/api/bots", "GET", { desktopToken: "" }).auth).toBeNull();
-    // The app's main process and the companion send no Sec-Fetch-*.
+    // The app's main process sends no Sec-Fetch-*.
     expect(check({ host: "127.0.0.1:8799" }, "/api/bots", "GET", desktop).auth?.kind).toBe("loopback");
-    const relay = { host: "127.0.0.1:8799", "x-sanremes-companion": "1", "x-sanremes-companion-device": "phone-1", "x-sanremes-companion-auth": "relay-secret" };
-    expect(check(relay, "/api/bots/b/messages", "POST", desktop).auth?.kind).toBe("loopback");
   });
 
   it("does not lend the owner header to another page in the desktop window's session", () => {

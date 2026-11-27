@@ -31,7 +31,7 @@ function setup(options: { start?: string; connected?: { gmail?: boolean; googlec
   store.appendMessage(thread(), greetingMessage(chief, {}, undefined));
   const world = {
     person: {} as { name?: string; email?: string }, language: undefined as string | undefined, zone: "UTC",
-    connected: { gmail: false, googlecalendar: false, ...options.connected }, briefOn: false, phones: 0, busy: false,
+    connected: { gmail: false, googlecalendar: false, ...options.connected }, briefOn: false, busy: false,
     pushed: [] as string[], turns: [] as Array<{ text: string; threadId: string }>, welcomeDone: 0, runs: [] as RoutineRun[],
     reply: "This week: Standup Tue 10:00." as string | null,
     briefCard: undefined as { threadId: string; messageId: string } | undefined,
@@ -49,7 +49,7 @@ function setup(options: { start?: string; connected?: { gmail?: boolean; googlec
     store, dataDir: dir, now: () => now, chief: () => store.bot(world.chiefId), mainThread: (botId) => store.bot(botId)?.threadId, threadBusy: () => world.busy,
     person: () => world.person, language: () => world.language, timeZone: () => world.zone,
     apps: { reachable: () => true, connected: async () => ({ ...world.connected }), card: async (slug) => ({ label: slug === "gmail" ? "Gmail" : "Google Calendar", description: "" }) },
-    briefOn: () => world.briefOn, ensureBrief: () => { world.briefOn = true; }, briefCard: () => world.briefCard, phones: () => world.phones,
+    briefOn: () => world.briefOn, ensureBrief: () => { world.briefOn = true; }, briefCard: () => world.briefCard,
     moving: () => world.moving, stopped: () => world.stopped,
     startTurn: async (_botId, text, opts) => {
       world.turns.push({ text, threadId: opts.threadId });
@@ -301,7 +301,7 @@ describe("a new Cloud's first hour", () => {
     fh.stop();
   });
 
-  it("the moment Gmail is in, gives its first look in the Chief's chat, then says the brief once and offers the phone", async () => {
+  it("the moment Gmail is in, gives its first look in the Chief's chat, then says the brief once", async () => {
     const s = setup();
     const fh = s.make();
     fh.begin();
@@ -318,16 +318,13 @@ describe("a new Cloud's first hour", () => {
     expect(s.world.pushed).toEqual(["Your first look is ready"]);
     fh.tick();
     expect(s.texts().slice(-2)).toEqual(["This week: Standup Tue 10:00.", "Every morning at 8 I'll send you a brief of what needs you."]);
-    const phone = s.rows().at(-1)!;
-    expect(phone).toMatchObject({ serverCard: true, kind: "widget" });
-    expect(JSON.stringify(phone.widget!.root)).toContain('"onClickAction":{"type":"open_phone_pairing"}');
+    expect(s.rows().filter((row) => row.serverCard)).toHaveLength(0);
     fh.tick();
     expect(s.texts().filter((text) => text?.startsWith("Every morning at 8"))).toHaveLength(1);
-    expect(s.rows().filter((row) => row.serverCard)).toHaveLength(1);
     expect(fh.health()).toMatchObject({ apps: ["gmail"], look: "delivered" });
   });
 
-  it("carries on without apps when the person sets the cards aside: no first look, no brief line, the phone offered", async () => {
+  it("carries on without apps when the person sets the cards aside: no first look, no brief line", async () => {
     const s = setup();
     const fh = s.make();
     fh.begin();
@@ -337,11 +334,11 @@ describe("a new Cloud's first hour", () => {
     await settle();
     expect(s.world.turns).toEqual([]);
     expect(s.texts().some((text) => text?.startsWith("Every morning at 8"))).toBe(false);
-    expect(s.rows().at(-1)!.widget?.root.title).toBe("Get me on your phone");
+    expect(s.rows().some((row) => row.widget)).toBe(false);
     expect(fh.health()!.ms.declined).toBeDefined();
   });
 
-  it("tries a failed first look once more after a short wait, then says which apps are in and how to get the look, and still offers the phone", async () => {
+  it("tries a failed first look once more after a short wait, then says which apps are in and how to get the look", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const s = setup({ connected: { googlecalendar: true } });
     const fh = s.make();
@@ -365,7 +362,7 @@ describe("a new Cloud's first hour", () => {
     expect(s.texts()).toContain("Google Calendar is connected, but I couldn't take my first look just now. Ask me \"what needs me today?\" whenever you like and I'll look then.");
     expect(s.texts().some((text) => text?.includes("You're connected"))).toBe(false);
     fh.tick();
-    expect(s.rows().at(-1)!.widget?.root.title).toBe("Get me on your phone");
+    expect(s.rows().some((row) => row.widget)).toBe(false);
     expect(fh.health()).toMatchObject({ look: "failed", lookFailure: "error", lookTries: 2 });
     const lines = warn.mock.calls.map((call) => String(call[0])).filter((line) => line.startsWith("first hour: the first look failed"));
     expect(lines).toEqual([
@@ -494,7 +491,7 @@ describe("a new Cloud's first hour", () => {
     expect(warn.mock.calls.map((call) => String(call[0])).at(-1)).toMatch(/path=settled ok=false replied=false stalled=false stop=error code=- .* cause="Claude is signed out."$/u);
   });
 
-  it("pushes the first look to a phone paired after it, once; otherwise the first morning brief says it is the first", async () => {
+  it("pushes the first look once, when it is delivered; otherwise the first morning brief says it is the first", async () => {
     const s = setup();
     const fh = s.make();
     fh.begin();
@@ -502,10 +499,10 @@ describe("a new Cloud's first hour", () => {
     const gmail = s.cards()[0]!;
     s.store.patchMessage(s.thread(), gmail.id, { connector: { ...gmail.connector!, status: "connected" } });
     await settle();
-    s.world.phones = 1;
+    expect(s.world.pushed).toEqual(["Your first look is ready"]);
     fh.tick();
     fh.tick();
-    expect(s.world.pushed).toEqual(["Your first look is ready", "Your first look is ready"]);
+    expect(s.world.pushed).toEqual(["Your first look is ready"]);
     expect(fh.morningPush("Your brief: 2 meetings")).toBe("Your first brief is ready");
     expect(fh.morningPush("Your brief: 2 meetings")).toBe("Your brief: 2 meetings");
   });

@@ -3,11 +3,11 @@
 //   sanremes setup [--data-dir ~/.sanremes]
 //   sanremes start [serve options]
 //   sanremes serve [--port 8799] [--data-dir ~/.sanremes] [--label "cab mini"]
-//                     [--public-url https://host] [--tailscale | --tunnel | --domain HOST] [--relay] [--no-pair]
+//                     [--public-url https://host] [--tailscale | --tunnel | --domain HOST] [--no-pair]
 //   sanremes pair  [--label "My MacBook"] [--client] [--public-url https://host]
 //   sanremes sessions [revoke <id>]
 //   sanremes account status
-//   sanremes account login [--email you@example.com] [--relay]
+//   sanremes account login [--email you@example.com]
 //   sanremes account logout
 //   sanremes run | send | wait | doctor | team apply | export | …
 //
@@ -20,7 +20,6 @@ import { dirname, join, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 
-import { phonePairingLink } from "../shared/pairing-link.ts";
 import { parseAllowList } from "./account-signin.ts";
 import { appendAdminAction, flushAdminActivity, sharedSignIn } from "./admin-activity.ts";
 import { bindDecisionRetention, decisionRetentionDays } from "./decision-log.ts";
@@ -37,10 +36,9 @@ import { runFleetCommand, type FleetInput } from "./fleet-cli.ts";
 import { startFleetAgent } from "./fleet-agent.ts";
 import { fleetLayout } from "./fleet.ts";
 import { clearLeftoverTailscaleServe, explainTailscaleFailure, tailnetListenFallback, tailscaleServe, tailscaleStatus, type TailscaleStatus } from "./tailscale.ts";
-import { defaultSetupIo, SetupCancelled, type SetupIo } from "./cli-prompts.ts";
+import { SetupCancelled } from "./cli-prompts.ts";
 import { routeCli, usage } from "./cli-usage.ts"; import { savedSessionHeaders } from "./headless/saved-servers.ts";
-import { normalizePhoneOrigin, phonePairingInstructions, runPhoneSetup } from "./cli-phone-setup.ts";
-import { browserSignInLines, desktopOwnedRefusal, formatSessions, pairingBlock, RELAY_NOT_WITH_TUNNEL, relayPairingBlock, showRelayPairing } from "./cli-pairing.ts";
+import { browserSignInLines, desktopOwnedRefusal, formatSessions, pairingBlock } from "./cli-pairing.ts";
 import { cliCommand, cliPrefix } from "./cli-invocation.ts"; import { defaultDataDir, type DataHomes } from "./data-dir.ts";
 import { checkReach, envPublicUrl, lanProblem, localLinkBase, noRouteLines, publicUrlProblem, reachLines, waitForReach, type Route } from "./cli-reach.ts";
 import { lanUrl } from "./lan-address.ts";
@@ -79,7 +77,6 @@ export interface CliOptions {
   domain?: string;
   tailscale: boolean;
   tunnel: boolean;
-  relay?: boolean;
   /** `serve --lan`: every private address of this machine, plain http, each connection held to private ends. */
   lan?: boolean;
   client: boolean;
@@ -117,7 +114,6 @@ export interface CliOptions {
   local?: boolean;
   open?: boolean;
   guided?: boolean;
-  phone?: "ios" | "android";
   /** `pair --ttl 24h`: how long the code stays open. */
   pairTtlMs?: number;
 }
@@ -162,15 +158,8 @@ export function parseArgs(argv: string[], env: NodeJS.ProcessEnv = process.env, 
         if (typeof domain !== "string") return domain;
         options.domain = domain;
       }
-      else if (arg === "--tunnel" || arg === "--relay") options[arg === "--tunnel" ? "tunnel" : "relay"] = true;
+      else if (arg === "--tunnel") options.tunnel = true;
       else if (arg === "--client" || (options.command === "pair" && arg === "--chat-only")) options.client = true;
-      // Which phone will scan; only Android needs a different QR. `pair --phone` alone is a chat-only code for any phone.
-      else if (arg === "--phone") {
-        const kind = rest[i + 1]?.toLowerCase();
-        if (kind === "ios" || kind === "android") { options.phone = kind; i += 1; }
-        else if (options.command === "pair") options.phone = "ios";
-        else return { error: "--phone takes ios or android" };
-      }
       else if (options.command === "pair" && arg === "--ttl") options.pairTtlMs = parseDuration(value(), "--ttl", { min: 60_000 });
       else if (arg === "--help" || arg === "-h") options.command = "help";
       else if (arg === "--no-pair") options.pair = false;
@@ -212,11 +201,11 @@ export function parseArgs(argv: string[], env: NodeJS.ProcessEnv = process.env, 
   if (!Number.isInteger(options.port) || options.port < 1 || options.port > 65_535) return { error: "--port must be 1-65535" };
   const publicUrlRefusal = options.publicUrl ? publicUrlProblem(options.publicUrl) : null;
   if (publicUrlRefusal) return { error: publicUrlRefusal };
-  if (options.tunnel && (options.tailscale || options.relay)) return { error: options.relay ? "choose one of --relay (phones through SanRemes Relay) and --tunnel (a public address)" : "choose one of --tailscale (your tailnet) and --tunnel (a public address)" };
+  if (options.tunnel && options.tailscale) return { error: "choose one of --tailscale (your tailnet) and --tunnel (a public address)" };
   if (options.command === "access" && !options.accessAction) return { error: "access needs one of: list, add EMAIL [--chat-only], remove EMAIL" };
   if (options.command === "service" && !options.serviceAction) return { error: "service needs one of: install [the same options as serve], uninstall" };
   if (options.domain && (options.tailscale || options.tunnel || options.publicUrl)) return { error: "--domain already gives the server its address; drop --tailscale, --tunnel and --public-url" };
-  if (options.local && (options.tailscale || options.tunnel || options.publicUrl || options.lan || options.relay)) return { error: "--local cannot be combined with a remote-access option" };
+  if (options.local && (options.tailscale || options.tunnel || options.publicUrl || options.lan)) return { error: "--local cannot be combined with a remote-access option" };
   if (options.command === "browser" && !options.browserAction) return { error: "browser needs an action: install or status" };
   if (options.command === "fleet") {
     if (!options.fleetAction) return { error: "fleet needs one of: init --domain HOST [--operator USER], create NAME --admin EMAIL, list, users NAME add|remove EMAIL, suspend NAME, resume NAME, delete NAME --yes, upgrade, agent" };
@@ -302,62 +291,58 @@ export async function openDashboard(port: number, env = process.env): Promise<bo
 /** Something already answers there as a SanRemes server (before this one has started). */
 const answersAsSanRemes = async (origin: string) => typeof (await fetch(`${origin}/.well-known/sanremes/environment`, { signal: AbortSignal.timeout(3_000) }).then((r) => r.json() as Promise<{ environmentId?: unknown }>).catch(() => null))?.environmentId === "string";
 
-/** Its public descriptor must identify this exact server; never sends a pairing code or credential. */
-export async function verifyPhoneEndpoint(port: number, origin: string): Promise<boolean> {
-  return Boolean(normalizePhoneOrigin(origin)) && (await checkReach(port, origin)).ok;
+/** An HTTPS origin, not proof a device can reach it; never a pasted invitation, password, query token, localhost or unspecified bind. */
+function normalizeSavedOrigin(raw: string): string | null {
+  const value = raw.trim();
+  // Reject control characters before URL parsing can silently remove them.
+  // eslint-disable-next-line no-control-regex
+  if (!/^https:\/\/[^/]/i.test(value) || /[\s\u0000-\u001f\u007f\\?#@]/.test(value)) return null;
+  try {
+    const url = new URL(value);
+    const host = url.hostname.toLowerCase().replace(/\.$/, "");
+    if (url.protocol !== "https:" || url.username || url.password || url.pathname !== "/") return null;
+    if (!host || host === "localhost" || host.endsWith(".localhost") || host === "0.0.0.0" || host.startsWith("127.")) return null;
+    if (host === "[::]" || host === "[::1]" || /^\[::ffff:(?:0:0|7f[0-9a-f]{2}:[0-9a-f]+)\]$/.test(host)) return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
 }
 
 export function applyStartupPreferences(options: CliOptions, saved: AppConfig["cliStartup"]): CliOptions {
-  if (options.local) return { ...options, tunnel: false, tailscale: false, publicUrl: undefined, phone: undefined };
-  if (!saved || options.tunnel || options.tailscale || options.publicUrl) return options; if (options.relay && saved.access === "tunnel") throw new Error(RELAY_NOT_WITH_TUNNEL);
-  if (saved.access === "public-url" && (!saved.publicUrl || !normalizePhoneOrigin(saved.publicUrl))) {
-    throw new Error(`The saved phone address is not a valid HTTPS origin. Run ${cliCommand("setup")} to correct it, or ${cliCommand("--local")} to start only on this computer.`);
+  if (options.local) return { ...options, tunnel: false, tailscale: false, publicUrl: undefined };
+  if (!saved || options.tunnel || options.tailscale || options.publicUrl) return options;
+  if (saved.access === "public-url" && (!saved.publicUrl || !normalizeSavedOrigin(saved.publicUrl))) {
+    throw new Error(`The saved address is not a valid HTTPS origin. Run ${cliCommand("setup")} to correct it, or ${cliCommand("--local")} to start only on this computer.`);
   }
   return {
     ...options,
     tunnel: saved.access === "tunnel", tailscale: saved.access === "tailscale",
     publicUrl: saved.access === "public-url" ? saved.publicUrl : undefined,
-    phone: saved.access === "local" ? undefined : saved.phone,
   };
 }
 
 function startupPreferences(options: CliOptions): NonNullable<AppConfig["cliStartup"]> {
   const access = options.local ? "local" : options.tunnel ? "tunnel" : options.tailscale ? "tailscale" : options.publicUrl ? "public-url" : "local";
-  const publicUrl = access === "public-url" ? normalizePhoneOrigin(options.publicUrl!) : null;
-  if (access === "public-url" && !publicUrl) throw new Error("Use an HTTPS origin without a password, path or query for saved phone access. The address was not saved.");
+  const publicUrl = access === "public-url" ? normalizeSavedOrigin(options.publicUrl!) : null;
+  if (access === "public-url" && !publicUrl) throw new Error("Use an HTTPS origin without a password, path or query for saved access. The address was not saved.");
   return {
     access,
     ...(publicUrl ? { publicUrl } : {}),
-    ...(!options.local && options.phone ? { phone: options.phone } : {}),
   };
 }
 
-async function showPhonePairing(options: CliOptions, origin: string | undefined, log: (line: string) => void): Promise<boolean> {
-  if (options.relay) return showRelayPairing({ tty: process.stdout.isTTY === true, status: async () => (await api(options.port, "/api/auth/pairing")).body?.relay, mint: () => mintPairing(options.port, { client: true, label: options.label ?? (options.phone === "android" ? "Android" : "iPhone / iPad"), phone: options.phone ?? "ios" }), log, prefix: cliPrefix() });
-  const ready = !!origin && await verifyPhoneEndpoint(options.port, origin);
-  if (!ready) {
-    log("Phone access is not reachable yet. SanRemes is ready on this computer; no phone pairing code was created.");
-    log(`Check the HTTPS connection, then run ${cliCommand("pair")} again with the same --data-dir and --port.`);
-    return false;
-  }
-  for (const line of phonePairingInstructions(options.phone ?? "ios", { origin: origin!, ready })) log(line);
-  log(await mintPairing(options.port, { client: true, label: options.label ?? (options.phone === "android" ? "Android" : "iPhone / iPad"), publicUrl: origin, phone: options.phone }));
-  log("Waiting for you to connect on the phone. Keep this terminal and the code private.");
-  return true;
-}
-
-async function mintPairing(port: number, options: { label?: string; client?: boolean; publicUrl?: string; phone?: "ios" | "android"; guided?: boolean; ttlMs?: number }): Promise<string> {
-  const chatOnly = Boolean(options.client || options.phone);
+async function mintPairing(port: number, options: { label?: string; client?: boolean; publicUrl?: string; guided?: boolean; ttlMs?: number }): Promise<string> {
+  const chatOnly = Boolean(options.client);
   const request = { ...(options.label ? { label: options.label } : {}), ...(chatOnly ? { scopes: ["client"] } : {}), ...(options.ttlMs ? { ttlMs: options.ttlMs } : {}) };
   const { status, body } = await api(port, "/api/auth/pairing", { method: "POST", body: JSON.stringify(request) });
   const refusal = refusedAsService(status, body) ? SERVICE_TRUST_HELP : desktopOwnedRefusal(status, body);
   if (refusal || status !== 200) throw new Error(refusal ?? `server refused to mint a pairing code: ${typeof body?.error === "string" ? body.error : status}`);
   const reachable = options.publicUrl && !isLoopbackHost(new URL(options.publicUrl).hostname) ? options.publicUrl : null;
   const link = reachable ? `${reachable}/pair#code=${body.code}` : typeof body.url === "string" && !isLoopbackHost(new URL(body.url).hostname) ? body.url : null;
-  const invite = (reachable && typeof body.credential === "string" ? phonePairingLink({ address: reachable, token: body.credential, name: typeof body.serverName === "string" ? body.serverName : undefined }) : null) ?? (typeof body.inviteUrl === "string" ? body.inviteUrl : null);
   const local = localLinkBase(options.publicUrl ?? null, port);
   if (options.guided) return browserSignInLines(`${local.base}/pair#code=${body.code}`, body.code, body.expiresAt);
-  return relayPairingBlock(body, chatOnly, cliPrefix()) ?? pairingBlock({ code: body.code, expiresAt: body.expiresAt, chatOnly, link, localLink: `${local.base}/pair#code=${body.code}`, localPlace: local.place, inviteUrl: invite, phone: options.phone, prefix: cliPrefix() });
+  return pairingBlock({ code: body.code, expiresAt: body.expiresAt, chatOnly, link, localLink: `${local.base}/pair#code=${body.code}`, localPlace: local.place, prefix: cliPrefix() });
 }
 
 /** Never asks anything: the running server's own address (its routes) goes in the link. */
@@ -368,7 +353,7 @@ export async function runPair(options: CliOptions): Promise<number> {
   }
   const advertised = await api(options.port, "/api/auth/pairing").catch(() => ({ status: 0, body: {} as any }));
   const origin = options.publicUrl ?? (typeof advertised.body?.publicUrl === "string" ? advertised.body.publicUrl : undefined);
-  console.log(await mintPairing(options.port, { label: options.label, client: options.client, publicUrl: origin, phone: options.phone, ttlMs: options.pairTtlMs }));
+  console.log(await mintPairing(options.port, { label: options.label, client: options.client, publicUrl: origin, ttlMs: options.pairTtlMs }));
   if (origin && origin.startsWith("https:") && !isLoopbackHost(new URL(origin).hostname)) {
     const reach = await checkReach(options.port, origin);
     if (!reach.ok) for (const line of [...reachLines("public-url", origin, options.port, cliPrefix(), reach), "The code works once the address answers."]) console.log(line);
@@ -500,7 +485,7 @@ export async function runAccess(options: CliOptions, io: CliIo = defaultIo()): P
 }
 
 export async function runLogin(options: CliOptions, io: CliIo = defaultIo()): Promise<number> {
-  const account = createTunnelAccount({ dataDir: options.dataDir, version: reportableServerVersion(), relayOnly: options.relay === true });
+  const account = createTunnelAccount({ dataDir: options.dataDir, version: reportableServerVersion() });
   if (fleetCredential()) io.log(`note: ${FLEET_CREDENTIAL_ENV} is set, so serve --tunnel will use that credential rather than this account`);
   if (account.credentials.status === "unavailable") {
     io.error(`${account.credentials.file} exists but could not be read; fix or remove it, then try again`);
@@ -532,13 +517,13 @@ export async function runLogin(options: CliOptions, io: CliIo = defaultIo()): Pr
     return 1;
   }
   const signedIn = describeTunnelAccount(account.credentials.read());
-  if (!signedIn.address && !(options.relay && signedIn.installationId)) {
+  if (!signedIn.address) {
     io.error(`signed in, but no public address was issued${state.message ? `: ${state.message}` : ""}`);
     return 1;
   }
   io.log(`Signed in as ${signedIn.email ?? email}.`);
-  io.log(signedIn.address ? `This machine's public address: ${signedIn.address}` : "No public address reserved: phones reach this machine through SanRemes Relay.");
-  io.log(`Serve there with:  ${cliCommand(signedIn.address ? "serve --tunnel" : "serve --relay")}`);
+  io.log(`This machine's public address: ${signedIn.address}`);
+  io.log(`Serve there with:  ${cliCommand("serve --tunnel")}`);
   return 0;
 }
 
@@ -711,7 +696,7 @@ export async function runServe(options: CliOptions, log: (line: string) => void 
     ...process.env,
     SANREMES_DATA_DIR: options.dataDir,
     SANREMES_PORT: String(options.port),
-    SANREMES_WEBHOOK_PORT: process.env.SANREMES_WEBHOOK_PORT || String(options.port + 1), ...(options.relay ? { SANREMES_PHONE_RELAY: "1" } : {}),
+    SANREMES_WEBHOOK_PORT: process.env.SANREMES_WEBHOOK_PORT || String(options.port + 1),
   };
   if (options.local) delete env.SANREMES_PUBLIC_URL;
   // The per-launch secret goes over stdin, not the environment that every engine the server starts inherits.
@@ -864,10 +849,7 @@ export async function runServe(options: CliOptions, log: (line: string) => void 
     const reach = route && origin && route !== "lan" ? await waitForReach(options.port, origin, route === "public-url" ? 3_000 : 15_000) : undefined;
     if (route && origin) for (const line of reachLines(route, origin, options.port, prefix, reach)) log(line);
     const interactive = process.stdout.isTTY === true;
-    if (options.pair && (options.phone || options.relay)) {
-      log("");
-      if (!stopping && exited === null) await showPhonePairing(options, publicUrl, log).catch((error: unknown) => log(`no pairing code: ${message(error)}`));
-    } else if (options.pair && (options.guided || ((route || serviceTrust) && interactive))) {
+    if (options.pair && (options.guided || ((route || serviceTrust) && interactive))) {
       log("");
       try {
         log(await mintPairing(options.port, { label: options.label ? `${options.label} owner` : undefined, client: options.client, publicUrl: origin ?? undefined, guided: options.guided && !route }));
@@ -883,7 +865,7 @@ export async function runServe(options: CliOptions, log: (line: string) => void 
     }
     if (serviceTrust && !(options.pair && interactive)) log(`This shared server takes no pairing commands from this machine. Let people sign in with their email: ${prefix} access add you@example.com`);
     if (interactive && !options.guided) log(`New code later   ${prefix} pair\nStop with Ctrl+C`);
-    if (options.guided) log(`\nKeep this terminal open while using your bots. Ctrl+C stops the server, not your saved work.\nNext time: ${prefix} · Change AI or phone setup: ${prefix} setup · Pair another device: ${prefix} pair`);
+    if (options.guided) log(`\nKeep this terminal open while using your bots. Ctrl+C stops the server, not your saved work.\nNext time: ${prefix} · Change setup: ${prefix} setup · Pair another device: ${prefix} pair`);
     return await childExit;
   } finally {
     serveOwnerToken = undefined;
@@ -910,7 +892,7 @@ export async function runOnboardingCommand(
   options: CliOptions,
   io: CliIo = defaultIo(),
   startServer: (options: CliOptions) => Promise<number> = serveUntilStopped,
-  flow: { prompts?: SetupIo; phoneSetup?: typeof runPhoneSetup; running?: typeof isWorkspaceRunning; open?: typeof openDashboard } = {},
+  flow: { running?: typeof isWorkspaceRunning; open?: typeof openDashboard } = {},
 ): Promise<number> {
   const interactive = process.stdin.isTTY === true && process.stdout.isTTY === true;
   if (options.command === "setup" && !interactive) {
@@ -929,7 +911,6 @@ export async function runOnboardingCommand(
     return 0;
   }
   const { runSetup, isSetupComplete, readCliStartup, saveCliStartup } = await import("./cli-setup.ts");
-  const prompts = flow.prompts ?? defaultSetupIo();
   try {
     if (options.command === "setup" || !(await isSetupComplete(options.dataDir))) {
       if (!interactive) {
@@ -943,17 +924,8 @@ export async function runOnboardingCommand(
     }
     const saved = readCliStartup(options.dataDir);
     // Only setup revisits the access choice; normal starts reuse consent and never turn a local session public.
-    let launch = options.command === "setup" ? options : applyStartupPreferences(options, saved);
+    const launch = options.command === "setup" ? options : applyStartupPreferences(options, saved);
     if (interactive && options.pair && !options.local && (options.command === "setup" || !saved)) {
-      io.log("\nOne optional step: connect your phone. You can skip this and start chatting here.");
-      const result = await (flow.phoneSetup ?? runPhoneSetup)(launch, prompts, {
-        accountReady: (value) => !!describeTunnelAccount(createTunnelAccount({ dataDir: value.dataDir, version: reportableServerVersion() }).credentials.read()).email,
-        login: (value, ui) => runLogin(value, {
-          log: ui.log, error: ui.log,
-          ask: (question) => /code/i.test(question) ? ui.secret(question) : ui.ask(question),
-        }),
-      });
-      launch = { ...result.options, phone: result.phone };
       saveCliStartup(options.dataDir, startupPreferences(launch));
     }
     if (options.command === "setup") {
@@ -1001,7 +973,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     case "service":
       return runServiceCommand({
         action: options.serviceAction ?? "install", dataDir: options.dataDir, port: options.port, domain: options.domain, tunnel: options.tunnel,
-        tailscale: options.tailscale, publicUrl: options.publicUrl, lan: options.lan, relay: options.relay, label: options.label, sentinel: options.sentinel, script: process.argv[1] ?? "", node: process.execPath,
+        tailscale: options.tailscale, publicUrl: options.publicUrl, lan: options.lan, label: options.label, sentinel: options.sentinel, script: process.argv[1] ?? "", node: process.execPath,
       }, { log: (line) => console.log(line), error: (line) => console.error(line) });
     case "fleet":
       if (options.fleetAction === "agent") {

@@ -94,14 +94,14 @@ function underWayLine(move: OneHomeView, place?: string): string | null {
  * day (with Try again), what arrived (on My Cloud's page, once), coming home, where the bots came home instead, or this
  * computer's bots on their way home and home because the person keeps them here.
  * `page`: which page shows it; `reason`: why a failing move failed, in main's words, when it said. */
-export function moveLine(move: OneHomeView, page: "local" | "cloud"): { kind: "sending" | "failed" | "done"; text: string; extra: string[]; phone?: true; retry?: true; reason?: string; place?: string } | null {
+export function moveLine(move: OneHomeView, page: "local" | "cloud"): { kind: "sending" | "failed" | "done"; text: string; extra: string[]; retry?: true; reason?: string; place?: string } | null {
   if (move.phase === "choose") return null;
   if (move.place) return ownMoveLine(move, move.place, page);
   if (move.phase === "done") {
     if (page !== "cloud") return null;
     const list = move.counts ? arrivedList(move.counts) : [];
     const text = move.left?.length || move.stayed?.length ? t("cloudSend.move.doneLeft") : list.length ? t("cloudSend.move.done", { list: listOf(list) }) : t("cloudSend.move.doneAll");
-    return { kind: "done", text, extra: [...notCarried(move.left), ...stayedHere(move.stayed), ...move.held.map((key) => t("cloudSend.result.held", { key }))], ...(move.phone ? { phone: true as const } : {}) };
+    return { kind: "done", text, extra: [...notCarried(move.left), ...stayedHere(move.stayed), ...move.held.map((key) => t("cloudSend.result.held", { key }))] };
   }
   if (move.phase === "keeping") return { kind: "sending", text: t(move.updating ? "cloudSend.move.keepingUpdating" : "cloudSend.move.keeping"), extra: [] };
   if (move.phase === "home-again" || move.phase === "back") {

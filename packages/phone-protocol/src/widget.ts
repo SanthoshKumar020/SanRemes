@@ -64,9 +64,7 @@ export function threadActionTarget(action: WidgetAction): { botId?: string; grou
 
 export const isThreadAction = (action: WidgetAction): boolean => threadActionTarget(action) !== undefined;
 
-/** `open_phone_pairing` opens the app's own phone pairing (the QR code and link) on the device. */
-export const PHONE_PAIRING_ACTION = "open_phone_pairing";
-const CLIENT_ACTION = (action: WidgetAction): boolean => action.type === "open_url" || action.type === "open_thread" || action.type === PHONE_PAIRING_ACTION;
+const CLIENT_ACTION = (action: WidgetAction): boolean => action.type === "open_url" || action.type === "open_thread";
 
 /** `confirm` and `cancel` on a root: the buttons under the card. */
 export interface WidgetButtonSpec {
@@ -692,7 +690,7 @@ export interface WidgetActionEntry {
   action: WidgetAction;
   /** Present when the press settles the widget. */
   tone?: "confirm" | "cancel" | "submit";
-  /** Handled on the device and never sent (open_url, open_thread, open_phone_pairing). */
+  /** Handled on the device and never sent (open_url, open_thread). */
   client?: true;
   kind: "button" | "item" | "confirm" | "cancel";
 }

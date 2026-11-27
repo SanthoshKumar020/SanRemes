@@ -31,7 +31,7 @@ async function serve(store: Store): Promise<string> {
   const deps = {
     store, viewerFor: () => ({}),
     visibleTo: () => ({ everything: true, bot: () => true, group: () => true, thread: () => true, sections: () => [] }),
-    workspaceAccess: () => null, desktopMutationToken: () => undefined, companionMutationToken: () => undefined, cliOwnerToken: () => undefined,
+    workspaceAccess: () => null, desktopMutationToken: () => undefined, cliOwnerToken: () => undefined,
     groupUsageReader: { refresh: () => {} },
     pageSize, defaultPage: 50, ...messagePages(store),
     wireBot: (bot: BotRecord) => ({ id: bot.id, threadId: bot.threadId, name: bot.name }),

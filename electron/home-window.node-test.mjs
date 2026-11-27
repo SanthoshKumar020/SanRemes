@@ -446,10 +446,10 @@ test("the window's IPC: the screen reads and retries, My Cloud's page renews its
 });
 
 const PRELOAD = readFileSync(new URL("./preload.cjs", import.meta.url), "utf8");
-function preload(origin, { home = false, activation = false, pairedElsewhere = false } = {}) {
+function preload(origin, { home = false, activation = false } = {}) {
   let bridge; const invoked = [], synced = [], listeners = new Map();
   vm.runInNewContext(PRELOAD, {
-    process: { platform: "darwin", argv: [`--sanremes-local-origin=${LOCAL}`, ...(pairedElsewhere ? ["--sanremes-remote-client"] : ["--sanremes-company-desktop=1"])] },
+    process: { platform: "darwin", argv: [`--sanremes-local-origin=${LOCAL}`, "--sanremes-company-desktop=1"] },
     location: { origin }, navigator: { userActivation: { isActive: activation } }, TextEncoder, localStorage: { getItem: () => null },
     queueMicrotask,
     require: () => ({ webUtils: {}, contextBridge: { exposeInMainWorld: (_name, value) => { bridge = value; } },
@@ -460,10 +460,11 @@ function preload(origin, { home = false, activation = false, pairedElsewhere = f
   return { bridge, invoked, synced, tell };
 }
 
-test("My Cloud's page in the app is the Cloud's own page, never a remote client: only a desktop paired to another computer is one", () => {
-  assert.equal(preload(CLOUD, { home: true }).bridge.remoteClient, undefined, "a Cloud's own page isn't told it is remote at all");
-  assert.equal(preload(LOCAL).bridge.remoteClient?.active, false);
-  assert.equal(preload(LOCAL, { pairedElsewhere: true }).bridge.remoteClient?.active, true);
+test("My Cloud's page in the app is the Cloud's own page, never this computer's page", () => {
+  const cloud = preload(CLOUD, { home: true });
+  assert.equal(cloud.bridge.remoteClient, undefined, "a Cloud's own page isn't told it is remote at all");
+  assert.equal(cloud.bridge.app?.ownPage, false);
+  assert.equal(preload(LOCAL).bridge.app?.ownPage, true);
 });
 
 test("My Cloud's own page, once it is home, gets this app's chat links, diagnostics and its session renewal; any other server's page doesn't", async () => {

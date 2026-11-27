@@ -97,8 +97,6 @@ test("connecting uses the pairing page with the code in the hash, or the machine
   assert.equal(cloudHomeConnectUrl({ origin, grant: { origin, code, expiresAt: NOW } }, NOW), origin);
   assert.equal(cloudHomeConnectUrl({ origin, grant: { origin: "https://other.fly.dev", code, expiresAt: NOW + 1 } }, NOW), origin);
   assert.equal(cloudHomeConnectUrl({ origin, grant: null }, NOW), origin);
-  assert.equal(cloudHomeConnectUrl({ origin, grant: { origin, code, expiresAt: NOW + 1 } }, NOW, "phone"), `${origin}/pair?desktop-settings=phone&pair=open#code=${code}`);
-  assert.equal(cloudHomeConnectUrl({ origin, grant: null }, NOW, "phone"), `${origin}/?desktop-settings=phone&pair=open`);
   assert.equal(cloudHomeConnectUrl({ origin, grant: null }, NOW, "evil"), origin);
   const parsed = parseServerInput(`${origin}/pair#code=${code}`);
   assert.deepEqual([parsed.candidates, parsed.code, pairingPageUrl(origin, parsed.code)], [[origin], code, `${origin}/pair#code=${code}`]);
@@ -233,8 +231,7 @@ test("main lists the machine from verified states only, and connects without a d
   context.cloudAccount = client;
   context.homeWindow = { openCloud: async (open) => { opened.push(open); if (refuse) throw new Error("My Cloud is not ready to connect yet."); } };
   assert.equal(await context.connectCloudHome(), state, "the renderer gets the sign-in's state back, as before");
-  await context.connectCloudHome("phone");
-  assert.deepEqual(opened, [null, "phone"]);
+  assert.deepEqual(opened, [undefined]);
   assert.deepEqual([navigated, probes, done], [[], [], 0], "main itself neither loads nor asks My Cloud");
   context.activateCloud(origin);
   assert.equal(done, 1, "opened: the purchase is over");

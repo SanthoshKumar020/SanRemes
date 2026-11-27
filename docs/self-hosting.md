@@ -28,7 +28,6 @@ For server feature switches, defaults and configuration-file instructions, see
 | Tailscale on the server and your devices | `npx sanremes serve --tailscale` | `https://<machine>.<tailnet>.ts.net/pair#code=…` |
 | Only this network (home or office) | `npx sanremes serve --lan` | `http://192.168.1.20:8799/pair#code=…` |
 | Nothing at all | `npx sanremes account login`, then `npx sanremes serve --tunnel` | `https://c-….sanremes.invalid/pair#code=…` |
-| Only the phone app, from anywhere (a machine with no tunnel address, for now) | `npx sanremes login --relay`, then `npx sanremes serve --relay` | a QR for the SanRemes app ([SanRemes Relay](phone-relay-server.md)) |
 
 `--lan` can be added to any of the others. Plain `http://` is only for a
 private network: the desktop app accepts it on LAN addresses, Tailscale
@@ -57,10 +56,9 @@ Pairing code   7KQ2-M9XD-H4TP   works once, until 11:14 · everything
 Link           https://sanremes.example.com/pair#code=7KQ2-M9XD-H4TP
 
   Desktop app   ＋ → Connect to another computer, paste the link
-  Phone         scan with your camera or the SanRemes app
+  Phone         scan with your camera
 
   ▄▄▄▄▄▄▄ ▄ ▄▄ ▄▄▄▄▄▄▄   (QR of the link)
-For a phone (chat and approvals only)   npx sanremes pair --phone
 New code later   npx sanremes pair
 Stop with Ctrl+C
 ```
@@ -369,7 +367,7 @@ too.
 - **`--tunnel`**: `npx sanremes account login` reserves an address like
   `https://c-….sanremes.invalid` for this machine (an emailed code signs it
   in). `serve --tunnel` connects it through a Cloudflare tunnel, the same one
-  the desktop app uses for its companion. The first run downloads
+  the desktop app uses for its own remote access. The first run downloads
   `cloudflared` (pinned version and digest) into the data dir. Only traffic
   through the tunnel reaches the server, and it still has to pair: the tunnel
   lands on a separate listener that the server treats as "through a proxy",
@@ -384,7 +382,7 @@ too.
   the start with a clear message rather than serving locally.
 
 Later: `npx sanremes pair --label "Kitchen iPad"` for another device
-(`--phone` for one that may chat but not change settings), and
+(`--client` for one that may chat but not change settings), and
 `npx sanremes devices` to see or sign them out. `sanremes serve` is a
 plain foreground process. For unattended use, run `service install` (above)
 or follow the [systemd example](deploy-vps.md#keep-it-running). Restarting a
@@ -454,9 +452,9 @@ address for **new server pairing links**. Removing it restores that fallback
 address, if any; neither action changes DNS, the proxy, bots, conversations, or
 existing sessions. A different browser origin needs its own pairing, so keep
 your original tab open until the new one works. The setting does not change
-`SANREMES_WEBHOOK_PUBLIC_URL`, existing webhook URLs, or the desktop companion's
+`SANREMES_WEBHOOK_PUBLIC_URL`, existing webhook URLs, or the desktop app's
 managed connection. This feature is for self-hosted servers, not the desktop
-app's managed phone endpoint.
+app's managed endpoint.
 
 ## Docker (with HTTPS on your own domain)
 
@@ -914,7 +912,7 @@ then plain http when the address is private. Plain http works only on a
 private network (LAN addresses, Tailscale's 100.64/10 and `*.ts.net`,
 `*.local`); a public http address is refused with what to do instead.
 Generate a fresh code for each device: `npx sanremes pair --label "My
-desktop"` gives full access, and `--phone` gives chat and approvals only. A
+desktop"` gives full access, and `--client` gives chat and approvals only. A
 code already used by your phone cannot also pair your desktop.
 
 **Connect to hetzner-1** opens the server's own page with the code, and the
@@ -937,7 +935,7 @@ Windows there is nothing more. Folders and the terminal are added with
 **Choose what it can use**; the switch turns it off at once, and the menu bar's
 or tray's SanRemes item pauses it with your Clouds. See
 `apps/docs/content/docs/computers/lend-to-your-server.mdx`. The server needs nothing turned on:
-it takes a computer from its owner's pairings only, and a phone code or another
+it takes a computer from its owner's pairings only, and a chat-only code or another
 person's pairing is never asked. Set `features.sharedComputers` to `false` in the
 server's config to turn this off, or to `true` to let every paired session lend
 its computer. Nothing is shared until you turn that switch on, unless you make the server
@@ -997,7 +995,7 @@ revoke its session there when reachable again, or if the device is gone.
 What this changes about the trust model: the server still binds loopback
 and still trusts programs on loopback as the owner, though never a browser
 (below). A **paired session** is the second way in: a bearer token or the cookie, same-origin only, with a scope (`admin`
-by default, `--phone` for a device that may chat but not change settings or
+by default, `--client` for a device that may chat but not change settings or
 pair others). Five wrong codes in five minutes from one address lock that
 address out for five minutes ("Too many wrong codes. Try again at 11:19.").
 Behind a proxy that names no client, every visitor looks like this machine,
@@ -1039,7 +1037,7 @@ the `Sec-Fetch-Site` or `Sec-Fetch-Dest` header (every browser sends them to a
 loopback address, and a page cannot remove them), or a WebSocket handshake
 with an `Origin`, needs a session: a web page is not the person who owns the
 server, even when it runs on the same machine. Programs are unaffected: the
-CLI, scripts, `curl` and the companion send neither header.
+CLI, scripts and `curl` send neither header.
 
 So the first time you open the web UI in a browser on the server's own
 machine, it shows the sign-in page. With no way in, `sanremes pair` prints
@@ -1152,7 +1150,7 @@ npx sanremes access list
 
 An entry is an address or `@domain` (everyone at that domain). Admins get
 the same access as a pairing code from `sanremes serve`; users get the
-chat-only scope, the same as `sanremes pair --phone`. The same lists live
+chat-only scope, the same as `sanremes pair --client`. The same lists live
 in `config.json` under `signIn.admins` and `signIn.members` and can be changed
 through the settings API without a restart. An environment variable that
 names someone wins over its list, which is how a container or a service unit
@@ -1371,8 +1369,7 @@ with the desktop; clipboard edits sync automatically. The desktop fits the
 window, with fullscreen available when the browser supports it. Hosted Cloud
 keeps its provider-issued viewer in its own window or tab.
 
-These controls are in the web app. The native phone apps have their own
-computer viewers; use a paired browser for interactive Local VM or VPS access.
+These controls are in the web app; use a paired browser for interactive Local VM or VPS access.
 For the proxy boundary and offline regression checks, see the
 [viewer verification recipe](verification/desktop-viewer.md).
 
@@ -1383,37 +1380,19 @@ email)? Settings → Remote access → **Pair a phone or another computer**
 creates a one-time code with a QR right in the browser, and lists every
 paired device with a sign-out button. Nobody needs the command line.
 
-The iOS app pairs with a server the same way a laptop does: scan the QR
-code that `sanremes serve` (or `sanremes pair`) prints, paste the
-whole `https://host/pair#code=…` link into the address field on the pairing
-screen, or type the address and then the code. The phone gets a session of
-its own, listed and revocable with `sanremes devices`. What it may do is
-the code's scope: a code from `sanremes pair` carries `admin` and the app
-shows everything; a code from `sanremes pair --phone` (also what the
-guided phone setup mints) can chat, approve and read, and the app hides
-creating bots and sections, changing models, generating avatars, connecting
-apps and cloud desktops — those stay with the owner. A server reinstalled at
-the same address has a new identity; the app then asks to pair again rather
-than present the old session to it.
-
-Both native apps pair this way. `sanremes pair --phone android` prints the
-app-scheme QR that Android's scanner needs, and the iOS app accepts either
-that QR or the web link, for example `docker compose exec sanremes sanremes
-pair --phone android --public-url https://your-domain`. `pair` never asks
+A phone pairs with a server the same way a laptop does: scan the QR code
+that `sanremes serve` (or `sanremes pair`) prints, paste the whole
+`https://host/pair#code=…` link into the browser, or type the address and
+then the code. The phone gets a session of its own, listed and revocable
+with `sanremes devices`. What it may do is the code's scope: a code from
+`sanremes pair` carries `admin` and the browser shows everything; a code
+from `sanremes pair --client` can chat, approve and read, and the browser
+hides creating bots and sections, changing models, generating avatars,
+connecting apps and cloud desktops — those stay with the owner. A server
+reinstalled at the same address has a new identity; the browser then asks to
+pair again rather than present the old session to it. `pair` never asks
 questions, so it works the same from a script. Nothing extra to install, and
 the phone becomes a session like any other.
-
-Older way, still supported, and only useful on a LAN or a tailnet: run the
-companion sidecar next to the harness and pair by its own QR. It advertises
-on your private networks (Tailscale-aware) and issues its own per-device
-credentials, which are **not** `sanremes devices` and are revoked from
-its own page at the `127.0.0.1:8811/#token=…` link it prints. It also serves phones over cleartext HTTP
-on port 8810, so do not expose it from a public server. It ships only in a
-git checkout: neither the npm package nor the Docker image contains it.
-
-```sh
-node --experimental-strip-types companion/src/index.ts
-```
 
 ## Usage and costs
 
@@ -1983,7 +1962,7 @@ run `sudo ./deploy/update-npm.sh` from a trusted checkout on the server. The
 `npx --yes sanremes@X.Y.Z serve --tunnel` selects a particular published
 release; replace `X.Y.Z` with that version.
 
-The desktop and phone apps work with any server version that was the stable
+The desktop app works with any server version that was the stable
 one within the last 90 days. An older server keeps running, but the app says
 it is behind, and newer features may not work until it is updated.
 

@@ -15,7 +15,7 @@ const LIVE = "/api/live/session";
 const COOKIE = "omb_session_test";
 const REMOTE = { host: "bots.example.com", "x-forwarded-for": "203.0.113.9", "x-forwarded-proto": "https" };
 const LOCAL = { host: "127.0.0.1:8799" };
-const DESKTOP = { loopbackMutationToken: "desktop-secret", companionMutationToken: "relay-secret" };
+const DESKTOP = { loopbackMutationToken: "desktop-secret" };
 
 let dir: string, sessions: SessionRegistry;
 beforeEach(() => {
@@ -64,12 +64,9 @@ describe("an Azure Live call", () => {
     it("goes to the app's own window", () => {
       expect(verdict({ ...LOCAL, "x-sanremes-desktop-owner": "desktop-secret" }, place)).toBe(CALL);
     });
-    it("goes to the owner's phone, through the companion that authenticated it", () => {
-      expect(verdict({ ...LOCAL, "x-sanremes-companion": "1", "x-sanremes-companion-device": "phone-1", "x-sanremes-companion-auth": "relay-secret" }, place)).toBe(CALL);
-    });
-    it("is refused to a bot's shell and to a forged companion", () => {
+    it("is refused to a bot's shell and to a request carrying companion headers", () => {
       expect(verdict(LOCAL, place)).toMatch(/^sign-in gate 403: forbidden: this change must come from the desktop app/);
-      expect(verdict({ ...LOCAL, "x-sanremes-companion": "1", "x-sanremes-companion-device": "phone-1", "x-sanremes-companion-auth": "guessed" }, place)).toMatch(/^sign-in gate 403: forbidden: invalid companion/);
+      expect(verdict({ ...LOCAL, "x-sanremes-companion": "1", "x-sanremes-companion-device": "phone-1", "x-sanremes-companion-auth": "guessed" }, place)).toMatch(/^sign-in gate 403: forbidden: this change must come from the desktop app/);
     });
     it("is refused to a remote device paired chat-only", () => {
       expect(verdict(device(["client"]), place)).toBe(AT_SIGN_IN);

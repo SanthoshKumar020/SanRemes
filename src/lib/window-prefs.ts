@@ -4,8 +4,6 @@
 import { WINDOW_PREFS, type WindowPrefFrame, type WindowPrefId, type WindowPrefValue } from "../../shared/app-settings";
 import { analyticsEnabled, setAnalyticsEnabled } from "./analytics";
 import { applyChatWidth, readChatWidth } from "./chat-width";
-import { companionBridge, pageIsThisComputer } from "./companion-bridge";
-import type { CompanionRoute } from "./companion-types";
 import { applyFont, readFont } from "./fonts";
 import { readFollowUpDefault, setFollowUpDefault } from "./follow-up";
 import { readAdvancedMode, setAdvancedMode } from "./interface-mode";
@@ -24,16 +22,8 @@ import { serverFetch } from "./relay-server";
 
 type Pref<I extends WindowPrefId> = { read(): unknown; write(value: WindowPrefValue<I>): unknown };
 const ogb = () => (typeof window === "undefined" ? undefined : window.ogb);
-const companion = () => (pageIsThisComputer() ? companionBridge() : null);
-const route = (name: CompanionRoute): { read(): unknown; write(on: boolean): unknown } => ({
-  read: async () => (await companion()?.state())?.routes?.[name]?.on,
-  write: (on) => {
-    const bridge = companion();
-    if (!bridge) return;
-    if (name === "tailscale") return bridge.setTailscale ? bridge.setTailscale(on) : on ? bridge.refreshTailscale() : bridge.state();
-    return bridge.setRoute ? bridge.setRoute(name, on) : on ? bridge.start([name]) : bridge.state();
-  },
-});
+/** The shared window-pref contract lists these; no backend serves them here. */
+const gone: { read(): unknown; write(on: boolean): unknown } = { read: async () => undefined, write: () => undefined };
 
 // Called, never referenced at load: many tests mock these modules with only the exports they use.
 const PREFS: { [I in WindowPrefId]: Pref<I> } = {
@@ -91,10 +81,10 @@ const PREFS: { [I in WindowPrefId]: Pref<I> } = {
     read: async () => { const state = await ogb()?.updatesConsent?.state(); return state?.available ? state.status === "opted_in" : undefined; },
     write: (on) => ogb()?.updatesConsent?.choose({ status: on ? "opted_in" : "withdrawn" }),
   },
-  "remote.wifi": route("wifi"),
-  "remote.relay": route("relay"),
-  "remote.tailscale": route("tailscale"),
-  "remote.keepAwake": { read: async () => (await companion()?.state())?.keepAwake, write: (on) => companion()?.keepAwake(on) },
+  "remote.wifi": gone,
+  "remote.relay": gone,
+  "remote.tailscale": gone,
+  "remote.keepAwake": gone,
 };
 
 export function applyWindowPref(frame: WindowPrefFrame): void {

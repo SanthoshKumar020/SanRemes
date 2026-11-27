@@ -488,7 +488,7 @@ export function createBrief(deps: BriefDeps) {
 
   /** The person arrived: the first open of a day, or a return after 3 hours away, shows today's brief when it has anything
    * in it. Any other ping only records the time, so the brief never takes the screen from a chat in use. */
-  async function active(source: "desktop" | "phone", zone?: string, language?: string): Promise<PresenceAnswer> {
+  async function active(source: "desktop", zone?: string, language?: string): Promise<PresenceAnswer> {
     if (deps.hosted) return { returned: false };
     const at = now();
     if (zone && validZone(zone) && zone !== state.timeZone) state.timeZone = zone;

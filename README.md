@@ -468,17 +468,16 @@ pnpm sanremes
 ```
 
 First launch guides you with arrow-key choices: choose AI access, sign in or paste a hidden
-API key, choose a model, and optionally connect a phone. Next time, the same command reuses your
+API key, and choose a model. Next time, the same command reuses your
 saved setup and opens SanRemes on this computer. Keep the terminal open; Ctrl-C stops
 the server, not your saved work. Use `--no-open` to skip opening the browser.
 
-Phone access is optional and defaults to skipping. Choose an explicitly
+Remote access is optional. Choose an explicitly
 approved managed public HTTPS endpoint protected by pairing, an existing
-Tailscale connection, or your own HTTPS reverse proxy. Both native apps pair from
-this flow: the QR is an app link when you are connecting an Android phone, and the
-iOS app takes either that or the web link. A browser works on either phone. A phone
+Tailscale connection, or your own HTTPS reverse proxy. A phone pairs in its
+browser: scan the QR with its camera or paste the pairing link. A phone
 cannot use a localhost link. `--local` ignores saved remote access for one launch;
-`--no-pair` suppresses phone prompts and invitations but does not disable a saved
+`--no-pair` suppresses pairing invitations but does not disable a saved
 remote connection.
 
 The web UI can also be installed from Safari or Chrome as a standalone phone
@@ -495,7 +494,7 @@ its `config.json` still holds OpenCode provider keys, keys given to one engine,
 and MCP header values in plaintext (a key a bot set from a secret card is kept
 in the Vault, and `config.json` holds only a pointer to it).
 See the [short setup guide](docs/cli-onboarding.md) for account differences,
-phone choices, credential storage, and cancellation.
+remote-access choices, credential storage, and cancellation.
 
 For a server on a VPS or an always-on computer, run `pnpm sanremes serve`
 with one way in: `--public-url` behind your own cloudflared, Caddy or nginx,

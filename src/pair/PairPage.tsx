@@ -15,9 +15,8 @@ import {
   type EnvironmentDescriptor,
   type SessionState,
 } from "../lib/session";
-import { pairedDestination } from "../lib/phone-pairing";
 import { t } from "../lib/i18n";
-import { formatPairingCode, PAIRING_INPUT_PROBLEM_KEY, readPairingInput } from "../../shared/pairing-code";
+import { PAIRING_INPUT_PROBLEM_KEY, readPairingInput } from "../../shared/pairing-code";
 import { isPrivateHost } from "../../shared/private-host";
 import { serverFetch } from "../lib/relay-server";
 
@@ -47,11 +46,17 @@ export function codeReady(code: string): boolean {
   return kind === "code" || kind === "credential";
 }
 
-/** The phone app opens this server with the code already filled in. */
-export function openInAppLink(origin: string, code: string): string {
-  const read = readPairingInput(code);
-  const filled = read.kind === "code" ? `&code=${encodeURIComponent(formatPairingCode(read.code))}` : "";
-  return `sanremes://pair?address=${encodeURIComponent(origin)}${filled}`;
+/** Where a page signed in here goes next: back to a path of this same server, or a linked thread. */
+export function pairedDestination(search: string): string {
+  const params = new URLSearchParams(search);
+  const next = params.get("next");
+  if (next && /^\/(?!\/)/.test(next) && !next.startsWith("/pair") && !/[\\\s]/.test(next)) return next;
+  const thread = params.get("thread");
+  if (thread === null) return "/";
+  const keep = new URLSearchParams({ thread });
+  const bot = params.get("bot");
+  if (bot !== null) keep.set("bot", bot);
+  return `/?${keep}`;
 }
 
 /** Plain http to the open internet: the session cookie and every chat would cross it readable. */
@@ -272,12 +277,6 @@ export function PairPage({ initialCode, initialEmail = null, reason }: { initial
             <button type="submit" disabled={busy || !codeReady(code)} className={button}>
               {t(busy ? "pair.connecting" : "pair.connect")}
             </button>
-            {where?.origin ? (
-              <p className="mt-3 text-[13px] text-ink-secondary">
-                {t("pair.onPhone")}{" "}
-                <a href={openInAppLink(where.origin, code)} className="text-accent underline">{t("pair.openInApp", { app: productName() })}</a>
-              </p>
-            ) : null}
             {ownServer ? (
               <p className="mt-3 text-[13px] text-ink-secondary">
                 {t("pair.noCode")} <code className="select-all rounded bg-inset px-1.5 py-0.5 text-[12px] text-ink">npx sanremes pair</code>

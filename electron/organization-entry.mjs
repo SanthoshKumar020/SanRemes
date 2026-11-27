@@ -1,5 +1,4 @@
 import environments from "./environments.cjs";
-import { withoutDesktopCompanionAccess } from "./desktop-companion-client.mjs";
 
 export const ORGANIZATION_DEEP_LINK = "sanremes://organization";
 const RESTART_FIELD = "desktopOrganizationSettingsPending";
@@ -18,7 +17,7 @@ export function takeOrganizationDeepLink(argv) {
 }
 export const organizationRestartIntent = credentials => credentials?.[RESTART_FIELD] === true;
 export const withOrganizationRestartIntent = credentials => ({
-  ...withoutDesktopCompanionAccess(credentials), [RESTART_FIELD]: true,
+  ...credentials, [RESTART_FIELD]: true,
 });
 export function withoutOrganizationRestartIntent(credentials) {
   const next = { ...credentials };

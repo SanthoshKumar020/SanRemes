@@ -5,17 +5,11 @@ import { createHash, randomUUID } from "node:crypto";
 import { once } from "node:events";
 import { createServer, request, type Server } from "node:http";
 import { connect, type Socket } from "node:net";
-import { chmodSync, closeSync, existsSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, renameSync, rmSync, statSync, symlinkSync, truncateSync, utimesSync, writeFileSync, writeSync } from "node:fs";
+import { chmodSync, closeSync, existsSync, mkdirSync, mkdtempSync, openSync, readFileSync, renameSync, rmSync, statSync, symlinkSync, truncateSync, utimesSync, writeFileSync, writeSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { DatabaseSync } from "node:sqlite";
-import {
-  Aes256Gcm,
-  CipherSuite,
-  DhkemP256HkdfSha256,
-  HkdfSha256,
-} from "@hpke/core";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { z } from "zod";
 
@@ -30,11 +24,6 @@ import { DEFAULT_MASCOT_BODY } from "../shared/mascot-bodies.ts";
 import { readHandoffs } from "./testing/handoff-rows.ts";
 import { FILE_MAX_BYTES, IMAGE_MAX_BYTES } from "./attachments.ts";
 import { computerPrompt, SIGN_IN_PROMPT } from "./system-prompt.ts";
-import {
-  PHONE_SECRET_INFO,
-  phoneSecretAAD,
-  type PhoneSecretContext,
-} from "./phone-secret.ts";
 import { workerPort } from "./testing/worker-port.ts";
 
 const SERVER_DIR = dirname(fileURLToPath(import.meta.url));
@@ -69,45 +58,6 @@ async function mintTestCapability(
   });
   expect(response.status).toBe(201);
   return ((await response.json()) as { token: string }).token;
-}
-
-const PHONE_SECRET_TEST_IDENTITY = {
-  type: "sanremes:phone-secret-key",
-  version: 1,
-  keyId: "taWSR_nZ7ojlH_0Z3tar6Q",
-  privateKey: {
-    kty: "EC",
-    crv: "P-256",
-    x: "g8FDXb91acXUNkuxNk7dWDQ0aN2zn6On2HeOGOvZOjs",
-    y: "bJelczS0LM82rfXV68PmSJhz2ePosj3fL974XckCpDU",
-    d: "5B-SwYLGXc04u4v7YLpzFrwj2JjysBFaJevOPl3h3Zg",
-  },
-} as const;
-const phoneSecretTestSuite = new CipherSuite({
-  kem: new DhkemP256HkdfSha256(),
-  kdf: new HkdfSha256(),
-  aead: new Aes256Gcm(),
-});
-
-async function sealPhoneSecretForTest(
-  context: Omit<PhoneSecretContext, "encapsulatedKey" | "ciphertext">,
-  value: string,
-): Promise<PhoneSecretContext> {
-  const publicKey = await phoneSecretTestSuite.kem.deserializePublicKey(Buffer.concat([
-    Buffer.from([4]),
-    Buffer.from(PHONE_SECRET_TEST_IDENTITY.privateKey.x, "base64url"),
-    Buffer.from(PHONE_SECRET_TEST_IDENTITY.privateKey.y, "base64url"),
-  ]));
-  const sender = await phoneSecretTestSuite.createSenderContext({
-    recipientPublicKey: publicKey,
-    info: new TextEncoder().encode(PHONE_SECRET_INFO),
-  });
-  const ciphertext = await sender.seal(new TextEncoder().encode(value), phoneSecretAAD(context));
-  return {
-    ...context,
-    encapsulatedKey: Buffer.from(sender.enc).toString("base64url"),
-    ciphertext: Buffer.from(ciphertext).toString("base64url"),
-  };
 }
 
 let child: ChildProcess;
@@ -6044,7 +5994,6 @@ describe("harness HTTP API", () => {
     }
   });
 
-
   it("imports a team as a project: one room, on a folder", async () => {
     const seed = await api("POST", "/api/bots", { name: "Planner", title: "Lead", description: "Plans", color: "purple" });
     const listed = (await api("GET", "/api/bots")).body.bots;
@@ -6478,40 +6427,6 @@ describe("harness HTTP API", () => {
       );
       expect(directCard).not.toHaveProperty("from");
 
-      const encryptedEnvelope = {
-        version: 1,
-        threadId: bot.threadId,
-        keyId: "A".repeat(22),
-        deviceId: "phone-1",
-        target: "openaiImageApiKey",
-        requestKey: directCard.secret.requestKey,
-        encapsulatedKey: "A".repeat(87),
-        ciphertext: "A".repeat(23),
-      };
-      const directProvision = await fetch(
-        `${BASE}/api/bots/${bot.id}/secret-cards/${messageId}/provide`,
-        {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(encryptedEnvelope),
-        },
-      );
-      expect(directProvision.status).toBe(403);
-
-      const developmentProvision = await fetch(
-        `${BASE}/api/bots/${bot.id}/secret-cards/${messageId}/provide`,
-        {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            "x-sanremes-companion": "1",
-            "x-sanremes-companion-device": "phone-1",
-          },
-          body: JSON.stringify(encryptedEnvelope),
-        },
-      );
-      expect(developmentProvision.status).toBe(503);
-
       await releaseTurn(bot.id);
       const originalUserMessage = directState?.messages.find(
         (message: { role?: string; kind?: string; text?: string }) =>
@@ -6929,370 +6844,6 @@ describe("harness HTTP API", () => {
       await api("PUT", "/api/config", { box: { token: "" } });
     }
   });
-
-  it("keeps credential-card ownership stable while an encrypted phone save is in flight", async () => {
-    const isolatedHome = mkdtempSync(join(tmpdir(), "sanremes-phone-secret-races-"));
-    const isolatedData = join(isolatedHome, ".sanremes");
-    const isolatedStatic = join(isolatedHome, "static");
-    const isolatedGate = join(isolatedHome, "credential-gate");
-    const isolatedPort = await freePortBlock([0, 1]);
-    const isolatedDump = join(isolatedHome, "fake-claude-dump.json");
-    const releaseFile = join(isolatedGate, "release");
-    mkdirSync(join(isolatedStatic, "assets"), { recursive: true });
-    mkdirSync(isolatedData, { recursive: true });
-    mkdirSync(isolatedGate, { recursive: true });
-    writeFileSync(join(isolatedStatic, "index.html"), "<!doctype html><title>Phone secret race test</title>");
-    writeFileSync(join(isolatedStatic, "assets", "smoke.css"), "body{}");
-    writeFileSync(join(isolatedData, "config.json"), JSON.stringify({
-      instances: {
-        claude: { driver: "claudeAgent", displayName: "Fixture Claude", config: { cli: FAKE_CLAUDE_CLI } },
-      },
-    }));
-
-    // Models Electron's private utility-process bridge: both saves pause after decryption, before the config commit.
-    const desktopPrelude = `data:text/javascript,${encodeURIComponent(`
-      const { existsSync, writeFileSync } = await import("node:fs");
-      const { join } = await import("node:path");
-      const identity = ${JSON.stringify(PHONE_SECRET_TEST_IDENTITY)};
-      const gate = ${JSON.stringify(isolatedGate)};
-      const release = ${JSON.stringify(releaseFile)};
-      const { EventEmitter } = await import("node:events");
-      const messages = new EventEmitter();
-      let saves = Promise.resolve();
-      const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-      Object.defineProperty(process, "parentPort", {
-        value: {
-          on(event, callback) {
-            if (event !== "message") return;
-            messages.on(event, callback);
-            queueMicrotask(() => callback({ data: identity }));
-          },
-          postMessage(message) {
-            if (message?.type !== "sanremes:phone-secret-save") return;
-            writeFileSync(join(gate, message.requestId + ".started"), message.target);
-            saves = saves.then(async () => {
-              while (!existsSync(release)) await delay(10);
-              try {
-                const patch = message.target === "openaiImageApiKey"
-                  ? { imageGen: { key: message.value } }
-                  : null;
-                if (!patch) throw new Error("unsupported test credential target");
-                const response = await fetch(
-                  "http://127.0.0.1:" + process.env.SANREMES_PORT + "/api/config?secretStorage=external",
-                  {
-                    method: "PUT",
-                    headers: { "content-type": "application/json" },
-                    body: JSON.stringify(patch),
-                  },
-                );
-                const body = await response.json().catch(() => null);
-                if (!response.ok) throw new Error(body?.error || "credential config failed");
-                messages.emit("message", { data: {
-                  type: "sanremes:phone-secret-save-result",
-                  requestId: message.requestId,
-                  ok: true,
-                } });
-              } catch (error) {
-                messages.emit("message", { data: {
-                  type: "sanremes:phone-secret-save-result",
-                  requestId: message.requestId,
-                  ok: false,
-                  error: error instanceof Error ? error.message : String(error),
-                } });
-              }
-            });
-          },
-        },
-      });
-    `)}`;
-    let isolatedStderr = "";
-    const isolatedChild = spawn(
-      process.execPath,
-      ["--import", desktopPrelude, join(SERVER_DIR, "index.ts")],
-      {
-        cwd: ROOT,
-        env: {
-          ...(process.env.PATH ? { PATH: process.env.PATH } : {}),
-          ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}),
-          HOME: isolatedHome,
-          USERPROFILE: isolatedHome,
-          SANREMES_PORT: String(isolatedPort),
-          SANREMES_WEBHOOK_PORT: String(isolatedPort + 1),
-          SANREMES_STATIC_DIR: isolatedStatic,
-          FAKE_CLAUDE_MODE: "hang",
-          FAKE_CLAUDE_DUMP: isolatedDump,
-          SANREMES_TEST_INTERNAL_CAPABILITY_KEY: TEST_CAPABILITY_KEY,
-        },
-        stdio: ["ignore", "pipe", "pipe"],
-      },
-    );
-    isolatedChild.stderr!.on("data", (chunk) => (isolatedStderr += chunk));
-    const isolatedApi = async (method: string, path: string, body?: unknown): Promise<{
-      status: number;
-      body: any;
-    }> => {
-      const response = await fetch(`http://127.0.0.1:${isolatedPort}${path}`, {
-        method,
-        headers: body ? { "content-type": "application/json" } : undefined,
-        body: body ? JSON.stringify(body) : undefined,
-      });
-      return { status: response.status, body: await response.json() };
-    };
-    const requestCredential = async (
-      botId: string,
-      threadId: string,
-    ): Promise<{ messageId: string }> => {
-      const token = await mintTestCapability(`http://127.0.0.1:${isolatedPort}`, botId, threadId);
-      const response = await fetch(`http://127.0.0.1:${isolatedPort}/api/internal/request-credential`, {
-        method: "POST",
-        headers: {
-          authorization: `Bearer ${token}`,
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          fromBotId: botId,
-          fromThreadId: threadId,
-          credentialId: "openaiImageApiKey",
-          reason: "needed for this task",
-        }),
-      });
-      expect(response.status).toBe(201);
-      return response.json() as Promise<{ messageId: string }>;
-    };
-    const provideRequests: Array<Promise<Response>> = [];
-    const earlyProvisionStatuses: number[] = [];
-
-    try {
-      await waitForIsolatedServer(isolatedChild, isolatedPort, () => isolatedStderr);
-      const createBot = async () => (await isolatedApi("POST", "/api/bots", {
-        modelSelection: { instanceId: "claude", model: "claude-sonnet-5" },
-        requireAvailableModel: true,
-      })).body.bot;
-      const direct = await createBot();
-      const channelOwner = await createBot();
-      const channelPeer = await createBot();
-      expect((await isolatedApi("PATCH", `/api/bots/${channelPeer.id}`, { chiefOfStaff: true })).status).toBe(200);
-      const roomChiefToken = await mintTestCapability(`http://127.0.0.1:${isolatedPort}`, channelPeer.id, channelPeer.threadId);
-
-      const directOriginalThread = direct.threadId as string;
-      const directAlternate = await isolatedApi("POST", `/api/bots/${direct.id}/tasks`, { title: "Alternate" });
-      expect(directAlternate.status).toBe(201);
-      expect((await isolatedApi(
-        "POST",
-        `/api/bots/${direct.id}/tasks/${directOriginalThread}`,
-      )).status).toBe(200);
-
-      const group = (await isolatedApi("POST", "/api/groups", {
-        name: "Credential ownership",
-        memberIds: [channelOwner.id, channelPeer.id],
-        setup: { bulletin: "", defaultResponder: { kind: "member", botId: channelOwner.id } },
-      })).body.group;
-      const groupOriginalThread = group.threadId as string;
-      const groupAlternate = await isolatedApi("POST", `/api/groups/${group.id}/tasks`, { title: "Alternate" });
-      expect(groupAlternate.status).toBe(201);
-      expect((await isolatedApi(
-        "POST",
-        `/api/groups/${group.id}/tasks/${groupOriginalThread}`,
-      )).status).toBe(200);
-
-      expect((await isolatedApi(
-        "POST",
-        `/api/bots/${direct.id}/messages`,
-        { text: "request a private key" },
-      )).status).toBe(202);
-      await readJsonFileWhenReady(isolatedDump);
-      const directRequest = await requestCredential(direct.id, directOriginalThread);
-      expect((await isolatedApi("POST", `/api/bots/${direct.id}/interrupt`, {})).status).toBe(200);
-      await expect.poll(async () => {
-        const state = (await isolatedApi("GET", "/api/bots?messages=0")).body;
-        return state.bots.find((bot: { id: string }) => bot.id === direct.id)?.busy;
-      }).toBe(false);
-      expect((await isolatedApi("POST", `/api/groups/${group.id}/messages`, { text: "request a private key in the room" })).status).toBe(202);
-      await expect.poll(async () => (await isolatedApi("GET", "/api/bots?messages=0")).body.groups
-        .find((candidate: { id: string }) => candidate.id === group.id)?.busyBotId, { timeout: 10_000 }).toBe(channelOwner.id);
-      const groupRequest = await requestCredential(channelOwner.id, groupOriginalThread);
-      expect((await isolatedApi("POST", `/api/groups/${group.id}/interrupt`, {})).status).toBe(200);
-      await expect.poll(async () => {
-        const state = (await isolatedApi("GET", "/api/bots?messages=0")).body;
-        return {
-          working: state.groups.find((candidate: { id: string }) => candidate.id === group.id)?.working,
-          busy: state.bots.find((bot: { id: string }) => bot.id === channelOwner.id)?.busy,
-        };
-      }, { timeout: 10_000 }).toEqual({ working: false, busy: false });
-
-      const state = (await isolatedApi("GET", "/api/bots?messages=20")).body;
-      const directState = state.bots.find((bot: { id: string }) => bot.id === direct.id);
-      const directCard = directState.messages.find(
-        (message: { id: string }) => message.id === directRequest.messageId,
-      );
-      const directUser = directState.messages.find(
-        (message: { role: string; text?: string }) => message.role === "user" && message.text === "request a private key",
-      );
-      const groupCard = state.groups
-        .find((candidate: { id: string }) => candidate.id === group.id).messages
-        .find((message: { id: string }) => message.id === groupRequest.messageId);
-      expect(directCard?.secret?.requestKey).toEqual(expect.any(String));
-      expect(directUser?.id).toEqual(expect.any(String));
-      expect(groupCard).toMatchObject({ from: { botId: channelOwner.id } });
-
-      const deviceId = "paired-phone";
-      const directEnvelope = await sealPhoneSecretForTest({
-        version: 1,
-        keyId: PHONE_SECRET_TEST_IDENTITY.keyId,
-        deviceId,
-        botId: direct.id,
-        threadId: directOriginalThread,
-        messageId: directRequest.messageId,
-        target: "openaiImageApiKey",
-        requestKey: directCard.secret.requestKey,
-      }, "sk-test-direct");
-      const groupEnvelope = await sealPhoneSecretForTest({
-        version: 1,
-        keyId: PHONE_SECRET_TEST_IDENTITY.keyId,
-        deviceId,
-        botId: channelOwner.id,
-        threadId: groupOriginalThread,
-        messageId: groupRequest.messageId,
-        target: "openaiImageApiKey",
-        requestKey: groupCard.secret.requestKey,
-      }, "sk-test-channel");
-      const provide = (botId: string, messageId: string, envelope: PhoneSecretContext) => fetch(
-        `http://127.0.0.1:${isolatedPort}/api/bots/${botId}/secret-cards/${messageId}/provide`,
-        {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            "x-sanremes-companion": "1",
-            "x-sanremes-companion-device": deviceId,
-          },
-          body: JSON.stringify(Object.fromEntries(
-            Object.entries(envelope).filter(([key]) => key !== "botId" && key !== "messageId"),
-          )),
-        },
-      );
-      // On a third bot, before any credential is configured, so the ownership fixtures below keep their cards.
-      const raceBot = await createBot();
-      const raceThread = raceBot.threadId as string;
-      const supersededRequest = await requestCredential(raceBot.id, raceThread);
-      const raceCard = async (messageId: string) => (await isolatedApi("GET", "/api/bots?messages=20")).body.bots
-        .find((bot: { id: string }) => bot.id === raceBot.id).messages
-        .find((message: { id: string }) => message.id === messageId);
-      const supersededEnvelope = await sealPhoneSecretForTest({
-        version: 1,
-        keyId: PHONE_SECRET_TEST_IDENTITY.keyId,
-        deviceId,
-        botId: raceBot.id,
-        threadId: raceThread,
-        messageId: supersededRequest.messageId,
-        target: "openaiImageApiKey",
-        requestKey: (await raceCard(supersededRequest.messageId)).secret.requestKey,
-      }, "sk-test-superseded");
-      const supersededProvide = provide(raceBot.id, supersededRequest.messageId, supersededEnvelope);
-      await expect.poll(() => readdirSync(isolatedGate).filter((name) => name.endsWith(".started")).length).toBe(1);
-      const freshRequest = await requestCredential(raceBot.id, raceThread);
-      writeFileSync(releaseFile, "release");
-      const rejected = await supersededProvide;
-      expect(rejected.status).toBe(409);
-      expect(await rejected.json()).toMatchObject({ error: expect.stringMatching(/superseded by a newer one/i) });
-      expect((await raceCard(supersededRequest.messageId)).secret).toMatchObject({ superseded: true });
-      expect((await raceCard(supersededRequest.messageId)).secret.provided).not.toBe(true);
-      const freshEnvelope = await sealPhoneSecretForTest({
-        version: 1,
-        keyId: PHONE_SECRET_TEST_IDENTITY.keyId,
-        deviceId,
-        botId: raceBot.id,
-        threadId: raceThread,
-        messageId: freshRequest.messageId,
-        target: "openaiImageApiKey",
-        requestKey: (await raceCard(freshRequest.messageId)).secret.requestKey,
-      }, "sk-test-fresh-card");
-      const freshProvide = await provide(raceBot.id, freshRequest.messageId, freshEnvelope);
-      expect(freshProvide.status).toBe(200);
-      expect(await freshProvide.json()).toEqual({ provided: true, resumed: false });
-      // Hand the gate back: the ownership fixtures' saves must start held, with no started markers.
-      for (const name of readdirSync(isolatedGate)) rmSync(join(isolatedGate, name));
-      provideRequests.push(...[
-        provide(direct.id, directRequest.messageId, directEnvelope),
-        provide(channelOwner.id, groupRequest.messageId, groupEnvelope),
-      ].map((request) => request.then((response) => {
-        earlyProvisionStatuses.push(response.status);
-        return response;
-      })));
-      await expect.poll(
-        () => ({
-          started: readdirSync(isolatedGate).filter((name) => name.endsWith(".started")).length,
-          earlyProvisionStatuses,
-        }),
-        { timeout: 20_000 },
-      ).toEqual({ started: 2, earlyProvisionStatuses: [] });
-
-      const expectLocked = async (result: Promise<{ status: number; body: any }>) => {
-        const response = await result;
-        expect(response.status).toBe(409);
-        expect(response.body.error).toMatch(/securely saving a credential/i);
-      };
-      await expectLocked(isolatedApi("POST", `/api/bots/${direct.id}/messages/${directUser.id}/edit`, {
-        text: "rewind under the save",
-      }));
-      await expectLocked(isolatedApi("POST", `/api/bots/${direct.id}/active-branch`, {
-        messageId: directRequest.messageId,
-      }));
-      await expectLocked(isolatedApi("POST", `/api/bots/${direct.id}/tasks`, { title: "Race" }));
-      await expectLocked(isolatedApi(
-        "POST",
-        `/api/bots/${direct.id}/tasks/${directAlternate.body.task.threadId}`,
-      ));
-      await expectLocked(isolatedApi("DELETE", `/api/bots/${direct.id}/tasks/${directOriginalThread}`));
-      await expectLocked(isolatedApi("DELETE", `/api/bots/${direct.id}`));
-
-      await expectLocked(isolatedApi("POST", `/api/groups/${group.id}/tasks`, { title: "Race" }));
-      await expectLocked(isolatedApi(
-        "POST",
-        `/api/groups/${group.id}/tasks/${groupAlternate.body.task.threadId}`,
-      ));
-      await expectLocked(isolatedApi("DELETE", `/api/groups/${group.id}/tasks/${groupOriginalThread}`));
-      await expectLocked(isolatedApi("PATCH", `/api/groups/${group.id}`, {
-        memberIds: [channelPeer.id],
-      }));
-      const chiefRosterChange = await chiefRoomRequest(`http://127.0.0.1:${isolatedPort}`, roomChiefToken, "manage-room", {
-        roomId: group.id, action: "set_members", memberIds: [channelOwner.id, channelPeer.id],
-      });
-      expect(chiefRosterChange.status).toBe(409);
-      expect(chiefRosterChange.body.error).toMatch(/securely saving a credential/i);
-      await expectLocked(isolatedApi("DELETE", `/api/groups/${group.id}`));
-      await expectLocked(isolatedApi("DELETE", `/api/bots/${channelOwner.id}`));
-      await expectLocked(isolatedApi("DELETE", `/api/bots/${channelPeer.id}`));
-
-      writeFileSync(releaseFile, "release");
-      const completed = await Promise.all(provideRequests);
-      for (const response of completed) expect(response.status).toBe(200);
-      expect(await completed[0]!.json()).toEqual({ provided: true, resumed: false });
-      expect(await completed[1]!.json()).toEqual({ provided: true, resumed: false });
-
-      const exactRetry = await provide(direct.id, directRequest.messageId, directEnvelope);
-      expect(exactRetry.status).toBe(200);
-      expect(await exactRetry.json()).toEqual({ provided: true, resumed: false });
-      const replacementEnvelope = await sealPhoneSecretForTest({
-        version: 1,
-        keyId: PHONE_SECRET_TEST_IDENTITY.keyId,
-        deviceId,
-        botId: direct.id,
-        threadId: directOriginalThread,
-        messageId: directRequest.messageId,
-        target: "openaiImageApiKey",
-        requestKey: directCard.secret.requestKey,
-      }, "sk-test-replacement");
-      const replacement = await provide(direct.id, directRequest.messageId, replacementEnvelope);
-      expect(replacement.status).toBe(409);
-      expect(await replacement.json()).toMatchObject({ error: expect.stringMatching(/already completed/i) });
-    } finally {
-      writeFileSync(releaseFile, "release");
-      await Promise.allSettled(provideRequests);
-      await waitForExit(isolatedChild, { signal: "SIGTERM" });
-      await removeTempDir(isolatedHome);
-    }
-    expectStoppedTestServerCleanly(isolatedChild, isolatedStderr);
-  }, 45_000);
 
   it("reports a failed routine once, not twice", async () => {
     // A routine reports through onDispatchError too, so this pins the count, not merely the presence.
@@ -9626,26 +9177,6 @@ describe("harness HTTP API", () => {
     }
   });
 
-  it("mounts the USB phone server on every turn, whatever its words: they pick only the phone skill's instructions", async () => {
-    const bot = (await api("POST", "/api/bots", { name: "Phone words" })).body.bot;
-    try {
-      expect((await api("PATCH", `/api/bots/${bot.id}`, { modelSelection: { instanceId: "claude", model: "claude-sonnet-5" } })).status).toBe(200);
-      for (const [text, instructed] of [["hello", false], ["open the Uber app on my Android", true], ["thanks", false]] as const) {
-        rmSync(fakeClaudeDump, { force: true });
-        expect((await api("POST", `/api/bots/${bot.id}/messages`, { text })).status).toBe(202);
-        const seen = await readJsonFileWhenReady<{ systemPrompt: string; mcpConfig: { mcpServers: Record<string, unknown> } }>(fakeClaudeDump, 15_000);
-        expect(seen.mcpConfig.mcpServers.phone, text).toBeDefined();
-        expect(seen.systemPrompt.includes('<sanremes-skill id="phone-harness"'), text).toBe(instructed);
-        expect((await api("POST", `/api/bots/${bot.id}/interrupt`)).status).toBe(200);
-        await expect.poll(async () => (await api("GET", "/api/bots?messages=0")).body.bots
-          .find((candidate: { id: string }) => candidate.id === bot.id)?.busy, { timeout: 5_000 }).toBe(false);
-      }
-    } finally {
-      await api("POST", `/api/bots/${bot.id}/interrupt`);
-      await api("DELETE", `/api/bots/${bot.id}`);
-    }
-  });
-
   it("re-enters setup mode for a configured bot when the user sends /setup, and rewrites the turn text", async () => {
     const bot = (await api("POST", "/api/bots", { name: "Kiwi", description: "Files bugs." })).body.bot;
     try {
@@ -9933,7 +9464,6 @@ describe("harness HTTP API", () => {
       let seen = await readJsonFileWhenReady<{ systemPrompt?: string }>(fakeClaudeDump);
       let system = seen.systemPrompt ?? "";
       expect(system).toContain('<sanremes-skill id="create-verification-skill"');
-      expect(system).toContain('<sanremes-skill id="phone-harness"');
       expect((await api("POST", `/api/groups/${room.id}/interrupt`, {})).status).toBe(200);
       await expect.poll(async () => {
         const state = (await api("GET", "/api/bots?messages=0")).body;
@@ -9947,7 +9477,6 @@ describe("harness HTTP API", () => {
       seen = await readJsonFileWhenReady<{ systemPrompt?: string }>(fakeClaudeDump);
       system = seen.systemPrompt ?? "";
       expect(system).not.toContain('<sanremes-skill id="create-verification-skill"');
-      expect(system).toContain('<sanremes-skill id="phone-harness"');
     } finally {
       if (room) {
         expect((await api("POST", `/api/groups/${room.id}/interrupt`, {})).status).toBe(200);
@@ -9970,7 +9499,7 @@ describe("harness HTTP API", () => {
   it("keeps skill authoring on by default and persists an explicit opt-out", async () => {
     const before = await api("GET", "/api/config");
     expect(before.status).toBe(200);
-    expect(before.body.features).toEqual({ browser: false, skillAuthoring: true, skillReview: false, skillReviewSteps: 10, skillsLibrary: false, shareLearnedSkills: "off", showToolCalls: false, sharedComputers: false, claudeUserMcp: false, claudeUserSkills: false, autoRecall: true, roomMemoryCapture: false, parallelRoomJobs: true, savedSteps: true, savedStepsHere: process.platform === "darwin", skillBurger: true, threadTabs: false, roomFeed: false, usbPhoneTakeover: false });
+    expect(before.body.features).toEqual({ browser: false, skillAuthoring: true, skillReview: false, skillReviewSteps: 10, skillsLibrary: false, shareLearnedSkills: "off", showToolCalls: false, sharedComputers: false, claudeUserMcp: false, claudeUserSkills: false, autoRecall: true, roomMemoryCapture: false, parallelRoomJobs: true, savedSteps: true, savedStepsHere: process.platform === "darwin", skillBurger: true, threadTabs: false, roomFeed: false });
     const untouched = JSON.parse(readFileSync(join(home, ".sanremes", "config.json"), "utf8"));
     expect(untouched.features?.skillAuthoring).toBeUndefined();
     expect(untouched.features?.skillReview).toBeUndefined();
@@ -9980,7 +9509,7 @@ describe("harness HTTP API", () => {
       features: { skillAuthoring: false },
     });
     expect(saved.status).toBe(200);
-    expect(saved.body.features).toEqual({ browser: false, skillAuthoring: false, skillReview: false, skillReviewSteps: 10, skillsLibrary: false, shareLearnedSkills: "off", showToolCalls: false, sharedComputers: false, claudeUserMcp: false, claudeUserSkills: false, autoRecall: true, roomMemoryCapture: false, parallelRoomJobs: true, savedSteps: true, savedStepsHere: process.platform === "darwin", skillBurger: true, threadTabs: false, roomFeed: false, usbPhoneTakeover: false });
+    expect(saved.body.features).toEqual({ browser: false, skillAuthoring: false, skillReview: false, skillReviewSteps: 10, skillsLibrary: false, shareLearnedSkills: "off", showToolCalls: false, sharedComputers: false, claudeUserMcp: false, claudeUserSkills: false, autoRecall: true, roomMemoryCapture: false, parallelRoomJobs: true, savedSteps: true, savedStepsHere: process.platform === "darwin", skillBurger: true, threadTabs: false, roomFeed: false });
 
     const disk = JSON.parse(readFileSync(join(home, ".sanremes", "config.json"), "utf8"));
     // Earlier browser coverage may have persisted its own toggle: opting out must preserve sibling settings.
@@ -9993,7 +9522,7 @@ describe("harness HTTP API", () => {
 
     const tools = await api("PATCH", "/api/config", { features: { showToolCalls: true } });
     expect(tools.status).toBe(200);
-    expect(tools.body.features).toEqual({ browser: false, skillAuthoring: false, skillReview: false, skillReviewSteps: 10, skillsLibrary: false, shareLearnedSkills: "off", showToolCalls: true, sharedComputers: false, claudeUserMcp: false, claudeUserSkills: false, autoRecall: true, roomMemoryCapture: false, parallelRoomJobs: true, savedSteps: true, savedStepsHere: process.platform === "darwin", skillBurger: true, threadTabs: false, roomFeed: false, usbPhoneTakeover: false });
+    expect(tools.body.features).toEqual({ browser: false, skillAuthoring: false, skillReview: false, skillReviewSteps: 10, skillsLibrary: false, shareLearnedSkills: "off", showToolCalls: true, sharedComputers: false, claudeUserMcp: false, claudeUserSkills: false, autoRecall: true, roomMemoryCapture: false, parallelRoomJobs: true, savedSteps: true, savedStepsHere: process.platform === "darwin", skillBurger: true, threadTabs: false, roomFeed: false });
 
     const bot = (await api("POST", "/api/bots", {})).body.bot;
     try {

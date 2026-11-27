@@ -106,13 +106,11 @@ keeps people apart on it. The bot box ([bot-box.md](bot-box.md)) is what makes t
   member signed in to in their chat never opens signed in for another member. The live view shows the browser of the
   conversation it is opened from, to whoever may read that conversation (a member's own browser to that member alone);
   with no conversation named (a phone) it is the person's own. Every Chrome runs in its own box (below).
-- **Phones.** Settings → *Open on your phone* (and *Connect your phone* in the account menu) shows a code made for the
-  person signed in. The phone app scans it as any `/pair#code=` link and gets that person's session: their address,
-  their role, their chats, never another member's. The phone stays signed in while it is used: the Cloud's roster check
-  (below, "Signed in without a desktop") asks the Admin about its person, as the desktop's re-pairing always did. Under the code,
-  *Paired devices* lists the phones those codes opened as *device · member* (`GET /api/team/phones`): a member sees their
-  own, the Super admin and Admins every member's. **Remove** (`DELETE /api/team/phones/<id>`, the same rule) signs that
-  phone out at once and closes its open streams; the app windows the Admin signs in are not listed there.
+- **Phones.** A member opens the team's Cloud on their phone in the browser, with a pairing code: the phone gets that
+  person's session — their address, their role, their chats, never another member's. The phone stays signed in while
+  it is used: the Cloud's roster check (below, "Signed in without a desktop") asks the Admin about its person, as the
+  desktop's re-pairing always did. **Remove** in Settings → Devices signs that phone out at once and closes its open
+  streams; the app windows the Admin signs in are not listed there.
 - **Slack.** With the team's Slack connected on SanRemes Cloud, a message to `@SanRemes` in a channel, or a direct
   message, is its writer's own request here: the Admin hands it over with a session it opened for that member, so their
   level on the bot, their run and their right to stop it hold as in the app. A channel thread is a conversation shared

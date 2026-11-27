@@ -64,7 +64,7 @@ describe("printed commands", () => {
         checked.push(`${command} ${flag}`);
       }
     }
-    expect(checked).toEqual(expect.arrayContaining(["serve --lan", "serve --public-url", "pair --phone", "pair --ttl", "account --email", "account --relay"]));
+    expect(checked).toEqual(expect.arrayContaining(["serve --lan", "serve --public-url", "pair --ttl", "account --email"]));
   });
 
   it("writes commands the way the CLI was started", () => {

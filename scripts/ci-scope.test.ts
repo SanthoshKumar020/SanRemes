@@ -116,7 +116,7 @@ describe("CI path scope", () => {
   });
 
   it.each([
-    ["server/index.ts"], ["shared/types.ts"], ["companion/src/index.ts"], ["enterprise/license.ts"], ["evals/runners/run-evals.ts"],
+    ["server/index.ts"], ["shared/types.ts"], ["enterprise/license.ts"], ["evals/runners/run-evals.ts"],
     ["skills/pdf/SKILL.md"], ["cloudflare/composio-broker/src/index.ts"], ["Dockerfile"], ["deploy/podman/run.sh"],
     ...SRC_OUTSIDE_RENDERER.map((file) => [file]),
   ])("runs every check that runs the server for %j", (file) => {
@@ -141,16 +141,6 @@ describe("CI path scope", () => {
 
   it("runs only the control-plane job for the control plane", () => {
     expect(selectCiScope(["cloudflare/control-plane/src/index.ts"])).toEqual({ areas: ["control-plane"], checks: ["control-plane"] });
-  });
-
-  it.each([["relay/src/server.ts"], ["relay/pnpm-lock.yaml"], ["relay/Dockerfile"], ["relay/deploy/Caddyfile"], ["relay/README.md"]])(
-    "runs only the relay job for the relay's %j", (file) => {
-      expect(selectCiScope([file])).toEqual({ areas: ["relay"], checks: ["relay"] });
-    });
-
-  it("runs the server's checks and the relay's for the shared E2E vectors, which the relay keeps a pinned copy of", () => {
-    expect(selectCiScope(["companion/src/e2e/vectors/v1.json"])).toEqual({ areas: ["e2e-vectors"], checks: [...checks("server"), "relay"].sort() });
-    expect(selectCiScope(["companion/src/e2e/noise.ts"])).toEqual({ areas: ["server"], checks: checks("server") });
   });
 
   it("selects every area's checks for a change across areas", () => {

@@ -4,7 +4,6 @@ import { approvalModeFor, isApprovalMode, type ApprovalMode } from "../../shared
 import { normalizeConnectorScopes, widensConnectorScopes } from "../../shared/connector-scopes.ts";
 import { isBotLiveVoice } from "../../shared/live-call.ts";
 import { normalizeOutboundPolicy } from "../../shared/outbound.ts";
-import { normalizePhoneApps } from "../../shared/phone-apps.ts";
 import { parseToolScope, toolScopeWidens } from "../../shared/tool-scope.ts";
 import type { MemoryModelSelection } from "../../shared/memory-model.ts";
 import { parseToolsOff, TOOL_GROUPS } from "../../shared/tool-groups.ts";
@@ -29,7 +28,6 @@ import { heldFrom } from "../host/room-reads.ts";
 import { unreadTargetTask } from "../task-record.ts";
 import { MAX_MCP_SERVERS, mcpServerNameError } from "../mcp-registry.ts";
 import type { MemoryUpkeep } from "../memory-upkeep.ts";
-import { phoneAppsFor } from "../phones/access.ts";
 import { profileSnapshot } from "../profile-revision.ts";
 import { recordProfileChange } from "../profile-versions.ts";
 import { memberBotPatchViolation, requestSource, type RequestAuth } from "../request-auth.ts"; import { defaultBotPatchRefusal, ownsDefaultBot } from "../default-bot.ts";
@@ -275,14 +273,6 @@ export function createBotPatchRoutes(deps: BotPatchRouteDeps): RouteHandler {
           const scopes = normalizeConnectorScopes(body.connectorScopes);
           if (!scopes) return json(res, 400, { error: "connectorScopes must be { apps: { <toolkit>: read | write }, accounts?: { <toolkit>: [account ids] } } or null" });
           patch.connectorScopes = scopes;
-        }
-      }
-      if (body.phoneApps !== undefined) {
-        if (body.phoneApps === null) patch.phoneApps = undefined;
-        else {
-          const apps = normalizePhoneApps(body.phoneApps);
-          if (!apps) return json(res, 400, { error: "phoneApps must be { <calendar|reminders|contacts|location|home|messages>: read | write } or null" });
-          patch.phoneApps = apps;
         }
       }
       if (body.outbound !== undefined) {
@@ -622,12 +612,6 @@ export function createBotPatchRoutes(deps: BotPatchRouteDeps): RouteHandler {
       const trustPatch = patch as Pick<Partial<BotRecord>, "outbound" | "connectorScopes" | "fallback">;
       if (body.outbound !== undefined && trustPatch.outbound?.policy === "allow" && existingBot?.outbound?.policy !== "allow") loosened.push("outbound");
       if (body.connectorScopes !== undefined && widensConnectorScopes(existingBot?.connectorScopes, trustPatch.connectorScopes)) loosened.push("connectorScopes");
-      if (body.phoneApps !== undefined && existingBot) {
-        // Compare effective grants: clearing falls back to every app.
-        const before = phoneAppsFor(existingBot);
-        const after = phoneAppsFor({ ...existingBot, phoneApps: (patch as Pick<Partial<BotRecord>, "phoneApps">).phoneApps });
-        if (Object.entries(after).some(([cap, grant]) => !before[cap as keyof typeof before] || (grant === "write" && before[cap as keyof typeof before] === "read"))) loosened.push("phoneApps");
-      }
       if (body.fallback !== undefined && trustPatch.fallback?.some(candidate =>
           !existingBot?.fallback?.some(previous => previous.instanceId === candidate.instanceId && previous.model === candidate.model))) loosened.push("fallback");
       if (Array.isArray(patch.managedSections) && patch.managedSections.some(section => !(existingBot?.managedSections ?? []).includes(section))) {

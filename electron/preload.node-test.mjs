@@ -70,16 +70,6 @@ test("copyText forwards only the text over the explicit clipboard:write-text cha
   assert.equal("ipcRenderer" in exposed.api, false);
 });
 
-test("browser control forwards a separate per-device capability, not the cloud grant", async () => {
-  const before = invocations.length;
-  await exposed.api.companion.browserControl("phone-1", true);
-  await exposed.api.companion.browserControl("phone-1", false);
-  assert.deepEqual(invocations.slice(before), [
-    ["companion:browser-control", "phone-1", true],
-    ["companion:browser-control", "phone-1", false],
-  ]);
-});
-
 test("the talk bridge asks main over its own channels with only what it understands", async () => {
   const before = invocations.length;
   await exposed.api.talkShortcut.state();
@@ -87,12 +77,6 @@ test("the talk bridge asks main over its own channels with only what it understa
   await exposed.api.callActive(true);
   await exposed.api.callActive("yes");
   assert.deepEqual(invocations.slice(before), [["talk-shortcut:state"], ["talk-shortcut:set", { enabled: false, key: "ctrl-shift-space" }], ["call:active", true], ["call:active", false]]);
-});
-
-test("account prepare asks for the secure address over its own channel and sends nothing from the page", async () => {
-  const before = invocations.length;
-  await exposed.api.companionAccount.prepare({ endpoint: "https://evil.example.test" });
-  assert.deepEqual(invocations.slice(before), [["companion-account:prepare"]]);
 });
 
 test("onOpenAppSettings subscribes to the exact app:open-settings channel, forwards every emit, and unsubscribes cleanly", () => {
@@ -159,9 +143,9 @@ test("a Settings page name from Switch to This computer reaches Settings, also b
   try {
     emit("app:open-settings", "app");
     emit("app:open-settings", "account");
-    emit("app:open-settings", "phone");
+    emit("app:open-settings", "devices");
   } finally { unsubscribe(); }
-  assert.deepEqual(calls, ["app", "account", "phone"]);
+  assert.deepEqual(calls, ["app", "account", "devices"]);
   emit("app:open-settings", "account");
   const later = exposed.api.onOpenAppSettings(section => calls.push(section));
   await Promise.resolve();

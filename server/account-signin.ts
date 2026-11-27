@@ -1,7 +1,7 @@
 // Email sign-in through the SanRemes control plane, or through the server's own mail server when SANREMES_SIGNIN_SMTP_URL is
 // set: the code exchange is server-side, so a browser only talks to this server, and a server with an empty allow-list
 // does not expose the routes. The result is an ordinary local session.
-import { resolveCompanionControlPlaneURL } from "../electron/companion-account-service.mjs";
+import { resolveControlPlaneURL } from "./tunnel-account.ts";
 import { ControlPlaneError, createControlPlaneClient, normalizeAccountEmail, type ControlPlaneClient } from "../electron/control-plane-client.mjs";
 import type { Scope } from "./sessions.ts";
 import { createSignInMail, SignInMailError, type MailTransport, type SignInMail } from "./sign-in-mail.ts";
@@ -62,7 +62,7 @@ export function createEmailSignIn(options: {
   let client: ControlPlaneClient | null = options.client ?? null;
   const controlPlane = (): ControlPlaneClient => {
     if (client) return client;
-    const url = resolveCompanionControlPlaneURL({ isPackaged: true, environment: env });
+    const url = resolveControlPlaneURL({ isPackaged: true, environment: env });
     if (!url) throw new Error("SANREMES_CONTROL_PLANE_URL is set but is not an https address");
     client = createControlPlaneClient({ baseURL: url, fetchImpl: options.fetchImpl });
     return client;

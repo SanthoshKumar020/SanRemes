@@ -14,7 +14,6 @@ import { profileInitials } from "../SidebarProfileMenu";
 import { Switch, SettingsTag } from "../SettingsPrimitives";
 import { accountLine, useAccountSummary, useYou } from "./account-summary";
 import { devicesDot, devicesPlaceKey, useDevicesSignal, type NavDot } from "./devices-signal";
-import { usePhonePlaceState } from "./phone-status";
 import type { SettingsPlace } from "./settings-context";
 import { OWNERS, pageById, type SearchHit, type SettingsContext, type SettingsOwner, type SettingsPage, type SettingsPageId } from "./settings-index";
 import { useUpdaterState } from "@/lib/updater";
@@ -104,17 +103,12 @@ function IdentityRow({ page, current, badge, name, line, onOpen, narrow }: {
 
 type Dot = { tone: NavDot; label: string };
 
-/** The mark beside Devices, said in words too: amber while a device or the private network needs the person, green while
- * a phone is connected and nothing does. Before Devices has been read, the phones alone decide it. */
-function useDevicesDot(place: SettingsPlace, enabled: boolean): Dot | null {
-  const phone = usePhonePlaceState(enabled);
+/** The mark beside Devices, said in words too: amber while a device needs the person. */
+function useDevicesDot(place: SettingsPlace): Dot | null {
   const seen = useDevicesSignal(devicesPlaceKey(place));
-  if (seen) {
-    const tone = devicesDot(seen);
-    return tone && { tone, label: t(tone === "warning" ? "settings.nav.devicesNeedYou" : "settings.nav.phoneConnectedAllClear") };
-  }
-  if (phone.kind === "paired" && phone.connected) return { tone: "success", label: t("settings.nav.phoneConnected") };
-  return phone.kind === "attention" ? { tone: "warning", label: t("settings.nav.phoneNeedsYou") } : null;
+  if (!seen) return null;
+  const tone = devicesDot(seen);
+  return tone && { tone, label: t("settings.nav.devicesNeedYou") };
 }
 
 function PageDot({ dot }: { dot: Dot }) {
@@ -202,7 +196,7 @@ export function SettingsNav({ ctx, place, pages, current, query, hits, keyHits, 
   const account = { ...summary, email: summary.email ?? (summary.plan ? profile?.email ?? null : null) };
   const placeLine = usePlaceSubLine(place);
   const appLine = useAppSubLine(ctx.desktop);
-  const devicesMark = useDevicesDot(place, !ctx.client);
+  const devicesMark = useDevicesDot(place);
   const listRef = useRef<HTMLDivElement>(null);
   const openSource = ctx.desktop && !window.ogb?.cloudAccount && !window.ogb?.cloudPlan;
   const lines: Record<SettingsOwner, { badge: ReactNode; name: string; line: string; page: SettingsPageId }> = {
@@ -360,7 +354,7 @@ export function searchWhere(hit: SearchHit, place: SettingsPlace, ctx: SettingsC
   return { owner: ownerName, ...(pageKey && !entry.id.startsWith("page:") ? { page: t(pageKey) } : {}) };
 }
 
-/** The full path, owner first ("This computer › Devices › How your phone reaches this computer"): the tooltip. */
+/** The full path, owner first ("This computer › Devices › Your computers"): the tooltip. */
 export function searchLocation(hit: SearchHit, place: SettingsPlace, ctx: SettingsContext): string {
   const entry = hit.entry;
   if (entry.jump === "apps") return t("settings.search.opensApps");

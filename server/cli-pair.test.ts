@@ -82,7 +82,7 @@ afterEach(async () => {
 const printed = () => vi.mocked(console.log).mock.calls.map(([line]) => String(line)).join("\n");
 
 describe("sanremes pair", () => {
-  it("never asks anything: one code, the running server's own link, a QR, and the phone command", async () => {
+  it("never asks anything: one code, the running server's own link, and a QR of it", async () => {
     expect(await runPair(options)).toBe(0);
     expect(mocks.ui.choose).not.toHaveBeenCalled();
     expect(mocks.readCliStartup).not.toHaveBeenCalled();
@@ -92,7 +92,7 @@ describe("sanremes pair", () => {
     expect(printed()).toMatch(new RegExp(`Pairing code {3}${code} {3}works once, until .+ · everything`));
     expect(printed()).toContain(`Link           ${advertisedOrigin}/pair#code=${code}`);
     expect(printed()).toMatch(/[▀▄█]/);
-    expect(printed()).toContain("For a phone (chat and approvals only)   sanremes pair --phone");
+    expect(printed()).not.toContain("pair --phone");
     expect(printed()).not.toContain("doesn't reach");
   });
 
@@ -101,8 +101,8 @@ describe("sanremes pair", () => {
     expect(printed()).toContain(`Link           ${explicitOrigin}/pair#code=${code}`);
   });
 
-  it("--phone mints a chat-only code", async () => {
-    expect(await runPair({ ...options, phone: "ios" })).toBe(0);
+  it("--client mints a chat-only code", async () => {
+    expect(await runPair({ ...options, client: true })).toBe(0);
     const posted = fetchMock.mock.calls.find(([, init]) => init?.method === "POST");
     expect(JSON.parse(String(posted![1]!.body))).toEqual({ scopes: ["client"] });
     expect(printed()).toContain("· chat and approvals");
@@ -157,32 +157,16 @@ describe("sanremes pair", () => {
     expect(await runPair(options)).toBe(1);
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining("No SanRemes server is running here. Start it: sanremes serve"));
   });
-});
 
-describe("the phone-app link `sanremes pair --phone android` scans", () => {
-  const credential = `omb_pair_${"b".repeat(43)}`;
-  const serverName = "Miguel's computer";
-  const pairingResponse = (fields: Record<string, unknown>) => {
+  it("keeps a proxy path in the web link", async () => {
     fetchMock.mockImplementation(async (input, init) => {
       const url = String(input);
       if (url === `http://127.0.0.1:${options.port}/api/health`) return Response.json({ app: "sanremes", pid: 12345 });
       if (url === `http://127.0.0.1:${options.port}/api/auth/pairing`) {
-        return init?.method === "POST" ? Response.json({ code, expiresAt: Date.now() + 300_000, credential, serverName, ...fields }) : Response.json({ pairings: [], publicUrl: null });
+        return init?.method === "POST" ? Response.json({ code, expiresAt: Date.now() + 300_000, url: `https://proxy.example.test/sanremes/pair#code=${code}` }) : Response.json({ pairings: [], publicUrl: null });
       }
       throw new Error(`Unexpected fixture request: ${url}`);
     });
-  };
-
-  it("builds the invite for --public-url from the server's credential and name, and never prints it as text", async () => {
-    pairingResponse({ url: null, inviteUrl: null });
-    expect(await runPair({ ...options, phone: "android", publicUrl: explicitOrigin })).toBe(0);
-    expect(printed()).not.toContain("sanremes://");
-    expect(printed()).not.toContain(credential);
-    expect(printed()).toContain("scan this with the SanRemes app");
-  });
-
-  it("keeps a proxy path in the web link", async () => {
-    pairingResponse({ url: `https://proxy.example.test/sanremes/pair#code=${code}`, inviteUrl: null });
     expect(await runPair({ ...options, label: "Pixel" })).toBe(0);
     expect(printed()).toContain(`https://proxy.example.test/sanremes/pair#code=${code}`);
   });

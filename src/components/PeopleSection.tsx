@@ -9,7 +9,7 @@ import { formatUsd, hasFiniteCost } from "@/lib/usage";
 import { readMembership, type Membership } from "../lib/membership";
 import type { SessionState } from "../lib/session";
 import { readSharedSessionState } from "../lib/shared-session";
-import { canPairDevices } from "./ServerPairingCard";
+import { canPairDevices } from "../lib/pairing";
 import { normalizeAccessEntry, withEntry, withoutEntry, type SignInLists } from "./SignInAccessCard";
 import { Card } from "./SettingsPrimitives";
 import { Select } from "./Select";

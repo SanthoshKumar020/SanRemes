@@ -3,17 +3,14 @@
 // than the one this window is on, the card says where it is set and draws no switches.
 import { lazy, Suspense, type ReactNode } from "react";
 
-import { pageIsThisComputer } from "@/lib/companion-bridge";
 import { t } from "@/lib/i18n";
 import type { Message } from "@/state/store";
 import type { SettingsCardId } from "../../shared/app-settings";
 import { SettingsLook } from "./SettingsPrimitives";
 
-const OtherComputersSetting = lazy(() => import("./TailnetComputers").then((module) => ({ default: module.OtherComputersSetting })));
 const AiSignIn = lazy(() => import("./EnginesSettings").then((module) => ({ default: module.AiSignInSettings })));
 
-const CARDS: Record<SettingsCardId, { here: () => boolean; control: () => ReactNode }> = {
-  "other-computers": { here: pageIsThisComputer, control: () => <OtherComputersSetting /> },
+const CARDS: Partial<Record<SettingsCardId, { here: () => boolean; control: () => ReactNode }>> = {
   "ai-sign-in": { here: () => true, control: () => <AiSignIn /> },
 };
 

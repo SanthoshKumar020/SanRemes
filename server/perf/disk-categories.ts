@@ -88,7 +88,7 @@ const DATA_FOLDERS: Readonly<Record<string, StorageCategory>> = {
   ".backups": "backups", "doctor-backups": "backups",
   // cli.ts and service-unit.ts (service logs), decider/log.ts, engine-records.ts (what each server run started).
   logs: "logs", "decider-log": "logs", "engine-runs": "logs",
-  // Made again on first use: phone-screen/scrcpy-server-file.ts downloads scrcpy; service-cli.ts installs the app copy;
+  // Made again on first use: service-cli.ts installs the app copy;
   // tunnel.ts prepares cloudflared in dist-native again when it is missing.
   scrcpy: "engine_clis", app: "engine_clis", "dist-native": "engine_clis",
   // excludedWorkspaceAuthPath (workspace-backup-policy.ts): login profiles of older browser engines.

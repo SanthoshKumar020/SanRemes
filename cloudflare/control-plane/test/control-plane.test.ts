@@ -294,10 +294,7 @@ describe("control-plane migrations and health", () => {
         providerRejectedAt: null,
         reclaim: { mode: "on", pending: 0 },
       },
-      relayAdoption: { e2eDevices: 0, legacyDevices: 0, installs: 0 },
       tunnelRelease: {
-        relayProven: { percent: 0, days: 3, eligible: 0 },
-        legacyPhoneCutoff: { percent: 0, eligible: 0 },
         minAppVersion: { on: false, eligible: 0 },
       },
     });
@@ -310,8 +307,7 @@ describe("control-plane migrations and health", () => {
     const first = await call("/healthz");
     const second = await call("/healthz");
     await expect(second.json()).resolves.toEqual(await first.json());
-    expect(prepare.mock.calls.filter(([sql]) => !sql.includes("relay_adoption"))).toHaveLength(1);
-    expect(prepare.mock.calls.filter(([sql]) => sql.includes("relay_adoption")).length).toBeLessThanOrEqual(1);
+    expect(prepare.mock.calls.filter(([sql]) => sql.includes("managed_endpoint_account_capacity"))).toHaveLength(1);
     // The public response stays uncached; only the internal copy expires on
     // its own, which bounds how far the report can trail D1.
     expect(second.headers.get("cache-control")).toBe("no-store");

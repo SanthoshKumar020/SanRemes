@@ -15,7 +15,6 @@ vi.mock("../settings-context", () => ({ useOtherPlaces: () => [], versionLine: (
 vi.mock("../inert", () => ({ useSwitchToComputer: () => ({ name: "This computer" }), InertRow: ({ title }: { title: string }) => createElement("div", { "data-inert": title }) }));
 vi.mock("@/state/store-select", () => ({ useStoreDispatch: () => vi.fn() }));
 vi.mock("../../ConnectedWorkspacesSettings", () => ({ ConnectedWorkspacesSettings: ({ label }: { label: string }) => createElement("section", { "data-your-computers": label }) }));
-vi.mock("../../RemoteComputerSection", () => ({ RemoteComputerSection: () => null }));
 vi.mock("../../NotificationSettingsRows", () => ({ NotificationRows: () => null }));
 vi.mock("../../AppSettingsRows", async (original) => ({ ...(await original<object>()), LanguageRow: () => null, UpdatesRow: () => null, ReplayTourRow: () => null }));
 vi.mock("../../AboutDialog", () => ({ AboutDialog: () => null }));

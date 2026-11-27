@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { appVersion } from "@/lib/app-links";
-import { pageIsThisComputer } from "@/lib/companion-bridge";
+import { localDesktopPage } from "@/components/onboarding/WelcomeGate";
 import { savedStepsHere, skillsLibraryEnabled } from "@/lib/feature-flags";
 import { t } from "@/lib/i18n";
 export { useSettingsPlace, type PlaceKind, type SettingsPlace } from "./settings-place";
@@ -23,7 +23,7 @@ export function useSettingsContext(): SettingsContext {
   const cloud = config?.cloudHome === true;
   const team = Boolean(config?.team);
   const desktop = Boolean(ogb);
-  const here = pageIsThisComputer();
+  const here = localDesktopPage();
   const home = here || Boolean(ogb?.home);
   const placesShown = known > 1 || (!ogb?.environments && railShown(places));
   const plan = desktop ? Boolean(ogb?.cloudAccount || (ogb?.cloudPlan && cloud)) : cloud && !team && admin;
@@ -86,7 +86,7 @@ export function useOtherPlaces(page?: string): OtherPlace[] {
   }
   // A Cloud's page in the desktop window can't read the rail's list, but This computer is always on it.
   const openComputer = typeof window === "undefined" || window.ogb?.remoteClient?.active ? undefined : window.ogb?.rail?.openComputer;
-  if (listed.length === 0 && openComputer && !pageIsThisComputer()) {
+  if (listed.length === 0 && openComputer && !localDesktopPage()) {
     return [{ key: "computer", name: t("rail.thisComputer"), kind: "computer", color: null, open: () => void openComputer(page).catch(() => {}) }];
   }
   return listed;

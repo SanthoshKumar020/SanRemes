@@ -37,7 +37,7 @@ describe("window preferences on the server", () => {
   it("refuses a preference the window never reported, such as a desktop-only one from a browser", () => {
     const frames: Record<string, unknown>[] = [];
     const prefs = createWindowPrefs({ broadcast: (frame) => frames.push(frame), ownerOrAdmin: () => true, windowOpen: () => true });
-    expect(prefs.write("remote.relay", true)).toMatch(/^The open SanRemes window can't change this here\./);
+    expect(prefs.write("appearance.userBubbles", true)).toMatch(/^The open SanRemes window can't change this here\./);
     expect(frames).toEqual([]);
   });
 });

@@ -5,7 +5,7 @@ import { PASS, type RouteHandler } from "./table.ts";
 
 export interface PresenceRouteDeps {
   isOwner(auth: RequestAuth): boolean;
-  active(source: "desktop" | "phone", timeZone?: string, language?: string): Promise<PresenceAnswer>;
+  active(source: "desktop", timeZone?: string, language?: string): Promise<PresenceAnswer>;
   /** A Team Cloud: every member's arrival counts, for their own brief, in the language their app shows. */
   member?(auth: RequestAuth, language?: string): PresenceAnswer;
   /** The language the app of a ping that counts shows (the owner's, or a member's), for the lines the server writes for
@@ -27,7 +27,6 @@ export function createPresenceRoutes(deps: PresenceRouteDeps): RouteHandler {
     if (method !== "POST" || path !== "/api/presence/active") return PASS;
     const body: unknown = await readBody(req, 4096);
     const given = body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {};
-    const source = given.source === "phone" ? "phone" : "desktop";
     const timeZone = typeof given.timeZone === "string" && given.timeZone.length <= 128 && IANA_ZONE.test(given.timeZone) ? validZone(given.timeZone) : undefined;
     const language = typeof given.language === "string" && LANGUAGE_TAG.test(given.language) ? given.language.toLowerCase() : undefined;
     const counts = Boolean(deps.member) || deps.isOwner(auth);
@@ -36,6 +35,6 @@ export function createPresenceRoutes(deps: PresenceRouteDeps): RouteHandler {
     if (deps.member) return json(res, 200, { ok: true, ...deps.member(auth, language) });
     // A guest's activation is not the person's: answered, never recorded.
     if (!deps.isOwner(auth)) return json(res, 200, { ok: true, returned: false });
-    return json(res, 200, { ok: true, ...(await deps.active(source, timeZone, language)) });
+    return json(res, 200, { ok: true, ...(await deps.active("desktop", timeZone, language)) });
   };
 }

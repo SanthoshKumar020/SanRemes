@@ -4,7 +4,6 @@ import { useSyncExternalStore } from "react";
 export interface DevicesSignal {
   place: string;
   needsYou: boolean;
-  phoneConnected: boolean;
 }
 
 let signal: DevicesSignal | null = null;
@@ -12,7 +11,7 @@ const listeners = new Set<() => void>();
 const subscribe = (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; };
 
 export function setDevicesSignal(next: DevicesSignal | null): void {
-  if (next === signal || (next && signal && next.place === signal.place && next.needsYou === signal.needsYou && next.phoneConnected === signal.phoneConnected)) return;
+  if (next === signal || (next && signal && next.place === signal.place && next.needsYou === signal.needsYou)) return;
   signal = next;
   for (const listener of listeners) listener();
 }
@@ -27,8 +26,7 @@ export const devicesPlaceKey = (place: { kind: string; name: string }) => `${pla
 
 export type NavDot = "success" | "warning";
 
-/** Amber while anything on Devices needs the person; green while a phone is connected and nothing does. */
+/** Amber while anything on Devices needs the person. */
 export function devicesDot(signal: DevicesSignal): NavDot | null {
-  if (signal.needsYou) return "warning";
-  return signal.phoneConnected ? "success" : null;
+  return signal.needsYou ? "warning" : null;
 }

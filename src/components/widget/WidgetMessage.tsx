@@ -2,7 +2,6 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { CircleAlert, X } from "lucide-react";
 import { useStore, type Message } from "@/state/store";
 import { usePageOpener } from "@/lib/page-open";
-import { phonePairingSettingsAction } from "@/lib/phone-pairing";
 import { useShowThreads } from "@/lib/thread-preferences";
 import { resolvedThreadTarget } from "@/lib/thread-target";
 import { openThread } from "@/state/thread-navigation";
@@ -11,7 +10,7 @@ import { activeLocale, t } from "@/lib/i18n";
 import { localizedCard } from "@/lib/widget-text";
 import { useAdvancedMode } from "@/lib/interface-mode";
 import {
-  PHONE_PAIRING_ACTION, widgetActions, widgetFields, widgetInitialValues, widgetScope, widgetString, type WidgetField, type WidgetNode, type WidgetOther, type WidgetPayload,
+  widgetActions, widgetFields, widgetInitialValues, widgetScope, widgetString, type WidgetField, type WidgetNode, type WidgetOther, type WidgetPayload,
   type WidgetSettled, type WidgetValues,
 } from "../../../shared/widget";
 import { ASK_QUIET_BUTTON, AskSettledLine, returnFocusToComposer } from "../AskCard";
@@ -121,7 +120,6 @@ function WidgetCard({ botId, threadId, messageId, payload, viewOnly }: { botId: 
     const entry = actions.get(ref);
     if (!entry || sendingNow.current || pending !== undefined) return;
     if (entry.client) {
-      if (entry.action.type === PHONE_PAIRING_ACTION) dispatch(phonePairingSettingsAction());
       const url = widgetActionUrl(entry);
       if (url) openPage(url);
       const target = resolvedThreadTarget(widgetThreadTarget(entry), state);

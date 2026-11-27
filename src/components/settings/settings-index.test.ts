@@ -52,7 +52,7 @@ describe("the pages", () => {
     expect(resolveSettingsTarget("backups", simple)).toEqual({ page: "transfer", anchor: "take-out" });
     expect(resolveSettingsTarget("import", simple)).toEqual({ page: "transfer", anchor: "bring-in" });
     expect(resolveSettingsTarget("decisionModel", simple)).toEqual({ page: "ai", anchor: "routing", advanced: true });
-    expect(resolveSettingsTarget("phone", simple)).toEqual({ page: "devices", anchor: "phones" });
+    expect(resolveSettingsTarget("phone", simple)).toEqual({ page: "devices" });
     expect(needsAdvanced({ page: "general" }, fullContext())).toBe(false);
   });
 
@@ -77,20 +77,22 @@ describe("the pages", () => {
     expect(find("backups", simple)[0]).toMatchObject({ entry: { page: "transfer" }, advanced: undefined });
   });
 
-  it("finds Your other computers without Advanced mode, on this computer only", () => {
+  it("finds your other computers without Advanced mode, on this computer only", () => {
     for (const advanced of [false, true]) {
-      for (const query of ["other computers", "another computer", "tailscale", "your other", "laptop"]) {
-        const hit = find(query, fullContext({ advanced })).find((found) => found.entry.id === "other-computers");
-        expect(hit, query).toMatchObject({ entry: { page: "devices", anchor: "network" }, elsewhere: false });
-        expect(hit!.advanced, query).toBeUndefined();
-      }
-      expect(find("tailscale", fullContext({ advanced }))[0]?.entry.id).toBe("other-computers");
+      const hit = find("another computer", fullContext({ advanced })).find((found) => found.entry.id === "your-computers");
+      expect(hit, "another computer").toMatchObject({ entry: { page: "app", anchor: "your-computers" }, elsewhere: false });
+      expect(hit!.advanced, "another computer").toBeUndefined();
+      expect(find("laptop", fullContext({ advanced }))[0]).toMatchObject({ entry: { page: "devices" }, elsewhere: false });
     }
-    const cloud = find("other computers", fullContext({ desktop: false, here: false, cloud: true, environments: false }));
-    expect(cloud.filter((found) => found.entry.id === "other-computers")).toEqual([]);
+    // The private network's own words are gone: nothing answers for them any more.
+    for (const query of ["other computers", "tailscale", "your other", "wifi"]) {
+      expect(find(query, fullContext({ advanced: false })), query).toEqual([]);
+    }
+    const cloud = find("another computer", fullContext({ desktop: false, here: false, cloud: true, environments: false }));
+    expect(cloud.filter((found) => found.entry.id === "your-computers")).toEqual([]);
   });
 
-  it("names Devices the same on every place, phones included: there is no Phone & devices or This server page", () => {
+  it("names Devices the same on every place: there is no Phone & devices or This server page", () => {
     for (const ctx of Object.values(PEOPLE)) {
       if (ctx.client) continue;
       expect(visiblePages(ctx).find((page) => page.id === "devices")?.labelKey).toBe("settings.page.devices");
@@ -132,10 +134,10 @@ describe("old links", () => {
   it("lands each old page where the design says", () => {
     const ctx = fullContext();
     const where = (id: AppSettingsSection) => resolveSettingsTarget(id, ctx);
-    expect(where("phone")).toEqual({ page: "devices", anchor: "phones" });
-    expect(where("companion")).toEqual({ page: "devices", anchor: "phones" });
-    expect(where("remote")).toEqual({ page: "devices", anchor: "reach" });
-    expect(resolveSettingsTarget("remote", fullContext({ here: false, cloud: true }))).toEqual({ page: "devices", anchor: "phones" });
+    expect(where("phone")).toEqual({ page: "devices" });
+    expect(where("companion")).toEqual({ page: "devices" });
+    expect(where("remote")).toEqual({ page: "devices" });
+    expect(resolveSettingsTarget("remote", fullContext({ here: false, cloud: true }))).toEqual({ page: "devices" });
     expect(resolveSettingsTarget("remote", fullContext({ client: true }))).toEqual({ page: "app", anchor: "your-computers" });
     expect(where("engines")).toEqual({ page: "ai", anchor: "providers" });
     expect(where("connections")).toEqual({ page: "ai", anchor: "ai-keys" });
@@ -164,8 +166,8 @@ describe("old links", () => {
 });
 
 describe("search", () => {
-  it.each(["phone", "pair", "qr", "iphone", "android", "this server", "pair a device", "connect your phone"])("puts Devices' phones first for “%s”", (query) => {
-    expect(first(query)).toMatchObject({ page: "devices", anchor: "phones" });
+  it.each(["this server"])("puts Devices first for “%s”", (query) => {
+    expect(first(query)).toMatchObject({ page: "devices" });
   });
 
   it.each(["name", "my name", "photo", "avatar", "profile", "profile picture"])("puts About you first for “%s”", (query) => {
@@ -241,11 +243,11 @@ describe("search", () => {
   });
 
   it("lists This computer's rows under On your other places on My Cloud's rail, and never with one place", () => {
-    const wifi = find("wifi", PEOPLE["My Cloud's page in the desktop window"]);
-    expect(wifi.find((hit) => hit.entry.id === "wifi")?.elsewhere).toBe(true);
-    // My Cloud has no Same Wi-Fi of its own, so its own Devices page isn't offered for it.
-    expect(wifi.some((hit) => hit.entry.id === "page:devices")).toBe(false);
-    expect(find("wifi", PEOPLE["My Cloud in a browser (owner)"]).some((hit) => hit.entry.id === "wifi")).toBe(false);
+    const move = find("move back", PEOPLE["My Cloud's page in the desktop window"]);
+    expect(move.find((hit) => hit.entry.id === "move")?.elsewhere).toBe(true);
+    // With one place there is nowhere else for it to live.
+    expect(find("move back", fullContext({ here: false, cloud: true, places: false }))).toEqual([]);
+    expect(find("move back", PEOPLE["My Cloud in a browser (owner)"]).some((hit) => hit.entry.id === "move")).toBe(false);
   });
 
   it("finds nothing for nonsense, and never a row whose page can't show here", () => {

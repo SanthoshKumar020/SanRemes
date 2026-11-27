@@ -62,9 +62,7 @@ export const ADVANCED_PAGES: readonly SettingsPageId[] = ["bots", "desktops", "d
 export const SETTINGS_PAGES: readonly SettingsPage[] = [
   { id: "overview", owner: "place", labelKey: "settings.page.overview", synonyms: ["overview", "place", "status", "version", "domain", "address", "sidebar"], when: () => true },
   { id: "devices", owner: "place", labelKey: "settings.page.devices", icon: Network, when: notClient,
-    synonyms: ["devices", "device", "my devices", "all devices", "device map", "map", "computers", "laptops", "servers", "mac mini", "vps", "cloud", "private network", "tailnet", "add a device", "add device",
-      "phone", "phones", "phone & devices", "pair", "pairing", "qr", "code", "iphone", "android", "mobile", "tablet", "wifi", "wi-fi", "anywhere", "relay", "remote", "companion", "tailscale",
-      "connect your phone", "get the phone app", "pair a device", "this server", "remote access"] },
+    synonyms: ["devices", "device", "my devices", "all devices", "device map", "map", "computers", "laptops", "servers", "mac mini", "vps", "cloud", "add a device", "add device", "this server"] },
   { id: "ai", owner: "place", labelKey: "settings.group.ai", icon: Sparkles, when: adminPage,
     synonyms: ["ai", "models", "model providers", "providers", "engines", "api keys", "keys", "key", "claude", "codex", "openai", "anthropic", "ollama", "lm studio", "local model"] },
   { id: "bots", owner: "place", labelKey: "settings.page.bots", icon: Bot, when: advancedOnly(notClient),
@@ -123,9 +121,9 @@ export const LEGACY_SETTINGS: Record<Exclude<AppSettingsSection, SettingsPageId>
   decisionModel: () => ({ page: "ai", anchor: "routing" }),
   imageGeneration: () => ({ page: "ai", anchor: "images" }),
   engines: () => ({ page: "ai", anchor: "providers" }),
-  phone: () => ({ page: "devices", anchor: "phones" }),
-  companion: () => ({ page: "devices", anchor: "phones" }),
-  remote: (ctx) => (ctx.client ? { page: "app", anchor: "your-computers" } : { page: "devices", anchor: ctx.here ? "reach" : "phones" }),
+  phone: () => ({ page: "devices" }),
+  companion: () => ({ page: "devices" }),
+  remote: (ctx) => (ctx.client ? { page: "app", anchor: "your-computers" } : { page: "devices" }),
   computer: () => ({ page: "desktops" }),
   logins: () => ({ page: "vault" }),
   botAccess: () => ({ page: "people", anchor: "bot-access" }),
@@ -188,22 +186,11 @@ const desk = (ctx: SettingsContext) => ctx.desktop && !ctx.client;
 const hereOnly = (ctx: SettingsContext) => ctx.here;
 
 export const SETTINGS_INDEX: readonly SettingsIndexEntry[] = [
-  { id: "add-device", page: "devices", anchor: "add", labelKey: "devicesPage.add", topFor: ["add a device", "add device", "new device"], synonyms: ["add a computer", "add a server", "add a phone", "connect a device"] },
-  { id: "private-network", page: "devices", anchor: "network", labelKey: "devicesPage.network.title", when: hereOnly, synonyms: ["tailscale", "tailnet", "private network", "vpn"] },
-  { id: "pair", page: "devices", anchor: "phones", labelKey: "devicesPage.addGroup.phone", sectionKey: "devicesPage.group.phonesTablets", topFor: ["phone", "pair", "pairing", "qr", "iphone", "android", "this server", "pair a device", "connect your phone"],
-    synonyms: ["code", "mobile", "tablet", "companion", "get the phone app"] },
-  { id: "paired", page: "devices", anchor: "phones", labelKey: "devicesPage.group.phonesTablets", synonyms: ["paired", "phones", "remove", "revoke", "pair again"] },
-  { id: "wifi", page: "devices", anchor: "reach", labelKey: "devices.route.wifi", sectionKey: "phone.reach.title", when: hereOnly, synonyms: ["wifi", "wi-fi", "lan", "local network"] },
-  { id: "relay", page: "devices", anchor: "reach", labelKey: "devices.route.relay", sectionKey: "phone.reach.title", when: hereOnly, synonyms: ["anywhere", "relay", "away"] },
-  { id: "keep-awake", page: "devices", anchor: "reach", labelKey: "remote.keepAwake", sectionKey: "phone.reach.title", when: hereOnly, synonyms: ["sleep", "awake", "overnight", "scheduled"] },
-  { id: "wake-automations", page: "devices", labelKey: "settings.search.wakeAutomations", jump: "automations", when: hereOnly, topFor: ["sleep", "overnight", "scheduled"], synonyms: ["awake"] },
+  { id: "add-device", page: "devices", anchor: "add", labelKey: "devicesPage.add", topFor: ["add a device", "add device", "new device"], synonyms: ["add a computer", "add a server", "connect a device"] },
   { id: "always-on", page: "devices", anchor: "always-on", labelKey: "alwaysOn.title", macLabelKey: "alwaysOn.titleMac", sectionKey: "alwaysOn.section", when: hereOnly,
     topFor: ["always on", "always-on", "home server", "spare computer", "mac mini"], synonyms: ["mini", "server at home", "run all day", "24/7", "open at login", "awake"] },
   { id: "add-always-on", page: "devices", anchor: "always-on", labelKey: "alwaysOn.add.title", sectionKey: "alwaysOn.section", when: hereOnly,
     topFor: ["add a mac mini", "add mac mini", "add a computer", "add always-on computer"], synonyms: ["mac mini", "mini", "home server", "spare computer", "move my bots"] },
-  { id: "other-computers", page: "devices", anchor: "network", labelKey: "devices.computers.title", sectionKey: "devicesPage.network.title", when: hereOnly, topFor: ["tailscale", "other computers", "another computer", "other computer", "my other computer"],
-    synonyms: ["computer", "computers", "laptop", "desktop", "mac", "pc", "share", "tailnet", "connect to another computer", "connect to a server"] },
-  { id: "https-address", page: "devices", anchor: "more-ways", labelKey: "devices.route.https", sectionKey: "phone.reach.title", when: hereOnly, advanced: true, synonyms: ["https", "web address", "https address"] },
   { id: "domain", page: "overview", anchor: "address", labelKey: "settings.overview.address", advanced: true, when: (ctx) => !ctx.here && !ctx.client, synonyms: ["domain", "dns", "https", "custom domain"] },
   { id: "sidebar-color", page: "overview", anchor: "sidebar", labelKey: "placeLook.sidebarColor", sectionKey: "settings.overview.sidebar", synonyms: ["color", "colour", "tint", "cloud color"] },
   { id: "sidebar-picture", page: "overview", anchor: "sidebar", labelKey: "placeLook.sidebarPicture", sectionKey: "settings.overview.sidebar", topFor: ["wallpaper", "background", "sidebar image"], synonyms: ["picture", "banner", "image"] },
@@ -276,13 +263,6 @@ export interface SearchHit {
   advanced?: boolean;
 }
 
-/** Words that name a page before any of its rows, and the section they open it at. */
-const PAGE_TOP: Partial<Record<SettingsPageId, { words: readonly string[]; anchor?: string }>> = {
-  devices: { words: ["phone", "phones", "pair", "pairing", "qr", "phone pairing", "mobile"], anchor: "phones" },
-};
-
-const LOCAL_ONLY_WORDS = ["wifi", "wi-fi", "lan", "local network", "tailscale"];
-
 const norm = (text: string) => text.toLocaleLowerCase().replace(/\s+/g, " ").trim();
 
 function score(query: string, label: string, words: readonly string[], topFor: readonly string[]): number {
@@ -308,14 +288,9 @@ export function searchSettings(rawQuery: string, ctx: SettingsContext, label: (e
   const every = { ...ctx, advanced: true };
   const simpleHides = (page: SettingsPageId) => !pageById(page).when(ctx);
   for (const page of visiblePages(every)) {
-    // A place with no Same Wi-Fi of its own doesn't offer its Devices page for "wifi": This computer's row does.
-    if (page.id === "devices" && !ctx.here && LOCAL_ONLY_WORDS.includes(query)) continue;
-    // A page named by the word itself ("phone", "pair") comes before its own rows, open at the section the word means.
-    const top = PAGE_TOP[page.id];
-    const named = top?.words.includes(query) === true;
-    const value = named ? 101 : score(query, pageLabel(page), page.synonyms, []) - 1;
+    const value = score(query, pageLabel(page), page.synonyms, []) - 1;
     if (value > 0) {
-      hits.push({ entry: { id: `page:${page.id}`, page: page.id, labelKey: page.labelKey, ...(named && top?.anchor ? { anchor: top.anchor } : {}) }, elsewhere: false, score: value, advanced: simpleHides(page.id) || undefined });
+      hits.push({ entry: { id: `page:${page.id}`, page: page.id, labelKey: page.labelKey }, elsewhere: false, score: value, advanced: simpleHides(page.id) || undefined });
     }
   }
   for (const listed of SETTINGS_INDEX) {

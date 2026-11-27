@@ -325,8 +325,6 @@ export function createSettingsRegistry(deps: RegistryDeps): SettingEntry[] {
     ownerOnly("vault.logins", "Vault and logins", "Saved website logins and secrets bots may use.", "vault", ["vault", "password", "passwords", "login", "logins", "1password"], () => "managed in Settings"),
     ownerOnly("data.backups", "Backups", "Making a backup (it takes a password), restoring or deleting one, and the daily company backup (it takes a typed confirmation).", "backup-export",
       ["backup", "backups", "restore", "export", "import", "schedule"], () => "managed in Settings"),
-    ownerOnly("phone.pairing", "Paired devices", "Pairing a phone or computer with a code, removing one, and what each paired device may do.", "pair",
-      ["pair", "pairing", "qr", "code", "paired", "revoke", "remove device", "device access"], () => "managed in Settings"),
     ownerOnly("computer.lending", "Lending this computer", "Which folders and apps this computer lends to a Cloud or server; each grant is picked and confirmed in the desktop app's own dialogs.", "your-computers",
       ["lend", "lending", "share computer", "share folders", "pause sharing"], () => "managed in Settings"),
     ownerOnly("data.keepHere", "Keep bots on this computer", "Whether this computer's bots stay here or move to My Cloud; the desktop app takes it only from the person's own click.", "move",
@@ -339,8 +337,6 @@ export function createSettingsRegistry(deps: RegistryDeps): SettingEntry[] {
       "members", ["people", "members", "invite", "roles", "admins", "sign in access"], () => "managed in Settings"),
     ownerOnly("remote.domain", "Custom domain", "The web address this self-hosted server answers on. Changing it can cut off the address the person is using right now.", "domain",
       ["domain", "custom domain", "dns", "public url"], () => cfg().customDomain ?? ""),
-    ownerOnly("remote.httpsAddress", "HTTPS address", "This computer's public HTTPS address for paired devices; turning it off can cut off the device the person is using now.", "https-address",
-      ["https", "public address"], () => "managed in Settings"),
   ];
 
   return [...safe, ...providers, engines, ...botEntries(deps, writable), ...pictureEntries(deps, writable), ...configEntries(deps, writable), ...windowEntries(windowPref), ...secret, ...owner];

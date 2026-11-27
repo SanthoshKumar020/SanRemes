@@ -7,7 +7,6 @@ import { isIP } from "node:net";
 
 import { BOT_PROFILE_PATCH_FIELDS } from "./bot-profile.ts";
 import type { Scope, SessionRecord, SessionRegistry } from "./sessions.ts";
-import { denyReason as companionDenial, isCompanionNotice } from "../companion/src/routes.ts";
 
 /** `owner`: the machine's owner. `service`: a shared server where every bot's shell is a loopback caller too,
  * so loopback without a session may reach only SERVICE_ALLOW. */
@@ -16,7 +15,7 @@ export type LoopbackTrust = "owner" | "service";
 export type RequestAuth =
   | {
     kind: "loopback"; scopes: readonly Scope[]; trust?: "service";
-    /** Set only on the verified companion-token path: the sidecar's id for the phone that authenticated. */
+    /** A paired device's id, when the request came from one; nothing sets it. */
     companionDevice?: string;
   }
   | { kind: "session"; session: SessionRecord; via: "bearer" | "cookie" | "ticket"; scopes: readonly Scope[] };
@@ -136,7 +135,7 @@ export function isLoopbackHost(host: string | undefined): boolean {
 
 /** Browsers send Sec-Fetch-Site and Sec-Fetch-Dest on every request to a loopback address and Origin on every WebSocket
  * handshake (Chrome 155 sends no Sec-Fetch-* there); a page can remove none of them. Node's fetch (undici) sends
- * Sec-Fetch-Mode alone, so it does not count; curl, the companion and the desktop app's main process send none. */
+ * Sec-Fetch-Mode alone, so it does not count; curl and the desktop app's main process send none. */
 export function fromBrowser(req: IncomingMessage): boolean {
   const headers = req.headers;
   if (headers["sec-fetch-site"] !== undefined || headers["sec-fetch-dest"] !== undefined) return true;
@@ -192,8 +191,7 @@ export function isProxied(req: IncomingMessage): boolean {
   return PROXY_HEADERS.some((name) => req.headers[name] !== undefined);
 }
 
-/** A paired phone's request. The companion marks everything it forwards and the mark only narrows, so this also
- * covers the standalone companion, which has no desktop token and so never sets `companionDevice`. */
+/** A paired device's request: loopback auth carrying its device id, or the paired-device header. */
 export function fromPairedDevice(req: IncomingMessage, auth: RequestAuth): boolean {
   return (auth.kind === "loopback" && auth.companionDevice !== undefined) || req.headers?.["x-sanremes-companion"] === "1";
 }
@@ -320,22 +318,11 @@ export const CLIENT_ALLOW: ReadonlyArray<{ methods: readonly string[]; path: Reg
   // A Team Cloud member's own themes: the route answers each person with theirs alone, and a limited session elsewhere with none.
   { methods: ["GET", "PUT", "PATCH", "POST", "DELETE"], path: /^\/api\/themes(?:\/[a-z0-9-]+(?:\/(?:duplicate|export))?)?$/ },
   { methods: ["GET", "HEAD"], path: /^\/api\/theme-assets\/[a-z0-9-]+\/[\w.-]+$/ },
-  // A Team Cloud member's own phone: the code carries their address and role, never more (routes/team-phone.ts).
-  { methods: ["POST"], path: /^\/api\/team\/phone-pairing$/ },
-  // The phones those codes opened: a member lists and removes their own only (routes/team-phone.ts visiblePhones).
-  { methods: ["GET"], path: /^\/api\/team\/phones$/ },
-  { methods: ["DELETE"], path: /^\/api\/team\/phones\/[\w-]+$/ },
   // Own desktop connector, bound to a private secret; listed only while features.sharedComputers is on.
   { methods: ["POST"], path: /^\/api\/shared-computers\/(?:connect|[\w-]+\/(?:poll|lease|result|disconnect))$/, feature: "sharedComputers" },
   { methods: ["GET"], path: /^\/api\/shared-computers$/, feature: "sharedComputers" },
   // The same desktop's device link: a WebSocket bound to that secret too.
   { methods: ["GET"], path: /^\/api\/shared-computers\/[\w-]+\/link$/, feature: "sharedComputers" },
-  // This phone's own apps, keyed by its session (routes/phones.ts): register, poll, lease, answer.
-  { methods: ["GET", "PUT", "DELETE"], path: /^\/api\/phones\/self$/ },
-  { methods: ["GET"], path: /^\/api\/phones\/self\/jobs$/ },
-  { methods: ["POST"], path: /^\/api\/phones\/self\/jobs\/[\w-]+\/(?:lease|result)$/ },
-  // This phone's own push registrations, alerts and Live Activities, keyed by its session (routes/phone-push.ts).
-  { methods: ["GET", "PUT", "DELETE"], path: /^\/api\/push\/(?:device|activity)$/ },
   { methods: ["GET"], path: /^\/api\/health$/ },
   { methods: ["GET"], path: /^\/api\/edition$/ },
   { methods: ["GET"], path: /^\/api\/brand$/ },
@@ -402,7 +389,7 @@ export const CLIENT_ALLOW: ReadonlyArray<{ methods: readonly string[]; path: Reg
   { methods: ["POST"], path: /^\/api\/bots\/[\w-]+\/browser\/action$/ },
   { methods: ["GET"], path: /^\/api\/bots\/[\w-]+\/browser\/(?:stream|download\/[\w-]+)$/ },
   { methods: ["POST"], path: /^\/api\/bots\/[\w-]+\/browser\/upload$/ },
-  // A bot's Data, read-only as a phone shows it: the sheet and tables, a page of a table or card (a catalog lookup, never
+  // A bot's Data, read-only: the sheet and tables, a page of a table or card (a catalog lookup, never
   // SQL), a chart card's picture. Running, changing and exporting stay an admin's (data/routes.ts).
   { methods: ["GET"], path: /^\/api\/bots\/[\w-]+\/data$/ },
   { methods: ["POST"], path: /^\/api\/bots\/[\w-]+\/data\/page$/ },
@@ -615,7 +602,6 @@ export interface ResolveOptions {
   url: URL;
   /** Desktop capability over Electron's private child port: with it, every public loopback mutation must come through the desktop's web session. */
   loopbackMutationToken?: string;
-  companionMutationToken?: string;
   features?: { sharedComputers?: boolean };
   /** Absent is `owner`; ignored while loopbackMutationToken is in force. */
   loopbackTrust?: LoopbackTrust;
@@ -649,8 +635,6 @@ function mutatingPublicRoute(method: string, path: string): boolean {
   if (upper === "GET" && path === "/api/setup-import/grok") return true;
   // Drives a bot's browser: a WebSocket upgrade is a GET, but what it carries is input.
   if (/^\/api\/bots\/[\w-]+\/browser\/(?:stream|desktop)$/.test(path)) return true;
-  // Shows the bots' USB phone: a WebSocket upgrade is a GET that a local process could send without an Origin.
-  if (/^\/api\/usb-phones\/[^/]+\/stream$/.test(path)) return true;
   if (["GET", "HEAD", "OPTIONS"].includes(upper)) return false;
   // Internal routes carry their own per-boot authorization; pairing-code exchange is public (the one-time code is its authorization).
   return !path.startsWith("/api/internal/") &&
@@ -717,16 +701,6 @@ export function resolveRequestAuth(req: IncomingMessage, options: ResolveOptions
   const proxied = isProxied(req);
   const loopback = !proxied && isLoopbackHost(headerValue(req.headers.host)) && isAllowedOrigin(headerValue(req.headers.origin));
   if (loopback) {
-    const companionToken = headerValue(req.headers["x-sanremes-companion-auth"]);
-    if (companionToken && options.loopbackMutationToken !== undefined) {
-      if (
-        !secureTokenMatch(companionToken, options.companionMutationToken ?? "") ||
-        req.headers["x-sanremes-companion"] !== "1" ||
-        !/^[\w-]{1,128}$/.test(headerValue(req.headers["x-sanremes-companion-device"]) ?? "") ||
-        (companionDenial({ path, method, authenticated: true }) && !isCompanionNotice(method, path))
-      ) return deny(403, "forbidden: invalid companion request");
-      return { auth: { kind: "loopback", scopes: LOOPBACK_SCOPES, companionDevice: headerValue(req.headers["x-sanremes-companion-device"]) }, status: 401, error: "" };
-    }
     const desktopOwner = options.loopbackMutationToken !== undefined &&
       secureTokenMatch(headerValue(req.headers[DESKTOP_OWNER_HEADER]), options.loopbackMutationToken) && fromOwnPage(req);
     if (fromBrowser(req) && !desktopOwner && !options.trustLocalBrowser) return deny(401, BROWSER_SIGN_IN);

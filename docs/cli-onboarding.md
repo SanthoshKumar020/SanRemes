@@ -14,7 +14,7 @@ Or, without a global install:
 npx sanremes
 ```
 
-Use the same command next time. The first launch guides you through setup; later launches reuse your saved AI connection and phone-access choice. `sanremes start` is the same as the bare command. If that workspace is already running, SanRemes opens it instead of starting a second server.
+Use the same command next time. The first launch guides you through setup; later launches reuse your saved AI connection and remote-access choice. `sanremes start` is the same as the bare command. If that workspace is already running, SanRemes opens it instead of starting a second server.
 
 ## First launch
 
@@ -23,7 +23,6 @@ The setup wizard uses Clack. Use ↑/↓ and Enter to select an option. Plain te
 1. Choose ChatGPT/Codex, Claude Code, or an API service. Existing supported connections are also listed.
 2. Sign in with the provider, or paste an API key into the hidden prompt. Setup asks before installing a missing Codex or Claude CLI. Codex also offers device-code sign-in for a remote terminal. API choices include OpenAI, OpenRouter, Groq, and other OpenAI-compatible endpoints.
 3. Choose a model and save. An API connection asks permission to send a short test message, which the provider may charge for. Native CLI setup confirms sign-in; it does not test the chosen model with a message. Model access is checked when you send one.
-4. Optionally connect a phone, or choose **Skip for now**. Your AI setup is already saved before this step.
 
 The workspace then starts and opens its local address in a browser on this computer. On SSH or a computer without a graphical desktop, open the printed address using an appropriate connection instead. Automatic browser opening only uses the local address; `--no-open` disables it.
 
@@ -31,9 +30,9 @@ Keep the terminal open while using your bots. This runs a foreground server, not
 
 Codex and Claude Code support agent tools. API-key connections currently support chat only. A ChatGPT or Claude subscription does not include separately billed API usage. Changing the saved default affects **new bots only**; existing bots and conversations keep their settings.
 
-## Optional phone access
+## Optional remote access
 
-A phone cannot connect to this computer's `localhost` address. The harness also does not listen on your LAN address. The guide does not create a phone QR until a configured HTTPS address has been checked against this workspace.
+Another device cannot connect to this computer's `localhost` address. The harness also does not listen on your LAN address. A pairing code is only created once a configured HTTPS address has been checked against this workspace.
 
 Choose one connection method:
 
@@ -43,12 +42,12 @@ Choose one connection method:
 
 After the connection is ready:
 
-- **iPhone/iPad:** scan the QR with Camera to open Safari. If you already have the SanRemes iOS app, use its pairing scanner or paste the full link there.
-- **Android:** the QR is an app link, so scan it inside the SanRemes app. To use a browser instead, open the web address printed above it and type the code.
+- **iPhone/iPad:** scan the QR with Camera to open Safari.
+- **Android:** scan the QR with the camera to open the browser, or open the web address printed above it and type the code.
 
-Choose **Connect** on the phone. Scanning alone is not a successful pairing. The code is private, single-use, and works for 10 minutes. Guided phone pairing grants client access for chat and approvals, not settings or pairing administration.
+Choose **Connect** on the phone. Scanning alone is not a successful pairing. The code is private, single-use, and works for 10 minutes.
 
-If the workspace starts but its HTTPS check fails, the local workspace remains usable and no phone code is created. Fix the connection and run `sanremes pair` in another terminal to try again. A missing account, connector, or Tailscale prerequisite can prevent startup; follow the printed error, or use `sanremes --local`. To add phone access after skipping it, stop the server, run `sanremes setup`, then start it again.
+If the workspace starts but its HTTPS check fails, the local workspace remains usable and no pairing code is created. Fix the connection and run `sanremes pair` in another terminal to try again. A missing account, connector, or Tailscale prerequisite can prevent startup; follow the printed error, or use `sanremes --local`. To add remote access after skipping it, stop the server, run `sanremes setup`, then start it again.
 
 ## Commands
 
@@ -57,11 +56,11 @@ The examples below assume a global install; prefix them with `npx` otherwise.
 | Command | Use |
 | --- | --- |
 | `sanremes` | Set up once, then start with saved settings. |
-| `sanremes setup` | Revisit AI and optional phone setup, save, and exit without starting. This is not a reset. |
+| `sanremes setup` | Revisit AI and remote-access setup, save, and exit without starting. This is not a reset. |
 | `sanremes --no-open` | Start without opening a browser. |
 | `sanremes --local` | Ignore saved remote access for this launch; keep the saved choice for next time. |
-| `sanremes --no-pair` | Suppress phone setup prompts and pairing invitations. This does **not** turn off saved remote access; use `--local` for that. |
-| `sanremes pair` | Create another phone invitation while the configured workspace and HTTPS connection are running. |
+| `sanremes --no-pair` | Suppress pairing invitations. This does **not** turn off saved remote access; use `--local` for that. |
+| `sanremes pair` | Create another pairing code while the configured workspace and HTTPS connection are running. |
 | `sanremes devices` | List paired devices; `sanremes devices revoke ID` signs one out. |
 | `sanremes serve` | Start without onboarding prompts or automatic browser opening; specify remote-access flags explicitly for a service. |
 | `sanremes account login` | Sign in to an SanRemes account for `--tunnel`; this does not sign in to an AI provider or start the tunnel. |
@@ -81,6 +80,6 @@ API keys are hidden while typed or pasted. New API connections save their key in
 
 The packaged desktop app does not keep your AI provider and service keys there: it encrypts them with the operating system (Keychain on macOS, DPAPI on Windows, the system secret store on Linux, where a desktop without one gets only Electron's fixed-key obfuscation) in `credentials.bin` and moves keys it finds in `config.json` into that store at startup. Keys entered through this CLI setup, OpenCode provider keys, keys given to one engine (`environment` or `key`), and MCP header values stay plaintext in `config.json`, on desktop too. `mcp-oauth.json` is also plaintext.
 
-Ctrl-C during AI setup leaves unsaved SanRemes changes unapplied. Installations and provider sign-ins already completed remain available. Ctrl-C during the later phone step keeps the AI setup you already saved, exits without starting a server, and does not undo an account sign-in already completed. Run `sanremes setup` to continue; no destructive reset is needed.
+Ctrl-C during AI setup leaves unsaved SanRemes changes unapplied. Installations and provider sign-ins already completed remain available. Run `sanremes setup` to continue; no destructive reset is needed.
 
 For remote access and background deployment options, see [self-hosting](self-hosting.md) and [the VPS guide](deploy-vps.md).

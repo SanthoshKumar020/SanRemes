@@ -1,19 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { ServerStatus } from "../../electron/server-status.mjs";
-import type { CompanionState, PhoneDevice } from "./companion-types";
 import { vpsServerId, type BotComputerRow } from "../../shared/bot-computers";
 import { withBots } from "./device-bots";
-import { buildDevices, groupByKind, kindFromLabel, nameKey, privateNetwork, type DeviceSources } from "./devices";
+import { buildDevices, groupByKind, kindFromLabel, nameKey, type DeviceSources } from "./devices";
 import { setLocale } from "./i18n";
-import type { PublicPhone } from "./phones";
 
 const NOW = 1_800_000_000_000;
 const here = { name: "This computer", kind: "computer" as const, version: "0.1.180", desktop: true };
 const status = (id: string, over: Partial<ServerStatus> = {}): ServerStatus => ({ id, state: "connected", since: NOW, version: "0.1.180", behind: false, install: "npx", ...over });
-const phone = (id: string, name: string, over: Partial<PhoneDevice> = {}): PhoneDevice => ({ id, name, createdAt: NOW - 1e9, lastSeenAt: NOW - 3_600_000, cloudDesktopAccess: false, ...over });
-const app = (key: string, name: string, online = true): PublicPhone => ({
-  key, registration: { installId: key, name, platform: "ios", appVersion: "2.4.0", timeZone: "UTC", capabilities: {} }, registeredAt: NOW - 1e9, seen: NOW - 60_000, lastUsedAt: null, online, busy: false,
-});
 const places = (environments: NonNullable<DeviceSources["places"]>["environments"]): NonNullable<DeviceSources["places"]> =>
   ({ localOrigin: "http://127.0.0.1:8799", remote: false, packaged: true, activeId: "local", environments });
 const build = (over: Partial<DeviceSources>) => buildDevices({ here, now: NOW, ...over });
@@ -58,38 +52,16 @@ describe("the device list", () => {
     expect(devices.map((device) => device.id)).toEqual(["here"]);
   });
 
-  it("reads paired phones with their live route, offline ones by the way they may use", () => {
-    const companion: Pick<CompanionState, "devices" | "connectedDeviceIds" | "routes"> = {
-      devices: [phone("a", "Ada's iPhone", { route: "wifi" }), phone("b", "Pixel 9", { route: "tailscale" }), phone("c", "iPad", { route: null })],
-      connectedDeviceIds: ["a", "b"],
-      routes: { wifi: { on: true, since: 1 }, relay: { on: true, since: 1 }, tailscale: { on: true, since: 1, name: "ada.ts.net" }, https: { on: false, since: null } },
-    };
-    const [, a, b, c] = build({ companion });
-    expect(a).toMatchObject({ id: "phone:a", kind: "phone", status: "online", route: "local" });
-    expect(b).toMatchObject({ status: "online", route: "tailscale" });
-    expect(c).toMatchObject({ status: "offline", route: "relay", lastSeen: NOW - 3_600_000 });
-    expect(c!.actions[0]).toEqual({ type: "remove", source: { type: "phone", id: "c" } });
-  });
 
-  it("joins a phone paired here and the same phone's apps into one device, removable from both", () => {
-    const devices = build({ companion: { devices: [phone("a", "Ada’s iPhone")], connectedDeviceIds: [] }, phoneApps: [app("k1", "ada's iphone"), app("k2", "Work Android", false)] });
-    expect(devices.map((device) => device.id)).toEqual(["here", "phone:a", "phone-app:k2"]);
-    const [, joined, other] = devices;
-    expect(joined).toMatchObject({ status: "online", version: "2.4.0" });
-    expect(joined!.sources).toEqual([{ type: "phone", id: "a" }, { type: "phone-app", id: "k1" }]);
-    expect(joined!.actions.filter((action) => action.type === "remove")).toHaveLength(2);
-    expect(other).toMatchObject({ status: "offline", route: "paired" });
-  });
 
   it("joins a server reached over Tailscale and the same machine paired here under its host name", () => {
     const devices = build({
-      companion: { devices: [], connectedDeviceIds: [], routes: { wifi: { on: false, since: null }, relay: { on: false, since: null }, tailscale: { on: true, since: 1, name: "me.ts.net", computers: true }, https: { on: false, since: null } } },
       places: places([{ id: "mini", kind: "remote", name: "Studio", origin: "http://studio-mini.tail1234.ts.net:8799" }]),
       statuses: [status("mini", { state: "cantReach" })],
       sessions: { current: null, sessions: [{ id: "s1", label: "Studio Mini", scopes: ["admin", "client"], lastSeenAt: NOW - 30_000 }] },
     });
     expect(devices.map((device) => device.id)).toEqual(["here", "place:mini"]);
-    expect(devices[1]).toMatchObject({ status: "online", routes: ["tailscale"], sources: [{ type: "place", id: "mini" }, { type: "session", id: "s1" }] });
+    expect(devices[1]).toMatchObject({ status: "online", routes: ["tailscale", "local"], sources: [{ type: "place", id: "mini" }, { type: "session", id: "s1" }] });
     expect(devices[1]!.note).toBeUndefined();
     const behind = build({
       places: places([{ id: "mini", kind: "remote", name: "Studio Mac mini", origin: "http://studio-mini.tail1234.ts.net:8799" }]),
@@ -140,25 +112,24 @@ describe("the device list", () => {
     expect(devices[1]!.live).toBe(true);
   });
 
-  it("marks live only what is connected at this moment: a phone on its link, a place this app is connected to", () => {
+  it("marks live only what is connected at this moment: a place this app is connected to", () => {
     const devices = build({
       places: places([{ id: "a", kind: "remote", name: "A", origin: "https://a.example.com" }, { id: "b", kind: "remote", name: "B", origin: "https://b.example.com" }]),
       statuses: [status("a"), status("b", { behind: true })],
-      companion: { devices: [phone("on", "On"), phone("off", "Off")], connectedDeviceIds: ["on"] },
       sessions: { current: null, sessions: [{ id: "s", label: "Chrome on Windows", scopes: ["admin"], lastSeenAt: NOW - 60_000 }] },
     });
     const live = Object.fromEntries(devices.map((device) => [device.id, Boolean(device.live)]));
-    expect(live).toMatchObject({ "place:a": true, "place:b": false, "phone:on": true, "phone:off": false, "session:s": false });
+    expect(live).toMatchObject({ "place:a": true, "place:b": false, "session:s": false });
   });
 
   it("groups the map by what each device is, in one fixed order, this place apart", () => {
     const devices = build({
       places: places([{ id: "home", kind: "remote", name: "My Cloud", origin: "https://a.sanremes.invalid", home: true }, { id: "mini", kind: "remote", name: "Mac mini", origin: "http://mini.tail1.ts.net:8799" }]),
-      companion: { devices: [phone("a", "Phone", { route: "wifi" })], connectedDeviceIds: ["a"] },
+      sessions: { current: null, sessions: [{ id: "a", label: "Pixel 9", scopes: ["admin"], lastSeenAt: NOW }] },
       vps: [{ alias: "gpu" }],
     });
     expect(groupByKind(devices).map((group) => [group.group, group.devices.map((device) => device.id)])).toEqual([
-      ["phones", ["phone:a"]], ["computers", ["place:mini"]], ["servers", ["place:home", "vps:gpu"]],
+      ["phones", ["session:a"]], ["computers", ["place:mini"]], ["servers", ["place:home", "vps:gpu"]],
     ]);
     expect(groupByKind(build({}))).toEqual([]);
   });
@@ -205,20 +176,5 @@ describe("names", () => {
     expect(kindFromLabel("Safari on iPhone")).toBe("phone");
     expect(kindFromLabel("Studio Mac mini")).toBe("desktop");
     expect(kindFromLabel("Chrome on Windows")).toBe("laptop");
-  });
-});
-
-describe("the private network", () => {
-  const routes = (tailscale: Partial<NonNullable<CompanionState["routes"]>["tailscale"]>) => ({
-    wifi: { on: false, since: null }, relay: { on: false, since: null }, https: { on: false, since: null }, tailscale: { on: false, since: null, ...tailscale },
-  });
-  it("is not shown without the desktop's phone link, and unknown until the person asks", () => {
-    expect(privateNetwork(null, null)).toBeNull();
-    expect(privateNetwork({ routes: routes({}) }, null)).toEqual({ state: "unknown", name: null, shared: false });
-  });
-  it("takes the last check's reason, then MagicDNS, then ready with this computer's name", () => {
-    expect(privateNetwork({ routes: routes({}) }, "not-installed")?.state).toBe("not-installed");
-    expect(privateNetwork({ routes: routes({ on: true, computers: true }) }, null)).toEqual({ state: "magicdns", name: null, shared: true });
-    expect(privateNetwork({ routes: routes({ on: true, name: "ada.tail1.ts.net", computers: true }) }, null)).toEqual({ state: "ready", name: "ada.tail1.ts.net", shared: true });
   });
 });

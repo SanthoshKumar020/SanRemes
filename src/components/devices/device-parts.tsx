@@ -83,7 +83,7 @@ export const botsLabel = (bots: ReturnType<typeof useBotsOn>) => (bots.length ? 
 /** The one thing a device needs, on its row, by what it needs. An update is a command to run there, so its button opens
  * the details that show it. */
 const NEED: Partial<Record<NonNullable<Device["note"]>, DeviceAction["type"]>> = {
-  update: "copy-update", "signed-out": "pair-again", insecure: "pair-again", unreachable: "retry", "no-way-in": "turn-on-way",
+  update: "copy-update", "signed-out": "pair-again", insecure: "pair-again", unreachable: "retry",
 };
 export const needOf = (device: Device) => {
   const type = device.note && NEED[device.note];

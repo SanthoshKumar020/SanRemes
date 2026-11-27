@@ -49,7 +49,7 @@ test("consuming a launch action prevents it replaying on a later restart without
 test("desktop relaunch accepts every platform once, guards its sender, and preserves consumed arguments and normal shutdown", () => {
   const main = readFileSync(new URL("./main.mjs", import.meta.url), "utf8");
   const source = main.slice(main.indexOf('ipcMain.handle("desktop:relaunch"'), main.indexOf("const talk = installTalk("))
-    + main.slice(main.indexOf("function requireMainWindowSender("), main.indexOf('ipcMain.handle("desktop-remote:state"'));
+    + main.slice(main.indexOf("function requireMainWindowSender("), main.indexOf("const workspaceOnly = (handler)"));
   const argv = ["/fixture/SanRemes", "--fixture", "sanremes://organization", "sanremes://organization?ignored"];
   takeOrganizationDeepLink(argv);
   const origin = "http://127.0.0.1:48995";
@@ -231,13 +231,11 @@ test("concurrent links share one confirmation and stale confirmations cannot cha
   assert.deepEqual(h.calls, []);
 });
 
-test("the encrypted credential update records intent and removes only companion access atomically", () => {
-  const before = { provider: { fixture: true }, desktopCompanionRemote: companion };
+test("the encrypted credential update records intent and leaves other credentials alone", () => {
+  const before = { provider: { fixture: true } };
   const next = withOrganizationRestartIntent(before);
   assert.equal(organizationRestartIntent(next), true);
-  assert.equal(next.desktopCompanionRemote, undefined);
   assert.deepEqual(next.provider, before.provider);
-  assert.equal(before.desktopCompanionRemote, companion);
   assert.deepEqual(withoutOrganizationRestartIntent(next), { provider: before.provider });
   assert.equal(organizationRestartIntent({ desktopOrganizationSettingsPending: "true" }), false);
 });

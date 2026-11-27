@@ -135,7 +135,7 @@ export function createSharedVmControl(deps: SharedVmControlDeps) {
     /** Deleting a bot a person's hold reaches would leave that hold to panels that may no longer exist. */
     deletionRefusal: (botId: string): string | null =>
       botSnapshot(botId).held ? "Hand back control of this bot's computer before deleting it" : null,
-    /** The key a phone's lease must own to open this conversation's Local VM: the shared desktop's in shared mode. */
+    /** The key a paired device's lease must own to open this conversation's Local VM: the shared desktop's in shared mode. */
     leaseKey: (bot: BotRecord, threadId?: string): string => sharedDesk() ? SHARED_VM_CONTROL_KEY : keyFor(bot, threadId),
     heldOnTarget: (target: LocalVmTarget): boolean => {
       if (target.key === SHARED_LOCAL_VM_TARGET.key) return control.snapshot(SHARED_VM_CONTROL_KEY).held;
@@ -151,11 +151,11 @@ export function createSharedVmControl(deps: SharedVmControlDeps) {
       keyFor(before) !== keyFor(after) && snapshot(before.id).held,
     takeRefusal: (key: string): string | null =>
       key === SHARED_VM_CONTROL_KEY && deps.busy() ? "The Local VM is being updated or changed — wait before taking control" : null,
-    /** A phone's take of a Local VM starts the expiry clock at once: nothing else may ever beat for it. A take naming a VPS
+    /** A paired device's take of a Local VM starts the expiry clock at once: nothing else may ever beat for it. A take naming a VPS
      * desktop is not one, though it lands on the key a per-bot VM shares. */
     armed: (auth: RequestAuth, bot: BotRecord, threadId: string | undefined, key: string, target?: string): boolean => {
-      const phone = auth.kind === "loopback" ? Boolean(auth.companionDevice) : auth.via === "bearer";
-      return phone && !(target?.startsWith("vps/") && bot.cloudBackend === "vps") && (key === SHARED_VM_CONTROL_KEY ||
+      const paired = auth.kind === "loopback" ? Boolean(auth.companionDevice) : auth.via === "bearer";
+      return paired && !(target?.startsWith("vps/") && bot.cloudBackend === "vps") && (key === SHARED_VM_CONTROL_KEY ||
         (key === bot.id && deps.mode() === "per-bot" && onLocalVm(bot, threadId)));
     },
     release: (bot: BotRecord, threadId: string | undefined, lease: string) =>

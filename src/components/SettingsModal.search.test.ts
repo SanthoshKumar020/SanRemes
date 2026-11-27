@@ -11,7 +11,7 @@ vi.mock("@/state/store", async (importOriginal) => ({
   ...await importOriginal<typeof import("@/state/store")>(),
   api: vi.fn(async () => ({})),
   useStore: () => ({
-    state: { appSettingsSection: fixture.section, instances: [], bots: [], config: { features: {}, composio: { mode: "self" }, rooms: { turnTimeoutMinutes: 5 } }, appSettingsCloudLink: 0, appSettingsPhonePairing: 0 },
+    state: { appSettingsSection: fixture.section, instances: [], bots: [], config: { features: {}, composio: { mode: "self" }, rooms: { turnTimeoutMinutes: 5 } }, appSettingsCloudLink: 0 },
     dispatch: fixture.dispatch,
     refreshInstances: vi.fn(),
   }),
@@ -22,8 +22,8 @@ vi.mock("@/lib/use-owner-or-admin", () => ({ useOwnerOrAdmin: () => null }));
 vi.mock("./DesktopCapabilities", () => ({ useDesktopCapabilities: () => ({ capabilities: { host: {} } }) }));
 vi.mock("./SidebarProfileMenu", async (importOriginal) => ({ ...await importOriginal<typeof import("./SidebarProfileMenu")>(), useServerUpdateItem: () => null }));
 for (const [path, name] of [
-  ["./EnginesSettings", "EnginesSettings"], ["./RemoteComputerSection", "RemoteComputerSection"], ["./PhoneDevicesSection", "PhoneDevicesSection"],
-  ["./ServerPairingCard", "ServerPairingCard"], ["./LocalComputerSection", "LocalComputerSection"], ["./CloudAccountSettings", "CloudAccountSettings"],
+  ["./EnginesSettings", "EnginesSettings"],
+  ["./LocalComputerSection", "LocalComputerSection"], ["./CloudAccountSettings", "CloudAccountSettings"],
   ["./PeopleSection", "PeopleSection"], ["./ActivitySection", "ActivitySection"], ["./UsageSection", "UsageSection"], ["./ImportSettings", "ImportSettings"],
   ["./CustomDomainSettings", "CustomDomainSettings"], ["./VaultSettings", "VaultSettings"], ["./PlanUsage", "PlanUsageSummary"],
 ] as const) vi.doMock(path, async (importOriginal) => ({ ...await importOriginal<Record<string, unknown>>(), [name]: () => null }));
@@ -78,7 +78,7 @@ describe("Settings search in Simple mode", () => {
     // Simple keeps notifications on This app (This browser in a tab), not on General.
     expect(first.textContent, "a browser tab is This browser").toContain("This browser");
     expect(first.textContent).not.toContain("General");
-    type("phone");
+    type("devices");
     expect(document.querySelector("[data-settings-hit]")!.getAttribute("data-settings-hit")).toBe("page:devices");
     expect(document.querySelector("[data-settings-hit]")!.textContent).toContain("Devices");
   });
@@ -95,6 +95,9 @@ describe("Settings search in Simple mode", () => {
   it("says plainly when nothing matches, with the Help Center beside it", () => {
     type("zzqx");
     expect(document.querySelector("[data-settings-no-match]")!.textContent).toContain("Nothing matches “zzqx”");
+    expect(document.querySelector("[data-settings-hit]")).toBeNull();
+    type("phone");
+    expect(document.querySelector("[data-settings-no-match]")!.textContent).toContain("Nothing matches “phone”");
     expect(document.querySelector("[data-settings-hit]")).toBeNull();
   });
 

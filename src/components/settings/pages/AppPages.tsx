@@ -19,7 +19,6 @@ import { DiagnosticsRow } from "../../DiagnosticsRow";
 import { NotificationRows } from "../../NotificationSettingsRows";
 import { OpenAtLoginRow } from "../../OpenAtLoginRow";
 import { PinnedPanelsSettings } from "../../PinnedPanelsSettings";
-import { RemoteComputerSection } from "../../RemoteComputerSection";
 import { SettingRow, SettingsGroup, SettingsLinkRow, SettingsRows, Switch } from "../../SettingsPrimitives";
 import { SkinPicker } from "../../SkinPicker";
 import { TalkShortcutRow } from "../../TalkShortcutRow";
@@ -69,7 +68,6 @@ export function AppPage() {
     {ctx.desktop && (window.ogb?.environments
       ? <ConnectedWorkspacesSettings label={t("settings.app.computers")} description={t("settings.app.computersLine")} />
       : !ctx.client && <PlacesFromHere />)}
-    {ctx.desktop && ctx.advanced && <RemoteComputerSection hideWhenUnavailable legacyOnly />}
     <SettingsGroup label={t("sidebar.menu.helpShort")} block="help">
       <SettingsRows>
         <SettingsLinkRow title={t("sidebar.menu.help")} external onClick={() => void openExternalLink(HELP_CENTER_URL)} />

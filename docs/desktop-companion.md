@@ -7,9 +7,7 @@ server**. The bots, their conversations, keys and routines stay on the host.
 Any desktop build can be the host or the client: Windows, macOS or Ubuntu. Both computers need Tailscale, signed in to
 the same Tailscale account, with MagicDNS on. Nothing here is reachable from outside your Tailscale network.
 
-A phone uses a different path: **Settings → Devices → Phones and tablets → Add a phone**. A phone's code has six digits and only
-the phone app can use it. The link a phone pairing creates is phone-only too: a desktop client that refuses it is
-behaving as expected. A computer needs the link below.
+A phone pairs in its browser instead: scan the QR or paste the pairing link — see [self-hosting](self-hosting.md#using-it-from-your-phone). An old six-digit phone code is refused here. A computer needs the link below.
 
 ## Share the host
 
@@ -17,7 +15,7 @@ behaving as expected. A computer needs the link below.
    "tailscale".
 2. On the **Private network** row under **You're here**, choose **Set up Tailscale** (or **Allow my other computers**),
    then keep its switch, **Your other computers**, on. This turns Tailscale on in the app first, if it is off, and turning the share off
-   turns it off again unless you turned Tailscale on yourself or a phone is paired. The app never installs, starts or
+   turns it off again unless you turned Tailscale on yourself. The app never installs, starts or
    signs in Tailscale itself: if Tailscale is not installed, not running, signed out or waiting for approval on your
    Tailscale network, the row says so.
 3. Wait for the row to say **On**: the host answers at `https://<name>.ts.net` when Tailscale's HTTPS Certificates are
@@ -26,7 +24,7 @@ behaving as expected. A computer needs the link below.
    once, and the step says until when.
 
 The private network row in **You're here** on the same page is where Tailscale is set up; while it is on, phones reach
-this computer over it too, and **Turn off for phones** turns it off once the share is off.
+this computer over it too.
 
 ## Connect the client
 
@@ -47,7 +45,7 @@ holds it awake while a way in is on, and that includes **Your other computers**.
 
 | It says | Do this |
 |---|---|
-| "…is a SanRemes desktop app. To open it from here, turn on Tailscale and Your other computers…" | The address reached the host's phone link or an app that is not shared. Share the host as above and use its link. |
+| "…is a SanRemes desktop app. To open it from here, turn on Tailscale and Your other computers…" | The address reached an app that is not shared. Share the host as above and use its link. |
 | "That code is for the phone app…" | A six-digit code was typed. Use **Pair a computer** on the host. |
 | "Tailscale isn't connected on this computer." | Open Tailscale on the client and sign in. |
 | "…isn't on this computer's tailnet." | The two computers are signed in to different Tailscale accounts. |

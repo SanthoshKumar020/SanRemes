@@ -281,14 +281,14 @@ Pairing code   RR8Y-BLR6-H939   works once, until 10:59 · everything
 Link           https://c-7f3a9c.sanremes.invalid/pair#code=RR8Y-BLR6-H939
 
   Desktop app   ＋ → Connect to another computer, paste the link
-  Phone         scan with your camera or the SanRemes app
+  Phone         scan with your camera
 ```
 
 - **A browser:** open the link. The code is filled in; press **Connect**. That browser is paired for 30 days, renewed on use as above.
 - **The desktop app:** choose **＋ → Connect to another computer** and paste the link, or type the address and the code. The rail at the window's left edge switches between your own machine and every server you added.
-- **The phone:** scan the QR code from the iOS app's pairing screen, or paste the whole link into its address field. A code from `pair --phone` can chat, approve, and read; creating bots, changing models, and connecting apps stay with you in the server's UI.
+- **The phone:** scan the QR code with its camera, or paste the whole link into its browser. A code from `pair --client` can chat, approve, and read; creating bots, changing models, and connecting apps stay with you in the server's UI.
 
-Worth knowing: a code works **once**, for **10 minutes** (`--ttl 24h` keeps it open up to a day); the link only works on that address (typing the code by hand: open `…/pair` and enter it); five wrong codes in five minutes from one address lock pairing there for five minutes; `--phone` mints a code for a device that may chat and approve but not change settings or pair others.
+Worth knowing: a code works **once**, for **10 minutes** (`--ttl 24h` keeps it open up to a day); the link only works on that address (typing the code by hand: open `…/pair` and enter it); five wrong codes in five minutes from one address lock pairing there for five minutes; `--client` mints a code for a device that may chat and approve but not change settings or pair others.
 
 ## Manage devices
 
@@ -647,7 +647,7 @@ start the version you want with `npx --yes sanremes@X.Y.Z serve --tunnel`.
 
 ### How far behind a server may fall
 
-The desktop and phone apps are built to work with any server version that was
+The desktop app is built to work with any server version that was
 the stable one within the last 90 days. An older server keeps running, but the
 app tells you it is behind, and newer features may not work until you update
 it. Update at least every 90 days.

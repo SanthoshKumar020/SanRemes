@@ -174,8 +174,6 @@ export interface CloudAccountBridge {
   readySeen?(): Promise<void>;
   /** Lists the Cloud machine under Servers and opens it in this window. */
   connectHome(): Promise<CloudAccountState>;
-  /** The same, opening the Cloud's Settings on its phone pairing. */
-  connectHomeForPhone(): Promise<CloudAccountState>;
   /** Opens a team's Cloud in this window, as the switcher does: one the verified session lists, by its id. Absent on an older app. */
   openTeam?(teamId: string): Promise<void>;
   /** Cancel trial / Cancel plan, after the survey when it says anything; Keep my plan. The Cloud is the verified session's own, never the page's. Absent on an older app. */

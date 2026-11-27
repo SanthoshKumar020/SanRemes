@@ -6,7 +6,7 @@ import { randomUUID } from "node:crypto";
 import { isSettingsCardId, SETTINGS_CARD_IDS, type AppSettingRequest, type SettingsCardId } from "../../shared/app-settings.ts";
 import { appendDecision } from "../decision-log.ts";
 import { UNDO_STALE } from "../direct-apply.ts";
-import type { TurnOwnerRefusal } from "../host/phones.ts";
+import type { CloudLendingRefusal } from "../cloud-lending.ts";
 import { serverLine } from "../server-lines.ts";
 import type { BotRecord, GroupRecord, Store } from "../store.ts";
 import type { ThemeTool } from "../themes/tool.ts";
@@ -60,13 +60,17 @@ export type UndoResult =
   | { claimed: true; state: "already_undone" | "undone" }
   | { claimed: true; state: "invalid"; error: string; status: number; stale?: true };
 
+/** Why a turn is not the owner's own: shared or service trust, a lent computer's refusal, or the owner's memory
+ * of this computer changed. */
+export type TurnOwnerRefusal = "shared" | "service" | CloudLendingRefusal | "memory-changed" | "memory-changed-here";
+
 export interface AppSettingsDeps {
   store: Pick<Store, "appendMessage" | "bot" | "messagesFor" | "patchMessage">;
   dataDir: string;
   entries: readonly SettingEntry[];
-  /** Non-null when the turn is the owner's own (phones.turnOwner); null on a Team Cloud or hosted workspace. */
+  /** Non-null when the turn is the owner's own; null on a Team Cloud or hosted workspace. */
   turnOwner(turn: Turn): string | null;
-  /** Why turnOwner is null (phones.turnOwnerRefusal), for the refusal's words only; turnOwner stays the guard. */
+  /** Why turnOwner is null, for the refusal's words only; turnOwner stays the guard. */
   ownerRefusal?(turn: Turn): TurnOwnerRefusal | null;
   guestDriven(threadId: string): boolean;
   /** The turn answers a routine, webhook or other automation, owner-written ones included: no lasting move onto this computer. */

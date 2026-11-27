@@ -13,7 +13,7 @@ describe("the first hour's words", () => {
     for (const language of FIRST_HOUR_LANGUAGES) {
       const w = firstHourWords(language);
       const english = language !== "en" ? firstHourWords("en") : null;
-      const lines = (words: typeof w) => [words.connect, words.lookLater("Gmail", 1), words.arrivedGreeting("Sam", "SanRemes", ["Coder"]), words.briefOn, words.phoneTitle, words.phoneBody, words.phoneButton, words.firstLookReady, words.firstBriefReady];
+      const lines = (words: typeof w) => [words.connect, words.lookLater("Gmail", 1), words.arrivedGreeting("Sam", "SanRemes", ["Coder"]), words.briefOn, words.firstLookReady, words.firstBriefReady];
       for (const line of lines(w)) {
         expect(line.trim(), language).not.toBe("");
         if (english) expect(lines(english), language).not.toContain(line);

@@ -12,13 +12,12 @@ import type { HelperFollowupFacts } from "../../shared/helper-followup";
 
 const f = vi.hoisted(() => ({
   state: {} as Record<string, unknown>, dispatch: vi.fn(), advanced: false, local: false, reduced: false,
-  services: {} as Record<string, { connected: boolean }>, phones: [] as unknown[], found: null as unknown, detect: vi.fn(),
+  services: {} as Record<string, { connected: boolean }>, found: null as unknown, detect: vi.fn(),
   followups: [] as unknown[], saves: true, bots: 0, routines: 0,
 }));
 vi.mock("@/state/store", () => ({
   useStore: () => ({ state: f.state, dispatch: f.dispatch }),
   api: async (path: string, init?: { body?: string }) => {
-    if (path === "/api/phones") return { phones: f.phones };
     if (path.endsWith("/helper-followup")) {
       const body = JSON.parse(init?.body ?? "{}");
       f.followups.push(body);
@@ -82,7 +81,6 @@ beforeEach(() => {
   f.local = false;
   f.reduced = false;
   f.services = {};
-  f.phones = [];
   f.found = null;
   f.followups = [];
   f.saves = true;
@@ -144,8 +142,8 @@ describe("in the chat (Simple mode)", () => {
     const first = host.querySelector<HTMLElement>('[data-helper-line="0"]')!;
     expect(first.dataset.chatBubble, "the chat's own Simple bubble").toBe("simple");
     expect(first.className).toContain(SIMPLE_BOT_BUBBLE);
-    expect(chips()).toEqual(["apps", "phone", "cloud"]);
-    expect([...host.querySelectorAll("[data-helper-step]")].map((node) => node.textContent)).toEqual(["Connect email & calendar", "Connect your phone", "Try Cloud"]);
+    expect(chips()).toEqual(["apps", "cloud"]);
+    expect([...host.querySelectorAll("[data-helper-step]")].map((node) => node.textContent)).toEqual(["Connect email & calendar", "Try Cloud"]);
     expect(f.followups, "only a first run asks for a follow-up").toEqual([]);
   });
 
@@ -170,10 +168,10 @@ describe("in the chat (Simple mode)", () => {
     f.state = { ...f.state, instances: [claude(false)] };
     await show();
     expect(lines()[3]).toBe(t("helperIntro.followup.noAi"));
-    expect(chips()).toEqual(["ai", "apps", "phone"]);
-    await act(async () => { host.querySelector<HTMLElement>('[data-helper-step="phone"]')!.click(); });
-    expect(f.dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "toggleAppSettings", section: "phone" }));
     expect(chips()).toEqual(["ai", "apps", "cloud"]);
+    await act(async () => { host.querySelector<HTMLElement>('[data-helper-step="apps"]')!.click(); });
+    expect(f.dispatch).toHaveBeenCalledWith({ type: "togglePlugins", open: true, surface: "apps" });
+    expect(chips()).toEqual(["ai", "cloud"]);
   });
 
   it("opens the Connect an AI dialog in place from its chip, not Settings", async () => {
@@ -196,7 +194,7 @@ describe("in the chat (Simple mode)", () => {
     f.local = true;
     f.found = { skills: [{ name: "pdf", source: "claudeCode" }], tools: [] };
     await show();
-    expect(chips()).toEqual(["apps", "import", "phone"]);
+    expect(chips()).toEqual(["apps", "import", "cloud"]);
     expect(chipAction("import")).toEqual({ type: "toggleAppSettings", open: true, section: "import" });
   });
 
@@ -217,7 +215,6 @@ describe("in the chat (Simple mode)", () => {
 
   it("opens the app's own flow for each chip", () => {
     expect(chipAction("apps")).toEqual({ type: "togglePlugins", open: true, surface: "apps" });
-    expect(chipAction("phone")).toMatchObject({ type: "toggleAppSettings", section: "phone", phonePairing: true });
     expect(chipAction("cloud")).toEqual({ type: "openCloudAdd", source: "app_onboarding" });
   });
 
@@ -252,7 +249,7 @@ describe("as a first run lands in the chat", () => {
     expect(host.querySelector("[data-helper-typing]")).toBeNull();
     expect(chips()).toEqual([]);
     await tick(INTRO_TIMING.chips);
-    expect(chips()).toEqual(["apps", "phone", "cloud"]);
+    expect(chips()).toEqual(["apps", "cloud"]);
     await show();
     expect(f.followups, "never asked twice").toHaveLength(1);
   });
@@ -278,7 +275,7 @@ describe("as a first run lands in the chat", () => {
     await show();
     expect(f.followups).toHaveLength(1);
     expect(lines()).toHaveLength(4);
-    expect(chips()).toEqual(["apps", "phone", "cloud"]);
+    expect(chips()).toEqual(["apps", "cloud"]);
   });
 });
 
@@ -290,7 +287,7 @@ describe("in Advanced mode", () => {
     expect(host.textContent).toContain(t("helperIntro.title", { name: "SanRemes" }));
     expect(host.textContent).toContain(t("helperIntro.chief"));
     expect(host.querySelector('[data-helper-ask="helperIntro.ask.overview"]')).not.toBeNull();
-    expect(chips()).toEqual(["bots", "apps", "phone", "cloud"]);
+    expect(chips()).toEqual(["bots", "apps", "cloud"]);
     expect(host.querySelector("[data-helper-line]"), "no Simple bubbles").toBeNull();
     expect(f.followups).toEqual([]);
   });
@@ -306,7 +303,6 @@ describe("in Advanced mode", () => {
     expect(setupAction("ai")).toEqual({ type: "toggleAppSettings", open: true, section: "engines" });
     expect(setupAction("bots")).toEqual({ type: "newBot" });
     expect(setupAction("apps")).toEqual({ type: "togglePlugins", open: true, surface: "apps" });
-    expect(setupAction("phone")).toMatchObject({ type: "toggleAppSettings", section: "phone", phonePairing: true });
     expect(setupAction("cloud")).toEqual({ type: "openCloudAdd", source: "app_onboarding" });
   });
 });

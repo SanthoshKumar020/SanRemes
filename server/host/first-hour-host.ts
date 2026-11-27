@@ -64,7 +64,6 @@ export interface FirstHourHostDeps {
     toolkitCard(cfg: AppConfig, slug: string): Promise<{ label: string; blurb?: string }>;
   };
   sessions: { list(): ReadonlyArray<{ owner?: string; email?: string; scopes: readonly string[] }> };
-  phones(): number;
   routines(): RoutineManager | null;
   mainThread(botId: string): string | undefined;
   threadBusy(botId: string, threadId: string): boolean;
@@ -108,7 +107,6 @@ export function startFirstHour(deps: FirstHourHostDeps): FirstHour | null {
     briefOn: deps.briefOn,
     ensureBrief: deps.ensureBrief,
     briefCard: () => deps.proactive.brief.latestCard(),
-    phones: deps.phones,
     startTurn: deps.startTurn,
     notify: (bot, threadId, body) => deps.notify(bot.notifications === false ? null : { kind: "brief", botId: bot.id, botName: bot.name, threadId, title: bot.name, body, ...(bot.avatarUrl ? { avatarUrl: bot.avatarUrl } : {}) }),
     wrote: deps.wrote,

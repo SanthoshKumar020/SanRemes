@@ -263,37 +263,13 @@ describe("CLI startup lifecycle", () => {
     expect(output.includes("serve --lan                      this network only, not encrypted")).toBe(!guided);
   });
 
-  it.each(["mismatched", "unreachable"])("never mints a phone code for a %s public endpoint", async (failure) => {
-    let healthRequests = 0;
-    const requests: string[] = [];
-    vi.stubGlobal("fetch", vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
-      const address = String(url);
-      requests.push(address);
-      expect(init?.method).not.toBe("POST");
-      if (address.endsWith("/api/health")) {
-        return ++healthRequests === 1 ? Response.json({}, { status: 503 }) : Response.json({ app: "sanremes", pid: childPid });
-      }
-      if (address.startsWith("https://")) {
-        if (failure === "unreachable") throw new Error("Fixture endpoint offline");
-        return Response.json({ environmentId: "another-workspace" });
-      }
-      return Response.json({ environmentId: workspaceId });
-    }));
-    const log = vi.fn((line: string) => { if (line.includes("Keep this terminal open")) interrupt(); });
-    expect(await runServe({ ...options, pair: true, phone: "android", publicUrl: "https://fixture.example.test" }, log)).toBe(0);
-    expect(log).toHaveBeenCalledWith(expect.stringContaining("no phone pairing code was created"));
-    expect(requests.some((url) => url.includes("/api/auth/pairing"))).toBe(false);
-    expect(requests).toContain("https://fixture.example.test/.well-known/sanremes/environment");
-  });
-
-  it("offers Android client pairing only after verifying the same workspace, without claiming it is connected", async () => {
+  it("offers client pairing only after verifying the same workspace, without claiming it is connected", async () => {
     const origin = "https://fixture.example.test";
     const code = "ABCD-EFGH-JKLM";
     const expiresAt = Date.now() + 300_000;
     const pairingUrl = `${origin}/pair#code=${code}`;
-    // A real server mints both encodings of one window; Android can only scan the sanremes:// one.
+    // A real server mints the credential alongside the code.
     const credential = `omb_pair_${"a".repeat(43)}`;
-    const inviteUrl = `sanremes://pair?address=${encodeURIComponent(origin)}&token=${credential}&name=fixture`;
     let healthRequests = 0;
     const fetcher = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
       const address = String(url);
@@ -302,7 +278,7 @@ describe("CLI startup lifecycle", () => {
       }
       if (address === `http://127.0.0.1:${options.port}/api/auth/pairing`) {
         expect(init?.method).toBe("POST");
-        expect(JSON.parse(String(init?.body))).toEqual({ label: "Android", scopes: ["client"] });
+        expect(JSON.parse(String(init?.body))).toEqual({ scopes: ["client"] });
         // A server started without SANREMES_PUBLIC_URL: it mints the credential but
         // cannot name itself, so it returns no links at all. The CLI was told
         // the public address with --public-url and must build both from that.
@@ -315,7 +291,7 @@ describe("CLI startup lifecycle", () => {
     });
     vi.stubGlobal("fetch", fetcher);
     const log = vi.fn((line: string) => { if (line.includes("Keep this terminal open")) interrupt(); });
-    expect(await runServe({ ...options, pair: true, phone: "android", publicUrl: origin }, log)).toBe(0);
+    expect(await runServe({ ...options, pair: true, client: true, publicUrl: origin }, log)).toBe(0);
     const requests = fetcher.mock.calls.map(([url]) => String(url));
     const pairingRequest = `http://127.0.0.1:${options.port}/api/auth/pairing`;
     expect(requests.filter((url) => url === pairingRequest)).toHaveLength(1);
@@ -327,13 +303,9 @@ describe("CLI startup lifecycle", () => {
     expect(output).toContain("· chat and approvals");
     expect(output).toContain(`Link           ${pairingUrl}`);
     expect(output).toMatch(/[▀▄█]/);
-    expect(output).toContain(`Or open ${origin}/pair on your phone and enter the code.`);
-    expect(output).toContain("On Android, open the SanRemes app and scan the QR with its pairing scanner.");
-    expect(output).toContain(qrToString(inviteUrl));
-    expect(output).not.toContain(qrToString(pairingUrl));
-    expect(output).toContain("client access: chat and approvals, not settings or pairing administration");
-    expect(output).toContain("Scanning a QR does not mean the phone is paired.");
-    expect(output).toContain("Waiting for you to connect on the phone.");
+    expect(output).toContain("Phone         scan with your camera");
+    expect(output).toContain(qrToString(pairingUrl));
+    expect(output).not.toContain("pair --phone");
     expect(output).not.toMatch(/pairing complete|phone (?:is |successfully )?connected|paired successfully/i);
   });
 });

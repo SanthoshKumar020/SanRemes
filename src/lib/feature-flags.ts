@@ -94,10 +94,6 @@ export function savedStepsHere(config: FeatureFlagConfig | null | undefined): bo
   return config?.features?.savedStepsHere === true;
 }
 
-export function usbPhoneTakeoverEnabled(config: FeatureFlagConfig | null | undefined): boolean {
-  return config?.features?.usbPhoneTakeover === true;
-}
-
 export function skillBurgerEnabled(config: FeatureFlagConfig | null | undefined): boolean {
   return config?.features?.skillBurger !== false;
 }

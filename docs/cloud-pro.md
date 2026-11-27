@@ -137,37 +137,6 @@ session; that is how the web UI knows to open the Cloud's welcome and engine
 sign-in instead of the welcome flow, which describes the person's own computer
 (it can still be replayed from Settings).
 
-### Use My Cloud on your phone
-
-1. Install SanRemes on your phone from the App Store or Google Play.
-2. The menu under your name → **Connect your phone · to your Cloud (always on)**, or
-   **Settings → SanRemes Cloud → Use My Cloud on your phone**. The Cloud opens in
-   the app window at its phone pairing.
-3. **Create pairing code**, and scan the QR code with the phone app.
-
-How it fits together (`src/lib/phone-pairing.ts`):
-
-- **Connect your phone** opens Settings → Remote access at the pairing that
-  fits the window, with focus on the button that shows the code: this
-  computer's phone flow in the desktop app on its own computer, the Cloud's
-  own pairing code (`ServerPairingCard`) on a Cloud home, and any other
-  server's pairing code only for a session that may make one (the owner on
-  that machine or an admin session, where pairing codes are on).
-- On this computer, when the verified snapshot shows a paid plan (any tier)
-  and a Ready Cloud, the menu has two **Connect your phone** lines: *to your
-  Cloud (always on)* first, which does what **Use My Cloud on your phone**
-  does, then *to this computer*. A paid plan whose Cloud is not Ready keeps
-  the single *to this computer* line, with a note that the Cloud will show
-  there. A failed switch opens Settings → SanRemes Cloud.
-- **Use My Cloud on your phone** shows for a paid plan. With a Ready Cloud it
-  calls `cloud-account:connectHomeForPhone`, which takes no arguments and
-  connects as **Open My Cloud** does, adding the one fixed request
-  `?desktop-settings=phone` (on `/pair` too, which carries it on once paired).
-  The Cloud's page opens Settings on its phone pairing. It never makes a code
-  by itself. Before the Cloud is Ready, or if opening it failed, the card
-  lists the two steps instead. On the Cloud itself, Settings → SanRemes Cloud
-  offers the same button and opens the pairing directly.
-
 ### Only your own devices
 
 A Cloud home is personal (`server/cloud-owner.ts`): only the owner's own
@@ -450,8 +419,7 @@ the Cloud's address.
   computer or My Cloud). A second call is told "Another Live call is running
   in a web browser. Hang up there first." or "…in the desktop app…", and a
   browser's call shows in other windows' call bars as "Ada is on a Live call
-  from a web browser". The phone apps show a client they don't know as
-  "another device".
+  from a web browser".
 - **Take turns stays on This computer.** Take-turns calls listen in the
   desktop app (on-device on a Mac, through Fish Audio on Windows and Linux),
   which a Cloud's page can't use. On a Cloud,

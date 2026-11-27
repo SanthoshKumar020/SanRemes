@@ -251,7 +251,7 @@ export function createHomeWindow(deps) {
   const waits = createPairWait({ now });
   /** The profile (clean-workspace.mjs) the person opened from the rail while My Cloud is home, until they pick a place. */
   let profileShown = null;
-  /** My Cloud asked for before the move made it home (`{ open }`), until its page loads or the person goes elsewhere;
+  /** My Cloud asked for before the move made it home, until its page loads or the person goes elsewhere;
    * `naming`: since when, and how often, a brand-new My Cloud's name was not found. */
   let asked = null, naming = null;
   const clock = createReadyClock({ store: readyStore, now });
@@ -472,11 +472,11 @@ export function createHomeWindow(deps) {
     return show({ place: "cloud" });
   }
 
-  async function connect(place, token, open) {
+  async function connect(place, token) {
     const origin = place.origin;
     // Only a window this opened as home is left as it is: one that shows My Cloud as a saved server (opened from the
     // switcher before the move) is opened again as home, and goes home with it if My Cloud ends.
-    if (shows(origin) && away && !screen && !open) {
+    if (shows(origin) && away && !screen) {
       shown = place;
       if (place.kind === "team" && !renewal) renewLater(place, TEAM_RENEW_MS);
       return;
@@ -534,7 +534,7 @@ export function createHomeWindow(deps) {
       screen = null; status = null; tries = 0; away = asHome; shown = asHome ? place : null;
       // A page that never finishes loading is the offline screen after OPEN_MS, which looks again by itself and has Try again.
       let slow = null;
-      const loaded = await Promise.race([Promise.resolve(go(cloudHomeConnectUrl({ origin, grant }, now(), open === "phone" ? "phone" : null), origin, place)).then(() => true, () => true),
+      const loaded = await Promise.race([Promise.resolve(go(cloudHomeConnectUrl({ origin, grant }, now()), origin, place)).then(() => true, () => true),
         new Promise((done) => { slow = timers.set(() => done(false), OPEN_MS); })]);
       timers.clear(slow);
       if (!loaded) { log(`home: ${otherPlace(place) ? place.name : "My Cloud"} didn't load in ${OPEN_MS / 1000} s`); return offline(token); }
@@ -547,13 +547,13 @@ export function createHomeWindow(deps) {
     }
   }
 
-  /** Shows the window onto the person's home. `open: "phone"` opens My Cloud's Settings on its phone pairing. `place`:
+  /** Shows the window onto the person's home. `place`:
    * "cloud" for My Cloud, `{ team }` for a team's Cloud, `{ cloud }` for another of the person's own, else the place
    * remembered from last time. */
-  async function show({ open = null, place = null } = {}) {
-    if (recovering) { if (!open && !place) return; recovering = null; }
+  async function show({ place = null } = {}) {
+    if (recovering) { if (!place) return; recovering = null; }
     const token = ++opens;
-    if (open || place) profileShown = null;
+    if (place) profileShown = null;
     const current = await refresh();
     if (!wanted(token)) return;
     if (current.kind !== "cloud") profileShown = null;
@@ -588,7 +588,7 @@ export function createHomeWindow(deps) {
       const setup = machineSetup(target.machine);
       if (setup) { clearRetry(); return toScreen({ screen: "setup", ...setup }); }
       if (!target.origin) { toScreen(planScreen(target.machine?.status ?? "stopped", target)); later(); return; }
-      return connect(target, token, open);
+      return connect(target, token);
     }
     if (place === "cloud" || target.left) remember(null);
     opening = null;
@@ -597,7 +597,7 @@ export function createHomeWindow(deps) {
       const setup = cloudSetupOf(state()), mine = readyCloudOrigin(state()), stopped = setup || mine ? null : myCloudScreen();
       if (setup || mine || stopped) ensureWindow();
       if (setup) { clearRetry(); return toScreen({ screen: "setup", ...setup }); }
-      if (mine) return connect({ kind: "cloud", origin: mine }, token, open ?? asked.open);
+      if (mine) return connect({ kind: "cloud", origin: mine }, token);
       // Not running (it ended, its checkout wasn't finished, a payment problem): its own screen, never its address.
       if (stopped) { clearRetry(); return toScreen(stopped); }
       asked = null; naming = null;
@@ -632,7 +632,7 @@ export function createHomeWindow(deps) {
     }
     ensureWindow();
     if (current.kind === "signin") { clearRetry(); return toScreen({ screen: "signin", ...(current.other ? { other: true } : {}) }); }
-    return connect({ kind: "cloud", origin: current.origin }, token, open);
+    return connect({ kind: "cloud", origin: current.origin }, token);
   }
 
   /** The place's session in this window ended: a new one by itself, back where the page was. */
@@ -651,7 +651,7 @@ export function createHomeWindow(deps) {
       }
       if (placeOrigin() !== origin) return;
       if (!grant) return signInNeeded() ? toScreen({ screen: "signin" }) : offline(++opens);
-      await go(cloudHomeConnectUrl({ origin, grant }, now(), null, route), origin, place);
+      await go(cloudHomeConnectUrl({ origin, grant }, now(), route), origin, place);
     })().finally(() => { repairing = null; });
     return repairing;
   }
@@ -708,11 +708,11 @@ export function createHomeWindow(deps) {
     },
     /** The person asked for My Cloud (the Server menu, the welcome, Settings, the ready notice). Before the move made it
      * home it opens as a saved server, and while the Admin sets it up the setup screen shows until it opens by itself. */
-    async openCloud(open = null) {
-      if ((await refresh()).kind !== "computer") return show({ place: "cloud", open });
+    async openCloud() {
+      if ((await refresh()).kind !== "computer") return show({ place: "cloud" });
       if (!cloudSetupOf(state()) && !readyCloudOrigin(state()) && !notRunning()) throw new Error(t("native.cloud.notReady"));
-      asked = { open };
-      return show({ place: "cloud", open });
+      asked = {};
+      return show({ place: "cloud" });
     },
     /** Remove from list, from this computer's screen (its own button, once the person said yes there): the Cloud the screen
      * shows leaves their list on the Admin (cloud-account.mjs hideCloud), and the window goes where it would without it.

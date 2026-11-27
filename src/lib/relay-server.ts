@@ -1,16 +1,15 @@
-// The page's way to its own server's `/api` routes: through SanRemes Relay while it holds a relay pairing (a phone
-// browser away from home, src/lib/e2e/relay-link.ts), as a plain same-origin request otherwise.
-// It imports nothing: server code type-checks src/lib/composer-attachments.ts, whose uploads come through here, and
-// must not take in the browser's relay crypto (e2e/) or the live events store with it.
+// The page's way to its own server's `/api` routes: a plain same-origin request, or through a link another transport
+// holds. It imports nothing: server code type-checks src/lib/composer-attachments.ts, whose uploads come through here,
+// and must not take in the live events store with it.
 
-/** What this file uses of a RelayLink (src/lib/e2e/relay-link.ts). */
+/** What this file uses of a link another transport holds. */
 export interface ServerLink {
   fetch(path: string, request?: { method?: string; headers?: Headers | Record<string, string>; body?: Uint8Array | null; signal?: AbortSignal }): Promise<Response>;
   close(): void;
 }
 
 /** An EventSource as the live events transport uses it (src/lib/live-events.ts): the browser's own, or one through
- * the relay link. */
+ * the link. */
 export interface LiveEventSourceLike {
   onopen: (() => void) | null;
   onerror: (() => void) | null;

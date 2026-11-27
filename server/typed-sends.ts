@@ -5,9 +5,27 @@
 // falls back to the start-of-message rule.
 import { createHash } from "node:crypto";
 
-import { createPhoneSends } from "./phones/sends.ts";
+export interface NotedSends {
+  note(sendId: string): void;
+  has(sendId: string | undefined): boolean;
+}
 
-const sends = createPhoneSends();
+export function createNotedSends(limit = 500): NotedSends {
+  const ids = new Set<string>();
+  return {
+    note(sendId) {
+      ids.delete(sendId);
+      ids.add(sendId);
+      for (const oldest of ids) {
+        if (ids.size <= limit) break;
+        ids.delete(oldest);
+      }
+    },
+    has: (sendId) => sendId !== undefined && ids.has(sendId),
+  };
+}
+
+const sends = createNotedSends();
 const proof = (threadId: string, sendId: string, text: string): string =>
   createHash("sha256").update(JSON.stringify([threadId, sendId, text])).digest("base64");
 

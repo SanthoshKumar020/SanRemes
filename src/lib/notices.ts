@@ -23,8 +23,6 @@ export const GROK_MOVE_NOTICE = "grok-move-2026-11";
 /** The sponsor's card for ModelGo: each person sees it once, on every page but a branded build or a desktop whose organization
  * refuses it, and on the first launch it may show in: first when nothing else is due, else right after the launch's notice. */
 export const MODELGO_OFFER_NOTICE = "modelgo-offer-2026-11";
-/** Update SanRemes on your phone: once per phone with an older app after this computer's secure link ended. */
-export const PHONE_UPDATE_NOTICE = "phone-app-update";
 /** A card from the project's announcements file (src/lib/announcements.ts keeps which ones each person saw, and allows one a
  * launch): after every notice someone must act on and every built-in offer, and, as the sponsor's card, it may follow the
  * launch's notice once that is closed, after the product-updates question and the sponsor's card. */
@@ -37,7 +35,6 @@ export const ANNOUNCEMENT_NOTICE = "announcement";
 export const NOTICES = [
   TEAMS_NOTICE,
   GROK_MOVE_NOTICE,
-  PHONE_UPDATE_NOTICE,
   SIMPLE_MODE_NOTICE,
   WHATS_NEW_NOTICE,
   UPDATES_CONSENT_NOTICE,
@@ -63,7 +60,7 @@ export const FOLLOWERS: readonly NoticeId[] = [UPDATES_CONSENT_NOTICE, MODELGO_O
 const FOLLOWING_CARDS: readonly NoticeId[] = [MODELGO_OFFER_NOTICE, ANNOUNCEMENT_NOTICE];
 /** Notices the person has to act on. The sponsor's card and an announcement card never go ahead of one, even one left for a
  * later launch: they wait for that launch and follow it there. */
-export const MUST_ACT: readonly NoticeId[] = [GROK_MOVE_NOTICE, PHONE_UPDATE_NOTICE, CLOUD_TRIAL_NOTICE, CLOUD_NOTICE];
+export const MUST_ACT: readonly NoticeId[] = [GROK_MOVE_NOTICE, CLOUD_TRIAL_NOTICE, CLOUD_NOTICE];
 
 /** `launch`: the notice this launch already showed (launchNotice), the only one besides FOLLOWERS that may show again in it.
  * `closed`: that notice was closed in this page, so it doesn't come back however its facts read. The following cards follow
@@ -120,8 +117,6 @@ export function dismissNotice(record: OnboardingStatus | undefined, id: string):
   return hintSeenPatch(record, id);
 }
 
-/** Per phone, so one paired later with an older app brings the card back once; config keeps hints of at most 60 characters. */
-export const phoneUpdateHint = (deviceId: string) => `${PHONE_UPDATE_NOTICE}:${deviceId.slice(0, 8)}`;
 
 export function dismissNotices(record: OnboardingStatus | undefined, ids: readonly string[]): { onboarding: { hintsSeen: string[] } } | null {
   const before = record?.hintsSeen ?? [];

@@ -84,7 +84,7 @@ describe("app_settings show_card", () => {
   it("in a room, where no control is drawn, posts nothing and tells the bot where the person finds it", async () => {
     const { show, messages } = fixture({ group: true, on: true });
     const answer = await show("other-computers");
-    expect(answer).toEqual({ status: 200, body: { text: "No card shown: a settings control is not drawn in a room. Tell the user in one line to open Settings → Devices → Private network → Your other computers in SanRemes on the computer itself, or to ask you in your own chat, where you can show it." } });
+    expect(answer).toEqual({ status: 200, body: { text: "No card shown: a settings control is not drawn in a room. Tell the user in one line to open Settings → Devices → Your other computers in SanRemes on the computer itself, or to ask you in your own chat, where you can show it." } });
     expect(messages).toEqual([]);
   });
 
@@ -110,7 +110,7 @@ describe("app_settings show_card", () => {
     for (const options of [{ here: false }, { cards: false as const }]) {
       const { show, messages } = fixture(options);
       const answer = await show("other-computers");
-      expect(answer).toEqual({ status: 200, body: { text: "No card shown: Your other computers is set in the SanRemes desktop app on the computer itself, in Settings → Devices → Private network. Tell the user that in one line." } });
+      expect(answer).toEqual({ status: 200, body: { text: "No card shown: Your other computers is set in the SanRemes desktop app on the computer itself, in Settings → Devices. Tell the user that in one line." } });
       expect(messages).toEqual([]);
     }
   });

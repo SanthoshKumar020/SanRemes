@@ -94,7 +94,6 @@ async function fixture() {
     visibleTo: () => ({ bot: () => true, group: () => true, thread: () => true }),
     workspaceAccess: () => null,
     desktopMutationToken: () => undefined,
-    companionMutationToken: () => undefined,
     cliOwnerToken: () => undefined,
     messageFileRootsForThread: () => [root],
   } as unknown as ThreadRouteDeps;

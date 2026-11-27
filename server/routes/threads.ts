@@ -53,7 +53,6 @@ export interface ThreadRouteDeps {
   lendingEnabled(): boolean;
   workspaceAccess(): WorkspaceAccess | null;
   desktopMutationToken(): string | undefined;
-  companionMutationToken(): string | undefined;
   cliOwnerToken(): string | undefined;
   defaultPage: number;
   pageSize(raw: string | null): number | null | undefined;
@@ -106,7 +105,6 @@ export function createThreadRoutes(deps: ThreadRouteDeps): RouteHandler {
     const visible = visibleTo(viewerFor(auth));
     const workspaceAccess = deps.workspaceAccess();
     const desktopMutationToken = deps.desktopMutationToken();
-    const companionMutationToken = deps.companionMutationToken();
     const cliOwnerToken = deps.cliOwnerToken();
     if (method === "GET" && path === "/api/bots") {
       if (backgroundWhileAsleep(path, req.headers)) return answerAsleep(res, json);
@@ -535,7 +533,7 @@ export function createThreadRoutes(deps: ThreadRouteDeps): RouteHandler {
       }
       const current = resolveRequestAuth(req, {
         sessions, cookieName: SESSION_COOKIE, streamPath: "/api/events", url,
-        loopbackMutationToken: desktopMutationToken, companionMutationToken,
+        loopbackMutationToken: desktopMutationToken,
         features: { sharedComputers: lendingEnabled() }, loopbackTrust: LOOPBACK.trust, cliOwnerToken, trustLocalBrowser: LOOPBACK.localBrowsers,
       });
       if (!current.auth) return json(res, current.status, { error: current.error });

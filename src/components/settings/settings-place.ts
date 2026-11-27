@@ -1,4 +1,4 @@
-import { pageIsThisComputer } from "@/lib/companion-bridge";
+import { localDesktopPage } from "@/components/onboarding/WelcomeGate";
 import { t } from "@/lib/i18n";
 import { useStoreSelector } from "@/state/store-select";
 import { useWindowPlace, windowPlaceName } from "../WindowPlaceTitle";
@@ -18,7 +18,7 @@ export function useSettingsPlace(): SettingsPlace {
   const config = useStoreSelector((state) => state.config);
   const place = useWindowPlace();
   const team = config?.team?.name;
-  if (pageIsThisComputer()) {
+  if (localDesktopPage()) {
     const name = place ? windowPlaceName(place, undefined) : t("rail.thisComputer");
     return { name, kind: "computer", color: place?.color ?? null, named: Boolean(place?.profileName) };
   }

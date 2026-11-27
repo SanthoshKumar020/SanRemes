@@ -23,7 +23,6 @@ import {
   RefreshCw,
   Rocket,
   Settings as SettingsIcon,
-  Smartphone,
   UserRound,
   UsersRound,
   Zap,
@@ -31,7 +30,6 @@ import {
 
 import { accountMenuItems, AccountsSheet, useAccounts } from "./AccountMenu";
 import { accountLine, useAccountSummary } from "./settings/account-summary";
-import { usePhonePlaceState, type PhonePlaceState } from "./settings/phone-status";
 import { useSettingsPlace } from "./settings/settings-place";
 import { AccountMoveStatus, useAccountMove, type AccountMoveKind } from "./AccountMove";
 import { InitialsAvatar } from "./Avatar";
@@ -46,9 +44,8 @@ import { useAdvancedMode } from "@/lib/interface-mode";
 import { useAutomationsNeedYou } from "./SidebarFooterNav";
 import { useCloudFilesReady } from "@/lib/cloud-files";
 import { SidebarPopoverMenu, type SidebarMenuItem } from "./SidebarPopoverMenu";
-import { api, useStore, type Action, type AppSettingsSection } from "@/state/store";
+import { api, useStore, type AppSettingsSection } from "@/state/store";
 import { serverCheckPhase, serverUpdateRow, type ServerUpdateCheck, type ServerUpdatePhase } from "@/lib/server-update";
-import type { CloudAccountBridge, CloudAccountState } from "../../electron/cloud-account.mjs";
 import { updaterMessage, useUpdaterState, type UpdaterState } from "@/lib/updater";
 import { productName } from "../lib/brand";
 import { cloudColor } from "@/lib/cloud-look";
@@ -57,18 +54,12 @@ import { meterPercent, resetLine } from "@/lib/usage-meter";
 import type { CloudPlanSnapshot } from "../../electron/cloud-account.mjs";
 import { activeLocale, t } from "@/lib/i18n";
 import { FEEDBACK_URL, HELP_CENTER_URL, RELEASES_URL, appVersion, openExternalLink } from "@/lib/app-links";
-import { pageIsThisComputer } from "@/lib/companion-bridge";
+import { localDesktopPage } from "@/components/onboarding/WelcomeGate";
 import { cloudPlanLabel } from "@/lib/cloud-plan";
 import { shortcutLabel } from "./ShortcutHint";
 import { useAnnouncements } from "./announcements/use-announcements";
 import { useOtherServerName } from "@/lib/other-server"; import { useFeature } from "@/lib/use-feature";
 import { isOwnerOrAdmin, profileForSession, readSessionState, type SessionState } from "@/lib/session";
-import {
-  cloudPhoneDestination,
-  phonePairingSettingsAction,
-  type CloudPhoneDestination,
-  type PhoneDestination,
-} from "@/lib/phone-pairing";
 
 export function profileInitials(profile?: { name?: string; email?: string }): string {
   const name = profile?.name?.trim();
@@ -266,50 +257,6 @@ export function useServerUpdateItem(enabled: boolean): UpdateEntry | null {
   };
 }
 
-export function useCloudPhoneDestination(enabled: boolean): { cloud: CloudPhoneDestination; bridge?: CloudAccountBridge } {
-  const bridge = enabled && !window.ogb?.remoteClient?.active ? window.ogb?.cloudAccount : undefined;
-  const [account, setAccount] = useState<CloudAccountState | null>(null);
-  useEffect(() => {
-    if (!bridge) return;
-    let active = true, updated = false;
-    const unsubscribe = bridge.onState((next) => { updated = true; if (active) setAccount(next); });
-    void bridge.state().then((next) => { if (active && !updated) setAccount(next); }).catch(() => {});
-    return () => { active = false; unsubscribe(); };
-  }, [bridge]);
-  return bridge ? { cloud: cloudPhoneDestination(account), bridge } : { cloud: null };
-}
-
-export function selectPhoneDestination(destination: PhoneDestination, { bridge, dispatch }: { bridge?: Pick<CloudAccountBridge, "connectHomeForPhone">; dispatch: (action: Action) => void }): void {
-  if (destination.id !== "cloud" || !bridge) {
-    dispatch(phonePairingSettingsAction());
-    return;
-  }
-  void bridge.connectHomeForPhone().catch(() => dispatch({ type: "toggleAppSettings", open: true, section: "cloudAccount" }));
-}
-
-/** The menu row's line under Devices: where a phone goes and how it is doing there, in a few words. */
-export function phoneDevicesSubtitle(state: PhonePlaceState, place: string): string {
-  switch (state.kind) {
-    case "paired": return t("sidebar.menu.phoneDevices.paired", { count: state.count, place });
-    case "attention": return t("sidebar.menu.phoneDevices.attention", { place });
-    case "managed": return t("policy.managedBy", { organization: state.organization });
-    case "chat-only": return t("remote.serverPairing.scope.client");
-    case "portal": return t("sidebar.menu.phoneDevices.portal");
-    default: return t("sidebar.menu.phoneDevices.notSetUp", { place });
-  }
-}
-
-export function phoneDevicesItem(state: PhonePlaceState, place: string, onSelect: () => void): SidebarMenuItem {
-  const dot = state.kind === "paired" && state.connected ? "bg-success" : state.kind === "attention" ? "bg-warning" : null;
-  return {
-    key: "phone-devices",
-    label: t("settings.page.devices"),
-    subtitle: phoneDevicesSubtitle(state, place),
-    icon: <Smartphone size={16} />,
-    trailing: dot ? <span aria-hidden="true" className={cn("size-2 shrink-0 rounded-full", dot)} /> : undefined,
-    onSelect,
-  };
-}
 
 export function toolMenuItems({ activeView, automationsNeedYou, onAutomations, onTeamMap, onFiles, onPublishedApps, onSkillBurgers, onTeamFiles, archived }: {
   activeView: string;
@@ -440,7 +387,6 @@ export interface AccountHeader {
 /** One menu for Simple, Advanced and phone width: your account, Devices and Settings, Simple's own places to go,
  * then Plan & billing and Help, with any other accounts and Sign out last. A ready update is raised to the top. */
 export function profileMenuItems({
-  phone,
   update,
   updateTop = null,
   move = [],
@@ -459,7 +405,6 @@ export function profileMenuItems({
   signOut = null,
   signOutElsewhere = null,
 }: {
-  phone: SidebarMenuItem | null;
   update: SidebarMenuItem | null;
   updateTop?: { label: string; action: string } | null;
   /** the move to My Cloud's own rows, first of all (AccountMove) */
@@ -513,8 +458,8 @@ export function profileMenuItems({
       : accounts.filter((item) => item.key === "accounts-sign-out"))];
   // Plan & billing follows Settings (Simple's own places sit between them); both modes end with Help, then Sign out.
   const groups = simple
-    ? [move, present(raised), [account], present(phone, settings), simple.tools, present(plan, switchPlace), present(news, support), out]
-    : [move, present(raised), [account], present(phone, settings, plan), present(switchPlace, news, support), out];
+    ? [move, present(raised), [account], present(settings), simple.tools, present(plan, switchPlace), present(news, support), out]
+    : [move, present(raised), [account], present(settings, plan), present(switchPlace, news, support), out];
   return groups.filter((group) => group.length > 0)
     .flatMap((group, at) => group.map((item, index) => (at > 0 && index === 0 ? { ...item, separatorBefore: true } : item)));
 }
@@ -541,17 +486,16 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
 } = {}) {
   const { state, dispatch } = useStore();
   const simple = account !== undefined;
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [, setMenuOpen] = useState(false);
   const advancedMode = useAdvancedMode(), skillBurger = useFeature("skillBurger");
   const automationsNeedYou = useAutomationsNeedYou();
   const planSnapshot = useCloudPlanSnapshot(usageBridge(state.config?.cloudHome === true) ?? (window.ogb?.remoteClient?.active ? undefined : window.ogb?.cloudPlan));
   const cloudUsage = cloudUsageSummary(planSnapshot);
-  const phoneState = usePhonePlaceState(menuOpen);
   const place = useSettingsPlace();
   const summary = useAccountSummary();
   const desktopUpdate = useUpdateItem();
   const serverUpdate = useServerUpdateItem(!window.ogb?.updater);
-  const here = pageIsThisComputer();
+  const here = localDesktopPage();
   const openComputer = window.ogb?.rail?.openComputer;
   // A Cloud's page in the desktop window can't update the app: the row says where that happens, and goes there.
   const elsewhereUpdate: UpdateEntry | null = !desktopUpdate && !here && Boolean(window.ogb) && state.config?.cloudHome === true && openComputer ? {
@@ -581,7 +525,7 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
   const planHere = !remote && (desktop ? Boolean(window.ogb?.cloudAccount || (window.ogb?.cloudPlan && state.config?.cloudHome === true))
     : state.config?.cloudHome === true && !state.config?.team && isOwnerOrAdmin(session));
   const openSettings = (section: AppSettingsSection) => dispatch({ type: "toggleAppSettings", open: true, section });
-  const move = useAccountMove(state.config?.cloudHome === true, { onOpen: () => openSettings("plan"), onPairPhone: () => dispatch(phonePairingSettingsAction()) });
+  const move = useAccountMove(state.config?.cloudHome === true, { onOpen: () => openSettings("plan") });
   const accounts = useAccounts();
   const news = useAnnouncements();
   const openSource = desktop && !window.ogb?.cloudAccount && !window.ogb?.cloudPlan;
@@ -589,7 +533,6 @@ export function SidebarProfileMenu({ iconOnly = false, rail = false, circle = fa
     : summary.signedIn === false || summary.plan === t("settings.account.free") ? t("sidebar.menu.plan.free") : summary.plan ?? undefined;
 
   const items = profileMenuItems({
-    phone: remote ? null : phoneDevicesItem(phoneState, place.name, () => openSettings("phone")),
     update: update?.item ?? null,
     updateTop: simpleUpdateTop(update),
     move: move.items,

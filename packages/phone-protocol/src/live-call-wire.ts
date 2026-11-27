@@ -3,7 +3,7 @@
 
 /** Which app holds the microphone of a Live call: the desktop app (its own
  * page or a server's page in it), a web browser, or a phone. Self-declared;
- * for display and logs only. The phone apps show a value they do not know as
+ * for display and logs only. A client shows a value it does not know as
  * "another device". */
 export type LiveClient = "desktop" | "web" | "ios" | "android";
 export type LiveCallStatus = "connecting" | "live" | "ending" | "ended";

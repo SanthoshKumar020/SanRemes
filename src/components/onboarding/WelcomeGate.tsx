@@ -7,11 +7,11 @@ import { SharedWorkspaceHint } from "./SharedWorkspaceHint";
 import { WelcomeFlow } from "./WelcomeFlow";
 
 /**
- * Security: a remote page the desktop app loads gets a reduced but truthy window.ogb without remoteClient, and is no
- * more the owner than a browser.
+ * Security: only this computer's own page gets app.ownPage; a remote page the desktop app loads gets a reduced
+ * window.ogb and is no more the owner than a browser.
  */
 export function localDesktopPage(): boolean {
-  return window.ogb?.remoteClient !== undefined;
+  return window.ogb?.app?.ownPage === true;
 }
 
 export function useWelcomeViewer(): WelcomeViewer | null {

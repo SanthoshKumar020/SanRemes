@@ -21,7 +21,6 @@ export const SPAWNED_PROXIES = {
   connectors: resolveProxy("connector-proxy"),
   mcpGate: resolveProxy("mcp-gate"),
   mcpRemote: resolveProxy("mcp-remote-proxy"),
-  phone: resolveProxy("drivers/phone-proxy"),
   chatgptPlanToken: resolveProxy("drivers/chatgpt-plan-token-command"),
   hook: resolveProxy("hooks/sanremes-hook"),
   piMcpExtension: resolveProxy("drivers/pi-mcp-extension"),

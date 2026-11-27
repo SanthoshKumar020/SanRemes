@@ -10,7 +10,6 @@ import { CloudUsageCard } from "./CloudUsageMeter";
 import { endCloudHowTo, useWorkspacePlace, type WorkspacePlace } from "./DesktopWorkspaceSwitcher";
 import { SidebarConnectApps } from "./SidebarConnectApps";
 import { SidebarBottomButtons, SidebarFooterNav } from "./SidebarFooterNav";
-import { phoneSettingsAction, SidebarPhoneButton } from "./SidebarPhoneButton";
 import { StorageNotice } from "./StorageNotice";
 import { SidebarProfileMenu, useSimpleAccount, type ArchivedBots } from "./SidebarProfileMenu";
 import { UpdateIndicator } from "./UpdateIndicator";
@@ -58,14 +57,12 @@ export function SidebarFooter({ density, simple = false, owner = null, archived,
   toolsCollapsed: boolean;
   onToggleTools?: () => void;
 }) {
-  const { dispatch } = useStore();
   if (simple) return <SimpleSidebarFooter owner={owner} archived={archived} />;
   return (
     <div className={cn("pb-3 pt-2", density === "icons" ? "flex flex-col items-center gap-1 px-2" : "px-3")}>
       <SidebarFooterNav density={density} collapsed={toolsCollapsed} onToggleCollapsed={onToggleTools} />
       {density === "icons" ? (
         <>
-          <SidebarPhoneButton density={density} onOpen={() => dispatch(phoneSettingsAction())} />
           <div className="flex flex-col items-center justify-center gap-1">
             <UpdateIndicator />
             <SidebarProfileMenu iconOnly />

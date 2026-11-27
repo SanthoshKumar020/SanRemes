@@ -11,7 +11,6 @@
     "scripts/ci-scope.test.ts": 14,
     "scripts/mascot-bodies/carved-bodies.test.mjs": 16,
     "scripts/server-installer.test.ts": 39,
-    "scripts/sync-phone-protocol.test.mjs": 7,
     "scripts/testing/deploy-update-podman.test.ts": 18,
     "scripts/testing/deploy-update.test.ts": 101,
     "scripts/testing/team-computers-fixture.test.ts": 6,

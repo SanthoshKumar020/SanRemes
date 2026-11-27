@@ -1,6 +1,6 @@
 // A new personal Cloud's first hour end to end on a real Cloud home (temporary home, the fake Claude CLI, a stand-in for
 // the connected-apps service): the greeting by name, the connect offer after the first answer, the first look with
-// drafts and nothing sent, the morning brief said once and timed, the phone offered, and what the Admin reads. Nothing
+// drafts and nothing sent, the morning brief said once and timed, and what the Admin reads. Nothing
 // here reaches a real Google account or a model.
 import { randomBytes } from "node:crypto";
 import { spawn, type ChildProcess } from "node:child_process";
@@ -199,12 +199,10 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
     expect(decisions).toContain(`"tool":"${SEND}"`);
     expect(decisions).toContain('"rule":"read-and-draft"');
 
-    // Then, once each: the morning brief, and the phone.
+    // Then, once: the morning brief.
     const brief = await until(async () => (await messages()).find((row) => row.role === "bot" && row.text === "Every morning at 8 I'll send you a brief of what needs you."), "the brief line");
-    const phone = await until(async () => (await messages()).find((row) => row.serverCard && row.widget?.root.title === "Get me on your phone"), "the phone offer");
     expect(brief.at).toBeGreaterThan(look.at);
-    expect(phone.at).toBeGreaterThanOrEqual(brief.at);
-    expect(JSON.stringify(phone.widget.root)).toContain('"type":"open_phone_pairing"');
+    expect((await messages()).some((row) => row.serverCard && row.widget)).toBe(false);
     const told = (await api("GET", "/api/notifications")).notifications as any[];
     expect(told.some((entry) => entry.kind === "brief" && entry.body === "Your first look is ready" && entry.threadId === chief.threadId)).toBe(true);
   }, 120_000);
@@ -222,7 +220,7 @@ await import(${JSON.stringify(pathToFileURL(join(SERVER_DIR, "testing", "fake-cl
 
   it("reports each milestone's time and what the Chief really did to the Admin, as times and counts only", async () => {
     const health = await signed("/api/cloud/health?after=");
-    expect(Object.keys(health.firstHour.ms).sort()).toEqual(["briefOn", "firstApp", "firstLook", "firstMessage", "offered", "phoneOffered", "seen"]);
+    expect(Object.keys(health.firstHour.ms).sort()).toEqual(["briefOn", "firstApp", "firstLook", "firstMessage", "offered", "seen"]);
     expect(health.firstHour).toMatchObject({ apps: ["gmail"], look: "delivered" });
     expect(health.firstHour.ms.firstMessage).toBeLessThanOrEqual(health.firstHour.ms.offered);
     expect(health.firstHour.ms.offered).toBeLessThanOrEqual(health.firstHour.ms.firstLook);

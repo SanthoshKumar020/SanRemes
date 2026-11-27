@@ -5,7 +5,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { applyStartupPreferences, parseArgs, runAccess, runLogin, runOnboardingCommand, serverEntry, type CliOptions, verifyPhoneEndpoint } from "./cli.ts";
+import { applyStartupPreferences, parseArgs, runAccess, runLogin, runOnboardingCommand, serverEntry, type CliOptions } from "./cli.ts";
 import { browserSignInLines, formatSessions, pairingBlock, qrToString, untilText } from "./cli-pairing.ts";
 import { reachableAddresses } from "./lan-address.ts";
 import { readAdminActivityRange } from "./admin-activity.ts";
@@ -74,13 +74,9 @@ describe("sanremes command line", () => {
     expect(parseArgs(["serve", "--domain", "sanremes.example.com", "--tunnel"], {})).toEqual({ error: expect.stringContaining("--domain already gives") });
   });
 
-  it("takes the phone kind non-interactively; --phone alone is a chat-only code for any phone", () => {
-    expect(parseArgs(["pair", "--phone", "android"], {})).toMatchObject({ command: "pair", phone: "android" });
-    expect(parseArgs(["pair", "--phone", "iOS"], {})).toMatchObject({ phone: "ios" });
-    expect(parseArgs(["pair", "--phone"], {})).toMatchObject({ phone: "ios" });
+  it("rejects the removed --phone flag; --chat-only still makes a chat-only code", () => {
+    expect(parseArgs(["pair", "--phone", "android"], {})).toEqual({ error: 'unknown argument "--phone"' });
     expect(parseArgs(["pair", "--chat-only"], {})).toMatchObject({ client: true });
-    expect(parseArgs(["pair", "--phone", "blackberry"], {})).toEqual({ error: expect.stringContaining("blackberry") });
-    expect(parseArgs(["serve", "--phone", "blackberry"], {})).toEqual({ error: expect.stringContaining("ios or android") });
     expect(parseArgs(["devices", "revoke", "a1"], {})).toMatchObject({ command: "sessions", revoke: "a1" });
     expect(parseArgs(["--version"], {})).toMatchObject({ command: "version" });
   });
@@ -98,13 +94,14 @@ describe("sanremes command line", () => {
     const link = "https://mini.example/pair#code=ABCD-EFGH-JKLM";
     const base = { code: "ABCD-EFGH-JKLM", expiresAt: now + 10 * 60_000, chatOnly: false, link, prefix: "npx sanremes", now };
 
-    it("shows one code, its link to paste into the desktop app, a QR, and the phone command the way the CLI was started", () => {
+    it("shows one code, its link to paste into the desktop app, and a QR of the link", () => {
       const out = pairingBlock(base);
       expect(out).toMatch(/^Pairing code {3}ABCD-EFGH-JKLM {3}works once, until .+ · everything$/m);
       expect(out).toContain(`Link           ${link}`);
       expect(out).toContain("＋ → Connect to another computer, paste the link");
+      expect(out).toContain("Phone         scan with your camera");
       expect(out).toContain(qrToString(link));
-      expect(out).toContain("For a phone (chat and approvals only)   npx sanremes pair --phone");
+      expect(out).not.toContain("pair --phone");
       expect(out).not.toMatch(/omb_pair_|phone app:|this computer:/);
       expect(pairingBlock({ ...base, chatOnly: true })).toContain("· chat and approvals");
     });
@@ -117,15 +114,6 @@ describe("sanremes command line", () => {
       expect(out).toContain("pick a way in first: npx sanremes serve --help");
       expect(out).not.toMatch(/[▀▄█]/);
       expect(pairingBlock({ ...base, link: null, localLink: "http://localhost:8080/pair#code=X", localPlace: "docker" })).toContain("Browser on the Docker host   http://localhost:8080/pair#code=X");
-    });
-
-    it("gives an Android phone the app-scheme QR, because its scanner rejects https", () => {
-      const invite = `sanremes://pair?address=https%3A%2F%2Fmini.example&token=omb_pair_${"a".repeat(43)}&name=mini`;
-      const out = pairingBlock({ ...base, chatOnly: true, inviteUrl: invite, phone: "android" });
-      expect(out).toContain(qrToString(invite));
-      expect(out).not.toContain(qrToString(link));
-      expect(out).not.toContain(invite);
-      expect(pairingBlock({ ...base, inviteUrl: invite, phone: "ios" })).toContain(qrToString(link));
     });
 
     it("says until when as a clock time, and tomorrow when a code outlives today", () => {
@@ -257,12 +245,10 @@ describe("terminal onboarding commands", () => {
   const command = (name: "setup" | "start") => parseArgs([name, "--data-dir", join(process.env.HOME!, "onboarding"), "--port", "18451"], {}) as CliOptions;
   const io = () => ({ log: vi.fn(), error: vi.fn(), ask: vi.fn() });
   const preserveEnv = () => vi.stubEnv("SANREMES_DATA_DIR", process.env.SANREMES_DATA_DIR);
-  const phoneSetup = vi.fn<NonNullable<NonNullable<Parameters<typeof runOnboardingCommand>[3]>["phoneSetup"]>>();
   const running = vi.fn().mockResolvedValue(false);
   const open = vi.fn().mockResolvedValue(true);
-  const flow = { phoneSetup, running, open };
+  const flow = { running, open };
   beforeEach(() => {
-    phoneSetup.mockImplementation(async (options) => ({ options }));
     running.mockResolvedValue(false);
     open.mockResolvedValue(true);
   });
@@ -282,7 +268,6 @@ describe("terminal onboarding commands", () => {
     expect(setup.isSetupComplete).not.toHaveBeenCalled();
     expect(serve).not.toHaveBeenCalled();
     expect(output.log).toHaveBeenCalledWith(expect.stringContaining("Start with: sanremes"));
-    expect(phoneSetup).toHaveBeenCalledOnce();
     expect(setup.saveCliStartup).toHaveBeenCalledWith(options.dataDir, { access: "local" });
   });
 
@@ -331,28 +316,25 @@ describe("terminal onboarding commands", () => {
     expect(serve).not.toHaveBeenCalled();
   });
 
-  it("persists an explicitly chosen phone route and uses it on later starts without prompts", async () => {
+  it("persists an explicitly chosen tunnel route and uses it on later starts without prompts", async () => {
     terminal(true);
     preserveEnv();
-    const options = command("start");
+    const options = { ...command("start"), tunnel: true };
     setup.isSetupComplete.mockResolvedValue(true);
-    phoneSetup.mockResolvedValue({ options: { ...options, tunnel: true, client: true }, phone: "android" });
     const serve = vi.fn().mockResolvedValue(0);
     await runOnboardingCommand(options, io(), serve, flow);
-    expect(setup.saveCliStartup).toHaveBeenCalledWith(options.dataDir, { access: "tunnel", phone: "android" });
-    expect(serve).toHaveBeenLastCalledWith(expect.objectContaining({ tunnel: true, phone: "android", guided: true }));
-    phoneSetup.mockClear();
-    setup.readCliStartup.mockReturnValue({ access: "tunnel", phone: "android" });
-    await runOnboardingCommand(options, io(), serve, flow);
-    expect(phoneSetup).not.toHaveBeenCalled();
-    expect(serve).toHaveBeenLastCalledWith(expect.objectContaining({ tunnel: true, phone: "android" }));
+    expect(setup.saveCliStartup).toHaveBeenCalledWith(options.dataDir, { access: "tunnel" });
+    expect(serve).toHaveBeenLastCalledWith(expect.objectContaining({ tunnel: true, guided: true }));
+    setup.readCliStartup.mockReturnValue({ access: "tunnel" });
+    await runOnboardingCommand(command("start"), io(), serve, flow);
+    expect(serve).toHaveBeenLastCalledWith(expect.objectContaining({ tunnel: true }));
   });
 
-  it("keeps the provider setup but does not start if phone setup is cancelled", async () => {
+  it("keeps the provider setup but does not start if setup is cancelled", async () => {
     terminal(true);
     preserveEnv();
-    setup.runSetup.mockResolvedValue(true);
-    phoneSetup.mockRejectedValue(new SetupCancelled());
+    setup.isSetupComplete.mockResolvedValue(false);
+    setup.runSetup.mockRejectedValue(new SetupCancelled());
     const serve = vi.fn();
     const output = io();
     expect(await runOnboardingCommand(command("start"), output, serve, flow)).toBe(130);
@@ -369,7 +351,6 @@ describe("terminal onboarding commands", () => {
     expect(await runOnboardingCommand(command("start"), io(), serve, flow)).toBe(0);
     expect(open).toHaveBeenCalledWith(18451);
     expect(setup.runSetup).not.toHaveBeenCalled();
-    expect(phoneSetup).not.toHaveBeenCalled();
     expect(serve).not.toHaveBeenCalled();
   });
 
@@ -379,7 +360,6 @@ describe("terminal onboarding commands", () => {
     setup.isSetupComplete.mockResolvedValue(true);
     const serve = vi.fn().mockResolvedValue(0);
     await runOnboardingCommand({ ...command("start"), pair: false, open: false }, io(), serve, flow);
-    expect(phoneSetup).not.toHaveBeenCalled();
     expect(setup.saveCliStartup).not.toHaveBeenCalled();
     expect(serve).toHaveBeenCalledWith(expect.objectContaining({ pair: false, open: false }));
   });
@@ -396,7 +376,7 @@ describe("terminal onboarding commands", () => {
     expect(serve).not.toHaveBeenCalled();
   });
 
-  it("does not persist a credential-bearing explicit URL even when phone setup is skipped", async () => {
+  it("does not persist a credential-bearing explicit URL even when setup is skipped", async () => {
     terminal(true);
     preserveEnv();
     setup.isSetupComplete.mockResolvedValue(true);
@@ -412,7 +392,7 @@ describe("saved startup access", () => {
   const options = () => parseArgs([], {}) as CliOptions;
   it("keeps local launches local and supports a one-time local override", () => {
     expect(applyStartupPreferences(options(), { access: "local" })).toMatchObject({ tunnel: false, tailscale: false, publicUrl: undefined });
-    expect(applyStartupPreferences({ ...options(), local: true }, { access: "tunnel", phone: "ios" })).toMatchObject({ tunnel: false, phone: undefined });
+    expect(applyStartupPreferences({ ...options(), local: true }, { access: "tunnel" })).toMatchObject({ tunnel: false, publicUrl: undefined });
   });
   it("explicit route flags take priority over saved settings", () => {
     expect(applyStartupPreferences({ ...options(), tailscale: true }, { access: "tunnel" })).toMatchObject({ tailscale: true, tunnel: false });
@@ -420,26 +400,6 @@ describe("saved startup access", () => {
   it("refuses a saved URL that embeds a credential or points to localhost", () => {
     for (const publicUrl of ["https://localhost", "https://user:secret@example.com", "https://example.com/pair#code=secret"])
       expect(() => applyStartupPreferences(options(), { access: "public-url", publicUrl })).toThrow("not a valid HTTPS origin");
-  });
-});
-
-describe("phone endpoint identity", () => {
-  afterEach(() => vi.unstubAllGlobals());
-  it("checks the public endpoint matches this server without sending credentials", async () => {
-    const fetcher = vi.fn().mockResolvedValueOnce(Response.json({ environmentId: "fixture" }))
-      .mockResolvedValueOnce(Response.json({ environmentId: "fixture" }));
-    vi.stubGlobal("fetch", fetcher);
-    expect(await verifyPhoneEndpoint(18451, "https://sanremes.example.com")).toBe(true);
-    expect(fetcher.mock.calls[1]![1]).toMatchObject({ redirect: "error" });
-    expect(fetcher.mock.calls[1]![1]).not.toHaveProperty("headers");
-  });
-  it("refuses another server or unreachable origin", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(Response.json({ environmentId: "ours" }))
-      .mockResolvedValueOnce(Response.json({ environmentId: "other" })));
-    expect(await verifyPhoneEndpoint(18451, "https://sanremes.example.com")).toBe(false);
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
-    expect(await verifyPhoneEndpoint(18451, "https://sanremes.example.com")).toBe(false);
-    expect(await verifyPhoneEndpoint(18451, "https://localhost")).toBe(false);
   });
 });
 

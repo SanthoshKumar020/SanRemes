@@ -1,18 +1,19 @@
-// While the page holds a relay pairing (a phone browser away from home), its own server is reachable only through
-// SanRemes Relay, so every request the app makes goes through serverFetch (src/lib/relay-server.ts), which keeps any
-// path outside /api a plain fetch. A bare fetch( in app code is a screen that breaks away from home.
+// Every request the app makes to its own server goes through serverFetch (src/lib/relay-server.ts), which keeps any
+// path outside /api a plain fetch. A bare fetch( in app code bypasses it.
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const ROOT = new URL("../../", import.meta.url);
 
-/** App code: not tests, the relay itself, test rigs, or the preview pages that stand in a fake server for fetch. */
+/** App code: not tests, test rigs, or the preview pages that stand in a fake server for fetch. Tracked files deleted
+ * in the working tree are skipped: they are gone, not app code. */
 function appFiles(): string[] {
   const out = execFileSync("git", ["ls-files", "src"], { cwd: ROOT, encoding: "utf8" });
   return out.split("\n").filter((file) => /\.(ts|tsx)$/.test(file))
-    .filter((file) => !/\.test\.|\.e2e\./.test(file) && !file.startsWith("src/testing/") && !file.startsWith("src/lib/e2e/"))
-    .filter((file) => file !== "src/lib/relay-server.ts" && !file.endsWith("-preview.tsx"));
+    .filter((file) => !/\.test\.|\.e2e\./.test(file) && !file.startsWith("src/testing/"))
+    .filter((file) => file !== "src/lib/relay-server.ts" && !file.endsWith("-preview.tsx"))
+    .filter((file) => existsSync(new URL(file, ROOT)));
 }
 
 /** A call to fetch, whitespace or a line break before its `(` too, or fetch handed on as a value (`fetchImpl = fetch`,

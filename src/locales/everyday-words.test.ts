@@ -30,7 +30,7 @@ const EVERYDAY_PREFIXES: Record<string, readonly string[]> = {
   "Apps": ["apps.", "connectors."],
   "the Settings pages Simple mode shows": ["settings.section.", "settings.group.", "settings.mcpCalls.", "settings.logins."],
   "Settings's pages, its search and Devices": [
-    "settings.page.", "settings.scope.", "settings.place.", "settings.glance.", "settings.overview.", "settings.search.", "phone.pair.", "phone.reach.",
+    "settings.page.", "settings.scope.", "settings.place.", "settings.glance.", "settings.overview.", "settings.search.",
     "devicesPage.",
   ],
   "the Usage page and its traces": ["trace.", "usage.page."],

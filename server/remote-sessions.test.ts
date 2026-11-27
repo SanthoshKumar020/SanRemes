@@ -111,7 +111,7 @@ const header = (headers: Record<string, string | string[] | undefined>, name: st
   return Array.isArray(v) ? v.join("\n") : (v ?? "");
 };
 
-async function pairingCode(scopes?: string[]): Promise<{ code: string; credential: string; url: string | null; inviteUrl: string | null; serverName: string; hint: string | null }> {
+async function pairingCode(scopes?: string[]): Promise<{ code: string; credential: string; url: string | null; serverName: string; hint: string | null }> {
   const opened = await call("/api/auth/pairing", { method: "POST", body: JSON.stringify(scopes ? { scopes } : {}) });
   expect(opened.status).toBe(200);
   return opened.body;
@@ -385,19 +385,6 @@ describe("pairing", () => {
       body: JSON.stringify({ code: opened.code, label: "same window" }),
     });
     expect(byCode.status).toBe(401);
-  });
-
-  it("offers the app-scheme invite the Android scanner can read", async () => {
-    const opened = await pairingCode(["client"]);
-    expect(opened.inviteUrl).not.toBeNull();
-    const invite = new URL(opened.inviteUrl!);
-    // Android's PairingInvite.parse accepts only this exact scheme and host (android/core Connection.kt).
-    expect(invite.protocol).toBe("sanremes:");
-    expect(invite.host).toBe("pair");
-    expect(invite.searchParams.get("address")).toBe(PUBLIC_URL);
-    expect(invite.searchParams.get("token")).toBe(opened.credential);
-    expect(invite.searchParams.get("name")).toBe(opened.serverName);
-    expect(opened.url).toBe(`${PUBLIC_URL}/pair#code=${opened.code}`);
   });
 
   it("refuses a native pairing body that is not JSON", async () => {

@@ -4,7 +4,7 @@ import { t } from "@/lib/i18n";
 import { api } from "@/state/store";
 import type { SessionState } from "../lib/session";
 import { readSharedSessionState } from "../lib/shared-session";
-import { canPairDevices } from "./ServerPairingCard";
+import { canPairDevices } from "../lib/pairing";
 import { Card } from "./SettingsPrimitives";
 
 export interface SignInLists {

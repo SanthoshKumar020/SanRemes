@@ -41,28 +41,23 @@ describe("computer panel view persistence", () => {
 });
 
 describe("computer panel view availability", () => {
-  it("drops the Android tab once its device disconnects", () => {
-    expect(resolveComputerPanelView("android", { advanced: true, androidConnected: true })).toBe("android");
-    expect(resolveComputerPanelView("android", { advanced: true, androidConnected: false })).toBe("computer");
-  });
-
   it("drops the tabs the current mode does not render", () => {
-    expect(resolveComputerPanelView("routines", { advanced: false, androidConnected: false })).toBe("computer");
-    expect(resolveComputerPanelView("files", { advanced: true, androidConnected: true })).toBe("computer");
+    expect(resolveComputerPanelView("routines", { advanced: false })).toBe("computer");
+    expect(resolveComputerPanelView("files", { advanced: true })).toBe("computer");
   });
 
-  it("shows Simple the Android tab, after Computer, only while a device is connected", () => {
-    expect(computerPanelTabs({ advanced: false, androidConnected: true })).toEqual(["computer", "android", "browser", "data", "files"]);
-    expect(computerPanelTabs({ advanced: false, androidConnected: false })).toEqual(["computer", "browser", "data", "files"]);
-    expect(resolveComputerPanelView("android", { advanced: false, androidConnected: true })).toBe("android");
-    expect(resolveComputerPanelView("android", { advanced: false, androidConnected: false })).toBe("computer");
+  it("shows Simple Computer, Browser, Data and Files, and Advanced adds Routines", () => {
+    expect(computerPanelTabs({ advanced: false })).toEqual(["computer", "browser", "data", "files"]);
+    expect(computerPanelTabs({ advanced: true })).toEqual(["computer", "routines", "browser", "data"]);
+    expect(resolveComputerPanelView("routines", { advanced: false })).toBe("computer");
+    expect(resolveComputerPanelView("routines", { advanced: true })).toBe("routines");
   });
 
   it("keeps a view whose trigger is on the row", () => {
     for (const view of ["computer", "browser", "data"] as const) {
-      expect(resolveComputerPanelView(view, { advanced: true, androidConnected: true })).toBe(view);
-      expect(resolveComputerPanelView(view, { advanced: false, androidConnected: false })).toBe(view);
+      expect(resolveComputerPanelView(view, { advanced: true })).toBe(view);
+      expect(resolveComputerPanelView(view, { advanced: false })).toBe(view);
     }
-    expect(resolveComputerPanelView("files", { advanced: false, androidConnected: false })).toBe("files");
+    expect(resolveComputerPanelView("files", { advanced: false })).toBe("files");
   });
 });

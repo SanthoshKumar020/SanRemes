@@ -346,16 +346,6 @@ const __APP_VERSION__: string;
         wakeState(): Promise<DesktopRoutineWake>;
         keepAwake(enabled: boolean): Promise<DesktopRoutineWake>;
       };
-      companionAccount?: {
-        state(): Promise<CompanionAccountState>;
-        requestCode(email: string): Promise<CompanionAccountState>;
-        verifyCode(email: string, code: string): Promise<CompanionAccountState>;
-        retry(): Promise<CompanionAccountState>;
-        /** Create or repair this computer's HTTPS address because a person
-         * is pairing now. Absent in older desktop builds. */
-        prepare?(): Promise<CompanionAccountState>;
-        signOut(): Promise<CompanionAccountState>;
-      };
       /** Local-shell-only bridge for trusted approval-mode transitions. It is
        * absent on remote server pages and in older desktop builds. */
       approvals?: {
@@ -376,11 +366,6 @@ const __APP_VERSION__: string;
       /** Arms one user-initiated display capture request from this frame. */
       beginScreenPreviewIntent(): boolean;
       screenFrame(): Promise<string | null>;
-      androidDevice?: {
-        status(): Promise<AndroidDeviceStatus>;
-        frame(serial: string): Promise<{ serial: string; dataUrl: string }>;
-        input(serial: string, payload: AndroidDeviceInput): Promise<void>;
-      };
       /** Start native dictation. Call mode supplies endpointMs so silence
        * finalizes a turn; composer dictation omits it and remains manual. */
       speechStart(options?: { endpointMs?: number }): Promise<void>;
@@ -601,50 +586,3 @@ export interface UpdaterState {
   /** the version the app updated itself to while the person was away, until they have seen it said */
   updated?: string;
 }
-
-export interface CompanionAccountState {
-  available: boolean;
-  status: "signed-out" | "connecting" | "ready" | "error";
-  email?: string;
-  endpoint?: string;
-  message?: string;
-  /** The HTTPS address was given back after 30 days with no paired phone
-   * seen. Opening the phone page calls prepare(), which brings it back. */
-  paused?: boolean;
-  /** The secure address was ended for old phone apps: a phone that has not used the encrypted connection must be
-   * updated and paired again. */
-  tunnelRetired?: boolean;
-  /** What failed, as one fixed word for the connection diagnosis. Absent on older builds. */
-  problem?: "unconfigured" | "unreachable" | "sign_in" | "busy" | "limit" | "update" | "address" | "failed";
-}
-
-export type AndroidUsbDevice = {
-  serial: string;
-  state: string;
-  connection: "usb";
-  model: string;
-  product?: string;
-  transportId?: string;
-};
-
-export type AndroidDeviceStatus = {
-  available: boolean;
-  reasonCode?: "adb-unavailable" | "adb-failed";
-  message?: string;
-  devices: AndroidUsbDevice[];
-};
-
-export type AndroidDeviceInput =
-  | { type: "tap"; x: number; y: number; width: number; height: number }
-  | {
-      type: "swipe";
-      fromX: number;
-      fromY: number;
-      toX: number;
-      toY: number;
-      durationMs: number;
-      width: number;
-      height: number;
-    }
-  | { type: "key"; key: string; width?: number; height?: number }
-  | { type: "text"; text: string; width?: number; height?: number };

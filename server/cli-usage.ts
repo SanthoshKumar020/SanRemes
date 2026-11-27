@@ -2,11 +2,11 @@ import { HEADLESS_VERBS } from "./headless/args.ts";
 
 export { HEADLESS_VERBS as HEADLESS_VERB_NAMES };
 
-/** Where a command line goes: the SanRemes account (`account login|logout|status`, and `login --email` or `--relay`
+/** Where a command line goes: the SanRemes account (`account login|logout|status`, and `login --email`
  * as before) and the other classic commands to cli.ts, the headless verbs to headless/main.ts. */
 export function routeCli(argv: readonly string[]): { headless: boolean; argv: string[] } {
   if (argv[0] === "account") return { headless: false, argv: ["login", "logout", "status"].includes(argv[1] ?? "") ? argv.slice(1) : ["--help"] };
-  if (argv[0] === "login" && argv.some((arg) => /^--(?:email|relay)(?:=|$)/.test(arg))) return { headless: false, argv: [...argv] };
+  if (argv[0] === "login" && argv.some((arg) => /^--email(?:=|$)/.test(arg))) return { headless: false, argv: [...argv] };
   return { headless: HEADLESS_VERBS.has((argv[0] === "help" ? argv[1] : argv[0]) ?? ""), argv: [...argv] };
 }
 
@@ -50,11 +50,11 @@ export const USAGE = `sanremes — your team of AI bots, ready in a few steps
   sanremes setup [--data-dir DIR]
   sanremes start [the same options as serve]
   sanremes serve [--port 8799] [--data-dir DIR] [--label NAME]
-                    [--public-url https://host | --domain HOST | --tunnel | --tailscale] [--lan] [--relay]
-  sanremes pair  [--label NAME] [--phone [ios|android]] [--ttl 24h] [--public-url https://host]
+                    [--public-url https://host | --domain HOST | --tunnel | --tailscale] [--lan]
+  sanremes pair  [--label NAME] [--client] [--ttl 24h] [--public-url https://host]
   sanremes devices [revoke ID]
   sanremes --version
-  sanremes account login [--email you@example.com] [--relay] | logout | status
+  sanremes account login [--email you@example.com] | logout | status
   sanremes access list | add EMAIL [--chat-only] | remove EMAIL
   sanremes service install [the same way-in options as serve] [--port N] [--data-dir DIR] | uninstall
                     [--sentinel]   (the health scan below, every two minutes, instead of the server)
@@ -67,18 +67,17 @@ export const USAGE = `sanremes — your team of AI bots, ready in a few steps
                   | delete NAME --yes [--keep-data] | upgrade   (all take --dry-run)
                   | agent [--socket PATH] [--group USER]   (root; installed by init --operator)
 
-setup   choose AI access and optional phone access; keep existing bots and chats
+setup   choose AI access and optional remote access; keep existing bots and chats
 start   same as sanremes: use your saved settings and open the workspace
 serve   starts the server without prompts; in a terminal it prints a pairing
         code, the link to paste into the desktop app (＋ → Connect to a
-        server) and a QR for a phone
+        server) and a QR
 pair    a new pairing code for the running server, with its link and QR
-        (--phone: chat and approvals only; --ttl keeps it open up to 24h,
+        (--client: chat and approvals only; --ttl keeps it open up to 24h,
         still single use)
 devices lists paired devices; "devices revoke ID" signs one out
 account login signs this machine in to an SanRemes account (an emailed
-        code) and reserves its public address for --tunnel; with --relay it
-        reserves none, for serve --relay. account logout releases that
+        code) and reserves its public address for --tunnel. account logout releases that
         address and signs out. account status: the running server, the
         address others reach it at, and whether that address answers as it
 access  who may sign in with an emailed code at /pair: an address or
@@ -119,12 +118,6 @@ Ways in (pick one; --lan can join any):
              downloaded once and run alongside the server, and gets the
              certificate itself. Point the domain's DNS at this machine and
              open ports 80 and 443.
-
---relay      phones only, and it can join any of the above except --tunnel:
-             the SanRemes phone app pairs by QR through SanRemes Relay,
-             end-to-end encrypted, with no address, open port or VPN. Run
-             \`sanremes account login --relay\` once on this machine first. Not on a
-             machine with a tunnel address: the relay stays off there.
 
 --no-open   do not open a browser window
 --no-pair   do not print a pairing code

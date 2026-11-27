@@ -320,13 +320,6 @@ for (const state of [{ status: "signed-out" }, { status: "reauth-required" }, { 
   });
 }
 
-test("every change to the organization's state reaches the tailnet share, which follows its policy", () => {
-  const f = fixture();
-  f.onState({ status: "connected", cloudBackups: true });
-  f.onState({ status: "connected", cloudBackups: true });
-  assert.equal(f.tailnetRechecks, 2);
-});
-
 test("backup IPC requires the local main window's exact main frame", async () => {
   const f = fixture();
   const subframe = { sender: f.event.sender, senderFrame: { url: `${ORIGIN}/embedded` } };

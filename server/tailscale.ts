@@ -1,11 +1,42 @@
 // Never log Tailscale's raw stderr (it can contain auth keys and node names): failures are classified into a closed set.
 import { execFile, spawn } from "node:child_process";
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
-import { networkInterfaces } from "node:os";
-import { join } from "node:path";
+import { homedir, networkInterfaces } from "node:os";
+import { delimiter, join } from "node:path";
 
-import { tailscaleCandidates, tailscaleEnvironment } from "../companion/src/listener.ts";
 import { readTailscaleStatusJson, tailnetInterfaceAddresses, tailnetOrigin } from "../electron/tailnet.mjs";
+
+export function tailscaleCandidates(home = homedir()): string[] {
+  // Absolute paths first: an app opened from Finder gets
+  // /usr/bin:/bin:/usr/sbin:/sbin, no Homebrew and no /usr/local.
+  // The macOS app's own executable comes last: run without CLI mode it opens
+  // the Tailscale app, which then connects.
+  return [
+    "/opt/homebrew/bin/tailscale",
+    "/usr/local/bin/tailscale",
+    "/usr/bin/tailscale",
+    "/run/current-system/sw/bin/tailscale",
+    "C:\\Program Files\\Tailscale\\tailscale.exe",
+    "C:\\Program Files (x86)\\Tailscale\\tailscale.exe",
+    "tailscale",
+    "/Applications/Tailscale.app/Contents/MacOS/Tailscale",
+    join(home, "Applications", "Tailscale.app", "Contents", "MacOS", "Tailscale"),
+  ];
+}
+
+export const searchPath = (): string =>
+  [process.env.PATH ?? "", "/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin"]
+    .filter(Boolean)
+    .join(delimiter);
+
+/** The macOS app executable chooses GUI or CLI mode from its environment.
+ * Finder-launched sidecars have no shell hints, so explicitly request the CLI.
+ * https://tailscale.com/docs/reference/tailscale-cli?tab=macos */
+export const tailscaleEnvironment = (): NodeJS.ProcessEnv => ({
+  ...process.env,
+  PATH: searchPath(),
+  TAILSCALE_BE_CLI: "1",
+});
 
 export interface TailscaleStatus {
   cli: string;

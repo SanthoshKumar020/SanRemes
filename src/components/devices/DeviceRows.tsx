@@ -1,12 +1,12 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
-import { Check, ChevronRight, CircleAlert, Waypoints, X } from "lucide-react";
+import { Check, ChevronRight, CircleAlert, X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
-import type { Device, DeviceAction, DeviceGroup, PrivateNetwork } from "@/lib/devices";
-import { SettingsEmptyRow, SettingsGroup, SettingsMark, SettingsRows, Switch } from "../SettingsPrimitives";
-import { actionLabel, DeviceDetails, type DeviceExtra } from "./DeviceDetails";
-import { BotsOn, botsLabel, needOf, StatusLine, StatusMark, useBotsOn } from "./device-parts";
-import { KIND_ICON, groupLabel, networkShort, statusText } from "./device-words";
+import type { Device, DeviceAction, DeviceGroup } from "@/lib/devices";
+import { SettingsEmptyRow, SettingsGroup, SettingsMark, SettingsRows } from "../SettingsPrimitives";
+import { actionLabel, DeviceDetails } from "./DeviceDetails";
+import { BotsOn, botsLabel, needOf, StatusLine, useBotsOn } from "./device-parts";
+import { KIND_ICON, groupLabel, statusText } from "./device-words";
 
 export interface NetworkAction {
   label: string;
@@ -23,8 +23,6 @@ export interface Opened {
   close: () => void;
   onPairing: (device: Device, open: boolean, connected?: boolean) => void;
   onRemoved: (notice: string | null, device: Device) => void;
-  /** More of an open device's details, from what only the page reads (a phone's own controls). */
-  extra?: (device: Device) => DeviceExtra | undefined;
 }
 
 const SLOT = "flex size-8 shrink-0 items-center justify-center text-ink-secondary";
@@ -62,80 +60,16 @@ function DeviceRow({ device, mark, opened, onAction, now }: {
         <ChevronRight size={14} aria-hidden="true" className={cn("-me-1 shrink-0 text-ink-tertiary transition-transform duration-150 motion-reduce:transition-none rtl:-scale-x-100", open && "rotate-90")} />
       </div>
       <div id={detailsId} hidden={!open} data-device-details={open ? device.id : undefined} className="ps-[60px] pe-4 pb-4 motion-safe:animate-fade-in">
-        {open && <DeviceDetails device={device} onAction={onAction} now={now} pairing={opened.pairing} extra={opened.extra?.(device)}
+        {open && <DeviceDetails device={device} onAction={onAction} now={now} pairing={opened.pairing}
           onPairing={(on, connected) => opened.onPairing(device, on, connected)} onRemoved={(text) => opened.onRemoved(text, device)} />}
       </div>
     </div>
   );
 }
 
-const NETWORK_MARK: Partial<Record<PrivateNetwork["state"], Device["status"]>> = { ready: "online", unknown: "unknown" };
-/** The private network's mark: a choice left off reads as away, not as needing the person. */
-export const networkMark = (network: PrivateNetwork): Device["status"] => (network.state === "ready" && !network.shared ? "offline" : NETWORK_MARK[network.state] ?? "attention");
-/** Tailscale is missing, signed out, waiting or not allowed: the network row, the page's notice and the nav's mark say so. */
-export const networkNeedsPerson = (network: PrivateNetwork | null): network is PrivateNetwork => Boolean(network && networkMark(network) === "attention");
-
-/** Your other computers on the private network, as a switch once Tailscale is on: on lets them open this computer. */
-export interface NetworkShare {
-  on: boolean;
-  busy: boolean;
-  /** The organization keeps remote access off: it can be turned off, never on. */
-  blocked: boolean;
-  onToggle: () => void;
-  /** Tailscale stays on for phones after the share is off: this turns it off for them too. */
-  onPhonesOff: (() => void) | null;
-}
-
-/** The private network on this computer: its state, the whole next step in words, and the one control for it. */
-function NetworkRow({ network, line, action, secondary, share }: { network: PrivateNetwork; line: string | null; action: NetworkAction | null; secondary?: ReactNode; share?: NetworkShare | null }) {
-  const shareLabel = t("devicesPage.network.shareSwitch");
-  const phonesOff = network.state === "ready" && !network.shared ? share?.onPhonesOff ?? null : null;
-  const mark = phonesOff ? "online" : networkMark(network);
-  const shown = line ?? (phonesOff ? t("devicesPage.network.line.phonesThrough") : null);
-  return (
-    <div data-settings-block="computers" className="contents">
-      <div data-settings-block="network" data-private-network="" tabIndex={-1} className="flex scroll-mt-4 flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 outline-none">
-        <div className="flex min-w-[min(100%,14rem)] flex-1 gap-3">
-          <span aria-hidden="true" className={SLOT}><SettingsMark><Waypoints /></SettingsMark></span>
-          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <span className="flex flex-wrap items-center gap-x-2 text-[14px] leading-5 text-ink">
-              {t("devicesPage.network.title")}
-              <span data-network-state={network.state} aria-live="polite" className={cn("flex min-w-0 items-start gap-1.5 text-[13px] leading-[18px]", mark === "attention" ? "text-ink" : "text-ink-secondary")}>
-                {mark !== "unknown" && <span className="flex h-[18px] shrink-0 items-center"><StatusMark status={mark} /></span>}
-                <span className="min-w-0">{phonesOff ? t("devicesPage.network.short.onPhonesOnly") : networkShort(network)}</span>
-              </span>
-            </span>
-            {shown && <span data-network-line={network.state} aria-live="polite" className="text-[13px] leading-[18px] text-ink-secondary">{shown}</span>}
-            {phonesOff && share && <span className="pt-1.5">
-              <button type="button" data-network-phones-off="" title={t("devicesPage.network.turnOffHint")} disabled={share.busy} onClick={phonesOff}
-                className="ui-button ui-button-sm">{t("devicesPage.network.turnOff")}</button>
-            </span>}
-          </div>
-        </div>
-        {(action || secondary || share) && (
-          <span className="ms-auto flex shrink-0 items-center gap-2 ps-11 @min-[480px]/rows:ps-0">
-            {action && (action.href
-              ? <a href={action.href} target="_blank" rel="noreferrer" className="ui-button ui-button-sm" data-network-action="">{action.label}</a>
-              : <button type="button" className="ui-button ui-button-sm" data-network-action="" disabled={action.busy} onClick={action.run}>{action.label}</button>)}
-            {secondary}
-            {share && <label className="flex cursor-pointer items-center gap-2 text-[13px] leading-[18px] text-ink">
-              {shareLabel}
-              <Switch checked={share.on} aria-label={shareLabel} data-network-share={share.on ? "on" : "off"}
-                disabled={share.busy || (share.blocked && !share.on)} onClick={share.onToggle} />
-            </label>}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/** This place first: its row (open like any other) and, on This computer, the private network under it (`network`, or
- * `pending` while it is still being read). `titled: false` leaves out "You're here" where the map above already says it. */
-export function HereSection({ device, mark, network, pending = false, opened, onAction, now, more, titled = true }: {
+/** This place first: its row (open like any other). `titled: false` leaves out "You're here" where the map above already says it. */
+export function HereSection({ device, mark, opened, onAction, now, more, titled = true }: {
   device: Device; mark: ReactNode; opened: Opened; onAction: (device: Device, action: DeviceAction) => void; now: number;
-  network: { network: PrivateNetwork; line: string | null; action: NetworkAction | null; secondary?: ReactNode; share?: NetworkShare | null } | null;
-  pending?: boolean;
   /** more rows of this place's own, under it */
   more?: ReactNode;
   titled?: boolean;
@@ -144,25 +78,17 @@ export function HereSection({ device, mark, network, pending = false, opened, on
     <SettingsGroup label={titled ? t("devicesPage.here.section") : undefined} block="here">
       <SettingsRows icons>
         <DeviceRow device={device} mark={mark} opened={opened} onAction={onAction} now={now} />
-        {network && <NetworkRow {...network} />}
         {more}
       </SettingsRows>
-      {!network && pending && <span data-settings-block="network" className="contents"><span data-settings-block="computers" className="contents" /></span>}
     </SettingsGroup>
   );
 }
 
-/**
- * What needs the person, by name, as one quiet row in its own card while anything does: each device's name opens its row,
- * and the private network's opens the network row.
- */
-export function DevicesAttention({ needing, network, now, onOpen, onNetwork }: {
-  needing: readonly Device[]; network: PrivateNetwork | null; now: number; onOpen: (id: string) => void; onNetwork: () => void;
+/** What needs the person, by name, as one quiet row in its own card while anything does: each device's name opens its row. */
+export function DevicesAttention({ needing, now, onOpen }: {
+  needing: readonly Device[]; now: number; onOpen: (id: string) => void;
 }) {
-  const items = [
-    ...(networkNeedsPerson(network) ? [{ key: "network", name: t("devicesPage.network.title"), status: networkShort(network), open: onNetwork }] : []),
-    ...needing.map((device) => ({ key: device.id, name: device.name, status: statusText(device, now), open: () => onOpen(device.id) })),
-  ];
+  const items = needing.map((device) => ({ key: device.id, name: device.name, status: statusText(device, now), open: () => onOpen(device.id) }));
   if (items.length === 0) return null;
   return (
     <section data-settings-block="attention" className="flex scroll-mt-4 flex-col">
@@ -212,7 +138,7 @@ export function GroupSection({ group, devices, addLabel, onAdd, opened, onAction
 }) {
   return (
     <SettingsGroup label={groupLabel(group)} block={block}
-      actions={addLabel && devices.length > 0 && <button type="button" data-add-group={group} data-phone-pairing-action={group === "phones" ? "" : undefined} onClick={onAdd} className="settings-quiet cursor-pointer">{addLabel}</button>}>
+      actions={addLabel && devices.length > 0 && <button type="button" data-add-group={group} onClick={onAdd} className="settings-quiet cursor-pointer">{addLabel}</button>}>
       {notes}
       {notice}
       <SettingsRows icons>
@@ -222,7 +148,7 @@ export function GroupSection({ group, devices, addLabel, onAdd, opened, onAction
           : <SettingsEmptyRow>
             <span className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-3 gap-y-2">
               <span data-devices-empty={group}>{t(EMPTY[group])}</span>
-              {addLabel && <button type="button" data-add-empty={group} data-add-group={group} data-phone-pairing-action={group === "phones" ? "" : undefined} onClick={onAdd} className="settings-quiet -me-1.5 shrink-0 cursor-pointer">{addLabel}</button>}
+              {addLabel && <button type="button" data-add-empty={group} data-add-group={group} onClick={onAdd} className="settings-quiet -me-1.5 shrink-0 cursor-pointer">{addLabel}</button>}
             </span>
           </SettingsEmptyRow>}
       </SettingsRows>

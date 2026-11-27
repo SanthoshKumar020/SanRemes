@@ -6,7 +6,7 @@ const f = vi.hoisted(() => ({ effects: [] as EffectCallback[], pair: vi.fn() }))
 vi.mock("react", async original => ({ ...await original<typeof import("react")>(), useEffect: (effect: EffectCallback) => { f.effects.push(effect); } }));
 vi.mock("../lib/session", async original => ({ ...await original<typeof import("../lib/session")>(), pairWithCode: f.pair, readSessionState: vi.fn().mockResolvedValue({ kind: "unauthenticated", error: "" }) }));
 vi.mock("../components/DesktopWorkspaceSwitcher", () => ({ DesktopWorkspaceSwitcher: () => null }));
-import { codeProblem, codeReady, openInAppLink, PairPage, pairIntro, pairsAutomatically, pairTitle, TeamLeftPage, teamPage, unencryptedPublic } from "./PairPage";
+import { codeProblem, codeReady, PairPage, pairIntro, pairsAutomatically, pairTitle, TeamLeftPage, teamPage, unencryptedPublic } from "./PairPage";
 import en from "../locales/en.json";
 import type { EnvironmentDescriptor } from "../lib/session";
 
@@ -77,11 +77,6 @@ it("names a wrong kind of code instead of letting it be sent as a wrong one", ()
   expect(codeProblem("7KQ2-M9XD")).toBeNull();
   expect(codeReady("7kq2 m9xd h4tp")).toBe(true);
   expect(codeReady("1234 5678")).toBe(false);
-});
-
-it("opens the phone app at this server with the code filled in", () => {
-  expect(openInAppLink("https://sanremes.example.com", "7kq2m9xdh4tp")).toBe("sanremes://pair?address=https%3A%2F%2Fmaus.example.com&code=7KQ2-M9XD-H4TP");
-  expect(openInAppLink("http://192.168.1.20:8799", "")).toBe("sanremes://pair?address=http%3A%2F%2F192.168.1.20%3A8799");
 });
 
 it("warns only on plain http across the open internet", () => {

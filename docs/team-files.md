@@ -19,8 +19,8 @@ space used of 5 GB.
   only an Owner or Admin uploads, renames or deletes anything in it there.
 - **Preview** of text, Markdown, CSV and JSON (up to 1 MB) and of PNG, JPEG, GIF and WebP pictures; anything else downloads.
 
-The desktop app and the browser show the same page. The routes (`/api/team-files/*`, below) are a member's, so the phone app
-may list and download from them; it has no page of its own.
+The desktop app and the browser show the same page. The routes (`/api/team-files/*`, below) are a member's, so a phone
+browser may list and download from them; it has no page of its own.
 
 ## For bots
 

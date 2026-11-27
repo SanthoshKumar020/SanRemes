@@ -35,13 +35,12 @@ import type { PublishedPageCard } from "./published-page.ts";
 import type { InboxItem, InboxTask } from "./inbox.ts";
 import type { LiveCallRecord, LiveCallState } from "./live-call-wire.ts";
 import type { ForkOrigin, TaskClosedBy, TaskOpenedBy } from "./task-provenance.ts";
-import type { CompanionEndpointsSnapshot } from "./responses.ts";
 /** What a team bot's main chat is called, beside each person's own chats. */
 export const SHARED_CHAT_TITLE = "Shared chat";
 
 export type { LiveCallRecord, LiveCallState, LiveCallStatus, LiveClient, LiveElevenLabsSession, LiveElevenLabsTransport, LiveEndReason, LiveFishRelayCommand, LiveFishRelayEvent, LiveFishSessionToken, LiveFishTransport, LiveGeminiSession, LiveGeminiTransport, LiveKeySource, LiveProvider, LiveSettings, LiveSpokenLine } from "./live-call-wire.ts";
 export type { ForkOrigin, TaskClosedBy, TaskOpenedBy } from "./task-provenance.ts";
-export type { AuthPairResponse, AuthSessionResponse, BotCreateResponse, BotsResponse, BotUpdateResponse, CompanionE2EDescriptor, CompanionEndpointsSnapshot, InstancesResponse, LoopbackSessionResponse, PairedDevice, PairedSession, PairRequest, PairResponse, RoomCreateResponse, RoomTaskCreateResponse, RoomTaskUpdateResponse, RoomUpdateResponse, SearchHit, SearchResponse, SignedInSessionResponse, TaskResponse, WireComputerControl, WireInstance, WireMessagePage, WireModelOption } from "./responses.ts";
+export type { AuthPairResponse, AuthSessionResponse, BotCreateResponse, BotsResponse, BotUpdateResponse, InstancesResponse, LoopbackSessionResponse, PairedDevice, PairedSession, PairRequest, PairResponse, RoomCreateResponse, RoomTaskCreateResponse, RoomTaskUpdateResponse, RoomUpdateResponse, SearchHit, SearchResponse, SignedInSessionResponse, TaskResponse, WireComputerControl, WireInstance, WireMessagePage, WireModelOption } from "./responses.ts";
 
 /** Reasoning-effort levels, ascending: a union of what any engine accepts;
  * each driver declares the subset its CLI will take. */
@@ -367,8 +366,6 @@ export interface WireBot extends DefaultBotFields, BotAccessFields {
   connectorTools?: Record<string, ConnectorToolGrant>;
   connectorScopes?: { apps: Record<string, "read" | "write"> };
   outbound?: { policy: "ask" | "allow" };
-  /** Which of a paired phone's apps this bot may use; absent: every bot may use what the phone allows (shared/phone-apps.ts). */
-  phoneApps?: import("./phone-apps.ts").PhoneApps;
   /** Ordered backups used only by opt-in, pre-prompt startup recovery. */
   fallback?: Array<{ instanceId: string; model: string }>;
   /** Whether this bot gets the app's built-in browser. */
@@ -954,8 +951,6 @@ export type ServerFrame =
   /** Always the first frame of an event stream. `cursor` is `<stream id>:<last seq>`; `resumed`: the frames after the
    * client's `since` follow, so it keeps what it has; otherwise it loads everything again. */
   | { kind: "hello"; cursor: string; resumed: boolean }
-  /** From a computer's companion, on a phone's own stream, when where the phone may connect changes. It has no seq. */
-  | ({ kind: "companion.endpoints" } & CompanionEndpointsSnapshot)
   | { kind: "sections"; sections: string[] }
   | { kind: "bot.queued"; queues: BotQueuedMessages }
   | { kind: "message"; threadId: string; message: WireMessage }

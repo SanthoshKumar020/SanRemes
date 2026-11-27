@@ -59,7 +59,6 @@ In the built-in browser (and in My Chrome) a bot can also sign in with a login y
 
 - **Same network**: a phone on the same Wi-Fi.
 - **Private network**: anything that reaches this computer over Tailscale. It is drawn as a group of its own, with Tailscale's state.
-- **Through SanRemes**: a phone using the relay.
 - **SanRemes Cloud**: the Cloud, or devices signed in to it.
 - **Internet**: a server of your own at a public address.
 - **Signed in**: a browser or device paired with a code.
@@ -77,7 +76,6 @@ Each device shows whether it is online, when it was last seen, or the one thing 
 
 **Add a device** takes each kind into the flow it already has:
 
-- **Phone** opens Pair a phone.
 - **Computer** makes a pairing link over your private network. It shows the link and code, and says when the other computer has connected. A Cloud's page says to sign in on the other computer instead.
 - **Your own server** gives you one line to run on that machine. `npx sanremes account login && npx sanremes serve --tunnel` makes it reachable from anywhere; `npx sanremes serve --tailscale` keeps it on your private network. Then **Paste the link it shows**.
 - **Cloud** opens Get a Cloud.

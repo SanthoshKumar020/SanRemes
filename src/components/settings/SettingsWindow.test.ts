@@ -17,7 +17,7 @@ const fixture = vi.hoisted(() => ({
 vi.mock("@/state/store", async (importOriginal) => ({
   ...await importOriginal<typeof import("@/state/store")>(),
   api: vi.fn(() => new Promise(() => {})),
-  useStore: () => ({ state: { appSettingsSection: fixture.section, appSettingsPhonePairing: 0, appSettingsCloudLink: 0, instances: [], bots: [], config: fixture.config, activeView: "chat" }, dispatch: fixture.dispatch }),
+  useStore: () => ({ state: { appSettingsSection: fixture.section, appSettingsCloudLink: 0, instances: [], bots: [], config: fixture.config, activeView: "chat" }, dispatch: fixture.dispatch }),
 }));
 vi.mock("@/lib/interface-mode", () => ({ useAdvancedMode: () => fixture.advanced, setAdvancedMode: fixture.setAdvancedMode }));
 vi.mock("@/lib/use-owner-or-admin", () => ({ useOwnerOrAdmin: () => fixture.admin }));
@@ -32,7 +32,7 @@ import { SettingsModal } from "../SettingsModal";
 import { profileMenuItems } from "../SidebarProfileMenu";
 
 const COMPANION = { state: () => new Promise(() => {}) };
-const desktopHere = (extra: Record<string, unknown> = {}) => ({ ogb: { platform: "darwin", companion: COMPANION, environments: { state: () => new Promise(() => {}) }, ...extra } });
+const desktopHere = (extra: Record<string, unknown> = {}) => ({ ogb: { platform: "darwin", app: { version: "fixture", ownPage: true }, companion: COMPANION, environments: { state: () => new Promise(() => {}) }, ...extra } });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -182,24 +182,20 @@ describe("the Settings window", () => {
     expect(fixture.setAdvancedMode).toHaveBeenCalledWith(true);
   });
 
-  it("opens an old phone link on Devices, under its title, with the phones and how they reach this computer while they load", () => {
+  it("opens an old phone link on Devices, under its title", () => {
     vi.stubGlobal("ogb", desktopHere().ogb);
     const html = render("phone");
     expect(html).toMatch(/data-settings-page-open="devices"/);
     expect(html).toMatch(/<h2[^>]*>Devices<\/h2>/);
-    expect(html).toContain('data-settings-block="phones"');
-    expect(html).toContain('data-settings-block="reach"');
   });
 
-  it("on My Cloud's page in the window: Devices keeps its name and lists the Cloud's phones, and This app rows it can't reach say so", () => {
+  it("on My Cloud's page in the window: Devices keeps its name, and This app rows it can't reach say so", () => {
     vi.stubGlobal("window", { ogb: { platform: "darwin", workspaces: { state: () => new Promise(() => {}), places: () => new Promise(() => {}) } } });
     fixture.config = { cloudHome: true };
     const phone = render("phone");
     expect(phone).toMatch(/<h2[^>]*>Devices<\/h2>/);
     expect(phone).not.toContain("This server");
     expect(phone).toContain("My Cloud");
-    expect(phone).toContain('data-settings-block="phones"');
-    expect(phone).not.toContain('data-settings-block="reach"');
     expect(render("overview")).toContain("Always on");
     fixture.advanced = true;
     const app = render("general");
@@ -256,7 +252,6 @@ describe("the Settings window", () => {
 
 describe("the outer menu", () => {
   const items = (simple: boolean) => profileMenuItems({
-    phone: { key: "phone-devices", label: "Phone & devices", onSelect: () => {} },
     update: null,
     header: { name: "Ada Lovelace", line: "Not signed in", avatar: null, onOpen: () => {} },
     plan: { key: "plan", label: "Plan & billing", onSelect: () => {} },
@@ -264,14 +259,14 @@ describe("the outer menu", () => {
     onSettings: () => {}, onShortcuts: () => {}, onAbout: () => {}, onHelp: () => {}, onFeedback: () => {},
   }).map((item) => item.key);
 
-  it("puts your account first, then Phone & devices and Settings, in both modes", () => {
-    expect(items(false)).toEqual(["account", "phone-devices", "settings", "plan", "support"]);
-    expect(items(true)).toEqual(["account", "phone-devices", "settings", "automations", "plan", "support"]);
+  it("puts your account first, then Settings, in both modes", () => {
+    expect(items(false)).toEqual(["account", "settings", "plan", "support"]);
+    expect(items(true)).toEqual(["account", "settings", "automations", "plan", "support"]);
   });
 
   it("keeps Plan & billing in Settings' group in Advanced, with no divider between them", () => {
     const rows = profileMenuItems({
-      phone: { key: "phone-devices", label: "Phone & devices", onSelect: () => {} }, update: null,
+      update: null,
       header: { name: "Ada Lovelace", line: "Not signed in", avatar: null, onOpen: () => {} },
       plan: { key: "plan", label: "Plan & billing", onSelect: () => {} },
       onSettings: () => {}, onShortcuts: () => {}, onAbout: () => {}, onHelp: () => {}, onFeedback: () => {},

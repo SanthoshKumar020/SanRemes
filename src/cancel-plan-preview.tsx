@@ -31,7 +31,7 @@ const cancel = async (): Promise<CloudRenewalResult> => {
 };
 const keep = async (): Promise<CloudRenewalResult> => { await wait(); settle({ ...renewal, cancelled: false, renewsAt: ENDS, endsAt: null }); return { outcome: "kept", state: state() }; };
 const account = { state: async () => state(), begin: async () => state(), signInAgain: async () => state(), reopen: async () => state(), cancel: async () => state(),
-  refresh: async () => state(), signOut: async () => state(), openDashboard: async () => state(), connectHome: async () => state(), connectHomeForPhone: async () => state(),
+  refresh: async () => state(), signOut: async () => state(), openDashboard: async () => state(), connectHome: async () => state(),
   onState: (listener: (next: CloudAccountState) => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; }, cancelPlan: cancel, keepPlan: keep } satisfies CloudAccountBridge;
 const plan = { state: async (): Promise<CloudPlanSnapshot> => ({ status: "paid", tier: "pro", home: true, ...(kind === "trial" ? { trial: state().trial } : {}), renewal }),
   manage: async () => undefined, cancel, keep } satisfies CloudPlanBridge;

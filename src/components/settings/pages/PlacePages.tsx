@@ -33,7 +33,6 @@ import { KEY_SECTIONS } from "../../keys/key-catalog";
 import { DesktopKinds } from "../DesktopKinds";
 import { SkillsSection } from "../../SkillsSection";
 import { ThreadConcurrencySettings } from "../../ThreadConcurrencySettings";
-import { usePhonePlaceState } from "../phone-status";
 import { KeysPage } from "../../keys/KeysPage";
 import { KEYS_ANCHOR_FOR_FOCUS } from "../../keys/key-focus";
 import { BrowserProfilesRow, ExperimentalFeaturesRow, NewBotEffortRow } from "../../AppSettingsRows";
@@ -71,10 +70,7 @@ export function OverviewPage() {
   const team = useStoreSelector((state) => state.config?.team), dispatch = useStoreDispatch();
   const engines = useStoreSelector((state) => state.instances.filter((instance) => instance.snapshot.state === "available").length);
   const [note, dismiss] = useGroupedNote();
-  const phone = usePhonePlaceState(!ctx.client);
   const teamOwner = useTeamPeople()?.me?.role === "owner";
-  const phoneValue = phone.kind === "paired" || phone.kind === "attention" ? t("settings.glance.phonePaired", { count: phone.count })
-    : phone.kind === "none" ? t("settings.glance.notSetUp") : undefined;
   const apps = useConnectedAppCount();
   return <>
     {note && (
@@ -88,7 +84,7 @@ export function OverviewPage() {
     {place.kind === "server" && !ctx.client && !window.ogb?.updater && <SettingsGroup label={t("settings.updates.title")} block="version"><SettingsRows><ServerUpdateRow title={versionLine()} /></SettingsRows></SettingsGroup>}
     <SettingsGroup label={t("settings.overview.glance")} block="glance">
       <SettingsRows>
-        {!ctx.client && <SettingsLinkRow title={t("settings.page.devices")} value={phoneValue} onClick={() => go("devices", "phones")} data={{ "data-glance": "devices" }} />}
+        {!ctx.client && <SettingsLinkRow title={t("settings.page.devices")} onClick={() => go("devices")} data={{ "data-glance": "devices" }} />}
         {!ctx.client && <SettingsLinkRow title={t("settings.group.ai")} onClick={() => go("ai", "providers")} data={{ "data-glance": "ai" }}
           value={ctx.admin ? engines > 0 ? t("settings.glance.aiReady", { count: engines }) : t("settings.glance.aiStart") : t("settings.glance.aiAdmin")} />}
         {/* Simple's sidebar footer has Connect apps right beside the avatar, so Simple's Overview leaves the jump out and

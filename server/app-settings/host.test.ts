@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { AppConfig } from "../config.ts";
 import { flushDecisionLog, readDecisions } from "../decision-log.ts";
 import { UNDO_STALE } from "../direct-apply.ts";
-import type { TurnOwnerRefusal } from "../host/phones.ts";
+import type { TurnOwnerRefusal } from "./host.ts";
 import type { BotRecord } from "../store.ts";
 import { createAppSettings, WRITE_BUDGET } from "./host.ts";
 import { createSettingsRegistry } from "./registry.ts";
@@ -129,8 +129,8 @@ describe("reads", () => {
 
   it("names real places only: find falls back to where a thing is, places lists them all", async () => {
     const { host, turn } = fixture();
-    const owner = await host.handle({ action: "get", id: "phone.pairing" }, turn);
-    expect(JSON.parse(String(owner.body.text))).toMatchObject({ where: "Settings → Devices → Phones and tablets → Add a phone", change: "only the person, in Settings → Devices → Phones and tablets → Add a phone" });
+    const owner = await host.handle({ action: "get", id: "vault.logins" }, turn);
+    expect(JSON.parse(String(owner.body.text))).toMatchObject({ where: "Settings → Vault", change: "only the person, in Settings → Vault" });
     const none = await host.handle({ action: "find", query: "invoice" }, turn);
     expect(none.body.text).toMatch(/^No setting you can change matches "invoice"\. Where the person finds it in the app: Settings → Plan & billing/);
     expect((await host.handle({ action: "places", query: "spending" }, turn)).body.text).toMatch(/^Settings → Spending$/m);
@@ -364,29 +364,16 @@ describe("secret tier", () => {
 });
 
 describe("owner-only tier", () => {
-  it("explains and refuses with where to change it: sign-in, logins, pairing, backups, the domain", async () => {
+  it("explains and refuses with where to change it: sign-in, logins, backups, the domain", async () => {
     const { host, set, turn, cards, saved, routeCalls } = fixture();
     const got = await host.handle({ action: "get", id: "vault.logins" }, turn);
     expect(JSON.parse(String(got.body.text))).toMatchObject({ tier: "owner-only", change: "only the person, in Settings → Vault" });
-    for (const id of ["cloud.account", "vault.logins", "phone.pairing", "data.backups", "people.signIn", "remote.domain", "remote.httpsAddress"]) {
+    for (const id of ["cloud.account", "vault.logins", "data.backups", "people.signIn", "remote.domain"]) {
       const refused = await set(id, "on");
       expect(refused.status, id).toBe(403);
       expect(refused.body.error, id).toMatch(/ is changed only by the person, in Settings → .+\. Tell them where in one line; do not try another way\.$/);
     }
     expect([cards(), saved, routeCalls]).toEqual([[], [], []]);
-  });
-
-  it("turns a way in to this computer on with Undo, but leaves turning one off to the person", async () => {
-    const fx = fixture();
-    fx.windowValues.set("remote.relay", false);
-    const on = await fx.set("remote.relay", "true");
-    expect(on.body.text).toMatch(/^Done: Let your paired phones reach this computer from anywhere, through SanRemes's relay\./);
-    expect(fx.windowValues.get("remote.relay")).toBe(true);
-    const off = await fx.set("remote.relay", false);
-    expect(off).toMatchObject({ status: 409, body: { error: "Turning off Reach from anywhere is changed only by the person, in Settings → Devices → How your phone reaches this computer → Anywhere, through SanRemes (only in the desktop app, on this computer's own page). Tell them where in one line; do not try another way." } });
-    expect(fx.windowValues.get("remote.relay")).toBe(true);
-    expect(await fx.undo()).toEqual({ claimed: true, state: "undone" });
-    expect(fx.windowValues.get("remote.relay")).toBe(false);
   });
 });
 
