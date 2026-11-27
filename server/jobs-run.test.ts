@@ -51,6 +51,7 @@ async function makeDriver(extra: Partial<JobRunDeps> = {}) {
     startApply: async (input) => { applied.push(input.jobId); input.onSettled?.(true); return { started: true }; },
     resumeCwd: () => resumeDir,
     appendMessage: (_threadId, text) => { posted.push(text); },
+    sleep: async () => {},
     ...extra,
   });
   return { driver, store, tasks, posted, applied, resumeDir };
@@ -139,6 +140,69 @@ describe("the run driver", () => {
     expect(done.applied).toHaveLength(2);
     expect(done.applied.map((entry) => entry.status)).toEqual(["not-submitted", "submitted"]);
     expect(done.reportText).toContain("Tried but not submitted (1):");
+  });
+
+  it("waits 45–120 seconds between applications, and not before the first", async () => {
+    const delays: number[] = [];
+    const { driver, applied } = await makeDriver({ sleep: async (ms) => { delays.push(ms); } });
+    const run = driver.start();
+    await waitFor(driver, run.id, "done");
+    expect(applied).toHaveLength(2);
+    expect(delays).toHaveLength(1);
+    expect(delays[0]).toBeGreaterThanOrEqual(45_000);
+    expect(delays[0]).toBeLessThanOrEqual(120_000);
+  });
+
+  it("stops after the current application when paused during the wait between applications", async () => {
+    let runId = "";
+    let driver!: JobRunDriver;
+    const made = await makeDriver({
+      sleep: async () => { driver.pause(runId); },
+    });
+    driver = made.driver;
+    const run = driver.start();
+    runId = run.id;
+    await waitFor(driver, run.id, "stopped");
+    const stopped = driver.getRun(run.id)!;
+    expect(stopped.applied).toHaveLength(1);
+    expect(stopped.reportText).toContain("Stopped early — paused.");
+    expect(made.applied).toHaveLength(1);
+  });
+
+  it("stops the run when a turn closes with the human-check marker, and says so plainly", async () => {
+    const attempted: string[] = [];
+    const { driver } = await makeDriver({
+      startApply: async (input) => {
+        attempted.push(input.jobId);
+        input.onSettled?.(false, "HUMAN CHECK: the site asked for a human check before sign-in.");
+        return { started: true };
+      },
+    });
+    const run = driver.start();
+    await waitFor(driver, run.id, "stopped");
+    const stopped = driver.getRun(run.id)!;
+    expect(attempted).toHaveLength(1);
+    expect(stopped.applied).toHaveLength(1);
+    expect(stopped.applied[0]?.status).toBe("not-submitted");
+    expect(stopped.reportText).toContain("The run stopped early: the site asked for a human check — the bot stopped and never tried to solve it");
+  });
+
+  it("skips the second application on one platform once that platform's daily share is used", async () => {
+    const twoNaukri = [
+      { platform: "naukri", url: "https://www.naukri.com/job/1", title: "Data Engineer", company: "Acme" },
+      { platform: "naukri", url: "https://www.naukri.com/job/2", title: "Data Engineer", company: "Beta" },
+    ];
+    const { driver, store } = await makeDriver({
+      startSearch: async (input) => { input.onSettled?.(reportText(twoNaukri)); return { started: true }; },
+    });
+    store.setSettings({ dailyCap: 2 });
+    const run = driver.start();
+    await waitFor(driver, run.id, "done");
+    const done = driver.getRun(run.id)!;
+    expect(done.applied).toHaveLength(1);
+    expect(done.skipped).toHaveLength(1);
+    expect(done.skipped[0]).toMatchObject({ company: "Beta", reason: "daily limit for Naukri reached" });
+    expect(done.reportText).toContain("daily limit for Naukri reached");
   });
 });
 

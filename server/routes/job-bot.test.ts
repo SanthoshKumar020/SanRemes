@@ -397,6 +397,7 @@ async function waitForRun(api: (path: string, init?: RequestInit) => Promise<{ s
 
 it("runs a full auto run over HTTP and records a queue task per application", async () => {
   const { api, store, tasks, posted } = await serve({
+    sleep: async () => {},
     startSearch: async (input) => {
       input.onSettled?.(runReport([
         { platform: "naukri", url: "https://www.naukri.com/job/1", title: "Data Engineer", company: "Acme" },

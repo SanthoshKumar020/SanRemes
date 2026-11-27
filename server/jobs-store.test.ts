@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { DAILY_CAP_DEFAULT, jobsFileSchema } from "../shared/jobs.ts";
-import { JobsStore, keywordMatchScore } from "./jobs-store.ts";
+import { JobsStore, keywordMatchScore, perPlatformDailyCap } from "./jobs-store.ts";
 import { removeTempDir } from "./testing/cleanup.ts";
 
 const START = new Date("2026-11-26T10:00:00+05:30").getTime();
@@ -150,6 +150,26 @@ describe("the approval queue and the submit gate", () => {
     expect(store.submitGate("job-2")).toEqual({ allowed: false, reason: "daily-cap" });
     now = START + DAY + 60_000;
     expect(store.submitGate("job-2")).toEqual({ allowed: true });
+  });
+
+  it("caps one platform at half the daily cap, so the other platform still gets its share", () => {
+    expect(perPlatformDailyCap(10)).toBe(5);
+    expect(perPlatformDailyCap(2)).toBe(1);
+    expect(perPlatformDailyCap(1)).toBe(1);
+    const { store } = makeStore();
+    store.setSettings({ dailyCap: 2 });
+    const first = seedJob(store, "job-1");
+    const second = store.addJob({ id: "job-2", platform: "naukri", url: "https://www.naukri.com/job/2", title: "Data Engineer", company: "Beta" });
+    const third = store.addJob({ id: "job-3", platform: "linkedin", url: "https://www.linkedin.com/jobs/3", title: "Data Engineer", company: "Gamma" });
+    for (const job of [first, second, third]) {
+      const item = store.enqueue(job.id, "resume-1")!;
+      store.decideQueue(item.id, "approved");
+    }
+    expect(store.submitGate("job-1")).toEqual({ allowed: true });
+    store.setJobStatus("job-1", "applied");
+    expect(store.appliedTodayForPlatform("naukri")).toBe(1);
+    expect(store.submitGate("job-2")).toEqual({ allowed: false, reason: "daily-cap", platform: "naukri" });
+    expect(store.submitGate("job-3")).toEqual({ allowed: true });
   });
 
   it("holds the gate shut while applying is paused", () => {

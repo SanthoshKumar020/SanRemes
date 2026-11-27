@@ -23,6 +23,8 @@ describe("job bot souls", () => {
     expect(APPLY_BOT_SOUL).toContain("Apply to ranked matches on your own, up to the daily cap");
     expect(APPLY_BOT_SOUL).toContain("Report every application");
     expect(APPLY_BOT_SOUL).toContain("Never try to solve a human check or CAPTCHA");
+    expect(APPLY_BOT_SOUL).toContain("stop the whole run at once and start your closing message with HUMAN CHECK:");
+    expect(APPLY_BOT_SOUL).toContain("Leave a pause between applications");
   });
 });
 

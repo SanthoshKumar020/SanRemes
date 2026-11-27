@@ -8,6 +8,8 @@ import { jobPlatformSchema, type JobsJob, type JobsProfile } from "../shared/job
 export const SEARCH_REPORT_FENCE = "sanremes-jobs";
 /** An apply turn reports a submitted application with this marker so the server can mark it applied. */
 export const APPLIED_MARKER = "SANREMES-APPLIED";
+/** An apply turn stopped by a human check starts its closing message with this marker so the server can stop the run. */
+export const HUMAN_CHECK_MARKER = "HUMAN CHECK:";
 
 const foundJobSchema = z.object({
   platform: jobPlatformSchema,
@@ -131,6 +133,7 @@ export function applyPrompt(job: Pick<JobsJob, "id" | "title" | "company" | "url
     `Upload the tailored resume at ${resumePath} with the existing agent_browser_upload tool.`,
     "Fill every field only from the stored job profile; never invent skills, experience, salary, or certificates.",
     "Never try to solve a human check or CAPTCHA: stop and hand sign-in to the person instead.",
+    `If the site asks for a human check, shows unusual-activity wording, or challenges the sign-in, stop at once and start your closing message with ${HUMAN_CHECK_MARKER} — never try to solve it.`,
     `If the application is submitted, end your reply with a line: ${APPLIED_MARKER} ${job.id}`,
     "If it is not submitted, say plainly what stopped it.",
   ].join(" ");

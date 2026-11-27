@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { JobsProfile } from "../shared/jobs.ts";
-import { estimateResumeLines, parseSearchReport, RESUME_PAGE_MAX_LINES, searchReportApplied, tailorResumeText } from "./jobs-resume.ts";
+import { applyPrompt, estimateResumeLines, HUMAN_CHECK_MARKER, parseSearchReport, RESUME_PAGE_MAX_LINES, searchReportApplied, tailorResumeText } from "./jobs-resume.ts";
 
 const profile: JobsProfile = {
   name: "Santhoshkumar",
@@ -98,5 +98,13 @@ describe("searchReportApplied", () => {
     expect(searchReportApplied("Done.\nSANREMES-APPLIED job-1", "job-1")).toBe(true);
     expect(searchReportApplied("Done.\nSANREMES-APPLIED job-1", "job-2")).toBe(false);
     expect(searchReportApplied("The application is still in progress.", "job-1")).toBe(false);
+  });
+});
+
+describe("applyPrompt", () => {
+  it("tells the bot to open its closing message with the human-check marker and never solve one", () => {
+    const prompt = applyPrompt({ id: "job-1", title: "Data Engineer", company: "Acme", url: "https://www.naukri.com/job/1" }, "/resumes/job-1.txt");
+    expect(prompt).toContain(`start your closing message with ${HUMAN_CHECK_MARKER}`);
+    expect(prompt).toContain("Never try to solve a human check or CAPTCHA");
   });
 });

@@ -295,9 +295,11 @@ describe("toolbar tools layout", () => {
     expect(render("comfortable", { toolsLayout: "toolbar" }).html).not.toContain('data-testid="routines-attention"');
   });
 
-  it("toolbar applies to Advanced mode's three places; Simple mode keeps them in the bottom bar instead", () => {
+  it("toolbar applies to Advanced mode's places, Jobs included by default; Simple mode keeps them in the bottom bar instead", () => {
     fixture.advanced = true;
-    expect(render("comfortable", { toolsLayout: "toolbar" }).html.match(/data-sidebar-nav="/g)).toHaveLength(3);
+    const html = render("comfortable", { toolsLayout: "toolbar" }).html;
+    expect(html.match(/data-sidebar-nav="/g)).toHaveLength(4);
+    expect(html).toContain('data-sidebar-nav="jobs"');
     fixture.advanced = false;
     expect(render("comfortable", { toolsLayout: "toolbar" }).html).toBe("");
   });

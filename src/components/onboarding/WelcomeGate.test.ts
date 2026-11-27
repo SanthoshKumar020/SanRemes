@@ -85,26 +85,41 @@ describe("who gets the welcome flow", () => {
 
   it("lands in the chat with the bot the person chose on the Chief screen", () => {
     vi.stubGlobal("window", LOCAL_PAGE);
-    store.state = { ...store.state, bots: [{ id: "sanremes", chiefOfStaff: true }, { id: "research" }] };
+    store.state = { ...store.state, bots: [{ id: "sanremes", chiefOfStaff: true }, { id: "research" }, { id: "resume", section: "Jobs" }] };
     gate(LOCAL_VIEWER).tree!.props.onDone!("research");
     expect(store.dispatch).toHaveBeenCalledWith({ type: "select", id: "research" });
     expect(store.dispatch).toHaveBeenCalledWith({ type: "toggleWelcome", open: false });
   });
 
+  it("on a first run with Jobs still to set up, lands on the Jobs page instead of the chat", () => {
+    vi.stubGlobal("window", LOCAL_PAGE);
+    store.state = { ...store.state, bots: [{ id: "sanremes", chiefOfStaff: true }, { id: "research" }] };
+    gate(LOCAL_VIEWER).tree!.props.onDone!("research");
+    expect(store.dispatch).toHaveBeenCalledWith({ type: "showJobs" });
+    expect(store.dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ type: "select" }));
+    // A replay from Settings stays where the person was, even with Jobs still to set up.
+    fixture.values = [];
+    store.dispatch.mockReset();
+    store.state = { ...store.state, welcomeOpen: true, config: { onboarding: { ...EMPTY_ONBOARDING, completedAt: "2026-10-23T00:00:00.000Z", version: WELCOME_VERSION } } };
+    gate(LOCAL_VIEWER).tree!.props.onDone!(null);
+    expect(store.dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ type: "showJobs" }));
+    expect(store.dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ type: "select" }));
+  });
+
   it("with no choice made, lands with the Chief of Staff wherever it sits in the list, else the first bot", () => {
     vi.stubGlobal("window", LOCAL_PAGE);
     const finish = () => gate(LOCAL_VIEWER).tree!.props.onDone!(null);
-    store.state = { ...store.state, bots: [{ id: "old", hidden: true, chiefOfStaff: true }, { id: "helper" }, { id: "chief", chiefOfStaff: true }] };
+    store.state = { ...store.state, bots: [{ id: "old", hidden: true, chiefOfStaff: true }, { id: "helper" }, { id: "chief", chiefOfStaff: true }, { id: "resume", section: "Jobs" }] };
     finish();
     expect(store.dispatch).toHaveBeenCalledWith({ type: "select", id: "chief" });
     fixture.values = [];
     store.dispatch.mockReset();
-    store.state = { ...store.state, bots: [{ id: "old", hidden: true }, { id: "helper" }] };
+    store.state = { ...store.state, bots: [{ id: "old", hidden: true }, { id: "helper" }, { id: "resume", section: "Jobs" }] };
     finish();
     expect(store.dispatch).toHaveBeenCalledWith({ type: "select", id: "helper" });
     fixture.values = [];
     store.dispatch.mockReset();
-    store.state = { ...store.state, bots: [] };
+    store.state = { ...store.state, bots: [{ id: "resume", section: "Jobs", hidden: true }] };
     finish();
     expect(store.dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ type: "select" }));
   });

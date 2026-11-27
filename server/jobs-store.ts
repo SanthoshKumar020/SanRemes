@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { DAILY_CAP_DEFAULT, jobRunSchema, jobsFileSchema, jobsJobSchema, jobsProfileSchema, jobsResumeSchema, jobsSettingsSchema, type JobPlatformSettings, type JobRun, type JobsData, type JobsJob, type JobsProfile, type JobsQueueItem, type JobsResume, type JobsSettings, type JobStatus, type QueueState } from "../shared/jobs.ts";
+import { DAILY_CAP_DEFAULT, jobRunSchema, jobsFileSchema, jobsJobSchema, jobsProfileSchema, jobsResumeSchema, jobsSettingsSchema, type JobPlatform, type JobPlatformSettings, type JobRun, type JobsData, type JobsJob, type JobsProfile, type JobsQueueItem, type JobsResume, type JobsSettings, type JobStatus, type QueueState } from "../shared/jobs.ts";
 
 import { writeFileAtomic } from "./atomic.ts";
 
@@ -13,7 +13,13 @@ export { DAILY_CAP_DEFAULT } from "../shared/jobs.ts";
 
 export type SubmitGate =
   | { allowed: true }
-  | { allowed: false; reason: "no-such-job" | "no-queue-item" | "not-approved" | "daily-cap" | "paused" };
+  | { allowed: false; reason: "no-such-job" | "no-queue-item" | "not-approved" | "paused" }
+  | { allowed: false; reason: "daily-cap"; platform?: JobPlatform };
+
+/** One platform may take at most half the day's cap, at least one application. */
+export function perPlatformDailyCap(dailyCap: number): number {
+  return Math.max(1, Math.floor(dailyCap / 2));
+}
 
 /** What PATCH /api/jobs/settings (and the setup wizard's nested form) may change: every field optional, search patchable per key. */
 export interface JobsSettingsPatch {
@@ -301,16 +307,22 @@ export class JobsStore {
     return this.read().jobs.filter((job) => job.status === "applied" && job.appliedAt !== undefined && sameLocalDay(job.appliedAt, now)).length;
   }
 
+  appliedTodayForPlatform(platform: JobPlatform, now: number = this.now()): number {
+    return this.read().jobs.filter((job) => job.platform === platform && job.status === "applied" && job.appliedAt !== undefined && sameLocalDay(job.appliedAt, now)).length;
+  }
+
   submitGate(jobId: string, now: number = this.now()): SubmitGate {
     const data = this.read();
     if (data.settings.paused) return { allowed: false, reason: "paused" };
-    if (!data.jobs.some((job) => job.id === jobId)) return { allowed: false, reason: "no-such-job" };
+    const job = data.jobs.find((one) => one.id === jobId);
+    if (!job) return { allowed: false, reason: "no-such-job" };
     const item = data.queue.find((one) => one.jobId === jobId);
     if (!item) return { allowed: false, reason: "no-queue-item" };
     if (item.state !== "approved") return { allowed: false, reason: "not-approved" };
     if (item.decidedBy === "auto" && !data.settings.autoApply) return { allowed: false, reason: "not-approved" };
     if (item.decidedBy !== "user" && item.decidedBy !== "auto") return { allowed: false, reason: "not-approved" };
     if (this.appliedToday(now) >= data.settings.dailyCap) return { allowed: false, reason: "daily-cap" };
+    if (this.appliedTodayForPlatform(job.platform, now) >= perPlatformDailyCap(data.settings.dailyCap)) return { allowed: false, reason: "daily-cap", platform: job.platform };
     return { allowed: true };
   }
 }

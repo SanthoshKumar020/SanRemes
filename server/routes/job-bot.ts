@@ -37,8 +37,10 @@ export interface JobBotRouteDeps {
   resumeCwd?(botId: string): string | null;
   /** Starts a Job Apply Bot turn; absent until the server wires turns. The turn's reply arrives later through onSettled. */
   startSearch?(input: { botId: string; prompt: string; onSettled?: (text: string) => void }): Promise<{ started: boolean; reason?: string }>;
-  /** Starts a Job Apply Bot turn to submit one approved application; the turn's reply says whether it went out. */
-  startApply?(input: { botId: string; jobId: string; prompt: string; onSettled?: (applied: boolean) => void }): Promise<{ started: boolean; reason?: string }>;
+  /** Starts a Job Apply Bot turn to submit one approved application; the turn's reply says whether it went out. The closing text follows so the run can see a human check. */
+  startApply?(input: { botId: string; jobId: string; prompt: string; onSettled?: (applied: boolean, closingText?: string) => void }): Promise<{ started: boolean; reason?: string }>;
+  /** Pacing delay between applications; absent, the run driver waits on a real timer. */
+  sleep?: (ms: number) => Promise<void>;
   /** The task queue, so a run records one task per application; absent, runs apply without queue tasks. */
   tasksStore?: TasksStore | null;
   /** The Apply Bot's main thread, for the run's end-of-run report. */
@@ -98,6 +100,7 @@ export function createJobBotRoutes(deps: JobBotRouteDeps): RouteHandler {
     botThreadId: deps.botThreadId,
     startSearch: deps.startSearch,
     startApply: deps.startApply,
+    sleep: deps.sleep,
     resumeCwd: deps.resumeCwd,
     appendMessage: deps.appendMessage,
   });

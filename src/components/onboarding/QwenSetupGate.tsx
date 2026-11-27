@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { t } from "@/lib/i18n";
+import { isLowMemory } from "@/lib/onboarding";
 import type { ConfigStatus } from "@/state/config-status";
 import { useStore } from "@/state/store";
 
@@ -21,6 +22,7 @@ export function QwenSetupGate() {
   }, [failed]);
   if (!qwenSetupDue(localQwen) && !failed) return null;
   const percent = localQwen?.state === "pulling" ? (localQwen.percent ?? 0) : 0;
+  const lowMemory = isLowMemory(localQwen?.totalMemoryBytes);
   const status = localQwen?.state === "pulling"
     ? t("qwenSetup.percent", { percent })
     : t("qwenSetup.starting");
@@ -30,6 +32,7 @@ export function QwenSetupGate() {
       {failed ? (
         <>
           <p className="max-w-md text-[13px]/[18px] text-ink-secondary">{t("qwenSetup.failedBody")}</p>
+          {lowMemory && <p className="max-w-md text-[13px]/[18px] text-ink-secondary">{t("qwenSetup.lowMemory")}</p>}
           {localQwen?.error && <p className="max-w-md text-[12px]/[16px] text-ink-tertiary">{localQwen.error}</p>}
           <button ref={continueRef} type="button" className="ui-button ui-button-primary mt-2" onClick={() => setDismissed(true)}>{t("qwenSetup.continue")}</button>
         </>
@@ -38,6 +41,7 @@ export function QwenSetupGate() {
           <Loader2 size={20} className="animate-spin text-ink-secondary motion-reduce:animate-none" aria-hidden="true" />
           <p role="status" className="text-[14px] text-ink-secondary tabular-nums">{status}</p>
           <p className="max-w-md text-[13px]/[18px] text-ink-secondary">{t("qwenSetup.downloading")}</p>
+          {lowMemory && <p className="max-w-md text-[13px]/[18px] text-ink-secondary">{t("qwenSetup.lowMemory")}</p>}
           {localQwen?.state === "pulling" && (
             <div role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} aria-valuetext={status} className="mt-1 h-2 w-64 max-w-full rounded-full bg-raised">
               <div className="h-full rounded-full bg-success" style={{ width: `${percent}%` }} />

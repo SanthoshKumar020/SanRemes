@@ -123,7 +123,7 @@ describe("JobBotPage", () => {
     expect(host.textContent).toContain("linkedin: Needs sign-in");
     expect(host.textContent).toContain("A signed-out platform needs you");
     expect(host.textContent).toContain("1 of 10 applications sent today");
-    expect(host.textContent).toContain("Automated applying can get an account restricted");
+    expect(host.textContent).toContain("Automated applying can look like bot activity");
     expect(host.querySelector("[data-jobs-wizard]")).toBeNull();
     await click(button("Edit setup"));
     expect(host.querySelector("[data-jobs-wizard]")).toBeTruthy();

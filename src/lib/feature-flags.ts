@@ -111,5 +111,5 @@ export function teamBoardEnabled(config: FeatureFlagConfig | null | undefined): 
 }
 
 export function jobBotEnabled(config: FeatureFlagConfig | null | undefined): boolean {
-  return config?.features?.jobBot === true;
+  return config?.features?.jobBot !== false;
 }

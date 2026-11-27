@@ -77,7 +77,12 @@ export function WelcomeGate({ viewer }: { viewer: WelcomeViewer | null }) {
       onDone={(botId) => {
         setDismissed(true);
         dispatch({ type: "toggleWelcome", open: false });
-        // A first run ends in the chat with the bot it chose, else its Chief; the app tour starts only from Settings.
+        // A first run with Jobs still to set up ends on the Jobs page; otherwise it ends in the chat with the bot it
+        // chose, else its Chief; the app tour starts only from Settings.
+        if (!replay && !state.bots.some((bot) => bot.section === "Jobs")) {
+          dispatch({ type: "showJobs" });
+          return;
+        }
         const target = botId ?? (replay ? null : fallback?.id);
         if (target) dispatch({ type: "select", id: target });
       }}

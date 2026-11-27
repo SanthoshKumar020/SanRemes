@@ -7,8 +7,8 @@ import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 
 import type { JobRun, JobRunApplied, JobRunSkipped, JobsJob, JobsQueueItem } from "../shared/jobs.ts";
-import type { JobsStore } from "./jobs-store.ts";
-import { applyPrompt, parseSearchReport, searchPrompt, tailorResumeText } from "./jobs-resume.ts";
+import type { JobsStore, SubmitGate } from "./jobs-store.ts";
+import { applyPrompt, HUMAN_CHECK_MARKER, parseSearchReport, searchPrompt, tailorResumeText } from "./jobs-resume.ts";
 import { writeFileAtomic } from "./atomic.ts";
 import type { TasksStore } from "./tasks-store.ts";
 
@@ -25,19 +25,32 @@ export interface JobRunDeps {
   /** The Apply Bot's main thread, for the end-of-run report. */
   botThreadId?(id: string): string | null;
   startSearch?(input: { botId: string; prompt: string; onSettled?: (text: string) => void }): Promise<JobRunTurn>;
-  startApply?(input: { botId: string; jobId: string; prompt: string; onSettled?: (applied: boolean) => void }): Promise<JobRunTurn>;
+  startApply?(input: { botId: string; jobId: string; prompt: string; onSettled?: (applied: boolean, closingText?: string) => void }): Promise<JobRunTurn>;
   /** The Resume Bot's working folder, or null when it cannot be found. */
   resumeCwd?(botId: string): string | null;
   appendMessage?(threadId: string, text: string): void;
   now?: () => number;
+  /** Waits between applications; defaults to a real timer. Tests pass a fake that records the delay. */
+  sleep?: (ms: number) => Promise<void>;
 }
 
 const SETTLE_TIMEOUT_MS = 20 * 60_000;
+const PACE_MIN_MS = 45_000;
+const PACE_MAX_MS = 120_000;
 const ACTIVE_PHASES: JobRun["phase"][] = ["searching", "tailoring", "applying", "reporting"];
 
-function gateReason(reason: string): string {
-  if (reason === "daily-cap") return "daily limit reached";
-  if (reason === "paused") return "applying is paused";
+const PLATFORM_NAMES: Record<string, string> = {
+  naukri: "Naukri", linkedin: "LinkedIn", indeed: "Indeed", wellfound: "Wellfound",
+  cutshort: "Cutshort", hirist: "Hirist", instahyre: "Instahyre",
+};
+
+function platformName(platform: string): string {
+  return PLATFORM_NAMES[platform] ?? platform.charAt(0).toUpperCase() + platform.slice(1);
+}
+
+function gateReason(gate: Exclude<SubmitGate, { allowed: true }>): string {
+  if (gate.reason === "daily-cap") return gate.platform ? `daily limit for ${platformName(gate.platform)} reached` : "daily limit reached";
+  if (gate.reason === "paused") return "applying is paused";
   return "not approved";
 }
 
@@ -48,12 +61,14 @@ function when(at: number): string {
 export class JobRunDriver {
   private readonly deps: JobRunDeps;
   private readonly now: () => number;
+  private readonly sleep: (ms: number) => Promise<void>;
   private readonly pausedIds = new Set<string>();
   private readonly executing = new Set<string>();
 
   constructor(deps: JobRunDeps) {
     this.deps = deps;
     this.now = deps.now ?? Date.now;
+    this.sleep = deps.sleep ?? ((ms) => new Promise((resolve) => { const timer = setTimeout(resolve, ms); timer.unref?.(); }));
   }
 
   getRun(id: string): JobRun | null {
@@ -115,9 +130,13 @@ export class JobRunDriver {
         seen.add(item.jobId);
         return true;
       });
-      await this.applyAll(runId, approved);
+      const humanCheck = await this.applyAll(runId, approved);
       if (this.paused(runId)) {
         this.finish(runId, "stopped", "paused");
+        return;
+      }
+      if (humanCheck) {
+        this.finish(runId, "stopped", "the site asked for a human check — the bot stopped and never tried to solve it");
         return;
       }
       this.finish(runId, "done", "applied");
@@ -212,14 +231,16 @@ export class JobRunDriver {
     }
   }
 
-  private async applyAll(runId: string, approved: readonly JobsQueueItem[]): Promise<void> {
+  /** True when a turn ended because the site asked for a human check, so the run stops. */
+  private async applyAll(runId: string, approved: readonly JobsQueueItem[]): Promise<boolean> {
     const store = this.deps.store;
     store.updateRun(runId, { phase: "applying" });
     const settings = store.snapshot().settings;
     const applyBotId = settings.applyBotId!;
     let queueFallback = !this.deps.tasks;
+    let attempted = 0;
     for (const item of approved) {
-      if (this.paused(runId)) return;
+      if (this.paused(runId)) return false;
       const data = store.snapshot();
       const job = data.jobs.find((one) => one.id === item.jobId);
       const resume = data.resumes.find((one) => one.id === item.tailoredResumeId);
@@ -229,8 +250,12 @@ export class JobRunDriver {
       }
       const gate = store.submitGate(job.id);
       if (!gate.allowed) {
-        this.addSkipped(runId, { jobId: job.id, company: job.company, title: job.title, reason: gateReason(gate.reason) });
+        this.addSkipped(runId, { jobId: job.id, company: job.company, title: job.title, reason: gateReason(gate) });
         continue;
+      }
+      if (attempted > 0) {
+        await this.sleep(PACE_MIN_MS + Math.random() * (PACE_MAX_MS - PACE_MIN_MS));
+        if (this.paused(runId)) return false;
       }
       let taskId: string | undefined;
       if (this.deps.tasks && applyBotId) {
@@ -248,12 +273,19 @@ export class JobRunDriver {
         }
       }
       let applied = false;
+      let closingText: string | undefined;
       try {
-        applied = await this.awaitSettled<boolean>((onSettled) =>
-          this.deps.startApply!({ botId: applyBotId, jobId: job.id, prompt: applyPrompt(job, resume.path), onSettled }));
+        const outcome = await this.awaitSettled<{ applied: boolean; closingText?: string }>((onSettled) =>
+          this.deps.startApply!({
+            botId: applyBotId, jobId: job.id, prompt: applyPrompt(job, resume.path),
+            onSettled: (settledApplied, settledText) => onSettled({ applied: settledApplied, closingText: settledText }),
+          }));
+        applied = outcome.applied;
+        closingText = outcome.closingText;
       } catch {
         applied = false;
       }
+      attempted++;
       if (taskId && this.deps.tasks) {
         try {
           if (applied) this.deps.tasks.complete(taskId, applyBotId, "Application submitted.");
@@ -270,8 +302,13 @@ export class JobRunDriver {
         url: job.url, appliedAt: this.now(), status: applied ? "submitted" : "not-submitted",
         ...(taskId ? { taskId } : {}),
       });
+      if (closingText?.trimStart().startsWith(HUMAN_CHECK_MARKER)) {
+        if (queueFallback) this.deps.store.updateRun(runId, { queueFallback: true });
+        return true;
+      }
     }
     if (queueFallback) this.deps.store.updateRun(runId, { queueFallback: true });
+    return false;
   }
 
   private addApplied(runId: string, entry: JobRunApplied): void {

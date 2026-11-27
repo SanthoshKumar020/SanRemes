@@ -85,8 +85,9 @@ export interface ConfigStatus {
   cacheKeepWarm?: { enabled: boolean; windowMinutes: number };
   localVm: { mode: "shared" | "per-bot" | "pool"; maxInstances: number; idleTimeoutMinutes?: number; preserveInstalledApps?: boolean };
   /** First-run install of the free local AI (Qwen): `idle` on machines it never runs on, `starting`/`pulling`
-   * while it installs, `ready` once it is the default, `failed` with the reason when it could not install. */
-  localQwen?: { state: "idle" | "starting" | "pulling" | "ready" | "failed"; percent?: number; instanceId?: string; error?: string };
+   * while it installs, `ready` once it is the default, `failed` with the reason when it could not install.
+   * `totalMemoryBytes` is the total RAM of the machine the server runs on; absent from older servers. */
+  localQwen?: { state: "idle" | "starting" | "pulling" | "ready" | "failed"; percent?: number; instanceId?: string; error?: string; totalMemoryBytes?: number };
   /** `providerKeys`: names of the keys saved for OpenCode's other
    * providers, never the keys. */
   opencodeGo?: SavedKey & { providerKeys?: string[] };
