@@ -441,6 +441,13 @@ const __APP_VERSION__: string;
         currentState(): Promise<{ open: boolean; contextId: string | null }>;
         onState(cb: (state: { open: boolean; contextId: string | null }) => void): () => void;
       };
+      /** Installs a published page as a standalone app window, after the person's explicit allow in the desktop prompt. */
+      installedApp?: {
+        install(input: { url: string; title: string; iconDataUrl?: string; iconPath?: string }): Promise<{ installed: boolean; id?: string; existing?: boolean; reason?: string }>;
+        list(): Promise<Array<{ id: string; url: string; origin: string; title: string; installedAt: number }>>;
+        open(id: string): Promise<boolean>;
+        uninstall(id: string): Promise<boolean>;
+      };
       /** Two Local VM viewers embedded in one app window. URLs are accepted
        * only by main-process validation and never return over this bridge. */
       desktopWorkspace?: {

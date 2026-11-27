@@ -650,7 +650,7 @@ export const MuseCodeDriver: ProviderDriver<MuseConfig> = {
         computerMcp: true,
         composioMcp: true,
         browserMcp: true,
-        dataMcp: true,
+        dataMcp: true, filegenMcp: true,
         emailMcp: true, deviceMcp: true,
         images: true,
         nativeImageInput: true,

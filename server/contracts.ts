@@ -204,6 +204,8 @@ export interface SendTurnInput {
     browser?: { command: string; args: string[]; env: Record<string, string> };
     /** The Data tools' MCP proxy: DuckDB on this bot's own database. */
     data?: { command: string; args: string[]; env: Record<string, string> };
+    /** The file-generation tools' MCP proxy: real .pptx/.docx/.pdf files from structured content. */
+    filegen?: { command: string; args: string[]; env: Record<string, string> };
     /** The Email tools' MCP proxy: the harness holds the passwords and the per-bot verdict. */
     email?: { command: string; args: string[]; env: Record<string, string> };
     /** The paired phone's app tools' MCP proxy: the harness holds the jobs and the per-bot verdict. */
@@ -275,6 +277,8 @@ export interface ProviderAdapter {
     browserMcp?: boolean;
     /** The driver can mount the Data tools MCP. */
     dataMcp?: boolean;
+    /** The driver can mount the file-generation tools MCP. */
+    filegenMcp?: boolean;
     /** The driver can mount the Email tools MCP. */
     emailMcp?: boolean;
     /** The driver can mount the phone apps MCP. */

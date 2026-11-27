@@ -8,6 +8,6 @@ export const HARNESS_CALL_BUDGET_MS = 120_000;
 export const COMPUTER_COPY_BUDGET_MS = 9 * 60_000;
 /** Outwaits the longest cloud computer call; Codex, which ends a tool call itself, waits a little longer still. */
 export const COMPUTER_PROXY_TIMEOUT_MS = COMPUTER_COPY_BUDGET_MS + 10_000;
-export const HARNESS_PROXY_TIMEOUTS_MS: Partial<Record<"browser" | "computer" | "data" | "email", number>> = {
+export const HARNESS_PROXY_TIMEOUTS_MS: Partial<Record<"browser" | "computer" | "data" | "email" | "filegen", number>> = {
   computer: COMPUTER_PROXY_TIMEOUT_MS,
 };

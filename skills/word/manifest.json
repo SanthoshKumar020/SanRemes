@@ -1,0 +1,18 @@
+{
+  "id": "word",
+  "name": "Word",
+  "version": "1.0.0",
+  "description": "Build a real .docx document from headings, paragraphs, bullet lists and tables.",
+  "defaultEnabled": true,
+  "triggerTerms": [
+    "word document",
+    "word doc",
+    "docx",
+    "a document",
+    "write a document",
+    "make a document",
+    "word file",
+    "microsoft word"
+  ],
+  "requiredCapabilities": []
+}

@@ -380,6 +380,12 @@ const bridge = {
       return () => ipcRenderer.removeListener("desktop-viewer:state", handler);
     },
   },
+  installedApp: {
+    install: (input) => ipcRenderer.invoke("installed-app:install", input),
+    list: () => ipcRenderer.invoke("installed-app:list"),
+    open: (id) => ipcRenderer.invoke("installed-app:open", id),
+    uninstall: (id) => ipcRenderer.invoke("installed-app:uninstall", id),
+  },
   desktopWorkspace: {
     open: (input) => ipcRenderer.invoke("desktop-workspace:open", input),
     layout: (items) => ipcRenderer.invoke("desktop-workspace:layout", items),

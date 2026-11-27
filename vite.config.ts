@@ -34,6 +34,7 @@ function railPage(): Plugin {
 const include = [
   "evals/**/*.test.ts",
   "server/**/*.test.ts",
+  "skills/**/*.test.ts",
   "electron/**/*.test.mjs",
   "src/**/*.test.ts",
   "shared/**/*.test.ts",

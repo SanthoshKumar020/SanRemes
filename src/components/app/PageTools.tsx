@@ -1,7 +1,7 @@
 // A bot's page in the chat, artifact-style: its version stepper, Point, Share, Open in new tab and Full screen.
 import { createContext, useCallback, useEffect, useRef, useState, type MutableRefObject, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { ArrowUpRight, Check, ChevronLeft, ChevronRight, Copy, Crosshair, Download, Globe, Loader2, Maximize2, Pin, PinOff, Share2, Trash2, X } from "lucide-react";
+import { AppWindow, ArrowUpRight, Check, ChevronLeft, ChevronRight, Copy, Crosshair, Download, Globe, Loader2, Maximize2, Pin, PinOff, Share2, Trash2, X } from "lucide-react";
 import { useStore } from "@/state/store";
 import { openExternalLink } from "@/lib/app-links";
 import { cn } from "@/lib/cn";
@@ -128,6 +128,28 @@ export function usePageSave(threadId: string, messageId: string, title: string) 
   return { busy, reason, run };
 }
 
+/** Install as app: the published link opens in its own window, after the person's explicit allow in the desktop prompt.
+ * A decline is not a failure; anything else that says no is. */
+export function usePageInstall() {
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const run = async (url: string, title: string) => {
+    const install = window.ogb?.installedApp?.install;
+    if (!install) { setFailed(true); return; }
+    setBusy(true);
+    setFailed(false);
+    try {
+      const outcome = await install({ url, title });
+      if (!outcome.installed && outcome.reason !== "declined") setFailed(true);
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return { busy, failed, run };
+}
+
 /** Point mode on whichever frame shows the page. Security: a pick counts only from that frame's own window and only
  * while the person has Point on, so a page cannot fill the composer by itself. Point stays on after a pick so several
  * parts can be marked in one pass; once it ends after any pick, `picked` runs and the composer takes focus. */
@@ -204,6 +226,8 @@ export interface PageToolsProps {
   point: ReturnType<typeof usePagePoint>;
   share: ReturnType<typeof usePageShare>;
   save: ReturnType<typeof usePageSave>;
+  install: ReturnType<typeof usePageInstall>;
+  title: string;
   ready: boolean;
   /** pane: the page opens in the chat's page pane, beside a usable message box, instead of covering the window. */
   fullScreen: { open: boolean; toggle(): void; pane?: boolean };
@@ -213,9 +237,10 @@ export interface PageToolsProps {
 }
 
 /** The card's toolbar: ‹ v2 › and Updated on the left; Point, Share, Open in new tab and Full screen on the right. */
-export function PageToolbar({ version, point, share, save, ready, fullScreen, room, pin, className }: PageToolsProps & { className?: string }) {
+export function PageToolbar({ version, point, share, save, install, title, ready, fullScreen, room, pin, className }: PageToolsProps & { className?: string }) {
   const label = version.latest ? t("chat.preview.version", { n: version.rev + 1 }) : t("chat.preview.versionOf", { n: version.rev + 1, count: version.last + 1 });
   const busy = share.share.kind === "busy";
+  const canInstall = Boolean(window.ogb?.installedApp);
   return (
     <div data-page-tools className={cn("flex flex-wrap items-center gap-x-1.5 gap-y-2", className)}>
       <div className="flex items-center gap-0.5 text-[13px] text-ink-secondary">
@@ -252,12 +277,18 @@ export function PageToolbar({ version, point, share, save, ready, fullScreen, ro
           aria-label={t("chat.preview.openTab")} title={share.url ? t("chat.preview.openTab") : t("chat.preview.openTabNeedsLink")}>
           <ArrowUpRight size={15} />
         </button>
+        {canInstall && <button type="button" className={TOOL} disabled={!share.url || install.busy}
+          onClick={() => share.url && void install.run(share.url, title)}
+          aria-label={t("chat.preview.installAsApp")} title={share.url ? t("chat.preview.installAsApp") : t("chat.preview.installAsAppNeedsLink")}>
+          {install.busy ? <Loader2 size={15} className="animate-spin" /> : <AppWindow size={15} />}
+        </button>}
         <button type="button" className={TOOL} onClick={fullScreen.toggle} aria-pressed={fullScreen.open}
           aria-label={fullScreenLabel(fullScreen)} title={fullScreenLabel(fullScreen)}>
           {fullScreen.open ? <X size={16} /> : <Maximize2 size={14} />}
         </button>
       </div>
       {!room && pin?.show && pin.full && <p data-page-pin-full className="basis-full text-end text-xs text-ink-secondary">{t("chat.preview.pinFull", { max: MAX_WEB_PANELS })}</p>}
+      {install.failed && <p role="alert" className="basis-full px-1 text-[13px] text-danger">{t("chat.preview.installAsAppFailed")}</p>}
     </div>
   );
 }
@@ -324,7 +355,6 @@ function typing(target: EventTarget | null): boolean {
 }
 
 export function PageFullScreen(props: PageToolsProps & {
-  title: string;
   doc: AppDocument;
   botId: string;
   threadId: string;

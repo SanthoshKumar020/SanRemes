@@ -8,7 +8,7 @@ import { EMAIL_CREDENTIAL } from "../../shared/email.ts";
 import { noCloudComputerNote } from "../../shared/team-setup.ts";
 
 import { peerName } from "../peer-roster.ts";
-import { callCardTool, CARD_TOOL_NAMES } from "./agents-call-cards.ts";
+import { callCardTool, CARD_TOOL_NAMES } from "./agents-call-cards.ts"; import { callArtifactTemplateTool } from "../artifacts/templates.ts"; import { executeRunPython } from "../python-sandbox/tool.ts";
 import { callTriggerTool, TRIGGER_TOOL_NAMES } from "./agents-call-triggers.ts";
 import { catalogProfileFromEnv, fullInputSchema, SHARED_COMPUTER_TOOL_NAMES } from "./agents-catalog.ts";
 import { harnessClientFromEnv } from "./agents-client.ts";
@@ -246,6 +246,8 @@ export async function callTool(called: string, input: Json, context: ToolCallCon
     return { text: `Attached ${String(body.name ?? "the file")} (${Number(body.bytes ?? 0)} bytes). It now appears in the chat with a preview.` };
   }
   if (CARD_TOOL_NAMES.has(name)) return callCardTool(name, args, context);
+  if (name === "build_artifact") return callArtifactTemplateTool(args);
+  if (name === "run_python") return executeRunPython(args);
   if (RESEARCH_TOOL_NAMES.has(name)) return callResearchTool(name, args, context);
   if (HELPER_TOOL_NAMES.has(name)) return callHelperTool(name, args, context);
   if (name === WHAT_CHANGED_TOOL) return callWhatChangedTool(args, context);

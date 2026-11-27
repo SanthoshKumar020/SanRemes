@@ -36,6 +36,7 @@ describe("typed capability fields for the cloud computer", () => {
     }));
     expect(mounted.adapter.capabilities.computerMcp).toBe(true);
     expect(mounted.adapter.capabilities.dataMcp).toBe(true);
+    expect(mounted.adapter.capabilities.filegenMcp).toBe(true);
     expect(mounted.adapter.capabilities.emailMcp).toBe(true);
     expect(mounted.adapter.capabilities.deviceMcp).toBe(true);
     expect(onBoat(mounted)).toBe(true);
@@ -45,6 +46,7 @@ describe("typed capability fields for the cloud computer", () => {
     }));
     expect(bare.adapter.capabilities.computerMcp).toBe(false);
     expect(bare.adapter.capabilities.dataMcp).toBe(false);
+    expect(bare.adapter.capabilities.filegenMcp).toBe(false);
     expect(bare.adapter.capabilities.emailMcp).toBe(false);
     expect(bare.adapter.capabilities.deviceMcp).toBe(false);
     expect(onBoat(bare)).toBe(false);

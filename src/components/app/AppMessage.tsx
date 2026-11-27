@@ -15,7 +15,7 @@ import { appendComposerDraft, appendDraftAttachments } from "@/lib/drafts";
 import { returnFocusToComposer } from "../AskCard";
 import { useCanWriteIn } from "@/lib/cloud-guest";
 import { closePage, onPageOpened, openPage, openPageFor } from "@/lib/open-page";
-import { PAGE_HEIGHT, PAGE_PREVIEW_HEIGHT, PageFullScreen, PageNotes, PagePaneContext, PageToolbar, usePagePin, usePagePoint, usePageSave, usePageShare, usePageVersion } from "./PageTools";
+import { PAGE_HEIGHT, PAGE_PREVIEW_HEIGHT, PageFullScreen, PageNotes, PagePaneContext, PageToolbar, usePageInstall, usePagePin, usePagePoint, usePageSave, usePageShare, usePageVersion } from "./PageTools";
 
 const WIDTH = "max-w-[760px]";
 const CARD_WIDTH = "max-w-[560px]";
@@ -209,8 +209,9 @@ function AppRow({ botId, botName, threadId, message, payload, pool, room }: {
   const onDraft = page && !room ? { onDraft: draft } : {};
   const share = usePageShare(threadId, message.id, message.publishedPage);
   const save = usePageSave(threadId, message.id, payload.title);
+  const install = usePageInstall();
   const pin = usePagePin({ botId, threadId, messageId: message.id }, payload.title);
-  const tools = { version, point, share, save, room, pin, ready: Boolean(current), fullScreen: { open: fullScreen, pane: Boolean(pane), toggle: () => { point.stop(); setFullScreen((open) => !open); } } };
+  const tools = { version, point, share, save, install, title: payload.title, room, pin, ready: Boolean(current), fullScreen: { open: fullScreen, pane: Boolean(pane), toggle: () => { point.stop(); setFullScreen((open) => !open); } } };
 
   const reloadNow = () => {
     setProblem(null);
@@ -397,7 +398,7 @@ function AppRow({ botId, botName, threadId, message, payload, pool, room }: {
         />
       )}
       {page && fullScreen && current && (
-        <PageFullScreen {...tools} title={payload.title} doc={current} botId={botId} threadId={threadId} handle={wide} close={() => { point.stop(); setFullScreen(false); }} pane={pane}
+        <PageFullScreen {...tools} doc={current} botId={botId} threadId={threadId} handle={wide} close={() => { point.stop(); setFullScreen(false); }} pane={pane}
           {...(!room ? { onSelection: setSelection } : {})} {...onDraft} />
       )}
     </div>

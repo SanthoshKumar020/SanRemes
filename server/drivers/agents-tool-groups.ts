@@ -11,8 +11,8 @@ import { SHARE_TOOL_NAMES } from "./agents-share-tool.ts";
 /** Each group's tools on the agents server, and the whole MCP servers (turn integrations) it stands for. */
 export const TOOL_GROUP_MEMBERS: Readonly<Record<ToolGroup, { tools: ReadonlySet<string>; servers: readonly ("data" | "email")[] }>> = {
   meetings: { tools: MEETING_TOOL_NAMES, servers: [] },
-  data: { tools: new Set(), servers: ["data"] },
-  pages: { tools: new Set(["show_html", ...PAGE_TOOL_NAMES, ...HOSTING_TOOL_NAMES, ...SHARE_TOOL_NAMES]), servers: [] },
+  data: { tools: new Set(["run_python"]), servers: ["data"] },
+  pages: { tools: new Set(["show_html", ...PAGE_TOOL_NAMES, ...HOSTING_TOOL_NAMES, ...SHARE_TOOL_NAMES, "build_artifact", "show_whiteboard"]), servers: [] },
   images: { tools: IMAGE_TOOL_NAMES, servers: [] },
   email: { tools: new Set(), servers: ["email"] },
 };
@@ -28,7 +28,7 @@ export const OWN_SWITCH_TOOLS: Readonly<Record<"memory" | "research", ReadonlySe
 export const CORE_TOOLS: ReadonlySet<string> = new Set([
   "tool_result_read", "list_shared_computers", "shared_computer", "ask_for_computer", "list_room_targets", "coordinate_bots",
   "assignment_status", "list_bots", "usage_limits", "list_rooms", "select_computer", "reset_cloud_computer", "list_threads",
-  "close_thread", "rename_thread", "start_thread", "burst", "list_models", "vm_exec", "attach_file", "show_widget", "create_options_card",
+  "close_thread", "rename_thread", "start_thread", "burst", "list_models", "vm_exec", "run_batch", "attach_file", "show_widget", "create_options_card",
   "post_to_room", "post_to_thread", "create_bot", "list_team_setup", "list_team_library", "propose_team_setup",
   "propose_bot_deletion", "manage_room", "request_credential", "request_sign_in", "fill_login", "send_voice_note", "decide",
   "extract", "what_changed", "message_person", "report_bug", "retry_thread", "session_search", "trigger_info", "trigger", "delete_trigger",

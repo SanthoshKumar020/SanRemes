@@ -37,6 +37,7 @@ import { createSystemTray } from "./system-tray.mjs";
 import { createLendingIndicator } from "./lending-indicator.mjs";
 import { createLendingDialogs } from "./lending-dialogs.mjs";
 import { createActivityWindow } from "./lending-activity-window.mjs";
+import { createInstalledApps } from "./installed-app-window.mjs";
 import { missingPermissions } from "./lent-screen-failures.mjs";
 import { createScreenControl } from "./screen-control.mjs"; import { createAskPrompt } from "./ask-prompt.mjs";
 let startupScreen = null;
@@ -1164,6 +1165,9 @@ async function openCloudSettings() {
 const lendingActivity = createActivityWindow({ BrowserWindow, icon: APP_ICON, background: () => windowBackground(nativeTheme.shouldUseDarkColors),
   entries: () => sharingController().activity(undefined, 200),
   locale: nativeText.intlTag });
+const installedApps = createInstalledApps({ BrowserWindow, dialog, nativeImage, icon: APP_ICON, background: () => windowBackground(nativeTheme.shouldUseDarkColors),
+  store: jsonFile(path.join(app.getPath("userData"), "installed-apps.json")),
+  words: { installMessage: (title) => nativeT("native.installedApp.installMessage", { title }), installDetail: nativeT("native.installedApp.installDetail"), installButton: nativeT("native.installedApp.installButton"), cancelButton: nativeT("native.common.cancel") } });
 let lendingTray = null;
 function lendingIndicator() {
   lendingTray ??= createLendingIndicator({
@@ -1966,6 +1970,15 @@ ipcMain.handle("desktop-viewer:open", localOnly("desktop-viewer:open", (event, r
   const owner = BrowserWindow.fromWebContents(event.sender);
   return openDesktopViewer(owner, rawUrl, title, contextId);
 }));
+
+// A published page installed as its own app window, after the person's explicit allow in the prompt.
+ipcMain.handle("installed-app:install", localOnly("installed-app:install", (event, request) => {
+  const owner = BrowserWindow.fromWebContents(event.sender);
+  return installedApps.install(request, owner ?? undefined);
+}));
+ipcMain.handle("installed-app:list", localOnly("installed-app:list", () => installedApps.list()));
+ipcMain.handle("installed-app:open", localOnly("installed-app:open", (_event, id) => installedApps.open(id) !== null));
+ipcMain.handle("installed-app:uninstall", localOnly("installed-app:uninstall", (_event, id) => installedApps.uninstall(id)));
 
 // URL validation, sandboxing, session isolation and the one-interactive-pane rule stay here, not in the renderer.
 ipcMain.handle("desktop-workspace:open", localOnly("desktop-workspace:open", (event, input) =>

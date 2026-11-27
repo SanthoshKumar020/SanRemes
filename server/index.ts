@@ -98,8 +98,10 @@ import * as boat from "./boat.ts"; import { keyHint, keyStatus, nestedKeyStatus,
 import { cloudComputerRpc } from "./cloud-computer-tools.ts"; import { createBoatRecovery } from "./boat-recovery.ts"; import { CLOUD_COMPUTER_PERSON_LINES, CLOUD_COMPUTER_REPLACING, CLOUD_COMPUTER_RESTARTING, CLOUD_COMPUTER_RESTORING, CLOUD_COMPUTER_WAKING, RUN_COMPUTER_LINES } from "../shared/cloud-computer-recovery.ts"; import { boatReadiness } from "./boat-ready.ts"; import { createRunComputerGate } from "./host/cloud-computer-run-gate.ts"; import { cloudComputerDisk } from "./cloud-computer-disk.ts"; import { runComputerMemory } from "./host/cloud-computer-run-memory.ts";
 import { chartRenderer, compileChart, dataEngine, validateVegaLite } from "./data/deps.ts";
 import { DATA_INTERNAL_MCP_PATH, dataRpc } from "./data/rpc.ts";
+import { FILEGEN_INTERNAL_MCP_PATH, filegenRpc } from "./filegen/rpc.ts";
 import { removeRetiredAppFiles } from "./retired-apps.ts"; import { createEmailRoutes } from "./routes/email.ts"; import { createEmailHost, EMAIL_INTERNAL_MCP_PATH, emailAccess } from "./email/host.ts"; import { createEmailService } from "./email/service.ts"; import { createPostizRoutes } from "./routes/postiz.ts"; import { createPostiz } from "./postiz/service.ts";
 import { createDataRoutes } from "./data/routes.ts";
+import { createSpreadsheetRoutes } from "./spreadsheet/routes.ts";
 import { DataSheetRegistry } from "./data/sheet.ts";
 import { DataFailure } from "./data/types.ts";
 import { TeamComputers, teamComputerOwner, type TeamComputerRecord } from "./team-computers.ts";
@@ -1567,7 +1569,7 @@ type InternalCapability = {
   threadId: string;
   generation: string;
   depth: number;
-  kind: "agents" | "connectors" | "computer" | "browser" | "hooks" | "data" | "email" | "device" | "lent";
+  kind: "agents" | "connectors" | "computer" | "browser" | "hooks" | "data" | "email" | "device" | "lent" | "filegen";
   skillAuthoring: boolean;
   createdBots: number;
   createdRooms?: number;
@@ -2368,6 +2370,15 @@ function dataIntegration(botId: string, turn: { threadId: string; generation: st
   return {
     command: process.execPath, args: [SPAWNED_PROXIES.harnessMcp, "data"], env: {
       ...AGENTS_NODE_FLAG, [harnessMcpTokenEnv("data")]: token, SANREMES_HARNESS_URL: `http://127.0.0.1:${PORT}`,
+    },
+  };
+}
+function filegenIntegration(botId: string, turn: { threadId: string; generation: string }) {
+  if (serverTurnedOff(store.bot(botId)?.toolsOff, "data")) return null;
+  const token = mintInternalCapability({ botId, ...turn, kind: "filegen", depth: 0, skillAuthoring: false, createdBots: 0, openedThreads: 0 });
+  return {
+    command: process.execPath, args: [SPAWNED_PROXIES.harnessMcp, "filegen"], env: {
+      ...AGENTS_NODE_FLAG, [harnessMcpTokenEnv("filegen")]: token, SANREMES_HARNESS_URL: `http://127.0.0.1:${PORT}`,
     },
   };
 }
@@ -8133,6 +8144,10 @@ async function beginTurn(
         const data = dataIntegration(bot.id, { threadId, generation: dispatchClaimId });
         if (data) integrations.data = data;
       }
+      if (liveBot && instance.adapter.capabilities.filegenMcp === true) {
+        const filegen = filegenIntegration(bot.id, { threadId, generation: dispatchClaimId });
+        if (filegen) integrations.filegen = filegen;
+      }
       if (liveBot && instance.adapter.capabilities.emailMcp === true) { const mail = emailIntegration(liveBot, { threadId, generation: dispatchClaimId }); if (mail) integrations.email = mail; }
       const mountedComputer = surfaceOfComputerKind(computerKind);
       if (
@@ -9765,6 +9780,10 @@ async function runClaimedGroupMemberTurn(
   if (instance.adapter.capabilities.dataMcp === true) {
     const data = dataIntegration(readyBot.id, { threadId, generation: internalGeneration });
     if (data) integrations.data = data;
+  }
+  if (instance.adapter.capabilities.filegenMcp === true) {
+    const filegen = filegenIntegration(readyBot.id, { threadId, generation: internalGeneration });
+    if (filegen) integrations.filegen = filegen;
   }
   if (instance.adapter.capabilities.emailMcp === true) { const mail = emailIntegration(readyBot, { threadId, generation: internalGeneration }); if (mail) integrations.email = mail; }
   if (roomPlan.browser && !(roomPlan.computer === undefined && roomTeamComputer)) {
@@ -12282,6 +12301,16 @@ ROUTES.push(createDataRoutes({
   compileChart, validateVegaLite, renderer: chartRenderer,
   exportRoots: dataExportRoots,
 }));
+ROUTES.push(createSpreadsheetRoutes({
+  bot: (id) => store.bot(id),
+  context: async (bot, signal) => ({
+    database: await dataEngine.forBot(bot.id),
+    sheet: dataSheets.for(bot.id),
+    compileChart, validateVegaLite, renderer: chartRenderer,
+    exportRoots: () => dataExportRoots(bot),
+    signal, connection: "panel", by: "person",
+  }),
+}));
 ROUTES.push(createLiveRoutes({
   calls: liveCalls,
   resolveTarget: (botId, threadId) => {
@@ -12885,6 +12914,16 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
                 ? { from: { botId: internalSender.id, name: internalSender.name, color: internalSender.color } } : {}),
             });
           },
+        }) });
+      }
+      if (method === "POST" && path === FILEGEN_INTERNAL_MCP_PATH) {
+        const body = await readInternalBody();
+        const abort = new AbortController();
+        res.once("close", () => { if (!res.writableEnded) abort.abort(); });
+        requireActiveInternalCapability();
+        return json(res, 200, { result: await filegenRpc(body, {
+          exportRoots: () => dataExportRoots(internalSender),
+          signal: abort.signal, assertActive: requireActiveInternalCapability,
         }) });
       }
       // The mail passwords stay here; the agent process holds only the turn's capability, and every call gets the live bot's verdict.

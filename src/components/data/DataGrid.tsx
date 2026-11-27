@@ -92,7 +92,7 @@ export function createDataGridDatasource({ botId, target, columns, rowCount, fil
 }
 
 const modules = [InfiniteRowModelModule, RowSelectionModule, RowApiModule, RenderApiModule, ScrollApiModule, CellStyleModule, TooltipModule];
-const gridTheme = themeQuartz.withParams({
+export const gridTheme = themeQuartz.withParams({
   browserColorScheme: "var(--code-color-scheme)",
   fontFamily: "var(--font-sans)", fontSize: 13, headerFontWeight: 500,
   backgroundColor: "var(--color-panel)", foregroundColor: "var(--color-ink)",

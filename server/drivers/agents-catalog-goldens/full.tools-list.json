@@ -707,6 +707,114 @@
       }
     },
     {
+      "name": "build_artifact",
+      "description": "Build a doc, deck or design from structured content and get back self-contained HTML to show with show_html. Use template 'doc' for a living document the person edits in place (lines are contenteditable; their edits arrive as a [doc-edit] message — parse its JSON lines, rebuild with the edited lines, and show_html again with the same app_id so the version history keeps the earlier draft), 'slides' for a deck from notes (presentable in the chat with next/previous and a Present mode), and 'design' for a landing page or mockup (layout hero, pricing, portfolio, dashboard or signup). Pass the rendered html to show_html verbatim, with the returned title and height.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "template": {
+            "type": "string",
+            "description": "doc, slides or design."
+          },
+          "content": {
+            "type": "object",
+            "description": "The template's input: doc { title, lines }, slides { title, slides }, design { layout, brand, headline, ... }."
+          }
+        },
+        "required": [
+          "template",
+          "content"
+        ]
+      }
+    },
+    {
+      "name": "show_whiteboard",
+      "description": "Show a whiteboard in this chat: sticky notes, shapes, lines and connectors on a canvas the person can pan, zoom, move and edit, saved as the page itself. Pass `title` and, to start with content, `notes` (each with text, and x, y, colour) and `shapes` (rect, ellipse or line with x, y, w, h). To show a board the person saved, pass its `board` JSON instead. The person's Save button sends the board's state back into the chat; call again with that `board` and `app_id` to keep the new version. In rooms it is view-only: ask in text there.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "One line, at most 80 characters; a new board needs one."
+          },
+          "board": {
+            "type": "string",
+            "description": "A saved board's JSON, from the person's Save button; it replaces notes and shapes."
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "text": {
+                  "type": "string"
+                },
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                },
+                "color": {
+                  "type": "string",
+                  "description": "yellow, pink, blue, green or white."
+                }
+              },
+              "required": [
+                "text"
+              ]
+            }
+          },
+          "shapes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "description": "rect, ellipse or line."
+                },
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                },
+                "w": {
+                  "type": "number"
+                },
+                "h": {
+                  "type": "number"
+                },
+                "color": {
+                  "type": "string",
+                  "description": "A #rgb / #rrggbb stroke."
+                }
+              },
+              "required": [
+                "kind",
+                "x",
+                "y",
+                "w",
+                "h"
+              ]
+            }
+          },
+          "app_id": {
+            "type": "string",
+            "description": "Only to replace a board you showed."
+          }
+        },
+        "required": [
+          "title"
+        ]
+      }
+    },
+    {
       "name": "post_to_room",
       "description": "Put one message into a shared room you belong to, for example when the user asks you to tell the team something. Get group_id from list_rooms. This posts and returns: no room member's turn starts, nobody replies, and nothing comes back except confirmation — so never use it to ask a question or hand out work (use coordinate_bots for those). Post once, say it in full, and tell the user what you posted. Set attach_voice_note true to attach this turn's voice note. If a post is refused, do not retry it unless the refusal says how: say what you wanted to post in your reply instead.",
       "inputSchema": {
@@ -1436,6 +1544,27 @@
           "prompts"
         ],
         "additionalProperties": false
+      }
+    },
+    {
+      "name": "run_python",
+      "description": "Run Python 3 code in a locked sandbox and get its stdout, stderr and exit code back. Use it to compute, check data, transform a file you already have in your working folder, or test a snippet before putting it in a deliverable. The sandbox has no network and no pip installs, so only the Python standard library is available; it starts in an empty working folder, so code that needs files must create them first, and it cannot read anything outside that folder, including your working folder. A run stops after timeout_seconds (default 30, at most 120) and its output is cut off at 64 KB. Never put secrets in the code.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "The Python code to run, at most 100000 characters."
+          },
+          "timeout_seconds": {
+            "type": "number",
+            "description": "Seconds before the run is stopped, 1 to 120; default 30."
+          }
+        },
+        "required": [
+          "code"
+        ]
       }
     },
     {

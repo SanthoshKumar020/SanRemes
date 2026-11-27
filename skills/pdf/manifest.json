@@ -1,0 +1,17 @@
+{
+  "id": "pdf",
+  "name": "PDF",
+  "version": "1.0.0",
+  "description": "Build a real .pdf document from headings, paragraphs, bullet lists and tables, paginated on A4.",
+  "defaultEnabled": true,
+  "triggerTerms": [
+    "pdf",
+    "make a pdf",
+    "create a pdf",
+    "export as pdf",
+    "save as pdf",
+    "a pdf file",
+    "pdf document"
+  ],
+  "requiredCapabilities": []
+}

@@ -1,0 +1,23 @@
+{
+  "id": "powerpoint",
+  "name": "PowerPoint",
+  "version": "1.0.0",
+  "description": "Build a real .pptx presentation from an outline: a title slide, then one slide per point with bullets and native bar, line or pie charts.",
+  "defaultEnabled": true,
+  "triggerTerms": [
+    "powerpoint",
+    "pptx",
+    "presentation",
+    "slide deck",
+    "slide show",
+    "slideshow",
+    "make slides",
+    "make a deck",
+    "build a deck",
+    "build slides",
+    "create slides",
+    "a deck",
+    "my slides"
+  ],
+  "requiredCapabilities": []
+}

@@ -954,7 +954,7 @@ export function createOpenAIChatRuntime<Config>(options: RuntimeOptions<Config>)
         browserMcp: options.tools !== false, ...(defaultSeesImages ? { nativeImageInput: true, images: true } : {}), ...(options.videoBytes ? { nativeVideoBytes: options.videoBytes } : {}) } : {}),
         ...(options.effortLevels?.length ? { effortLevels: options.effortLevels } : {}),
         ...(options.modelVariants ? { modelVariants: true } : {}), sessionModelSwitch: "in-session", customMcp: options.tools !== false, agentsMcp: options.tools !== false, composioMcp: options.tools !== false,
-        dataMcp: options.tools !== false,
+        dataMcp: options.tools !== false, filegenMcp: options.tools !== false,
         emailMcp: options.tools !== false,
         deviceMcp: options.tools !== false,
         queueing: true,

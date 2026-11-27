@@ -1,0 +1,19 @@
+{
+  "id": "excel",
+  "name": "Excel",
+  "version": "1.0.0",
+  "description": "Build and export real .xlsx spreadsheets from tables and the spreadsheet model, with formulas evaluated to values.",
+  "defaultEnabled": true,
+  "triggerTerms": [
+    "excel",
+    "xlsx",
+    "spreadsheet",
+    "workbook",
+    "make a spreadsheet",
+    "build a spreadsheet",
+    "excel file",
+    "excel sheet",
+    "make an excel"
+  ],
+  "requiredCapabilities": []
+}
