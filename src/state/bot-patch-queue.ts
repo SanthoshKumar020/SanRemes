@@ -50,6 +50,7 @@ export type BotUpdatePatch = Partial<
     | "checkWork"
     | "mcpServers"
     | "modelSelection"
+    | "jsonMode"
   >
 > & {
   computer?: Bot["computer"] | null;

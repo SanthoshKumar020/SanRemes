@@ -124,6 +124,8 @@ export function responsesRequest(input: {
   summaries: boolean;
   /** The reasoning level the person picked, as the Chat Completions body would carry it in `reasoning_effort`. */
   effort?: unknown;
+  /** Ask for a JSON object reply, as the Responses API's text format. */
+  jsonMode?: boolean;
 }): Record<string, unknown> {
   const instructions = input.messages.filter((message) => message.role === "system" && typeof message.content === "string")
     .map((message) => message.content).join("\n\n");
@@ -131,6 +133,7 @@ export function responsesRequest(input: {
     model: input.model,
     stream: true,
     store: false,
+    ...(input.jsonMode ? { text: { format: { type: "json_object" } } } : {}),
     ...(instructions ? { instructions } : {}),
     input: input.messages.flatMap((message) => inputItems(message, input.replay(message))),
     ...(input.summaries || typeof input.effort === "string" ? { reasoning: {

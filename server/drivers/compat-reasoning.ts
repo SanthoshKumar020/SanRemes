@@ -1,3 +1,4 @@
+import { EFFORT_LEVELS, type EffortLevel } from "../../shared/wire.ts";
 import { isModelVariant, type ModelCatalog, type ModelVariantOption } from "../contracts.ts";
 
 export type ReasoningWire = "flat" | "nested";
@@ -5,6 +6,14 @@ export interface ReasoningChoices {
   choices: ModelVariantOption[];
   wire?: ReasoningWire;
   inferred?: boolean;
+}
+
+/** The effort levels a runtime offers whole, and the request fields each level sends. */
+export interface EffortRequestOptions {
+  /** Effort levels this runtime offers whole, for drivers whose models all take the same levels; per-model levels ride on the catalog instead. */
+  effortLevels?: readonly EffortLevel[];
+  /** The request fields a per-bot effort level sends for `model`; unset leaves the provider default. */
+  effortRequest?: (model: string, effort: EffortLevel) => Record<string, unknown>;
 }
 
 const MANUAL_CHOICES = ["low", "medium", "high", "xhigh", "max"].map((id) => ({ id, label: id }));
@@ -120,4 +129,12 @@ export function reasoningBody(selected: ReasoningChoices | undefined, variant: s
     throw new Error("Selected reasoning effort is unavailable for this model. Refresh models and choose a supported effort or use the provider default.");
   }
   return selected.wire === "nested" ? { reasoning: { effort: variant } } : { reasoning_effort: variant };
+}
+
+/** The cross-engine effort levels a model's reasoning choices cover, in level order. A choice named `off`
+ * is the `none` level; `on` names no level and is left out. */
+export function effortLevelsFromVariants(variants: readonly ModelVariantOption[] | undefined): EffortLevel[] {
+  if (!variants?.length) return [];
+  const ids = new Set(variants.map((choice) => choice.id === "off" ? "none" : choice.id));
+  return EFFORT_LEVELS.filter((level) => ids.has(level));
 }

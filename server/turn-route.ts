@@ -103,7 +103,7 @@ export function routeTurn(input: RouteInput): RouteResult {
 /** Routines, webhooks, peer turns, card continuations and unattended runs pass `automated`. */
 export function routeDirectTurn(
   bot: { replyStyle?: ReplyStyle; modelSelection: ModelSelection },
-  task: { modelSelection?: ModelSelection; usage?: { context?: { tokens: number } } },
+  task: { modelSelection?: ModelSelection; projectModel?: ModelSelection; usage?: { context?: { tokens: number } } },
   path: readonly { role: string; kind?: string }[],
   message: { text: string; images: readonly unknown[]; videos?: readonly unknown[] },
   instance: { models?: ModelCatalog; quickModelsUsable?: () => boolean; adapter: { capabilities: { effortLevels?: readonly EffortLevel[] } } },
@@ -113,7 +113,7 @@ export function routeDirectTurn(
   const lastAsk = path.findLastIndex((m) => m.role === "user" && m.kind === "text");
   return routeTurn({
     conversational: isConversational(bot.replyStyle),
-    followsBotModel: task.modelSelection === undefined,
+    followsBotModel: task.modelSelection === undefined && task.projectModel === undefined,
     automated,
     signals: {
       text: message.text,

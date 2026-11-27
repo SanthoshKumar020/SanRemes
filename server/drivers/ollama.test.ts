@@ -371,6 +371,7 @@ describe("the chat engine on Ollama", () => {
       expect(instance.models.options).toEqual([{
         id: "llama3.2:latest", label: "llama3.2:latest", custom: true,
         variants: ["low", "medium", "high", "xhigh", "max"].map((id) => ({ id, label: id })),
+        effortLevels: ["low", "medium", "high", "xhigh", "max"],
       }]);
       expect(await instance.snapshot()).toMatchObject({ state: "available" });
       expect(instanceLook({ driver: "openai-compat", displayName: "Local", config: { url: `${url}/v1` } })).toEqual({});

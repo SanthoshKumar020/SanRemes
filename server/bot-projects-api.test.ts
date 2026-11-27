@@ -121,6 +121,27 @@ describe("organizational folders through an isolated HTTP fixture", () => {
     expect(fresh.projects[2]).not.toHaveProperty("emoji");
     expect(fresh.projects[0].emoji).toBe("🇮🇳");
     expect(persistedBot(bot.id).projects).toEqual(fresh.projects);
+
+    const workspace = await api("PATCH", `/api/bots/${bot.id}/projects/${plain.id}`, {
+      instructions: "  Answer in Tamil.  ",
+      files: [{ id: "f1", name: "notes.txt", text: "Ship it." }],
+      model: { instanceId: "ollama", model: "qwen3:4b" },
+    });
+    expect(workspace.status).toBe(200);
+    expect(workspace.body.project).toMatchObject({
+      instructions: "Answer in Tamil.",
+      files: [{ id: "f1", name: "notes.txt", text: "Ship it." }],
+      model: { instanceId: "ollama", model: "qwen3:4b" },
+    });
+    expect(persistedBot(bot.id).projects.find((project: any) => project.id === plain.id)).toMatchObject({ instructions: "Answer in Tamil." });
+    const clearedWorkspace = await api("PATCH", `/api/bots/${bot.id}/projects/${plain.id}`, { instructions: null, files: null, model: null });
+    expect(clearedWorkspace.status).toBe(200);
+    expect(clearedWorkspace.body.project).not.toHaveProperty("instructions");
+    expect(clearedWorkspace.body.project).not.toHaveProperty("files");
+    expect(clearedWorkspace.body.project).not.toHaveProperty("model");
+    expect((await api("PATCH", `/api/bots/${bot.id}/projects/${plain.id}`, { model: { instanceId: "ollama" } })).status).toBe(400);
+    expect((await api("PATCH", `/api/bots/${bot.id}/projects/${plain.id}`, { instructions: 42 })).status).toBe(400);
+    expect((await api("POST", `/api/bots/${bot.id}/projects`, { name: "No workspace on create", instructions: "x" })).status).toBe(400);
     expect(fresh.tasks).toEqual(before.tasks);
     expect(fresh.threadId).toBe(before.threadId);
   });

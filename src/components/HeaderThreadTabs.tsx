@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { Pin, Plus, X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
+import { isIncognitoThread } from "@/lib/incognito-threads";
 import { nextRename } from "@/lib/rename";
 import { localizedTaskTitle } from "@/lib/task-title";
 import { useFeature } from "@/lib/use-feature";
@@ -180,6 +181,7 @@ function Strip({ bot, tabs }: { bot: Bot; tabs: ThreadTab[] }) {
                     <span dir="auto" className="col-start-1 row-start-1 truncate">{title}</span>
                     <span aria-hidden="true" className="invisible col-start-1 row-start-1 truncate font-medium">{title}</span>
                   </span>
+                  {isIncognitoThread(bot, tab.threadId) && <span className="shrink-0 text-[11px] leading-4 text-ink-tertiary">{t("task.incognito")}</span>}
                 </span>
               )}
               {renaming === tab.threadId ? null : !closable ? <span aria-hidden="true" className="ms-1 size-5 shrink-0" /> : (

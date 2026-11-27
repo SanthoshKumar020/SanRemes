@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { ProviderInstance } from "../contracts.ts";
+import type { EffortLevel, ProviderInstance } from "../contracts.ts";
 import { recordEvents } from "../testing/events.ts";
 import { OpenAICompatDriver } from "./openai-compat.ts";
 
@@ -32,16 +32,17 @@ const create = async (config: Record<string, unknown>) => {
   return instance;
 };
 
-async function turn(instance: ProviderInstance, model: string, variant?: string) {
+async function turn(instance: ProviderInstance, model: string, variant?: string, effort?: EffortLevel) {
   const recorder = recordEvents(instance.adapter);
   const threadId = randomUUID();
-  await instance.adapter.sendTurn({ threadId, text: "hi", model, ...(variant ? { variant } : {}) });
+  await instance.adapter.sendTurn({ threadId, text: "hi", model, ...(variant ? { variant } : {}), ...(effort ? { effort } : {}) });
   const completed = await recorder.until((event) => event.type === "turn.completed" && event.threadId === threadId);
   recorder.stop();
   return completed;
 }
 
 const variantsOf = (instance: ProviderInstance) => Object.fromEntries(instance.models.options.map((option) => [option.id, option.variants?.map((choice) => choice.id)]));
+const effortLevelsOf = (instance: ProviderInstance) => Object.fromEntries(instance.models.options.map((option) => [option.id, option.effortLevels]));
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -86,6 +87,42 @@ describe("reasoning effort on an API key", () => {
       await turn(instance, "gpt-5.2", "high");
       expect(chats[0]).not.toHaveProperty("reasoning_effort");
       expect(chats[0]).toHaveProperty("reasoning", { effort: "high" });
+    } finally { await instance.dispose(); }
+  });
+});
+
+describe("per-bot reasoning effort", () => {
+  it("stamps the levels on each model and sends a picked effort on the model's own wire", async () => {
+    const chats = server([{ id: "gpt-5.2", created: 3 }, { id: "gpt-4.1", created: 1 }]);
+    const instance = await create({ url: "https://llm.example.test/v1", catalog: "openai" });
+    try {
+      expect(effortLevelsOf(instance)).toEqual({ "gpt-5.2": ["low", "medium", "high"], "gpt-4.1": undefined });
+      expect(await turn(instance, "gpt-5.2", undefined, "low")).toMatchObject({ ok: true });
+      expect(await turn(instance, "gpt-5.2")).toMatchObject({ ok: true });
+      expect(await turn(instance, "gpt-5.2", undefined, "max"), "a level the model does not list is left out").toMatchObject({ ok: true });
+      expect(chats.map((chat) => chat.reasoning_effort)).toEqual(["low", undefined, undefined]);
+    } finally { await instance.dispose(); }
+  });
+
+  it("sends an OpenRouter effort nested, and stamps the advertised levels", async () => {
+    const chats = server([{ id: "acme/thinker", supported_parameters: ["tools", "reasoning"] }, { id: "acme/plain", supported_parameters: ["tools"] }]);
+    const instance = await create({ url: "https://openrouter.ai/api/v1" });
+    try {
+      expect(effortLevelsOf(instance)).toMatchObject({ "acme/thinker": ["low", "medium", "high", "xhigh", "max"], "acme/plain": undefined });
+      expect(await turn(instance, "acme/thinker", undefined, "high")).toMatchObject({ ok: true });
+      expect(await turn(instance, "acme/plain", undefined, "high"), "a model that does not reason is left alone").toMatchObject({ ok: true });
+      expect(chats.map((chat) => chat.reasoning)).toEqual([{ effort: "high" }, undefined]);
+      expect(chats.every((chat) => chat.reasoning_effort === undefined)).toBe(true);
+    } finally { await instance.dispose(); }
+  });
+
+  it("refuses a turn carrying both an effort and a variant, without sending anything", async () => {
+    const chats = server([{ id: "gpt-5.2", created: 3 }]);
+    const instance = await create({ url: "https://llm.example.test/v1", catalog: "openai" });
+    try {
+      const completed = await turn(instance, "gpt-5.2", "low", "high");
+      expect(completed).toMatchObject({ ok: false });
+      expect(chats).toHaveLength(0);
     } finally { await instance.dispose(); }
   });
 });

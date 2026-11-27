@@ -37,7 +37,7 @@ export type NewThreadLevel = "ask" | "full" | { from: ApprovalMode };
 const levelFrom = (bot: BotRecord, mode: ApprovalMode) => ({ approvalMode: mode, autoApprove: mode === "auto", alwaysAllow: [...(bot.alwaysAllow ?? [])] });
 
 export function buildTask(bot: BotRecord, title?: string, projectId?: string, openedBy?: TaskOpenedBy,
-  approvalMode?: NewThreadLevel, modelSelection?: ModelSelection, cwd?: string | null): TaskRecord {
+  approvalMode?: NewThreadLevel, modelSelection?: ModelSelection, cwd?: string | null, incognito?: boolean): TaskRecord {
   const createdAt = Date.now();
   return {
     threadId: newId(),
@@ -46,6 +46,7 @@ export function buildTask(bot: BotRecord, title?: string, projectId?: string, op
     updatedAt: createdAt,
     ...(cwd !== undefined ? { cwd } : {}),
     ...(projectId ? { projectId } : {}),
+    ...(incognito ? { incognito: true } : {}),
     ...(openedBy ? { openedBy: structuredClone(openedBy) } : {}),
     resumeCursors: {},
     ...(modelSelection && !sameModelSelection(modelSelection, bot.modelSelection) ? { modelSelection: structuredClone(modelSelection) } : {}),

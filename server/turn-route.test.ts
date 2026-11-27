@@ -200,6 +200,7 @@ describe("routeDirectTurn", () => {
 
   it("leaves a thread with its own model and an automated turn alone", () => {
     expect(routeDirectTurn(bot, { modelSelection: bot.modelSelection }, [], message, instance, false).tier).toBeNull();
+    expect(routeDirectTurn(bot, { projectModel: { instanceId: "claude", model: "claude-sonnet-5" } }, [], message, instance, false).tier).toBeNull();
     expect(routeDirectTurn(bot, {}, [], message, instance, true).tier).toBeNull();
   });
 

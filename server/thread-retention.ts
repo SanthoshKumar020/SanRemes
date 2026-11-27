@@ -23,11 +23,13 @@ export function sweepThreadEventLogs(
   candidates: Iterable<ThreadLogRetentionCandidate>,
   retentionDays: number,
   now: number = Date.now(),
+  opts: { incognitoThreadIds?: ReadonlySet<string> } = {},
 ): number {
   const cutoff = now - retentionDays * DAY_MS;
   let swept = 0;
   for (const candidate of candidates) {
     if (candidate.unread || candidate.busy || candidate.openDirectHandoff) continue;
+    if (opts.incognitoThreadIds?.has(candidate.threadId)) continue;
     const since = idleSince(candidate);
     if (since === null || since >= cutoff) continue;
     let removedAny = false;

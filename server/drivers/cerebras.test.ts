@@ -59,7 +59,7 @@ describe("Cerebras provider", () => {
     expect(instance.models.default).toBe("private-model");
     expect(instance.models.options).toEqual([
       { id: "private-model", label: "private-model" },
-      { id: "gpt-oss-120b", label: "GPT OSS 120B", contextWindow: 65536 },
+      { id: "gpt-oss-120b", label: "GPT OSS 120B", contextWindow: 65536, effortLevels: ["low", "medium", "high"] },
       { id: "brand-new-model", label: "brand-new-model" },
     ]);
     expect(fetcher.mock.calls[0]).toMatchObject(["https://api.cerebras.ai/v1/models", {
@@ -86,6 +86,26 @@ describe("Cerebras provider", () => {
     expect(JSON.parse(String(request?.body))).toEqual({ model: "gpt-oss-120b", stream: true,
       stream_options: { include_usage: true },
       messages: [{ role: "user", content: "hello" }], tools: [ASK_USER_TOOL_DEFINITION] });
+    recorder.stop(); await instance.dispose();
+  });
+
+  it("advertises each model's reasoning levels and sends the picked effort", async () => {
+    expect(CerebrasDriver.models.options).toEqual([
+      { id: "gpt-oss-120b", label: "GPT OSS 120B", contextWindow: 65536, effortLevels: ["low", "medium", "high"] },
+      { id: "qwen-3.8-27b", label: "Qwen3.8 27B", contextWindow: 65536, effortLevels: ["none", "low", "medium", "high"] },
+    ]);
+    let request: RequestInit | undefined;
+    vi.stubGlobal("fetch", vi.fn(async (url, init) => {
+      if (String(url).endsWith("/models")) return Response.json({ data: [] });
+      request = init;
+      return new Response('data: {"choices":[{"delta":{"content":"Hi"},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n',
+        { headers: { "content-type": "text/event-stream" } });
+    }));
+    const instance = await create();
+    const recorder = recordEvents(instance.adapter);
+    await instance.adapter.sendTurn({ threadId: "effort", text: "hello", effort: "low" });
+    expect(await recorder.until((event) => event.type === "turn.completed")).toMatchObject({ ok: true });
+    expect(JSON.parse(String(request?.body))).toMatchObject({ reasoning_effort: "low" });
     recorder.stop(); await instance.dispose();
   });
 

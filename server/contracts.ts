@@ -11,6 +11,7 @@ import type { ProviderIcon } from "../shared/provider-icon.ts";
 import type { ContextBreakdown } from "../shared/context-breakdown.ts";
 
 export type { CloudBackend, EffortLevel, ModelSelection } from "../shared/wire.ts";
+export type { EffortRequestOptions } from "./drivers/compat-reasoning.ts";
 export type {
   DriverKind, InstanceId, ModelVariantOption, ModelVariantState, RuntimeEvent,
   RuntimeEventBase, RuntimeEventListener, ThreadId, TurnId,
@@ -147,6 +148,8 @@ export interface SendTurnInput {
   model?: string;
   effort?: EffortLevel;
   variant?: string;
+  /** Ask the model to reply in JSON only; a non-JSON reply fails the turn in plain words. */
+  jsonMode?: boolean;
   resumeCursor?: unknown;
   /** Start without the previous native context or retained process; wins over resumeCursor. */
   sessionReset?: boolean;

@@ -81,6 +81,7 @@ export const profilePatchSchema = z.object({
     .optional(),
   speakReplies: z.boolean({ error: "speakReplies must be true or false" }).optional(),
   replyStyle: z.enum(REPLY_STYLES, { error: "replyStyle must be default or conversational" }).optional(),
+  jsonMode: z.boolean({ error: "jsonMode must be true or false" }).optional(),
 });
 
 export type BotProfilePatchInput = z.input<typeof profilePatchSchema>;
@@ -105,6 +106,7 @@ export type BotProfilePatch = Partial<
     | "voice"
     | "speakReplies"
     | "replyStyle"
+    | "jsonMode"
   >
 >;
 

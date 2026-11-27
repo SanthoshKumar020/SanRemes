@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ArrowDown, ArrowUp, CheckCheck, Folder, MoreHorizontal, Pencil, Plus, X } from "lucide-react";
-import { useStore, type Bot, type BotProject } from "@/state/store";
+import { useStore, type Bot, type BotProject, type ModelSelection, type ProjectFile } from "@/state/store";
 import { cn } from "@/lib/cn";
+import { Select } from "./Select";
 import { MENU_SHEET } from "./menu-recipe";
 import { useHeldMenuMotion } from "./MenuMotion";
 import { t } from "@/lib/i18n";
@@ -80,13 +81,32 @@ export function BotProjectDialog({ bot, project, onClose, onCreated }: {
   onClose: () => void;
   onCreated?: (project: BotProject) => void;
 }) {
-  const { dispatch } = useStore();
+  const { state, dispatch } = useStore();
   const [name, setName] = useState(project?.name ?? "");
   const [emoji, setEmoji] = useState(project?.emoji ?? "");
+  const [instructions, setInstructions] = useState(project?.instructions ?? "");
+  const [files, setFiles] = useState<ProjectFile[]>(project?.files ?? []);
+  const [model, setModel] = useState<ModelSelection | null>(project?.model ?? null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [choosingIcon, setChoosingIcon] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const availableModels = (state?.instances ?? []).filter((instance) => instance.snapshot.state === "available")
+    .flatMap((instance) => instance.models.options.map((option) => ({ instanceId: instance.instanceId, model: option.id, label: `${instance.displayName} · ${option.label}` })));
+  const modelOptions = model && !availableModels.some((option) => option.instanceId === model.instanceId && option.model === model.model)
+    ? [{ ...model, label: model.model }, ...availableModels] : availableModels;
+  const modelValue = model ? JSON.stringify({ instanceId: model.instanceId, model: model.model }) : "";
+  const addFiles = async (list: FileList | null) => {
+    if (!list?.length) return;
+    if (files.length + list.length > 8) { setError(t("folder.tooManyFiles")); return; }
+    const added: ProjectFile[] = [];
+    for (const file of Array.from(list)) {
+      if (file.size > 32_000) { setError(t("folder.fileTooLarge", { name: file.name })); return; }
+      added.push({ id: crypto.randomUUID(), name: file.name, text: await file.text() });
+    }
+    setFiles((current) => [...current, ...added]);
+  };
   const dialogRef = useRef<HTMLDivElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
   const iconRef = useRef<HTMLButtonElement>(null);
@@ -110,7 +130,7 @@ export function BotProjectDialog({ bot, project, onClose, onCreated }: {
       onKeyDown={(event) => {
         if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); onCloseRef.current(); }
         if (event.key !== "Tab") return;
-        const controls = dialogRef.current?.querySelectorAll<HTMLElement>("button:not([disabled]), input:not([disabled]), select:not([disabled])");
+        const controls = dialogRef.current?.querySelectorAll<HTMLElement>("button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])");
         if (!controls?.length) return;
         const first = controls[0]!;
         const last = controls[controls.length - 1]!;
@@ -130,7 +150,7 @@ export function BotProjectDialog({ bot, project, onClose, onCreated }: {
           setError(null);
           const onError = (message: string) => { setSaving(false); setError(message); };
           if (project) {
-            dispatch({ type: "updateProject", botId: bot.id, projectId: project.id, patch: { name: name.trim(), emoji: emoji.trim() || null }, onSaved: onClose, onError });
+            dispatch({ type: "updateProject", botId: bot.id, projectId: project.id, patch: { name: name.trim(), emoji: emoji.trim() || null, instructions: instructions.trim() || null, files, model }, onSaved: onClose, onError });
           } else {
             dispatch({ type: "createProject", botId: bot.id, name: name.trim(), emoji: emoji.trim() || null, onError,
               onCreated: (created) => { onCreated?.(created); onClose(); } });
@@ -154,6 +174,37 @@ export function BotProjectDialog({ bot, project, onClose, onCreated }: {
             </label>
           </div>}
           <p className="mt-2 text-[12px] leading-relaxed text-ink-secondary">{t("folder.detail", { name: bot.name })}</p>
+          {project && <>
+            <label className="mt-4 block text-[12px] text-ink-secondary">{t("folder.instructions")}
+              <textarea value={instructions} disabled={saving} rows={3} onChange={(event) => setInstructions(event.target.value)}
+                className="mt-1.5 w-full rounded-lg border border-hairline/50 bg-inset px-3 py-2 text-[13px] text-ink focus:border-accent/60 focus:outline-none" />
+            </label>
+            <p className="mt-1 text-[12px] text-ink-tertiary">{t("folder.instructionsHint")}</p>
+            <div className="mt-4">
+              <div className="text-[12px] text-ink-secondary">{t("folder.files")}</div>
+              <p className="mt-1 text-[12px] text-ink-tertiary">{t("folder.filesHint")}</p>
+              {files.length > 0 && <ul className="mt-2 flex flex-col gap-1">
+                {files.map((file) => <li key={file.id} className="flex items-center justify-between gap-2 rounded-lg border border-hairline/40 bg-inset px-2.5 py-1.5 text-[13px] text-ink">
+                  <span className="min-w-0 truncate" title={file.name}>{file.name}</span>
+                  <button type="button" disabled={saving} aria-label={t("folder.removeFile", { name: file.name })} onClick={() => setFiles((current) => current.filter((candidate) => candidate.id !== file.id))} className="shrink-0 rounded p-1 text-ink-secondary hover:bg-raised"><X size={14} /></button>
+                </li>)}
+              </ul>}
+              <input ref={fileInputRef} type="file" multiple tabIndex={-1} aria-hidden="true" className="hidden"
+                onChange={(event) => { void addFiles(event.target.files); event.target.value = ""; }} />
+              <button type="button" disabled={saving} onClick={() => fileInputRef.current?.click()} className="mt-2 rounded-lg border border-hairline/50 px-2.5 py-2 text-[12px] text-ink-secondary hover:bg-raised">{t("folder.addFiles")}</button>
+            </div>
+            <label className="mt-4 block text-[12px] text-ink-secondary">{t("folder.model")}
+              <Select value={modelValue} disabled={saving} className="mt-1.5 w-full" onChange={(event) => {
+                if (!event.target.value) { setModel(null); return; }
+                const parsed = JSON.parse(event.target.value) as { instanceId: string; model: string };
+                setModel(parsed);
+              }}>
+                <option value="">{t("folder.modelDefault")}</option>
+                {modelOptions.map((option) => <option key={`${option.instanceId}:${option.model}`} value={JSON.stringify({ instanceId: option.instanceId, model: option.model })}>{option.label}</option>)}
+              </Select>
+            </label>
+            <p className="mt-1 text-[12px] text-ink-tertiary">{t("folder.modelHint")}</p>
+          </>}
           {error && <p role="alert" className="mt-3 text-[12px] text-danger">{error}</p>}
           <div className="mt-5 flex justify-end gap-2">
             <button type="button" onClick={onClose} className="rounded-lg px-3 py-2 text-[13px] text-ink-secondary hover:bg-raised">{t("common.cancel")}</button>

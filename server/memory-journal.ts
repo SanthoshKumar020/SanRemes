@@ -1,12 +1,13 @@
 // Kept outside the workspace on purpose: an audit trail the audited bot can rewrite is not an audit trail.
 // A journal write must never fail the change it records.
 import { randomUUID } from "node:crypto";
-import { closeSync, fstatSync, mkdirSync, openSync, readFileSync, readSync } from "node:fs";
+import { closeSync, fstatSync, mkdirSync, openSync, readFileSync, readSync, readdirSync } from "node:fs";
 import { appendFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { writeFileAtomic } from "./atomic.ts";
 import { DATA_DIR } from "./config.ts";
+import { parseRetentionDays, type RetentionSource } from "./decision-log.ts";
 import {
   MEMORY_INDEX,
   MemoryStoreError,
@@ -44,6 +45,30 @@ export interface MemoryJournalEntry {
 export const JOURNAL_DIR = join(DATA_DIR, "memory-journal");
 export const DIFF_CAP = 8_000;
 export const BEFORE_CAP = 512 * 1024;
+export const DEFAULT_MEMORY_JOURNAL_RETENTION_DAYS = 180;
+
+let journalRetentionDays: () => number = () => DEFAULT_MEMORY_JOURNAL_RETENTION_DAYS;
+
+export function bindMemoryJournalRetention(provider: () => number): void {
+  journalRetentionDays = provider;
+}
+
+export function boundMemoryJournalRetentionDays(): number {
+  return journalRetentionDays();
+}
+
+export function resolveMemoryJournalRetention(configured: number | undefined, env: NodeJS.ProcessEnv = process.env): { days: number; source: RetentionSource } {
+  const fromEnv = env.SANREMES_MEMORY_JOURNAL_RETENTION_DAYS?.trim();
+  const parsedEnv = fromEnv ? parseRetentionDays(Number(fromEnv)) : null;
+  if (parsedEnv !== null) return { days: parsedEnv, source: "env" };
+  const parsedConfig = parseRetentionDays(configured);
+  if (parsedConfig !== null) return { days: parsedConfig, source: "config" };
+  return { days: DEFAULT_MEMORY_JOURNAL_RETENTION_DAYS, source: "default" };
+}
+
+export function memoryJournalRetentionDays(configured: number | undefined, env: NodeJS.ProcessEnv = process.env): number {
+  return resolveMemoryJournalRetention(configured, env).days;
+}
 const MAX_JOURNAL_READ_BYTES = 8 * 1024 * 1024;
 const MAX_ROWS = 500;
 const LCS_CELL_CAP = 4_000_000;
@@ -245,6 +270,56 @@ export function readMemoryJournal(botId: string, limit = 50): MemoryJournalEntry
     }
   }
   return rows;
+}
+
+export function listJournalBotIds(): string[] {
+  let names: string[];
+  try {
+    names = readdirSync(JOURNAL_DIR);
+  } catch {
+    return [];
+  }
+  return names.filter((name) => name.endsWith(".ndjson")).map((name) => name.slice(0, -".ndjson".length));
+}
+
+/** Call after flushMemoryJournal(botId): a queued append landing mid-prune is lost. */
+export function pruneMemoryJournal(botId: string, days: number, now: Date = new Date()): number {
+  const cutoff = now.getTime() - days * 24 * 60 * 60_000;
+  let text: string;
+  try {
+    text = readFileSync(journalFile(botId), "utf8");
+  } catch {
+    return 0;
+  }
+  const lines = text.split("\n");
+  if (lines.length > 0 && lines[lines.length - 1] === "") lines.pop();
+  let removed = 0;
+  const kept: string[] = [];
+  for (const line of lines) {
+    let at: unknown;
+    try {
+      at = (JSON.parse(line) as { at?: unknown }).at;
+    } catch {
+      kept.push(line);
+      continue;
+    }
+    if (typeof at === "number" && at < cutoff) {
+      removed++;
+      continue;
+    }
+    kept.push(line);
+  }
+  if (removed === 0) return 0;
+  try {
+    writeFileAtomic(journalFile(botId), kept.length > 0 ? `${kept.join("\n")}\n` : "", { mode: 0o600 });
+  } catch {
+    return 0;
+  }
+  return removed;
+}
+
+export function pruneAllMemoryJournals(days: number, now: Date = new Date()): { botId: string; removed: number }[] {
+  return listJournalBotIds().map((botId) => ({ botId, removed: pruneMemoryJournal(botId, days, now) }));
 }
 
 

@@ -1,25 +1,53 @@
-// The agents catalog's X and research tools (through treg) and the internal route behind each. Every call is paid, from
+// The agents catalog's X and research tools (through treg) and the internal route behind each. Every treg call is paid, from
 // the person's own treg balance or their Cloud plan's allowance, so a bot is shown x_search only when a treg key or a
 // plan credential is held and its research switch is on, and the research tools only when research also works for that
-// credential (a plan's relay can have X without research); each route checks again before it spends.
+// credential (a plan's relay can have X without research); each route checks again before it spends. web_search and
+// deep_research are the free exception: keyless web search, no treg, no key.
 import { agentsCallMember } from "../../shared/agents-tool-names.ts";
 import type { ToolCallContext, ToolCallResult } from "./agents-call.ts";
 import type { Json } from "./agents-client.ts";
+import { runDeepResearch } from "../research/deep-research.ts";
+import { appendSourcesBlock, sourcesFromValue, type ResearchSource } from "../research/sources.ts";
+import { fetchPageText, searchWeb } from "../research/web-search.ts";
 
 /** Each call's route, by the member name it goes by (x_search's actions are its members). */
 const RESEARCH_ROUTES: Readonly<Record<string, string>> = {
   x_search: "x/search", x_user_posts: "x/user-posts", x_post: "x/post", x_profile: "x/profile",
   research_search: "research/search", research_endpoint: "research/endpoint", research_call: "research/call",
 };
-export const RESEARCH_TOOL_NAMES: ReadonlySet<string> = new Set(["x_search", "research_search", "research_endpoint", "research_call"]);
+export const RESEARCH_TOOL_NAMES: ReadonlySet<string> = new Set(["x_search", "research_search", "research_endpoint", "research_call", "web_search", "deep_research"]);
 /** The ones that need only X: shown without research. */
 export const X_TOOL_NAMES: ReadonlySet<string> = new Set(["x_search"]);
+/** The ones that need no key at all: free web search, shown to every bot. */
+export const FREE_RESEARCH_TOOL_NAMES: ReadonlySet<string> = new Set(["web_search", "deep_research"]);
 
 /** What each X read cannot go without, said before anything is spent. */
 const X_NEEDS: Readonly<Record<string, string>> = { x_search: "query", x_user_posts: "handle", x_post: "post", x_profile: "handle" };
 const X_ACTIONS = new Set(["search", "user_posts", "post", "profile"]);
 
 export async function callResearchTool(name: string, args: Json, context: ToolCallContext): Promise<ToolCallResult> {
+  if (name === "web_search") {
+    const query = typeof args.query === "string" ? args.query.trim() : "";
+    if (!query) return { text: "web_search needs query: words to search the web for.", isError: true };
+    const limit = typeof args.limit === "number" && Number.isInteger(args.limit) ? Math.min(Math.max(args.limit, 1), 10) : 8;
+    const outcome = await searchWeb(query, { limit });
+    if (outcome.note) return { text: outcome.note };
+    const sources: ResearchSource[] = outcome.hits.map((hit) => ({ url: hit.url, title: hit.title, fetchedAt: Date.now() }));
+    const lines = outcome.hits.map((hit, index) => `${index + 1}. ${hit.title}\n   ${hit.url}${hit.snippet ? `\n   ${hit.snippet}` : ""}`);
+    return { text: appendSourcesBlock(`Web results for ${JSON.stringify(query)}:\n${lines.join("\n")}`, sources) };
+  }
+  if (name === "deep_research") {
+    const question = typeof args.question === "string" ? args.question.trim() : "";
+    if (!question) return { text: "deep_research needs question: the question to research.", isError: true };
+    if (question.length > 500) return { text: "deep_research question is too long: keep it under 500 characters.", isError: true };
+    const maxPages = typeof args.max_pages === "number" && Number.isInteger(args.max_pages) ? Math.min(Math.max(args.max_pages, 1), 8) : 6;
+    const result = await runDeepResearch(question, {
+      search: (subQuestion) => searchWeb(subQuestion, { limit: 5 }),
+      fetchPage: (url) => fetchPageText(url),
+      maxPages,
+    });
+    return { text: result.answer };
+  }
   const member = agentsCallMember(name, args);
   const { action, ...rest } = args;
   const input = name === "x_search" ? rest : args;
@@ -30,7 +58,8 @@ export async function callResearchTool(name: string, args: Json, context: ToolCa
     if (typeof value !== "string" || !value.trim()) return { text: `x_search ${member === "x_search" ? "search" : String(action)} needs ${needed}.`, isError: true };
   }
   const { ok, body } = await context.client.apiResponse(`/api/internal/${RESEARCH_ROUTES[member]}`, { method: "POST", body: JSON.stringify(input) });
-  return ok ? { text: JSON.stringify(body) } : { text: String(body.error ?? "Research failed. Try again shortly."), isError: true };
+  if (ok) return { text: appendSourcesBlock(JSON.stringify(body), sourcesFromValue(body, Date.now())) };
+  return { text: String(body.error ?? "Research failed. Try again shortly."), isError: true };
 }
 
 export const RESEARCH_TOOL_DEFINITIONS = [
@@ -91,6 +120,34 @@ export const RESEARCH_TOOL_DEFINITIONS = [
         query: { type: "object", additionalProperties: true, description: "Query string for an endpoint that takes a JSON body." },
       },
       required: ["id"],
+    },
+  },
+  {
+    name: "web_search",
+    description:
+      "Search the web for free, with no key: DuckDuckGo results (title, link, snippet). Use it for a quick fact check, or when research_search is not available. Returns numbered results with their sources; when the search page cannot be reached it says so plainly instead of failing.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        query: { type: "string", minLength: 1, maxLength: 512, description: "Words to search the web for." },
+        limit: { type: "integer", minimum: 1, maximum: 10, description: "How many results, 1-10. Default 8." },
+      },
+      required: ["query"],
+    },
+  },
+  {
+    name: "deep_research",
+    description:
+      "Research a question in depth, free and with no key: plans sub-questions, searches the web for each, reads the best pages, and returns findings with numbered citations ([1], [2]) and a Sources list. Cite those numbers in your reply and keep the Sources list under it. Reads at most 6 pages, so ask a focused question.",
+    inputSchema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        question: { type: "string", minLength: 1, maxLength: 500, description: "The question to research." },
+        max_pages: { type: "integer", minimum: 1, maximum: 8, description: "How many pages to read, 1-8. Default 6." },
+      },
+      required: ["question"],
     },
   },
 ];

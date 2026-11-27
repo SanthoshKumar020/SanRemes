@@ -36,4 +36,21 @@ describe("ToolActivity", () => {
       setLocale("en");
     }
   });
+  it("renders a trailing Sources block as numbered links, not raw text", () => {
+    const output = "Findings here.\n\nSources\n1. Alpha — https://example.com/a (fetched 2026-11-27)\n2. Beta — https://example.com/b";
+    const html = renderToStaticMarkup(createElement(ToolActivity, { tool: { name: "deep_research", ok: true, input: "{}", output } }));
+    expect(html).toContain("Sources");
+    expect(html).toContain('<a href="https://example.com/a"');
+    expect(html).toContain(">Alpha</a>");
+    expect(html).toContain('<a href="https://example.com/b"');
+    expect(html).toContain("Fetched 2026-11-27");
+    expect(html).toContain("Findings here.");
+    expect(html).not.toContain("1. Alpha — https://example.com/a (fetched 2026-11-27)");
+  });
+  it("leaves output without a Sources block alone and never links a non-web scheme", () => {
+    const plain = renderToStaticMarkup(createElement(ToolActivity, { tool: { name: "Bash", ok: true, input: "{}", output: "Sources\n1. Alpha — javascript:alert(1)" } }));
+    expect(plain).not.toContain("<ol");
+    expect(plain).not.toContain('<a href="javascript:');
+    expect(plain).toContain("Sources");
+  });
 });

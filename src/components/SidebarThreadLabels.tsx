@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState, type Dispatch, type KeyboardEvent as
 import { ChevronRight, Clock3, Loader2, Pin, Plus, X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
+import { isIncognitoThread } from "@/lib/incognito-threads";
 import { nextRename } from "@/lib/rename";
 import { localizedTaskTitle } from "@/lib/task-title";
 import { setThreadsUnfolded, useThreadsUnfolded } from "@/lib/thread-fold-preferences";
@@ -175,6 +176,7 @@ export function SidebarThreadLabels({ bot, selected, drafting = false, rowThread
             ) : <>
               <span className={cn("flex min-w-0 flex-1 items-center gap-1.5", hideable(row) && YIELDS)}>
                 <span dir="auto" className="min-w-0 truncate">{title}</span>
+                {isIncognitoThread(bot, row.task.threadId) && <span className="shrink-0 text-[11px] leading-4 text-ink-tertiary">{t("task.incognito")}</span>}
                 {row.pinned && <Pin size={10} role="img" aria-label={t("task.pinned")} className="shrink-0 text-ink-tertiary" />}
               </span>
               {row.task.threadId === bot.mainThreadId && <MainThreadMark />}

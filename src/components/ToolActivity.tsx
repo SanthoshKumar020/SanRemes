@@ -10,14 +10,49 @@ import { useAdvancedMode } from "@/lib/interface-mode";
 import { toolStepLabel } from "@/lib/tool-step-label";
 import { isNoticeCode, routineLineText } from "@/lib/activity-text";
 import type { MessageAttachmentContext } from "./AttachmentPreview";
+import { LINK_CLASS } from "./ChatLinks";
 import { PlaceIcon } from "./PlaceIcon";
 import { WorkingDots } from "./WorkingIndicator";
+
+/** One cited page, as a research tool's trailing Sources block names it. */
+interface CitedSource {
+  url: string;
+  title: string;
+  fetchedAt: number;
+}
+
+const SOURCE_LINE = /^(\d+)\.\s+(.+?)\s+—\s+(https?:\/\/\S+?)(?:\s+\(fetched\s+(\d{4}-\d{2}-\d{2})\))?$/;
+
+/** A tool result's trailing Sources block, split into its body and its cited pages; anything else is left alone. */
+function splitSourcesBlock(output: string | undefined): { body: string | undefined; sources: CitedSource[] } {
+  if (!output) return { body: output, sources: [] };
+  const lines = output.split("\n");
+  const at = lines.lastIndexOf("Sources");
+  if (at < 0 || at === lines.length - 1) return { body: output, sources: [] };
+  const sources: CitedSource[] = [];
+  for (const line of lines.slice(at + 1)) {
+    const match = SOURCE_LINE.exec(line.trim());
+    if (!match) return { body: output, sources: [] };
+    sources.push({
+      title: match[2]!,
+      url: match[3]!,
+      fetchedAt: match[4] ? Date.parse(`${match[4]}T00:00:00Z`) : 0,
+    });
+  }
+  if (!sources.length) return { body: output, sources: [] };
+  return { body: lines.slice(0, at).join("\n").replace(/\s+$/, ""), sources };
+}
+
+function sourceDay(at: number): string {
+  return Number.isFinite(at) && at > 0 ? new Date(at).toISOString().slice(0, 10) : "";
+}
 
 /** Which stored message a step is: a clipped step (its output cut short in conversation pages) loads the rest from it. */
 export function ToolActivity({ tool, place = null, live = false, source }: { tool: NonNullable<Message["tool"]>; place?: Place | null; live?: boolean; source?: MessageAttachmentContext }) {
   const [expanded, setExpanded] = useState(false);
   const full = useFullOutput(expanded && tool.clipped ? source : undefined, tool.output);
   const output = full.output ?? tool.output;
+  const { body, sources } = splitSourcesBlock(output);
   const failed = tool.ok === false;
   const advanced = useAdvancedMode();
   const notice = isNoticeCode(tool.nameCode);
@@ -51,8 +86,19 @@ export function ToolActivity({ tool, place = null, live = false, source }: { too
         </div>
         <div>
           <div className="mb-1 text-[11px] font-medium">{t("toolDetail.output")}</div>
-          {output ? <pre dir="ltr" className="max-h-64 overflow-auto rounded-lg bg-inset p-2.5 font-mono text-xs whitespace-pre-wrap break-words text-ink">{output}</pre> : <p className="text-xs">{tool.ok === undefined ? (live ? t("toolDetail.waiting") : t("toolDetail.unverified")) : t("toolDetail.noOutput")}</p>}
+          {body ? <pre dir="ltr" className="max-h-64 overflow-auto rounded-lg bg-inset p-2.5 font-mono text-xs whitespace-pre-wrap break-words text-ink">{body}</pre> : <p className="text-xs">{tool.ok === undefined ? (live ? t("toolDetail.waiting") : t("toolDetail.unverified")) : t("toolDetail.noOutput")}</p>}
         </div>
+        {sources.length > 0 && <div>
+          <div className="mb-1 text-[11px] font-medium">{t("toolDetail.sources")}</div>
+          <ol className="list-decimal space-y-1 ps-5 text-xs">
+            {sources.map((cited, index) => (
+              <li key={`${cited.url}#${index}`}>
+                <a href={cited.url} className={LINK_CLASS}>{cited.title || cited.url}</a>
+                {sourceDay(cited.fetchedAt) && <span className="text-ink-tertiary"> · {t("toolDetail.sourceFetched", { date: sourceDay(cited.fetchedAt) })}</span>}
+              </li>
+            ))}
+          </ol>
+        </div>}
         {(full.state === "loading" || full.state === "failed") && <p className="text-[11px] text-ink-secondary" role="status">{t(full.state === "loading" ? "toolDetail.loadingFull" : "toolDetail.partial")}</p>}
         <p className="text-[11px] text-ink-secondary">{t("toolDetail.previewHint")}</p>
       </div>

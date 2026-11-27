@@ -274,7 +274,7 @@ export interface TaskUsage {
   context?: { tokens: number; window?: number };
 }
 
-export interface Bot extends DefaultBotFields, Pick<WireBot, "mascotFaceColor" | "mascotBodyColor" | "mascotMaterial" | "access" | "yourAccess" | "onlyPeopleAdded"> {
+export interface Bot extends DefaultBotFields, Pick<WireBot, "mascotFaceColor" | "mascotBodyColor" | "mascotMaterial" | "access" | "yourAccess" | "onlyPeopleAdded" | "incognitoThreadIds"> {
   toolScope?: ToolScope;
   waitingForTeammates?: boolean;
   id: string;
@@ -301,6 +301,7 @@ export interface Bot extends DefaultBotFields, Pick<WireBot, "mascotFaceColor" |
   activity?: "working" | "waiting-on-you" | "idle" | "no-signal" | "dead" | "parked.computer";
   turnStartedAt?: number | null;
   modelSelection: ModelSelection;
+  jsonMode?: boolean;
   computer?: "cloud" | "vm" | "local" | "browser" | "off";
   cloudBackend?: CloudBackend;
   autoStartVps?: boolean;
@@ -343,13 +344,13 @@ export interface Bot extends DefaultBotFields, Pick<WireBot, "mascotFaceColor" |
   activeLeafId?: string | null;
 }
 
+export interface ProjectFile { id: string; name: string; text: string; }
 export interface BotProject {
-  id: string;
-  name: string;
-  emoji?: string;
+  id: string; name: string; emoji?: string;
+  instructions?: string; files?: ProjectFile[]; model?: ModelSelection;
 }
 
-export type ProjectUpdatePatch = { name?: string; emoji?: string | null };
+export type ProjectUpdatePatch = { name?: string; emoji?: string | null; instructions?: string | null; files?: ProjectFile[] | null; model?: ModelSelection | null };
 
 export function threadApprovalModes(bot: Pick<Bot, "approvalMode" | "autoApprove" | "tasks">): ApprovalMode[] {
   return (bot.tasks ?? []).map((task) => approvalModeFor({
@@ -364,7 +365,7 @@ export function currentTaskBot(bot: Bot, threadId = bot.threadId): Bot {
   return {
     ...bot,
     threadId,
-    modelSelection: task.modelSelection ?? bot.modelSelection,
+    modelSelection: task.modelSelection ?? bot.projects?.find((project) => project.id === task.projectId)?.model ?? bot.modelSelection,
     approvalMode: task.approvalMode ?? (task.autoApprove === undefined ? bot.approvalMode : undefined),
     autoApprove: task.autoApprove ?? bot.autoApprove,
     alwaysAllow: task.alwaysAllow ?? bot.alwaysAllow,
@@ -694,7 +695,7 @@ export type Action =
       rememberCommand?: boolean;
       onError?: (message: string) => void;
     }
-  | { type: "newTask"; botId: string; projectId?: string; cwd?: string; onCreated?: () => void; onError?: (message: string) => void; blankChat?: number }
+  | { type: "newTask"; botId: string; projectId?: string; cwd?: string; incognito?: boolean; onCreated?: () => void; onError?: (message: string) => void; blankChat?: number }
   | { type: "switchTask"; botId: string; threadId: string; whole?: true }
   | { type: "switchTaskFailed"; botId: string; threadId: string }
   | { type: "taskSwitched"; bot: Bot }
@@ -2721,7 +2722,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             : Promise.resolve();
           void ready.then(() => api<{ bot: Bot }>(action.type === "newTask"
             ? `/api/bots/${action.botId}/tasks`
-            : `/api/bots/${action.botId}/tasks/${action.threadId}${action.whole ? "" : `?messages=${SWITCH_MESSAGE_COUNT}`}`, { method: "POST", body: JSON.stringify(action.type === "newTask" ? { projectId: action.projectId, cwd: action.cwd } : {}) }))
+            : `/api/bots/${action.botId}/tasks/${action.threadId}${action.whole ? "" : `?messages=${SWITCH_MESSAGE_COUNT}`}`, { method: "POST", body: JSON.stringify(action.type === "newTask" ? { projectId: action.projectId, cwd: action.cwd, ...(action.incognito ? { incognito: true } : {}) } : {}) }))
             .then((r) => {
               if (action.type === "newTask") { settle(null); action.onCreated?.(); }
               if (navigation.get(action.botId) !== revision) return;

@@ -131,6 +131,7 @@ export interface WireTask extends InboxTask, HandoffStatusField {
   projectId?: string;
   /** Detached routine execution, reachable through its visible results card. */ routineRunId?: string;
   /** Work from outside (a webhook, an app's event) reached this conversation: what it starts or runs stays confined, for good. */ outside?: true;
+  /** Opened incognito: no memory, journal entry, or recap ever records this thread. */ incognito?: boolean;
   /** An outside caller opened this thread through the bot's API, so only it may continue it; such a thread is outside too. */ botApi?: true; /** Opened with a key its owner marked as acting for them: at the bot's own level, not outside, while that key still does (server/bot-api-host.ts). */ botApiAsOwner?: true;
   /** Set when a bot, not a person, opened this thread. */ openedBy?: TaskOpenedBy;
   /** On a team's server: one person's conversation, seen by them alone (never by another member or an admin). */
@@ -202,10 +203,20 @@ export interface CacheKeepWarmStatus {
 }
 
 /** A lightweight organizational label within one bot. */
+/** A text file attached to a project. The bot reads it in every thread in the project. */
+export interface ProjectFile {
+  id: string;
+  name: string;
+  text: string;
+}
+
 export interface BotProject {
   id: string;
   name: string;
   emoji?: string;
+  instructions?: string;
+  files?: ProjectFile[];
+  model?: ModelSelection;
 }
 
 /** Public, package-authored playbooks installed for a bot. Process
@@ -269,6 +280,8 @@ export interface WireBot extends DefaultBotFields, BotAccessFields {
   mainThreadId?: string;
   /** newest first */
   tasks?: WireTask[];
+  /** Threads of this bot opened incognito; nothing from them is ever recorded. */
+  incognitoThreadIds?: string[];
   projects?: BotProject[];
   name: string;
   title: string;
@@ -301,6 +314,8 @@ export interface WireBot extends DefaultBotFields, BotAccessFields {
   /** The bot's model: every thread without a model of its own runs on it
    * and moves with it. Navigating tasks never changes this value. */
   modelSelection: ModelSelection;
+  /** Ask the model to reply in JSON only; a non-JSON reply fails the turn in plain words. */
+  jsonMode?: boolean;
   /** where the bot works ("Works on"). Unset = auto. */
   computer?: Surface | "off";
   /** Which cloud computer backs computer: "cloud"; absent means Boat. */

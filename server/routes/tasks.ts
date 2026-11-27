@@ -10,6 +10,7 @@ import { ownerOrAdmin, type RequestAuth } from "../request-auth.ts";
 import type { RoutineManager } from "../routines.ts";
 import type { SkillReview } from "../skill-review.ts";
 import { isProjectEmoji, type BotRecord, type Store, type TaskRecord } from "../store.ts";
+import { readProjectWorkspace } from "../projects/workspace.ts";
 import { parseSurface } from "../surface.ts";
 import type { ThreadStarters } from "../thread-starters.ts";
 import { titleConversationExcerpt, type ThreadTitleSource } from "../thread-title.ts";
@@ -17,6 +18,7 @@ import type { MessagePage } from "./channels.ts";
 import { bulkDeleteThreadIds, type BulkDeleteRefusal } from "./bulk-delete.ts";
 import { FORK_BUSY, FORK_NO_TEXT, parseForkRequest } from "./fork-request.ts";
 import { PASS, type RouteHandler } from "./table.ts";
+import { markThreadIncognito } from "../incognito-threads.ts";
 import { madeThread, sawThread } from "../thread-presence.ts";
 import { refusalBody, userError } from "../user-errors.ts";
 import type { ServerErrorBody } from "../../shared/server-text.ts";
@@ -54,7 +56,7 @@ export interface TaskRouteDeps {
   notificationListed: NotificationListed;
   publicBot(bot: BotRecord): WireBot;
   wireBot(bot: BotRecord): WireBot;
-  wireTask(task: TaskRecord, botModel: ModelSelection): WireTask;
+  wireTask(task: TaskRecord, botModel: ModelSelection, awaiting?: ReadonlySet<string>, projectModel?: ModelSelection): WireTask;
   pageSize(raw: string | null): number | null | undefined;
   messagePage(threadId: string, limit: number | undefined): MessagePage;
   checkedModelSelection(raw: unknown, current?: { selection: ModelSelection; busy: boolean }, requireAvailableModel?: boolean):
@@ -141,7 +143,8 @@ export function createTaskRoutes(deps: TaskRouteDeps): RouteHandler & { deleteTa
       }
       const body = await readBody(req);
       if (!body || typeof body !== "object" || Array.isArray(body)) return json(res, 400, { error: "body must be a JSON object" });
-      if (Object.keys(body).some((key) => key !== "name" && key !== "emoji")) {
+      const allowed = method === "POST" ? ["name", "emoji"] : ["name", "emoji", "instructions", "files", "model"];
+      if (Object.keys(body).some((key) => !allowed.includes(key))) {
         return json(res, 400, { error: "unsupported folder setting" });
       }
       if ((method === "POST" || body.name !== undefined) &&
@@ -154,9 +157,15 @@ export function createTaskRoutes(deps: TaskRouteDeps): RouteHandler & { deleteTa
       const patch: Parameters<typeof store.patchProject>[2] = {};
       if (body.name !== undefined) patch.name = body.name.trim();
       if (body.emoji !== undefined) patch.emoji = body.emoji;
+      if (method === "PATCH") {
+        if (body.instructions !== undefined) patch.instructions = body.instructions;
+        if (body.files !== undefined) patch.files = body.files;
+        if (body.model !== undefined) patch.model = body.model;
+      }
       const project = method === "POST"
         ? store.createProject(bot.id, patch.name!, patch.emoji)
         : store.patchProject(bot.id, m[2]!, patch);
+      if (!project) return json(res, 400, { error: "invalid folder setting" });
       return json(res, method === "POST" ? 201 : 200, { project, bot: publicBot(bot) });
     }
 
@@ -172,7 +181,7 @@ export function createTaskRoutes(deps: TaskRouteDeps): RouteHandler & { deleteTa
       const task = store.forkTask(bot.id, m[2], fork.messageId, fork.branchLeafId);
       if (!task) return json(res, 404, fork.messageId === undefined ? FORK_NO_TEXT : { error: "no such completed message in this conversation" });
       if (auth.kind === "session") threadStarters.set(task.threadId, actorKey(auth));
-      return json(res, 201, { bot: publicBot(store.bot(bot.id)!), task: wireTask(task, store.bot(bot.id)!.modelSelection) } satisfies TaskResponse);
+      return json(res, 201, { bot: publicBot(store.bot(bot.id)!), task: wireTask(task, store.bot(bot.id)!.modelSelection, undefined, readProjectWorkspace(store.project(bot.id, task.projectId)).model) } satisfies TaskResponse);
     }
 
     m = path.match(/^\/api\/bots\/([\w-]+)\/tasks$/);
@@ -205,12 +214,17 @@ export function createTaskRoutes(deps: TaskRouteDeps): RouteHandler & { deleteTa
       if (body.projectId !== undefined && (typeof body.projectId !== "string" || !store.project(bot.id, body.projectId))) {
         return json(res, 400, { error: "projectId must belong to this bot" });
       }
+      if (body.incognito !== undefined && typeof body.incognito !== "boolean") {
+        return json(res, 400, { error: "incognito must be a boolean" });
+      }
       // Who opened it decides who may answer its cards on a shared workspace, and on a team who sees it at all.
       const task = store.createTask(bot.id, typeof body.title === "string" ? body.title : undefined, body.select !== false, body.projectId, undefined, body.approvalMode, undefined, cwd,
-        auth.kind === "session" ? (created) => threadStarters.set(created.threadId, actorKey(auth)) : undefined);
+        auth.kind === "session" ? (created) => threadStarters.set(created.threadId, actorKey(auth)) : undefined, body.incognito === true);
       if (!task) return json(res, 500, { error: "couldn't create that task" });
+      if (body.incognito === true) markThreadIncognito(task.threadId, bot.id);
       madeThread(bot.id, task.threadId);
-      return json(res, 201, { bot: publicBot(store.bot(bot.id)!), task: wireTask(task, store.bot(bot.id)!.modelSelection) } satisfies TaskResponse);
+      const created = store.bot(bot.id)!;
+      return json(res, 201, { bot: publicBot(created), task: wireTask(task, created.modelSelection, undefined, readProjectWorkspace(store.project(created.id, task.projectId)).model) });
     }
     m = path.match(/^\/api\/bots\/([\w-]+)\/tasks\/delete$/);
     if (m && method === "POST") {
@@ -312,7 +326,7 @@ export function createTaskRoutes(deps: TaskRouteDeps): RouteHandler & { deleteTa
         }
         const task = store.refreshTaskPermissions(profile.id, m[2]);
         if (!task) return json(res, 404, { error: "no such task" });
-        return json(res, 200, { task: wireTask(task, store.bot(profile.id)!.modelSelection), bot: publicBot(store.bot(profile.id)!) } satisfies TaskResponse);
+        return json(res, 200, { task: wireTask(task, store.bot(profile.id)!.modelSelection, undefined, readProjectWorkspace(store.project(profile.id, task.projectId)).model), bot: publicBot(store.bot(profile.id)!) } satisfies TaskResponse);
       }
       const patch: Parameters<typeof store.patchTask>[2] = {};
       if (body.projectId !== undefined) {
@@ -398,7 +412,7 @@ export function createTaskRoutes(deps: TaskRouteDeps): RouteHandler & { deleteTa
           { ...patch, ...hostedModels?.resetTask(current.modelSelection, patch.modelSelection) })!
         : store.patchTask(m[1], m[2], patch)!;
       if (patch.modelSelection) deps.modelSwitched?.(m[1], m[2], current.modelSelection, patch.modelSelection, body.updateBotDefault === true);
-      return json(res, 200, { task: wireTask(task, store.bot(m[1])!.modelSelection), bot: publicBot(store.bot(m[1])!) } satisfies TaskResponse);
+      return json(res, 200, { task: wireTask(task, store.bot(m[1])!.modelSelection, undefined, readProjectWorkspace(store.project(m[1], task.projectId)).model), bot: publicBot(store.bot(m[1])!) } satisfies TaskResponse);
     }
     if (m && method === "DELETE") {
       const bot = store.bot(m[1]);
@@ -428,7 +442,7 @@ export function createTaskRoutes(deps: TaskRouteDeps): RouteHandler & { deleteTa
         if (!title) return json(res, 502, { error: "couldn't generate a title — try again, or rename the thread" });
         const task = store.retitleTask(m[1], m[2], startedFrom, title) ?? store.taskByThread(m[1], m[2]);
         if (!task) return json(res, 404, { error: "no such task" });
-        return json(res, 200, { task: wireTask(task, store.bot(m[1])!.modelSelection) });
+        return json(res, 200, { task: wireTask(task, store.bot(m[1])!.modelSelection, undefined, readProjectWorkspace(store.project(m[1], task.projectId)).model) });
       } finally {
         titleRegenerations.delete(m[2]);
       }

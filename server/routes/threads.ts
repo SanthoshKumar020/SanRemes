@@ -30,6 +30,7 @@ import type { BotRecord, GroupRecord, Message, Store } from "../store.ts";
 import { answerAsleep, backgroundWhileAsleep } from "../cloud-power.ts";
 import { heldTail } from "../host/snapshot-tail.ts";
 import { createJobRoutes } from "./jobs.ts";
+import { incognitoThreadIdsForBot } from "../incognito-threads.ts";
 import { PASS, type RouteContext, type RouteHandler } from "./table.ts";
 
 const UPLOADED_NAME = /^[A-Za-z0-9-]+\.[A-Za-z0-9]{1,10}$/;
@@ -92,10 +93,11 @@ export function createThreadRoutes(deps: ThreadRouteDeps): RouteHandler {
     const wired = wireBot(bot);
     // Narrowed first: on a Team Cloud the selected conversation may be someone else's, and its words never go out.
     const shown = memberBot({ ...wired, tasks: wired.tasks ?? [] }, visible);
+    const incognitoThreadIds = incognitoThreadIdsForBot(bot.id).filter((threadId) => visible.thread(threadId));
     const threadId = shown.threadId;
-    if (typeof threadId !== "string") return { ...shown, messages: [], hasMore: false, activeLeafId: null };
+    if (typeof threadId !== "string") return { ...shown, incognitoThreadIds, messages: [], hasMore: false, activeLeafId: null };
     const cursor = shown.tasks?.find((task) => task.threadId === threadId)?.lastReadMessageId;
-    return { ...shown, ...(tail !== undefined && limit !== undefined && tail < limit ? heldTail((size) => messagePage(threadId, size), tail, limit, cursor) : messagePage(threadId, limit)) };
+    return { ...shown, incognitoThreadIds, ...(tail !== undefined && limit !== undefined && tail < limit ? heldTail((size) => messagePage(threadId, size), tail, limit, cursor) : messagePage(threadId, limit)) };
   };
   const jobs = createJobRoutes({ store, coordinator: deps.coordinator, groupThreadIsWorking: deps.groupThreadIsWorking, viewerFor, visibleTo, sessions, ...(deps.stopRefusal ? { stopRefusal: deps.stopRefusal } : {}) });
   const handle = async ({ req, res, url, path, method, auth, json, readBody }: RouteContext): Promise<unknown> => {

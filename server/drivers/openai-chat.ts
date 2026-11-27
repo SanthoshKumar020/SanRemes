@@ -2,6 +2,7 @@ import { RuntimeNoticeError, runtimeErrorText } from "./runtime-notice-error.ts"
 import { createHash } from "node:crypto";
 import type {
   DriverCreateInput,
+  EffortLevel, EffortRequestOptions,
   ModelCatalog,
   ProviderInstance, ProviderSnapshot,
   RuntimeEvent,
@@ -25,6 +26,8 @@ import { ChatHttpError, completionError, httpErrorDetail, refusedToolCall, refus
 import { ChatRepeatGuard } from "./chat-repeat-guard.ts";
 import { TextCallHoldback, textToolCalls } from "./chat-text-tool-calls.ts";
 import { createModelRoutes, isOpenAIAddress, ModelRouteRefused, noRouteLeft, readResponsesStream, responsesRequest, routeRefusal, selectedReasoningEffort, type ModelRoute, type ResponseItem } from "./openai-responses.ts";
+import { jsonModeBody, JsonTextSink, parseJsonReply, turnJsonMode } from "./json-mode.ts";
+import { MaskedDelta } from "./masked-delta.ts";
 import { appendNative } from "./native.ts";
 import { classifyError, computeBackoff, interruptibleDelay, RETRY_MAX_ATTEMPTS } from "./retry.ts";
 import { plainFailure } from "./engine-errors.ts";
@@ -81,7 +84,7 @@ interface NativeLog {
 }
 const LIVENESS_MISSES = 3;
 
-interface RuntimeOptions<Config> {
+interface RuntimeOptions<Config> extends EffortRequestOptions {
   input: DriverCreateInput<Config>;
   driverKind: string;
   apiKey: string;
@@ -258,6 +261,7 @@ export function createOpenAIChatRuntime<Config>(options: RuntimeOptions<Config>)
     onDelta?: (delta: string, kind: "assistant_text" | "reasoning_text") => void,
     tools: ChatToolDefinition[] = [],
     onUsage?: TextGenerationOptions["onUsage"], variant?: string, threadId?: string,
+    effort?: EffortLevel, jsonMode?: boolean,
   ): Promise<Completion> => {
     const timeoutController = new AbortController();
     let idleTimer: NodeJS.Timeout | null = null;
@@ -277,12 +281,14 @@ export function createOpenAIChatRuntime<Config>(options: RuntimeOptions<Config>)
         : timeoutController.signal;
 
       const served = options.servedModel ? await prepareChatModel(() => options.servedModel!(model), activeSignal) : model;
+      if (variant && effort) throw new ChatProtocolError("A turn takes a reasoning effort or a model variant, not both.");
       const requestBody = options.requestBody(served, messages, stream, variant, threadId, model);
-      const effort = selectedReasoningEffort(requestBody, route, variant, options.selectedReasoning?.(model, variant));
+      const body = { ...requestBody, ...(effort ? options.effortRequest?.(served, effort) ?? {} : {}), ...(jsonMode ? jsonModeBody() : {}) };
+      const reasoningEffort = selectedReasoningEffort(body, route, variant, options.selectedReasoning?.(model, variant));
       const payload = JSON.stringify(route === "responses"
-        ? responsesRequest({ model: served, messages, tools, replay: (message) => responseOutputs.get(message), summaries: routes.summaries(model), effort })
+        ? responsesRequest({ model: served, messages, tools, replay: (message) => responseOutputs.get(message), summaries: routes.summaries(model), effort: reasoningEffort, ...(jsonMode ? { jsonMode } : {}) })
         : {
-          ...requestBody,
+          ...body,
           ...(route === "chat-reasoning-off" ? (options.reasoningOffBody?.(served) ?? { reasoning_effort: "none" }) : {}),
           ...(tools.length ? { tools } : {}),
         });
@@ -463,6 +469,7 @@ export function createOpenAIChatRuntime<Config>(options: RuntimeOptions<Config>)
     onDelta?: (delta: string, kind: "assistant_text" | "reasoning_text") => void,
     tools: ChatToolDefinition[] = [],
     onUsage?: TextGenerationOptions["onUsage"], variant?: string, threadId?: string,
+    effort?: EffortLevel, jsonMode?: boolean,
   ): Promise<Completion> => {
     for (;;) {
       let replied = false;
@@ -470,7 +477,7 @@ export function createOpenAIChatRuntime<Config>(options: RuntimeOptions<Config>)
         return await completeOn(routes.routeFor(model, tools.length > 0), messages, model, stream, signal, onDelta && ((text, kind) => {
           replied = true;
           onDelta(text, kind);
-        }), tools, onUsage, variant, threadId);
+        }), tools, onUsage, variant, threadId, effort, jsonMode);
       } catch (error) {
         if (!(error instanceof ModelRouteRefused) || replied || signal?.aborted) throw error;
         if (!routes.advance(model, error.refusal)) throw new ChatProtocolError(noRouteLeft(error.message));
@@ -635,33 +642,20 @@ export function createOpenAIChatRuntime<Config>(options: RuntimeOptions<Config>)
           let attempt = 0;
           let resends = 0;
           let completion: Completion;
+          const jsonSink = new JsonTextSink(turnJsonMode(turn));
           for (;;) {
             let streamed = false;
             let answerStreamed = false;
             const holdback = options.localModel && tools.definitions.length ? new TextCallHoldback() : undefined;
-            const pending = { assistant_text: "", reasoning_text: "" };
-            const delta = (text: string, streamKind: keyof typeof pending, flush = false) => {
-              let combined = pending[streamKind] + text;
-              // Mask whole matches before holding a suffix, or "abab" could split at its own repeated prefix.
-              for (const secret of secrets) if (secret) combined = combined.split(secret).join("[redacted]");
-              let hold = 0;
-              // A configured credential can straddle chunks: hold any suffix that could be its prefix.
-              if (!flush) for (const secret of secrets) {
-                for (let length = Math.min(secret.length - 1, combined.length); length > hold; length--) {
-                  if (combined.endsWith(secret.slice(0, length))) { hold = length; break; }
-                }
-              }
-              pending[streamKind] = hold ? combined.slice(-hold) : "";
-              const visible = safeText(hold ? combined.slice(0, -hold) : combined);
-              if (visible) emit({ ...base(turn.threadId, turnId), type: "content.delta", streamKind, delta: visible });
-            };
+            const masked = new MaskedDelta(secrets, (visible, streamKind) => emit({ ...base(turn.threadId, turnId), type: "content.delta", streamKind, delta: safeText(visible) }));
+            const delta = (text: string, streamKind: "assistant_text" | "reasoning_text", flush = false) => masked.send(text, streamKind, flush);
             try {
               completion = await complete(messages, model, true, abort.signal, (text, streamKind) => {
                 streamed = true;
                 if (streamKind === "assistant_text") answerStreamed = true;
                 const shown = holdback && streamKind === "assistant_text" ? holdback.feed(text) : text;
-                if (shown) delta(shown, streamKind);
-              }, tools.definitions, undefined, turn.variant, turn.threadId);
+                if (shown) jsonSink.show(shown, streamKind, delta);
+              }, tools.definitions, undefined, turn.variant, turn.threadId, turn.effort, jsonSink.enabled);
               // A reply cut off at the token limit may be a call cut short; running half of one is worse than saying so.
               const written = holdback && !completion.toolCalls.length && completion.finishReason !== "length" ? textToolCalls(completion.text, tools.definitions) : null;
               unreadable = written?.kind === "unreadable" && !askedAgain;
@@ -673,8 +667,13 @@ export function createOpenAIChatRuntime<Config>(options: RuntimeOptions<Config>)
                 native("in", { recovered: "unreadable_tool_call" });
               } else {
                 const rest = holdback?.rest();
-                if (rest) delta(rest, "assistant_text");
+                if (rest) jsonSink.show(rest, "assistant_text", delta);
               }
+              if (jsonSink.enabled && !completion.toolCalls.length && !unreadable) {
+                const parsed = parseJsonReply(completion.text);
+                if (!parsed.ok) throw new ChatProtocolError(parsed.error);
+              }
+              jsonSink.release(delta);
               delta("", "assistant_text", true);
               delta("", "reasoning_text", true);
               break;
@@ -953,6 +952,7 @@ export function createOpenAIChatRuntime<Config>(options: RuntimeOptions<Config>)
       provider: options.driverKind,
       capabilities: { ...(options.computerUse ? { computerMcp: options.tools !== false && defaultSeesImages, localComputerMcp: options.tools !== false && defaultSeesImages,
         browserMcp: options.tools !== false, ...(defaultSeesImages ? { nativeImageInput: true, images: true } : {}), ...(options.videoBytes ? { nativeVideoBytes: options.videoBytes } : {}) } : {}),
+        ...(options.effortLevels?.length ? { effortLevels: options.effortLevels } : {}),
         ...(options.modelVariants ? { modelVariants: true } : {}), sessionModelSwitch: "in-session", customMcp: options.tools !== false, agentsMcp: options.tools !== false, composioMcp: options.tools !== false,
         dataMcp: options.tools !== false,
         emailMcp: options.tools !== false,

@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, rmSync, unlinkSync } from "node:fs";
 import { join } from "node:path"; import { isDeepStrictEqual } from "node:util";
 
-import { writeFileAtomic } from "./atomic.ts"; import { BOTS_FILE, JsonRegistry, persistedPin, type RegistryDurability, type RegistryStore } from "./registry-store.ts"; import { discardNativeLog } from "./drivers/native.ts";
+import { writeFileAtomic } from "./atomic.ts"; import { BOTS_FILE, JsonRegistry, persistedPin, type RegistryDurability, type RegistryStore } from "./registry-store.ts"; import { discardNativeLog } from "./drivers/native.ts"; import { applyProjectWorkspacePatch, readProjectWorkspace, resolveThreadModel, sanitizeProjectWorkspacePatch, type ProjectWorkspacePatch } from "./projects/workspace.ts";
 import { commitRegistryChange, deferrablePatch, keptRevocation, saveRegistryFor, touchesPermissions } from "./registry-save.ts";
 import { parseToolScope, toolScopeWidens } from "../shared/tool-scope.ts"; import { grantScopedApps } from "../shared/connector-scopes.ts"; import { dropRetiredApps } from "./retired-apps.ts";
 import { reorderInPlace } from "../shared/bot-order.ts"; import { trimOutboundPolicy } from "../shared/outbound.ts";
@@ -101,11 +101,11 @@ type AssertSameKeys<A, B> = [keyof A] extends [keyof B] ? ([keyof B] extends [ke
 export type TaskWireProjectionIsExact = AssertExact<WireTask, TaskWireProjection> & AssertSameKeys<WireTask, TaskWireProjection>;
 export const taskWireProjectionIsExact: TaskWireProjectionIsExact = true;
 
-export function toWireTask(task: TaskRecord, botModel: ModelSelection): WireTask {
+export function toWireTask(task: TaskRecord, botModel: ModelSelection, projectModel?: ModelSelection): WireTask {
   const { resumeCursors: _resumeCursors, lastInstanceId: _lastInstanceId, handedMessages: _handedMessages,
     appliedCompactionId: _appliedCompactionId, contextFloor: _contextFloor, lastContextModel: _lastContextModel,
     surfaceSource, askedAt: _askedAt, ...stored } = task;
-  const wire: WireTask = { ...stored, modelSelection: structuredClone(task.modelSelection ?? botModel), followsBotModel: task.modelSelection === undefined };
+  const wire: WireTask = { ...stored, modelSelection: structuredClone(task.modelSelection ?? projectModel ?? botModel), followsBotModel: task.modelSelection === undefined && projectModel === undefined };
   return surfaceSource === "auto" && wire.surface !== undefined ? { ...wire, surfaceAuto: true } : wire;
 }
 
@@ -1897,29 +1897,29 @@ export class Store {
     return cwd;
   }
 
-  project(botId: string, projectId: string): BotProjectRecord | undefined {
+  project(botId: string, projectId: string | undefined): BotProjectRecord | undefined {
+    if (projectId === undefined) return undefined;
     return this.own(botId)?.projects?.find((project) => project.id === projectId);
   }
 
   createProject(botId: string, name: string, emoji?: string | null): BotProjectRecord | null {
     const bot = this.own(botId);
     if (!bot || !name.trim() || (emoji != null && !isProjectEmoji(emoji))) return null;
-    const project: BotProjectRecord = {
-      id: newId(), name: name.trim().slice(0, 80),
-      ...(emoji == null ? {} : { emoji }),
-    };
+    const project: BotProjectRecord = { id: newId(), name: name.trim().slice(0, 80), ...(emoji == null ? {} : { emoji }) };
     bot.projects = [...(bot.projects ?? []), project];
     this.saveBots();
     this.emit({ type: "bot", botId });
     return project;
   }
 
-  patchProject(botId: string, projectId: string, patch: { name?: string; emoji?: string | null }): BotProjectRecord | null {
+  patchProject(botId: string, projectId: string, patch: { name?: string; emoji?: string | null } & ProjectWorkspacePatch): BotProjectRecord | null {
     const project = this.project(botId, projectId);
-    if (!project || (patch.name !== undefined && !patch.name.trim()) || (patch.emoji != null && !isProjectEmoji(patch.emoji))) return null;
+    const workspace = sanitizeProjectWorkspacePatch(patch);
+    if (!project || !workspace || (patch.name !== undefined && !patch.name.trim()) || (patch.emoji != null && !isProjectEmoji(patch.emoji))) return null;
     if (patch.name !== undefined) project.name = patch.name.trim().slice(0, 80);
     if (patch.emoji === null) delete project.emoji;
     else if (patch.emoji !== undefined) project.emoji = patch.emoji;
+    applyProjectWorkspacePatch(project, workspace);
     this.saveBots();
     this.emit({ type: "bot", botId });
     return project;
@@ -1994,7 +1994,7 @@ export class Store {
       ...bot,
       threadId: task.threadId,
       approvalGrant: bot.approvalGrant?.threadOnly && bot.approvalGrant.threadId !== threadId ? undefined : bot.approvalGrant,
-      modelSelection: structuredClone(task.modelSelection ?? bot.modelSelection),
+      modelSelection: structuredClone(resolveThreadModel(task.modelSelection, readProjectWorkspace(task.projectId ? this.project(botId, task.projectId) : undefined).model, bot.modelSelection)),
       resumeCursors: structuredClone(task.resumeCursors),
       ...threadApproval(task, bot),
       unread: Boolean(task.unread),
@@ -2131,11 +2131,11 @@ export class Store {
   }
 
   createTask(botId: string, title?: string, activate = true, projectId?: string, openedBy?: TaskOpenedBy, approvalMode?: NewThreadLevel,
-    modelSelection?: ModelSelection, cwd?: string, beforeShown?: (task: TaskRecord) => void): TaskRecord | null {
+    modelSelection?: ModelSelection, cwd?: string, beforeShown?: (task: TaskRecord) => void, incognito?: boolean): TaskRecord | null {
     const bot = this.own(botId);
     if (!bot) return null;
     if (projectId !== undefined && !this.project(botId, projectId)) return null;
-    const task = buildTask(bot, title, projectId, openedBy, approvalMode, modelSelection, cwd);
+    const task = buildTask(bot, title, projectId, openedBy, approvalMode, modelSelection, cwd, incognito);
     this.commitBotChange(bot, "the new thread", () => {
       bot.tasks = [task, ...(bot.tasks ?? [])];
       if (activate) this.mirrorActiveTask(bot, task);

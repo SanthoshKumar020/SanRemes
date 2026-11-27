@@ -114,3 +114,21 @@ describe("a thread a bot opens while a level change is being confirmed", () => {
     expect(levelOf(store, bot.id, store.createTask(bot.id, "Same engine", false)!.threadId)).toBe("edits");
   });
 });
+
+describe("an incognito thread", () => {
+  beforeEach(() => {
+    rmSync(DATA_DIR, { recursive: true, force: true });
+  });
+
+  it("carries the flag on its record and on the wire, and a plain thread carries none", async () => {
+    const { toWireTask } = await import("./store.ts");
+    const store = new Store(selection);
+    const bot = store.createBot();
+    const incognito = store.createTask(bot.id, "Private", false, undefined, undefined, undefined, undefined, undefined, undefined, true)!;
+    const plain = store.createTask(bot.id, "Public", false)!;
+    expect(incognito.incognito).toBe(true);
+    expect(toWireTask(incognito, bot.modelSelection).incognito).toBe(true);
+    expect(plain.incognito).toBeUndefined();
+    expect(toWireTask(plain, bot.modelSelection).incognito).toBeUndefined();
+  });
+});

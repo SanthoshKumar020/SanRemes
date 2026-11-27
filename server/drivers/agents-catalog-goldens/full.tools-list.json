@@ -1294,6 +1294,48 @@
       }
     },
     {
+      "name": "web_search",
+      "description": "Search the web for free, with no key: DuckDuckGo results (title, link, snippet). Use it for a quick fact check, or when research_search is not available. Returns numbered results with their sources; when the search page cannot be reached it says so plainly instead of failing.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Words to search the web for."
+          },
+          "limit": {
+            "type": "integer",
+            "description": "How many results, 1-10. Default 8."
+          }
+        },
+        "required": [
+          "query"
+        ]
+      }
+    },
+    {
+      "name": "deep_research",
+      "description": "Research a question in depth, free and with no key: plans sub-questions, searches the web for each, reads the best pages, and returns findings with numbered citations ([1], [2]) and a Sources list. Cite those numbers in your reply and keep the Sources list under it. Reads at most 6 pages, so ask a focused question.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "question": {
+            "type": "string",
+            "description": "The question to research."
+          },
+          "max_pages": {
+            "type": "integer",
+            "description": "How many pages to read, 1-8. Default 6."
+          }
+        },
+        "required": [
+          "question"
+        ]
+      }
+    },
+    {
       "name": "decide",
       "description": "Ask a decision model typed questions about some state; it answers with probabilities and cannot act.",
       "inputSchema": {
@@ -1375,6 +1417,25 @@
         "destructiveHint": false,
         "idempotentHint": true,
         "openWorldHint": false
+      }
+    },
+    {
+      "name": "run_batch",
+      "description": "Run a list of prompts as queued tasks and collect one result per prompt.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "prompts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "prompts"
+        ],
+        "additionalProperties": false
       }
     },
     {

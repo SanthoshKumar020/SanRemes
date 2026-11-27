@@ -26,6 +26,8 @@ const LINES: Record<string, number> = {
   "server/drivers/codex.ts": 1585,
   "server/browser/viewers/core.ts": 1003,
   "server/drivers/openai-chat.ts": 1004,
+  "packages/phone-protocol/src/wire.ts": 1010,
+  "server/browser-runtime.ts": 1006,
   "server/routines.ts": 1553,
   "src/components/ComputerPanel.tsx": 1782,
   "src/components/RoutineCalendarPage.tsx": 1485,

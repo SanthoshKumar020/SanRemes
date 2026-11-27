@@ -100,6 +100,19 @@ describe("thread event log retention", () => {
     expect(sweepThreadEventLogs([old], 30, now)).toBe(0);
   });
 
+  it("leaves incognito threads out of retention", async () => {
+    const { sweepThreadEventLogs } = await freshSweep();
+    const cases = [
+      candidate({ threadId: "gone", closedAt: now - 40 * DAY_MS }),
+      candidate({ threadId: "ghost", closedAt: now - 40 * DAY_MS }),
+    ];
+    for (const each of cases) await writeLogs(each.threadId);
+
+    expect(sweepThreadEventLogs(cases, 30, now, { incognitoThreadIds: new Set(["ghost"]) })).toBe(1);
+    expect(await logsExist("gone")).toBe(false);
+    expect(await logsExist("ghost")).toBe(true);
+  });
+
   it("warns on removal failures other than a missing file", async () => {
     const { sweepThreadEventLogs } = await freshSweep();
     const { EVENTS_DIR, NATIVE_DIR } = await import("./config.ts");

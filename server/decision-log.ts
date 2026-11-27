@@ -79,7 +79,25 @@ const MONTH_FILE = /^(\d{4})-(\d{2})\.ndjson$/;
 const DAY_MS = 24 * 60 * 60_000;
 const PRUNE_EVERY_MS = 60 * 60_000;
 export const DEFAULT_DECISION_RETENTION_DAYS = 180;
+export const MIN_DECISION_RETENTION_DAYS = 1;
 export const MAX_DECISION_RETENTION_DAYS = 3650;
+
+export function parseRetentionDays(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isInteger(value)) return null;
+  if (value < MIN_DECISION_RETENTION_DAYS || value > MAX_DECISION_RETENTION_DAYS) return null;
+  return value;
+}
+
+export type RetentionSource = "env" | "config" | "default";
+
+export function resolveRetentionDays(configured: number | undefined, envName: string, env: NodeJS.ProcessEnv = process.env): { days: number; source: RetentionSource } {
+  const fromEnv = env[envName]?.trim();
+  const parsedEnv = fromEnv ? parseRetentionDays(Number(fromEnv)) : null;
+  if (parsedEnv !== null) return { days: parsedEnv, source: "env" };
+  const parsedConfig = parseRetentionDays(configured);
+  if (parsedConfig !== null) return { days: parsedConfig, source: "config" };
+  return { days: DEFAULT_DECISION_RETENTION_DAYS, source: "default" };
+}
 const writeQueues = new Map<string, Promise<void>>();
 const lastPrune = new Map<string, number>();
 let retentionDays: () => number = () => DEFAULT_DECISION_RETENTION_DAYS;
@@ -93,11 +111,7 @@ export function boundRetentionDays(): number {
 }
 
 export function decisionRetentionDays(configured: number | undefined, env: NodeJS.ProcessEnv = process.env): number {
-  const fromEnv = env.SANREMES_DECISION_RETENTION_DAYS?.trim();
-  const parsed = fromEnv ? Number(fromEnv) : NaN;
-  if (Number.isInteger(parsed) && parsed >= 1 && parsed <= MAX_DECISION_RETENTION_DAYS) return parsed;
-  if (typeof configured === "number" && Number.isInteger(configured) && configured >= 1 && configured <= MAX_DECISION_RETENTION_DAYS) return configured;
-  return DEFAULT_DECISION_RETENTION_DAYS;
+  return resolveRetentionDays(configured, "SANREMES_DECISION_RETENTION_DAYS", env).days;
 }
 
 export type DecisionVia = "call" | "reaction";

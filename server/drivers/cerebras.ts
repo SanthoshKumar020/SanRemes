@@ -6,11 +6,13 @@ import { createOpenAIChatRuntime } from "./openai-chat.ts";
 const DEFAULT_URL = "https://api.cerebras.ai/v1";
 // The account tier is unknown: use the shared free-tier limit, not paid 128K.
 // https://inference-docs.cerebras.ai/models/overview
+// Effort levels are per model (Cerebras docs, Reasoning): gpt-oss-120b takes
+// low/medium/high and answers 400 to "none"; qwen-3.8-27b takes none/low/medium/high.
 const DEFAULT_MODELS: ModelCatalog = {
   default: "gpt-oss-120b",
   options: [
-    { id: "gpt-oss-120b", label: "GPT OSS 120B", contextWindow: 65536 },
-    { id: "qwen-3.8-27b", label: "Qwen3.8 27B", contextWindow: 65536 },
+    { id: "gpt-oss-120b", label: "GPT OSS 120B", contextWindow: 65536, effortLevels: ["low", "medium", "high"] },
+    { id: "qwen-3.8-27b", label: "Qwen3.8 27B", contextWindow: 65536, effortLevels: ["none", "low", "medium", "high"] },
   ],
 };
 const configSchema = z.object({
@@ -86,6 +88,7 @@ export const CerebrasDriver: ProviderDriver<CerebrasConfig> = {
       input, driverKind: "cerebras", apiKey, apiUrl: config.url,
       tools: config.tools, models: () => catalog, refreshModels, reasoning: true,
       reasoningReplayField: "reasoning",
+      effortRequest: (_model, effort) => ({ reasoning_effort: effort }),
       computerUse: true, imageInput: (model) => !TEXT_ONLY_MODELS.test(model),
       nudgeAnnouncedAction: true,
       requestBody: (model, messages, stream) => ({

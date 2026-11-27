@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { memoryOverview, parseMemoryPath, readMemoryDoc, threadNotesPath } from "./memory-store.ts";
+import { clearIncognitoThread, markThreadIncognito } from "./incognito-threads.ts";
 import {
   THREAD_NOTES_MAX_LINES,
   createThreadScope,
@@ -212,5 +213,49 @@ describe("the notes file", () => {
     expect(existsSync(file)).toBe(true);
     expect(readFileSync(file, "utf8")).not.toContain("abcdefghijklmnopqrstuvwxyz0123456789");
     expect(readMemoryDoc(botId, threadNotesPath("t-1")).exists).toBe(true);
+  });
+});
+
+describe("incognito conversations save nothing", () => {
+  it("refuses thread notes and bot-wide saves, and hides the notes prompt", () => {
+    const botId = freshBot();
+    markThreadIncognito("ghost", botId);
+    try {
+      expect(save(botId, "ghost", { action: "append", text: "A secret" })).toEqual({
+        ok: false,
+        error: "This conversation is incognito, so nothing from it is saved.",
+        code: "invalid",
+      });
+      expect(save(botId, "ghost", { action: "append", text: "A secret", scope: "everywhere" })).toEqual({
+        ok: false,
+        error: "This conversation is incognito, so nothing from it is saved.",
+        code: "invalid",
+      });
+      expect(readThreadNotes(botId, "ghost")).toBe("");
+      expect(memoryText(botId)).not.toContain("A secret");
+      expect(threadNotesPrompt(botId, "ghost", { scoped: true })).toBe("");
+    } finally {
+      clearIncognitoThread("ghost");
+    }
+  });
+
+  it("keeps incognito conversations out of session_search", () => {
+    const botId = freshBot();
+    markThreadIncognito("ghost", botId);
+    try {
+      const found = reachThreads({
+        botId, current: "here",
+        threads: [{ threadId: "ghost", title: "Ghost chat", updatedAt: 9 }, { threadId: "sm", title: "Supermouse lease", updatedAt: 5 }],
+        messages: () => [],
+      });
+      expect(found).toMatchObject({ total: 1, threads: [{ threadId: "sm" }] });
+      expect(reachThreads({
+        botId, current: "here",
+        threads: [{ threadId: "ghost", title: "Ghost chat", updatedAt: 9 }],
+        messages: () => [], threadId: "ghost",
+      })).toEqual({ error: "not-found" });
+    } finally {
+      clearIncognitoThread("ghost");
+    }
   });
 });

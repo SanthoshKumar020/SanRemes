@@ -6,6 +6,7 @@
 // a hand-written node_modules would go, and on a desktop a task workspace can be a project the person also works in.
 // The cache cap's sweeper (cache-sweep/) starts here too; it deletes nothing while a turn or an engine process is alive.
 import { cleanupStaleAttachmentPartials } from "../attachments.ts";
+import { incognitoThreadIds } from "../incognito-threads.ts";
 import type { BotRecord } from "../store.ts";
 import { sweepTaskWorkspaceBuildFolders } from "../task-workspace-retention.ts";
 import { sweepThreadEventLogs } from "../thread-retention.ts";
@@ -46,7 +47,7 @@ export function startUpkeep(deps: StartUpkeepDeps): void {
       busy: deps.busy(bot.id, task.threadId),
       openDirectHandoff: deps.openDirectHandoff(task.threadId),
     })));
-    const swept = (deps.sweepLogs ?? sweepThreadEventLogs)(candidates, retentionDays);
+    const swept = (deps.sweepLogs ?? sweepThreadEventLogs)(candidates, retentionDays, Date.now(), { incognitoThreadIds: new Set(incognitoThreadIds()) });
     if (swept > 0) console.log(`[retention] removed event logs for ${swept} idle thread(s) past ${retentionDays} day(s)`);
   };
   // Read lazily: the removals before a thread's turn take time, and a thread that wakes meanwhile must read busy.

@@ -144,6 +144,7 @@
     "sucrase": "3.35.1",
     "tailwind-merge": "^3.3.1",
     "tar": "7.5.22",
+    "tesseract.js": "^7.0.0",
     "tldts": "7.4.18",
     "undici": "8.11.2",
     "unpdf": "2.2.3",

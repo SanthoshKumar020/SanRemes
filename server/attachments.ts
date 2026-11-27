@@ -18,6 +18,7 @@ import { dropKeptOriginals, dropOrphanKeptOriginals, keepUploadedOriginal, keptO
 import { boxUploadsDir } from "./bot-box/plan.ts";
 
 export { FILE_MAX_BYTES, PREVIEW_MAX_BYTES } from "../shared/upload-limits.ts";
+export type { OcrResult } from "./ocr/ocr.ts";
 export const ATTACHMENTS_DIR = join(DATA_DIR, "attachments");
 
 export const IMAGE_MAX_BYTES = 10 * 1024 * 1024;
@@ -128,6 +129,13 @@ export function extensionForMime(mime: string | undefined): string | null {
 
 export function ensureAttachmentsDir(): void {
   mkdirSync(ATTACHMENTS_DIR, { recursive: true, mode: 0o700 });
+}
+
+/** Text read from an image or a PDF for a model without vision. Loaded on demand, so a missing OCR engine or language
+ * data never breaks an upload; an unavailable result means the turn goes on without the text. */
+export async function ocrAttachmentText(path: string, mime: string): Promise<import("./ocr/ocr.ts").OcrResult | { ok: false; reason: "unsupported-type" | "read-failed" | "scanned-pdf" }> {
+  const { extractAttachmentText } = await import("./ocr/attachment-text.ts");
+  return extractAttachmentText(path, mime);
 }
 
 export function validateAttachmentUploadId(value: string | undefined): string | undefined {

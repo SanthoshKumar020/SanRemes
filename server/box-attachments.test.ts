@@ -2,11 +2,21 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { boxUploadsDir, planBox } from "./bot-box/plan.ts";
-import { attachmentsForBox } from "./box-attachments.ts";
+import { attachmentTextForTurn, attachmentsForBox } from "./box-attachments.ts";
 import { extractTurnImages } from "./turn-images.ts";
 import { codexImageInputs } from "./drivers/codex-images.ts";
+
+vi.mock("./attachments.ts", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./attachments.ts")>()),
+  ocrAttachmentText: vi.fn(async (path: string, mime: string) => {
+    if (path.endsWith("markup.png")) return { ok: true, text: "a <b> & c", confidence: 90 };
+    if (path.endsWith(".png")) return { ok: true, text: "Hello OCR", confidence: 95 };
+    if (mime === "application/pdf") return { ok: true, text: "PDF words", confidence: 100 };
+    return { ok: false, reason: "unsupported-type" as const };
+  }),
+}));
 
 describe("attachmentsForBox", () => {
   let root: string, dataDir: string, uploads: string, cwd: string, shown: string;
@@ -125,5 +135,43 @@ describe("attachmentsForBox", () => {
     expect(mounts({ botThreads: true })).toContainEqual({ kind: "ro", source: room, target: room, optional: true });
     expect(mounts({ botThreads: true })).not.toContainEqual(expect.objectContaining({ target: join(dataDir, "box-uploads", "bot") }));
     expect(mounts({ botId: "other" })).not.toContainEqual(expect.objectContaining({ target: room }));
+  });
+
+  describe("attachmentTextForTurn", () => {
+    const run = (text: string) => attachmentTextForTurn(text, cwd, undefined, dataDir, uploads);
+
+    it("appends the read text after image and PDF tags, and nothing for other files", async () => {
+      writeFileSync(join(uploads, "shot.png"), "png");
+      writeFileSync(join(uploads, "doc.pdf"), "pdf");
+      writeFileSync(join(uploads, "notes.md"), "md");
+      const text = [
+        `<attached-image path="${join(uploads, "shot.png")}" name="shot.png" />`,
+        `<attached-file path="${join(uploads, "doc.pdf")}" name="doc.pdf" />`,
+        `<attached-file path="${join(uploads, "notes.md")}" name="notes.md" />`,
+      ].join("\n");
+      expect(await run(text)).toBe([
+        `<attached-image path="${join(uploads, "shot.png")}" name="shot.png" />`,
+        `<attached-image-text name="shot.png">Hello OCR</attached-image-text>`,
+        `<attached-file path="${join(uploads, "doc.pdf")}" name="doc.pdf" />`,
+        `<attached-image-text name="doc.pdf">PDF words</attached-image-text>`,
+        `<attached-file path="${join(uploads, "notes.md")}" name="notes.md" />`,
+      ].join("\n"));
+    });
+
+    it("escapes markup in the read text so it cannot close its own tag", async () => {
+      writeFileSync(join(uploads, "markup.png"), "png");
+      const out = await run(`<attached-image path="${join(uploads, "markup.png")}" name="markup.png" />`);
+      expect(out).toContain(`<attached-image-text name="markup.png">a &lt;b&gt; &amp; c</attached-image-text>`);
+    });
+
+    it("adds nothing without a tag, outside the uploads folder, or for a missing file", async () => {
+      writeFileSync(join(root, "elsewhere.png"), "png");
+      const text = [
+        "no tags here",
+        `<attached-image path="${join(root, "elsewhere.png")}" name="elsewhere.png" />`,
+        `<attached-image path="${join(uploads, "missing.png")}" name="missing.png" />`,
+      ].join("\n");
+      expect(await run(text)).toBe(text);
+    });
   });
 });

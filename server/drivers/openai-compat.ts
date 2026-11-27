@@ -1,13 +1,13 @@
 // Transcript-replay driver for OpenRouter, Groq, Together, llama.cpp, and
 // other endpoints that speak the OpenAI chat-completions contract.
-import { titleCaseModelId, type ModelCatalog, type ProviderDriver } from "../contracts.ts";
+import { titleCaseModelId, type EffortLevel, type ModelCatalog, type ProviderDriver } from "../contracts.ts";
 import { operatorEnvKey } from "../credential-env.ts";
 import { isLoopback } from "../provider-key-check.ts";
 import { lmStudioV1Catalog } from "./local-inject.ts";
 import { isContextName, isOllama, pickedName, serveWithWindow } from "./ollama-context.ts";
 import { isOllamaServer, OLLAMA_PLACEHOLDER_KEY, ollamaOrigin, ollamaUnavailable, onOllamaPort, probeOllama, thinkingEffort, type OllamaModel, type OllamaStatus } from "./ollama.ts";
 import { createOpenAIChatRuntime } from "./openai-chat.ts";
-import { decodeReasoningEfforts, reasoningBody, reasoningCatalog, reasoningChoices, rememberReasoning, waitForCatalog, type ReasoningChoices } from "./compat-reasoning.ts";
+import { decodeReasoningEfforts, effortLevelsFromVariants, reasoningBody, reasoningCatalog, reasoningChoices, rememberReasoning, waitForCatalog, type ReasoningChoices } from "./compat-reasoning.ts";
 import {
   freeDefault, freeFallbackCatalog, freeLabel, freeToolModels, freeToolsFirst, isOpenRouterOrigin, openRouterFreeTier,
   withOpenRouterTurns, type OpenRouterModelRow,
@@ -156,6 +156,24 @@ function openRouterPromptCache(threadId: string | undefined): Record<string, unk
   return { cache_control: { type: "ephemeral" }, ...(threadId ? { session_id: threadId } : {}) };
 }
 
+/** The models OpenRouter's docs name for explicit `cache_control` on content blocks, rather than the top-level field
+ * Anthropic takes: Alibaba's list, snapshot endpoints excluded. Gemini takes the same block breakpoint.
+ * https://openrouter.ai/docs/features/prompt-caching */
+const OPENROUTER_BLOCK_CACHE_MODELS = new Set([
+  "deepseek/deepseek-v3.2", "qwen/qwen3-max", "qwen/qwen-plus",
+  "qwen/qwen3.6-plus", "qwen/qwen3-coder-plus", "qwen/qwen3-coder-flash",
+]);
+const openRouterBlockCacheModel = (model: string): boolean =>
+  OPENROUTER_BLOCK_CACHE_MODELS.has(model) || /^google\/gemini-/i.test(model);
+
+/** The system prompt, the stable prefix, marked as the cached block. Every other provider on this path caches
+ * automatically or not at all, so nothing is sent for them. */
+function withSystemCacheBreakpoint(messages: readonly { role: string; content: unknown }[]): unknown {
+  const [first, ...rest] = messages;
+  if (!first || first.role !== "system" || typeof first.content !== "string") return messages;
+  return [{ ...first, content: [{ type: "text", text: first.content, cache_control: { type: "ephemeral" } }] }, ...rest];
+}
+
 function loopbackLmStudioV1Url(baseUrl: string): string | null {
   try {
     const url = new URL(baseUrl);
@@ -293,6 +311,14 @@ export const OpenAICompatDriver: ProviderDriver<OpenAICompatConfig> = {
       return config.catalog === "openai" ? { reasoning_effort: variant } : openRouter ? { reasoning: { effort: variant } } : {};
     };
 
+    /** The same wire shape as a picked variant, for a per-bot effort level: an Ollama thinking choice first
+     * (`off` is the `none` level), then the variant's own wire shape, and nothing for a level the model does not list. */
+    const effortBody = (model: string, effort: EffortLevel): Record<string, unknown> => {
+      const thinking = fact(pickedName(model))?.thinking;
+      if (thinking) return withEffort(thinkingEffort(thinking, effort === "none" ? "off" : effort));
+      return apiEffort(model, effort);
+    };
+
     const fetchModels = async () => {
       if (!apiKey) return;
       if (ollamaCandidate && await listOllama()) return;
@@ -417,9 +443,19 @@ export const OpenAICompatDriver: ProviderDriver<OpenAICompatConfig> = {
       tools: config.tools,
       computerUse: true,
       nudgeAnnouncedAction: true,
-      models: () => reasoningCatalog(catalog, reasoningFor),
+      models: () => {
+        const catalogued = reasoningCatalog(catalog, reasoningFor);
+        return {
+          ...catalogued,
+          options: catalogued.options.map((option) => {
+            const levels = effortLevelsFromVariants(option.variants);
+            return levels.length ? { ...option, effortLevels: levels } : option;
+          }),
+        };
+      },
       prepareTurn: (turn, signal) => loading && (turn.variant || isOllamaServer(config)) ? waitForCatalog(loading, signal) : undefined,
       selectedReasoning: (model, variant) => Boolean(variant && fact(model)?.thinking?.choices.includes(variant)),
+      effortRequest: effortBody,
       refreshModels: fetchModels,
       imageInput: (model) => fact(model)?.vision ?? true,
       ...(gemini ? { videoBytes: GEMINI_VIDEO_BYTES } : {}),
@@ -433,18 +469,23 @@ export const OpenAICompatDriver: ProviderDriver<OpenAICompatConfig> = {
         },
       } : {}),
       modelVariants: true,
-      requestBody: (model, messages, stream, variant, threadId, selectedModel) => ({
-        model,
-        messages,
-        stream,
-        stream_options: stream ? { include_usage: true } : undefined,
-        ...withEffort(thinkingEffort(fact(pickedName(model))?.thinking, variant)),
-        ...apiEffort(selectedModel ?? model, variant),
-        ...(config.provider && isOpenRouterUrl(config.url)
-          ? { provider: { order: [config.provider], allow_fallbacks: false } }
-          : {}),
-        ...(isOpenRouterUrl(config.url) && isClaudeModel(model) ? openRouterPromptCache(threadId) : {}),
-      }),
+      requestBody: (model, messages, stream, variant, threadId, selectedModel) => {
+        const openRouter = isOpenRouterUrl(config.url);
+        const blockCache = openRouter && openRouterBlockCacheModel(model);
+        return {
+          model,
+          messages: blockCache ? withSystemCacheBreakpoint(messages) : messages,
+          stream,
+          stream_options: stream ? { include_usage: true } : undefined,
+          ...withEffort(thinkingEffort(fact(pickedName(model))?.thinking, variant)),
+          ...apiEffort(selectedModel ?? model, variant),
+          ...(config.provider && openRouter
+            ? { provider: { order: [config.provider], allow_fallbacks: false } }
+            : {}),
+          ...(openRouter && isClaudeModel(model) ? openRouterPromptCache(threadId) : {}),
+          ...(blockCache && threadId ? { session_id: threadId } : {}),
+        };
+      },
       httpErrorLabel: "upstream",
       missingKeyError: missingKey,
       unavailableReason: missingKey,

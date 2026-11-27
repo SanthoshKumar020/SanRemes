@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { recordEvents } from "../testing/events.ts";
-import { advertisedReasoning, reasoningChoices } from "./compat-reasoning.ts";
+import { advertisedReasoning, effortLevelsFromVariants, reasoningChoices } from "./compat-reasoning.ts";
 import { OpenAICompatDriver } from "./openai-compat.ts";
 
 const variants = (models: { options: Array<{ id: string; variants?: Array<{ id: string }> }> }, id: string) =>
@@ -216,4 +216,16 @@ describe("OpenAI-compatible reasoning choices", () => {
       expect(bodies.map((body) => body.reasoning_effort)).toEqual(["max", "max"]);
     } finally { recorder.stop(); await instance.dispose(); }
   }, 20_000);
+
+  it("maps reasoning choices to effort levels, in level order", () => {
+    expect(effortLevelsFromVariants(undefined)).toEqual([]);
+    expect(effortLevelsFromVariants([])).toEqual([]);
+    expect(effortLevelsFromVariants([{ id: "low", label: "low" }, { id: "medium", label: "medium" }, { id: "high", label: "high" }]))
+      .toEqual(["low", "medium", "high"]);
+    expect(effortLevelsFromVariants([{ id: "max", label: "max" }, { id: "low", label: "low" }, { id: "xhigh", label: "xhigh" }]))
+      .toEqual(["low", "xhigh", "max"]);
+    expect(effortLevelsFromVariants([{ id: "off", label: "off" }, { id: "on", label: "on" }, { id: "high", label: "high" }]))
+      .toEqual(["none", "high"]);
+    expect(effortLevelsFromVariants([{ id: "future", label: "future" }, { id: "low", label: "low" }])).toEqual(["low"]);
+  });
 });

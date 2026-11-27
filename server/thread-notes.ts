@@ -7,6 +7,7 @@
 // bot's conversations reads them only through session_search scope "threads", on that bot's own conversations.
 import { chatNotice, type ChatNoticeKey } from "./chat-notices.ts";
 import type { RuntimeEvent } from "./contracts.ts";
+import { isIncognitoThread } from "./incognito-threads.ts";
 import { memoryHomeThread } from "./main-thread.ts";
 import { passageMatcher, withoutExpired } from "./memory-entries.ts";
 import { botMemoryUpdate, withoutMentions, type BotMemoryResult } from "./memory-forget.ts";
@@ -83,6 +84,7 @@ export type ThreadNotesResult = (MemoryUpdateResult & { ok: true; scope: "thread
 
 /** One memory_update applied to this conversation's notes. Nothing moves out when they fill: the tool says they are full. */
 export function updateThreadNotes(botId: string, threadId: string, update: MemoryUpdate, opts: MemoryUpdateOptions = {}): ThreadNotesResult {
+  if (isIncognitoThread(threadId)) return { ok: false, error: "This conversation is incognito, so nothing from it is saved.", code: "invalid" };
   const path = threadNotesPath(threadId);
   const current = readMemoryDoc(botId, path).text;
   const edit = editMemoryText(current, update, opts);
@@ -115,6 +117,7 @@ export function scopedMemoryUpdate(
   opts: Parameters<typeof botMemoryUpdate>[2],
   thread: { botId: string; threadId: string } | null,
 ): BotMemoryResult | ThreadNotesResult {
+  if (thread && isIncognitoThread(thread.threadId)) return { ok: false, error: "This conversation is incognito, so nothing from it is saved.", code: "invalid" };
   if (!thread || body.scope === "everywhere" || body.action === "prefer") return botMemoryUpdate(layer, body, opts);
   if (body.action === "forget") {
     const result = botMemoryUpdate(layer, body, opts);
@@ -144,6 +147,7 @@ export function threadNotesPrompt(
   threadId: string,
   opts: { scoped: boolean; enabled?: boolean; managedWrites?: boolean; fileTools?: boolean; writesRefused?: boolean },
 ): string {
+  if (isIncognitoThread(threadId)) return "";
   if (opts.enabled === false) return "";
   const notes = loadedThreadNotes(readThreadNotes(botId, threadId));
   const canWrite = opts.scoped && !opts.writesRefused && (opts.managedWrites || opts.fileTools !== false);
@@ -201,7 +205,7 @@ export function reachThreads(input: {
   notes?: boolean;
 }) {
   const notesOf = (threadId: string) => input.notes === false ? { text: "", truncated: false } : loadedThreadNotes(readThreadNotes(input.botId, threadId));
-  const others = input.threads.filter((thread) => thread.threadId !== input.current);
+  const others = input.threads.filter((thread) => thread.threadId !== input.current && !isIncognitoThread(thread.threadId));
   if (input.threadId) {
     const thread = others.find((candidate) => candidate.threadId === input.threadId);
     if (!thread) return { error: "not-found" as const };

@@ -421,8 +421,8 @@ describe("OpenAICompatDriver", () => {
     expect(inst.models).toEqual({
       default: "vendor/model-a",
       options: [
-        { id: "vendor/model-a", label: "Model A", custom: true, variants: ["low", "medium", "high", "xhigh", "max"].map((id) => ({ id, label: id })) },
-        { id: "vendor/model-b", label: "vendor/model-b", custom: true, variants: ["low", "medium", "high", "xhigh", "max"].map((id) => ({ id, label: id })) },
+        { id: "vendor/model-a", label: "Model A", custom: true, variants: ["low", "medium", "high", "xhigh", "max"].map((id) => ({ id, label: id })), effortLevels: ["low", "medium", "high", "xhigh", "max"] },
+        { id: "vendor/model-b", label: "vendor/model-b", custom: true, variants: ["low", "medium", "high", "xhigh", "max"].map((id) => ({ id, label: id })), effortLevels: ["low", "medium", "high", "xhigh", "max"] },
       ],
     });
     await inst.dispose();
@@ -787,6 +787,49 @@ describe("OpenAICompatDriver", () => {
     ]) {
       expect(body).not.toHaveProperty("cache_control");
       expect(body).not.toHaveProperty("session_id");
+    }
+  });
+
+  it("marks the system prompt as the cached block for OpenRouter's explicit-caching models, and leaves the rest alone", async () => {
+    const sent: any[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+        if (String(input).endsWith("/models")) return new Response(JSON.stringify({ data: [] }), { status: 200 });
+        sent.push(JSON.parse(String(init?.body)));
+        return new Response('data: {"choices":[{"delta":{"content":"hi"}}]}\n' + "data: [DONE]\n", { status: 200, headers: { "content-type": "text/event-stream" } });
+      }),
+    );
+    const turn = async (url: string, model: string) => {
+      const inst = await OpenAICompatDriver.create({
+        instanceId: "test-block-cache", displayName: "Cache", enabled: true,
+        config: { url, apiKeyEnv: "TEST_KEY", model }, environment: { TEST_KEY: "secret" },
+      });
+      const recorder = recordEvents(inst.adapter);
+      await inst.adapter.sendTurn({ threadId: "thread-b", text: "prompt", model, system: "You are a test bot." });
+      await recorder.until((e) => e.type === "turn.completed");
+      recorder.stop();
+      await inst.dispose();
+      return sent.at(-1);
+    };
+
+    for (const model of ["qwen/qwen3-max", "google/gemini-2.5-pro"]) {
+      const body = await turn("https://openrouter.ai/api/v1", model);
+      expect(body).not.toHaveProperty("cache_control");
+      expect(body.session_id).toBe("thread-b");
+      expect(body.messages[0]).toEqual({
+        role: "system",
+        content: [{ type: "text", text: "You are a test bot.", cache_control: { type: "ephemeral" } }],
+      });
+    }
+
+    for (const body of [
+      await turn("https://openrouter.ai/api/v1", "qwen/qwen3.5-plus-02-15"),
+      await turn("https://openrouter.ai/api/v1", "deepseek/deepseek-v4-flash-0731"),
+      await turn("https://api.example.com/v1", "qwen/qwen3-max"),
+    ]) {
+      expect(body).not.toHaveProperty("session_id");
+      expect(JSON.stringify(body)).not.toContain("cache_control");
     }
   });
 

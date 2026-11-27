@@ -5,6 +5,7 @@ import { type Bot, type InstanceInfo } from "@/state/store";
 import { useBotEditor } from "./BotEditorContext";
 import { ProposalStatus } from "./ProposalStatus";
 import { CheckWorkSetting } from "./CheckWorkSetting";
+import { Switch } from "../SettingsPrimitives";
 import { ThreadModelsLine } from "../ThreadModelsLine";
 import { t } from "@/lib/i18n";
 import { Select } from "../Select";
@@ -50,11 +51,28 @@ export function ModelSection({ bot }: { bot: Bot }) {
         }
       />
       {!draft && <CheckWorkSetting bot={bot} />}
+      {!draft && <JsonModeRow bot={bot} />}
       {!draft && <FallbackChain bot={bot} onChange={(fallback) => dispatch({ type: "updateBot", botId: bot.id, patch: { fallback } })} />}
       {!draft && state.config?.cacheKeepWarm && (
         <KeepWarmRow bot={bot} workspaceOn={state.config.cacheKeepWarm.enabled}
           onChange={(cacheKeepWarm) => dispatch({ type: "updateBot", botId: bot.id, patch: { cacheKeepWarm } })} />
       )}
+    </div>
+  );
+}
+
+function JsonModeRow({ bot }: { bot: Bot }) {
+  const dispatch = useStoreDispatch();
+  const on = bot.jsonMode === true;
+  return (
+    <div className="rounded-xl bg-card p-4">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <div className="text-[15px] font-medium text-ink">{t("botSettings.jsonMode.title")}</div>
+          <div className="mt-0.5 text-[13px] text-ink-secondary">{t("botSettings.jsonMode.help")}</div>
+        </div>
+        <Switch checked={on} aria-label={t("botSettings.jsonMode.title")} onClick={() => dispatch({ type: "updateBot", botId: bot.id, patch: { jsonMode: !on } })} />
+      </div>
     </div>
   );
 }
