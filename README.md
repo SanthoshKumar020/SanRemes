@@ -6,22 +6,9 @@
 
 [**SanRemes on GitHub**](https://github.com/SanthoshKumar020/SanRemes) &nbsp;·&nbsp; [Quick start](#quick-start)
 
-## Fork notice
+## Origin
 
-SanRemes is a fork of [OpenMausBot](https://github.com/milind-soni/OpenMausBot) by Milind Soni, open
-source under the [Apache License 2.0](LICENSE). Upstream copyright and third-party attributions are
-kept in [NOTICE](NOTICE). What changed in this fork:
-
-- **Free model first.** The first run offers a free Groq API key (gpt-oss-120b): get one at
-  [console.groq.com](https://console.groq.com) — free tier, no card. No Claude, Codex or Grok
-  subscription is needed to start; those stay available as options.
-- **No enterprise layer.** Upstream's `enterprise/` folder (separate license, key required) was
-  removed. This fork is the open-source edition only.
-- **One-click install.** `install.sh` (macOS/Linux/WSL) and `install.ps1` (Windows) check for
-  Node 24+ and pnpm, install dependencies, and start the app.
-- **Renamed throughout.** The app, packages and user-visible strings now say SanRemes instead of
-  OpenMausBot/MausBot. The upstream names and mascot are trademarks of Supamaus Software Private
-  Limited and are not used in this fork's branding.
+SanRemes started as a fork of [OpenMausBot](https://github.com/milind-soni/OpenMausBot) by Milind Soni, open source under the [Apache License 2.0](LICENSE); upstream copyright and third-party attributions are kept in [NOTICE](NOTICE). It is now built by [Santo Square Automation](https://santo-square-automation.vercel.app) as the open-source edition: free model first (a free Groq API key at [console.groq.com](https://console.groq.com) gets you started — no Claude, Codex or Grok subscription needed), no enterprise layer, and one-click install via `install.sh` (macOS/Linux/WSL) or `install.ps1` (Windows). The upstream names and mascot are trademarks of Supamaus Software Private Limited and are not used in this project's branding.
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
@@ -216,7 +203,6 @@ expressions · screenshots of the bot's work folded into the transcript.
 ![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-0F172A?logo=tailwindcss&logoColor=38BDF8)
 ![Composio](https://img.shields.io/badge/Composio-e6493a)
-![Boat](https://img.shields.io/badge/Boat-sponsor-111111)
 ![Cua](https://img.shields.io/badge/Cua%20Driver-1f2937)
 ![ElevenLabs](https://img.shields.io/badge/ElevenLabs-000000?logo=elevenlabs&logoColor=white)
 ![Fish Audio](https://img.shields.io/badge/Fish%20Audio-2563eb)
@@ -229,8 +215,6 @@ expressions · screenshots of the bot's work folded into the transcript.
 | **Claude · Codex · Grok** | The agents behind every bot, run through their local CLIs |
 | **Electron** | Desktop shells for macOS, Windows, and Ubuntu |
 | **React + Vite + Tailwind CSS** | The chat app UI and its build |
-| **Boat** ([boat.dev](https://boat.dev)) | Each bot's cloud computer · our sponsor |
-| **ModelGo** ([modelgo.ai](https://modelgo.ai/?utm_source=sanremes&utm_medium=sponsorship&utm_content=readme&campaign_id=sanremes&ad_group_id=readme)) | One API key for every model · our inference provider sponsor |
 | **Composio** | Connected apps — Gmail, Slack, GitHub, and more |
 | **Cua Driver** | Native computer use on your own machine |
 | **ElevenLabs · Fish Audio** | Hosted voices for bots that talk back |
@@ -452,10 +436,7 @@ names, addresses or conversations. Turn them off in Settings → General → Usa
 
 ## Support the project
 
-SanRemes is free and open source under the Apache License 2.0. The upstream project,
-SanRemes, is developed by Milind Soni — if it does real work for you, you can support
-its development through [GitHub Sponsors](https://github.com/sponsors/SanthoshKumar020). This fork
-has no sponsorship set up yet.
+SanRemes is free and open source under the Apache License 2.0. If it does real work for you, you can support its development through [GitHub Sponsors](https://github.com/sponsors/SanthoshKumar020).
 
 ## Run from a terminal or on a server
 

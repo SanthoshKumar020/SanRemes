@@ -33,7 +33,7 @@ the agent — each needs his word.
 - **Team library repointed:** the app's team library now reads from the
   `SanthoshKumar020/sanremes-teams` fork (MIT-licensed upstream
   team-templates repo, forked 2026-11-27).
-- **Phone connector / companion sidecar: KEPT in Phase 1.** Removal was
+- **Phone connector / companion sidecar: KEPT in Phase 1 — SUPERSEDED 2026-11-27 by commit `2f1fcd81` ("Remove phone connector and companion sidecar"), which deleted `companion/` (including `src/e2e/`), `relay/`, server phone code, Electron companion management, desktop phone UI, and Cloudflare phone surfaces; a future Android app will use the Bot API route, like the WhatsApp/Telegram bridges.** Removal was
   ordered and attempted, but verification showed it is not a standalone
   sidecar: the server runtime imports `companion/src/e2e/*` (relay crypto),
   `server/phone-relay.ts` is wired into `server/index.ts` (which Phase 1
@@ -43,7 +43,8 @@ the agent — each needs his word.
   live functionality. The reusable core for his own future Android app is
   `packages/phone-protocol/` (wire contract) and `companion/src/e2e/`
   (Noise-based relay crypto). A follow-up removal needs the `index.ts`
-  no-touch rule lifted first.
+  no-touch rule lifted first — which the user then authorized, and the
+  removal landed as commit `2f1fcd81`.
 - **CLA: none required.** The upstream CLA only covered the deleted
   `enterprise/` directory; contributions are under Apache 2.0. The old
   CLA text (which granted rights to Milind Soni) was replaced and the
