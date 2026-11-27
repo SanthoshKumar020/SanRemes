@@ -101,7 +101,7 @@ export function buildAppFixtures(): AppFixtures {
         ...(message.app.blocked ? { blocked: message.app.blocked } : {}),
         network: message.app.network,
         ...(message.app.context ? { context: message.app.context.text } : {}),
-        ...(doc ? { srcdocStartsWith: doc.srcdoc.slice(0, doc.srcdoc.indexOf("\">") + 2), botHelper: doc.srcdoc.includes(APP_HELPER_SOURCE) } : {}),
+        ...(doc?.srcdoc ? { srcdocStartsWith: doc.srcdoc.slice(0, doc.srcdoc.indexOf("\">") + 2), botHelper: doc.srcdoc.includes(APP_HELPER_SOURCE) } : {}),
       };
     }
     const host = readFileSync(APP_HOST_HTML, "utf8");

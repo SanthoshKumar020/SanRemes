@@ -8,7 +8,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BotEditorStore, type Message, type useStore } from "@/state/store";
 import { ROOM_VIEW_ONLY, type AppDocument, type AppPayload } from "../../../shared/app";
 import { APP_SAMPLES, MCP_APP_SAMPLES } from "../../../shared/app-samples";
-import { botHtmlDocument, mcpAppDocument } from "../../../shared/app-frame/document";
+import { botHtmlDocument, mcpAppDocument, spreadsheetAppDocument } from "../../../shared/app-frame/document";
+import { createWorkbook, setCell, type Workbook } from "../../../shared/spreadsheet/index.ts";
 import { getDraft, setDraft } from "@/lib/drafts";
 import { createAppPool, type AppPool } from "./app-pool";
 import { AppMessage, forgetAppRows } from "./AppMessage";
@@ -368,5 +369,102 @@ describe("an MCP app", () => {
     fetchMock.mockImplementation(async () => json(200, mcpDoc()));
     await mount(row(mcpPayload({ border: false })));
     expect(find("[data-app] > div")!.className).not.toContain("rounded-3xl");
+  });
+});
+
+describe("a spreadsheet", () => {
+  const sheetWorkbook = (): Workbook => {
+    let book = createWorkbook("Budget");
+    const tab = book.tabs[0]!;
+    const next = setCell(book, tab.id, 0, 0, 10);
+    if (next.ok) book = next.workbook;
+    return book;
+  };
+  const sheetDoc = (workbook = sheetWorkbook()): AppDocument => spreadsheetAppDocument({ messageId: "a1", rev: 0, workbook });
+  const sheetPayload = (more: Partial<AppPayload> = {}): AppPayload => ({
+    v: 1, source: "spreadsheet", title: "Budget", doc: "s0", rev: 0, bytes: 1234, height: 480, border: true,
+    network: { connect: [], resources: [] }, ...more,
+  });
+  const formulaBar = () => host.querySelector<HTMLInputElement>("#spreadsheet-formula")!;
+
+  beforeEach(() => {
+    vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(360);
+    vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(800);
+    fetchMock.mockImplementation(async (path) => /\/app(\?|$)/.test(path) ? json(200, sheetDoc()) : json(202, { ok: true }));
+  });
+
+  it("names the bot that made it, and shows the grid instead of a frame", () => {
+    expect(renderToStaticMarkup(view(row(sheetPayload())))).toContain("Spreadsheet made by Pepper");
+    expect(renderToStaticMarkup(view(row(sheetPayload())))).not.toContain("<iframe");
+  });
+
+  it("mounts the sheet it fetched, with the formula engine live", async () => {
+    await mount(row(sheetPayload()));
+    expect(fetchMock.mock.calls[0]![0]).toBe(`/api/threads/t1/messages/a1/app?origin=${encodeURIComponent(window.location.origin)}`);
+    expect(find("[data-app]")!.getAttribute("data-app-state")).toBe("live");
+    await vi.waitFor(() => expect(host.querySelector('[role="grid"]')).not.toBeNull());
+    expect(host.textContent).toContain("Sheet1");
+    expect(formulaBar().value).toBe("10");
+    expect(find("iframe")).toBeNull();
+  });
+
+  it("saves an edit a second after the person stops typing", async () => {
+    await mount(row(sheetPayload()));
+    await vi.waitFor(() => expect(host.querySelector('[role="grid"]')).not.toBeNull());
+    const cell = host.querySelector<HTMLElement>('.ag-row[row-index="0"] .ag-cell')!;
+    await act(async () => { cell.click(); });
+    const bar = formulaBar();
+    expect(bar.value).toBe("10");
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")!.set!;
+    await act(async () => {
+      bar.focus();
+      setter.call(bar, "99");
+      bar.dispatchEvent(new Event("input", { bubbles: true }));
+      bar.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    });
+    await vi.waitFor(() => expect(posts("/apps/a1/spreadsheet")).toHaveLength(1), { timeout: 5000 });
+    const saved = posts("/apps/a1/spreadsheet")[0]!;
+    expect(saved).toMatchObject({ threadId: "t1" });
+    expect(saved.workbook.tabs[0].cells["0:0"].raw).toBe(99);
+    expect(find("[data-app-strip]")).toBeNull();
+  });
+
+  it("shows a failed save with a retry, and the retry sends the edit", async () => {
+    let saves = 0;
+    fetchMock.mockImplementation(async (path) => {
+      if (/\/app(\?|$)/.test(path)) return json(200, sheetDoc());
+      if (path.includes("/apps/a1/spreadsheet")) {
+        saves += 1;
+        return saves === 1 ? json(500, { error: "The sheet could not be saved." }) : json(202, { ok: true });
+      }
+      return json(202, { ok: true });
+    });
+    await mount(row(sheetPayload()));
+    await vi.waitFor(() => expect(host.querySelector('[role="grid"]')).not.toBeNull());
+    const cell = host.querySelector<HTMLElement>('.ag-row[row-index="0"] .ag-cell')!;
+    await act(async () => { cell.click(); });
+    const bar = formulaBar();
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")!.set!;
+    await act(async () => {
+      bar.focus();
+      setter.call(bar, "42");
+      bar.dispatchEvent(new Event("input", { bubbles: true }));
+      bar.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    });
+    await vi.waitFor(() => expect(find("[data-app-strip]")?.textContent).toContain("could not be saved"), { timeout: 5000 });
+    expect(posts("/apps/a1/spreadsheet")).toHaveLength(1);
+    await act(async () => { button("Try again")!.click(); });
+    await vi.waitFor(() => expect(posts("/apps/a1/spreadsheet")).toHaveLength(2), { timeout: 5000 });
+    expect(find("[data-app-strip]")).toBeNull();
+  });
+
+  it("in a room, shows the sheet read-only and saves nothing", async () => {
+    fetchMock.mockImplementation(async (path) => /\/app(\?|$)/.test(path) ? json(200, spreadsheetAppDocument({ messageId: "a1", rev: 0, workbook: sheetWorkbook(), room: true })) : json(202, { ok: true }));
+    await mount(row(sheetPayload()), true);
+    await vi.waitFor(() => expect(host.querySelector('[role="grid"]')).not.toBeNull());
+    expect(formulaBar().readOnly).toBe(true);
+    expect(host.querySelector<HTMLButtonElement>('button[aria-label="Add tab"]')!.disabled).toBe(true);
+    await settle();
+    expect(posts("/apps/a1/spreadsheet")).toEqual([]);
   });
 });

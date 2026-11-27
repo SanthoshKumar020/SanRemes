@@ -239,7 +239,7 @@ export function mountAppFrame(options: AppFrameHostOptions): AppFrameHost {
   };
   win?.addEventListener("message", onMessage);
   // The router listens before the frame can speak: it loads on insertion.
-  iframe.srcdoc = doc.srcdoc;
+  if (doc.srcdoc) iframe.srcdoc = doc.srcdoc;
   container.appendChild(iframe);
 
   const destroy = () => {

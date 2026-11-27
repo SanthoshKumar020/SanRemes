@@ -815,6 +815,50 @@
       }
     },
     {
+      "name": "show_spreadsheet",
+      "description": "Show a spreadsheet in this chat: an editable sheet the person can change in place, with formulas that calculate live. Pass `title` and, to start with content, `values` (rows of raw values for the first tab; a string starting with = is a formula, numbers and TRUE/FALSE become values). To show a sheet the person saved, pass its `workbook` JSON instead. The person's edits save themselves and reach you with their next message; call again with that `workbook` and `app_id` to replace it. In rooms it is view-only: ask in text there.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "One line, at most 80 characters; a new sheet needs one."
+          },
+          "workbook": {
+            "type": "string",
+            "description": "A saved workbook's JSON, from a previous show_spreadsheet result; it replaces values."
+          },
+          "values": {
+            "type": "array",
+            "description": "Rows of raw values for the first tab, starting at A1.",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "string",
+                  "number",
+                  "boolean",
+                  "null"
+                ]
+              }
+            }
+          },
+          "height": {
+            "type": "number",
+            "description": "Card height in pixels, 80 to 720; 480 when omitted."
+          },
+          "app_id": {
+            "type": "string",
+            "description": "Only to replace a sheet you showed."
+          }
+        },
+        "required": [
+          "title"
+        ]
+      }
+    },
+    {
       "name": "post_to_room",
       "description": "Put one message into a shared room you belong to, for example when the user asks you to tell the team something. Get group_id from list_rooms. This posts and returns: no room member's turn starts, nobody replies, and nothing comes back except confirmation — so never use it to ask a question or hand out work (use coordinate_bots for those). Post once, say it in full, and tell the user what you posted. Set attach_voice_note true to attach this turn's voice note. If a post is refused, do not retry it unless the refusal says how: say what you wanted to post in your reply instead.",
       "inputSchema": {

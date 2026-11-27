@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { createWorkbook } from "../shared/spreadsheet/index.ts";
 import { APP_DOCS_SWEEP_GRACE_MS, AppDocs } from "./app-docs.ts";
 
 const fresh = () => join(mkdtempSync(join(tmpdir(), "sanremes-app-docs-")), "app-docs");
@@ -48,6 +49,16 @@ describe("AppDocs", () => {
     expect(files(dir, "html")).toHaveLength(1);
     expect(docs.put({ source: "html", html: "a".repeat(300) })).toEqual(first);
     expect(new AppDocs(dir, { maxBytes: 600 }).put({ source: "html", html: "c".repeat(300) }).ok).toBe(false);
+  });
+
+  it("stores a spreadsheet and reads its workbook back, by a content id", () => {
+    const docs = new AppDocs(fresh());
+    const workbook = createWorkbook("Budget");
+    const put = docs.put({ source: "spreadsheet", html: "", data: { workbook } });
+    expect(put.ok).toBe(true);
+    if (!put.ok) throw new Error("not stored");
+    expect(docs.read(put.doc)).toEqual({ doc: put.doc, source: "spreadsheet", html: "", data: { workbook } });
+    expect(docs.put({ source: "spreadsheet", html: "", data: { workbook } })).toEqual(put);
   });
 
   it("reads only well-formed ids", () => {

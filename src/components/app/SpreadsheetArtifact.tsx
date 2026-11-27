@@ -35,12 +35,14 @@ interface SheetRow {
 export interface SpreadsheetArtifactProps {
   workbook: Workbook;
   onChange: (next: Workbook) => void;
+  /** In a room, or where the person may not write: the grid shows but nothing changes. */
+  readOnly?: boolean;
   onExport?: (format: "xlsx" | "csv", tabName: string) => void;
   exportState?: "idle" | "working" | "done" | "failed";
   exportMessage?: string;
 }
 
-export function SpreadsheetArtifact({ workbook, onChange, onExport, exportState = "idle", exportMessage }: SpreadsheetArtifactProps) {
+export function SpreadsheetArtifact({ workbook, onChange, readOnly = false, onExport, exportState = "idle", exportMessage }: SpreadsheetArtifactProps) {
   const [activeTabId, setActiveTabId] = useState(workbook.tabs[0]?.id ?? "");
   const [selected, setSelected] = useState({ row: 0, col: 0 });
   const [formulaInput, setFormulaInput] = useState("");
@@ -72,7 +74,7 @@ export function SpreadsheetArtifact({ workbook, onChange, onExport, exportState 
     headerName: columnLabel(col),
     width: tab.columnWidths[col] ?? 110,
     minWidth: 24,
-    editable: true,
+    editable: !readOnly,
     valueFormatter: (params) => {
       const { computed: values, tab: current } = live.current;
       const cell = getCell(current, params.data?.__row ?? 0, col);
@@ -101,6 +103,7 @@ export function SpreadsheetArtifact({ workbook, onChange, onExport, exportState 
   };
 
   const commitFormulaBar = () => {
+    if (readOnly) return;
     const { workbook: current, tab: currentTab, onChange: change } = live.current;
     const next = setCell(current, currentTab.id, selected.row, selected.col, formulaInput);
     if (!next.ok) { setError(next.error); return; }
@@ -109,7 +112,7 @@ export function SpreadsheetArtifact({ workbook, onChange, onExport, exportState 
   };
 
   const commitRename = () => {
-    if (!renaming) return;
+    if (!renaming || readOnly) return;
     const { workbook: current, onChange: change } = live.current;
     const next = renameTab(current, renaming, renameText);
     setRenaming(null);
@@ -119,6 +122,7 @@ export function SpreadsheetArtifact({ workbook, onChange, onExport, exportState 
   };
 
   const toggleBold = () => {
+    if (readOnly) return;
     const { workbook: current, tab: currentTab, onChange: change } = live.current;
     const next = setCellStyle(current, currentTab.id, selected.row, selected.col, { bold: !selectedCell?.bold });
     if (!next.ok) { setError(next.error); return; }
@@ -127,6 +131,7 @@ export function SpreadsheetArtifact({ workbook, onChange, onExport, exportState 
   };
 
   const changeFormat = (format: NumberFormat) => {
+    if (readOnly) return;
     const { workbook: current, tab: currentTab, onChange: change } = live.current;
     const next = setCellStyle(current, currentTab.id, selected.row, selected.col, { format });
     if (!next.ok) { setError(next.error); return; }
@@ -135,6 +140,7 @@ export function SpreadsheetArtifact({ workbook, onChange, onExport, exportState 
   };
 
   const addNewTab = () => {
+    if (readOnly) return;
     const { workbook: current, onChange: change } = live.current;
     const next = addTab(current);
     if (!next.ok) { setError(next.error); return; }
@@ -148,12 +154,12 @@ export function SpreadsheetArtifact({ workbook, onChange, onExport, exportState 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-hairline bg-panel text-ink" data-testid="spreadsheet-artifact">
       <div className="flex shrink-0 flex-wrap items-center gap-1 border-b border-hairline/40 px-2 py-1">
-        <button type="button" className="ui-icon-button" aria-pressed={selectedCell?.bold ?? false} aria-label={t("spreadsheet.bold")} title={t("spreadsheet.bold")} onClick={toggleBold}>
+        <button type="button" className="ui-icon-button" aria-pressed={selectedCell?.bold ?? false} aria-label={t("spreadsheet.bold")} title={t("spreadsheet.bold")} disabled={readOnly} onClick={toggleBold}>
           <Bold size={16} aria-hidden="true" />
         </button>
         <Select
           variant="field" size="sm" className="w-32" aria-label={t("spreadsheet.numberFormat")} title={t("spreadsheet.numberFormat")}
-          value={selectedCell?.format ?? "general"}
+          value={selectedCell?.format ?? "general"} disabled={readOnly}
           onChange={(event) => changeFormat(event.target.value as NumberFormat)}
         >
           {NUMBER_FORMATS.map((format) => (
@@ -178,7 +184,7 @@ export function SpreadsheetArtifact({ workbook, onChange, onExport, exportState 
         </span>
         <label htmlFor="spreadsheet-formula" className="sr-only">{t("spreadsheet.formula")}</label>
         <input
-          id="spreadsheet-formula" dir="auto" value={formulaInput}
+          id="spreadsheet-formula" dir="auto" value={formulaInput} readOnly={readOnly}
           className="min-w-0 flex-1 rounded-lg border border-hairline/40 bg-inset px-2 py-1 font-mono text-[13px] text-ink outline-none focus-visible:border-focus"
           onChange={(event) => setFormulaInput(event.target.value)}
           onKeyDown={(event) => {
@@ -198,7 +204,7 @@ export function SpreadsheetArtifact({ workbook, onChange, onExport, exportState 
           onCellFocused={({ rowIndex, column }) => selectCell(rowIndex, column)}
           onCellClicked={({ rowIndex, column }) => selectCell(rowIndex, column)}
           onColumnResized={({ column, finished }) => {
-            if (!finished || !column || typeof column === "string") return;
+            if (readOnly || !finished || !column || typeof column === "string") return;
             const { workbook: current, tab: currentTab, onChange: change } = live.current;
             const next = setColumnWidth(current, currentTab.id, Number(column.getColId().slice(1)), column.getActualWidth());
             if (next.ok) change(next.workbook);
@@ -223,13 +229,13 @@ export function SpreadsheetArtifact({ workbook, onChange, onExport, exportState 
               key={entry.id} type="button" role="tab" aria-selected={entry.id === tab.id}
               className={cn("h-7 shrink-0 rounded-full px-3 text-[13px]", entry.id === tab.id ? "bg-ink/[0.08] font-medium text-ink" : "text-ink-secondary hover:bg-ink/[0.06]")}
               onClick={() => { setActiveTabId(entry.id); setSelected({ row: 0, col: 0 }); }}
-              onDoubleClick={() => { setRenaming(entry.id); setRenameText(entry.name); }}
+              onDoubleClick={() => { if (readOnly) return; setRenaming(entry.id); setRenameText(entry.name); }}
             >
               {entry.name}
             </button>
           )
         ))}
-        <button type="button" className="ui-icon-button" aria-label={t("spreadsheet.addTab")} title={t("spreadsheet.addTab")} onClick={addNewTab}>
+        <button type="button" className="ui-icon-button" aria-label={t("spreadsheet.addTab")} title={t("spreadsheet.addTab")} disabled={readOnly} onClick={addNewTab}>
           <Plus size={16} aria-hidden="true" />
         </button>
       </div>

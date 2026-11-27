@@ -8,8 +8,9 @@ import { parseWidgetInput, widgetAdvice } from "../../shared/widget.ts";
 import type { ToolCallContext, ToolCallResult } from "./agents-call.ts";
 import type { Json } from "./agents-client.ts";
 import { callWhiteboardTool } from "../whiteboard/tool.ts";
+import { callSpreadsheetTool } from "../spreadsheet/tool.ts";
 
-export const CARD_TOOL_NAMES: ReadonlySet<string> = new Set(["create_options_card", "show_widget", "show_html", "show_whiteboard"]);
+export const CARD_TOOL_NAMES: ReadonlySet<string> = new Set(["create_options_card", "show_widget", "show_html", "show_whiteboard", "show_spreadsheet"]);
 
 const CARD_ROUTE = "/api/internal/options-card";
 
@@ -62,6 +63,7 @@ export async function callCardTool(name: string, args: Json, context: ToolCallCo
 
   if (name === "show_html") return callAppTool(agentsCallMember(name, args) === "update_html" ? "update_html" : "show_html", args, context);
   if (name === "show_whiteboard") return callWhiteboardTool(name, args, context);
+  if (name === "show_spreadsheet") return callSpreadsheetTool(name, args, context);
 
   const parsed = parseWidgetInput(args.widget);
   if (!parsed.ok) return { text: parsed.error, isError: true };

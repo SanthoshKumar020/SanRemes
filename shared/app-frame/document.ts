@@ -2,6 +2,7 @@
 // (`<?xml …?>`, `<![CDATA[…]>`) and the app's own doctype are stripped first; the rest follows the meta,
 // which already sits in the head the parser opened for it.
 import type { AppCan, AppDocument, AppToolDefinition, AppToolResult } from "../app.ts";
+import type { Workbook } from "../spreadsheet/index.ts";
 import { BOT_HTML_CSP, BOT_HTML_NETWORK, folderPageCsp, folderPageNetwork, mcpAppCsp } from "./csp.ts";
 import { APP_HELPER_SOURCE, APP_ROOM_HELPER_SOURCE, APP_THEME_STYLE } from "./helper.ts";
 import { jsxPageHtml } from "./jsx-page.ts";
@@ -50,8 +51,23 @@ export function publishedBotHtml(html: string): string {
 }
 
 export const BOT_HTML_CAN: AppCan = { serverTools: false, serverResources: false, message: true, openLinks: true, modelContext: true };
+/** A spreadsheet reaches no server and opens no links; its edits reach the model as context. */
+export const SPREADSHEET_CAN: AppCan = { serverTools: false, serverResources: false, message: true, openLinks: false, modelContext: true };
 /** Any app in a room: links open for whoever clicks them, and nothing acts for anyone. */
 export const ROOM_CAN: AppCan = { serverTools: false, serverResources: false, message: false, openLinks: true, modelContext: false };
+
+/** A spreadsheet as the client fetches it: the workbook as JSON, no frame, no network. */
+export function spreadsheetAppDocument(input: { messageId: string; rev: number; workbook: Workbook; room?: boolean }): AppDocument {
+  return {
+    v: 1,
+    messageId: input.messageId,
+    rev: input.rev,
+    network: { connect: [], resources: [] },
+    workbook: input.workbook,
+    can: { ...(input.room ? ROOM_CAN : SPREADSHEET_CAN) },
+    ...(input.room ? { room: true as const } : {}),
+  };
+}
 
 /** `format: "jsx"`: `html` is a React component file, served inside the page shell. `files`: a folder page, whose
  * other files load from that folder URL (the token route's, ending in "/"). */

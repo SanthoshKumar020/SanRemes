@@ -5,11 +5,13 @@ import { cn } from "@/lib/cn";
 import type { AppDocument, AppPayload } from "../../../shared/app";
 import { appBlockedLine } from "./app-blocked";
 import { APP_FRAME_LIMITS } from "../../../shared/app-frame/bridge";
-import { AppDocumentError, fetchAppDocument, type AppFetchFailure } from "./app-api";
+import { AppDocumentError, fetchAppDocument, saveSpreadsheet, type AppFetchFailure } from "./app-api";
 import { APP_POOL_LIMITS, useAppPoolSlot, type AppPool } from "./app-pool";
 import { AppDone, AppHeader, AppInfo, AppOpenButton, AppPlaceholder, AppStrip, APP_SURFACE, PageCardFooter } from "./AppChrome";
 import { AppFrame, type AppFrameHandle, type AppFrameProblem } from "./AppFrame";
 import type { AppSelection } from "./app-frame-host";
+import { SpreadsheetArtifact } from "./SpreadsheetArtifact";
+import type { Workbook } from "../../../shared/spreadsheet/index";
 import { PageCitationButton } from "../CitationUI";
 import { appendComposerDraft, appendDraftAttachments } from "@/lib/drafts";
 import { returnFocusToComposer } from "../AskCard";
@@ -52,7 +54,7 @@ function rememberDoc(key: string, doc: AppDocument) {
 function isAppPayload(value: unknown): value is AppPayload {
   if (!value || typeof value !== "object") return false;
   const payload = value as Partial<AppPayload>;
-  return typeof payload.title === "string" && (payload.source === "html" || payload.source === "mcp") && typeof payload.doc === "string";
+  return typeof payload.title === "string" && (payload.source === "html" || payload.source === "mcp" || payload.source === "spreadsheet") && typeof payload.doc === "string";
 }
 
 function useAutoMount(botId: string, threadId: string | undefined, messageId: string): boolean {
@@ -190,6 +192,52 @@ function AppRow({ botId, botName, threadId, message, payload, pool, room }: {
   }, [arrived, message.id, rev]);
 
   const current = slot.live ? loaded?.doc : undefined;
+  // A spreadsheet row: the grid's workbook, saved back a second after the person stops typing. The bot's own
+  // replacement bumps the version, which fetches again and replaces what the person sees; the person's own
+  // saves keep the version, so the fetch never runs and never overwrites their edits.
+  const sheet = payload.source === "spreadsheet";
+  const readOnly = Boolean(room) || !canWrite;
+  const [sheetWorkbook, setSheetWorkbook] = useState<Workbook | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const savedWorkbookRef = useRef<Workbook | null>(null);
+  const latestWorkbookRef = useRef<Workbook | null>(null);
+  useEffect(() => {
+    if (!sheet || !current || !current.workbook || typeof current.workbook !== "object") return;
+    const workbook = current.workbook as Workbook;
+    savedWorkbookRef.current = workbook;
+    latestWorkbookRef.current = workbook;
+    setSheetWorkbook(workbook);
+  }, [sheet, current]);
+  useEffect(() => {
+    if (sheet && payload.height !== undefined) setHeight(payload.height);
+  }, [sheet, payload.height]);
+  useEffect(() => {
+    if (!sheet || !sheetWorkbook) return;
+    latestWorkbookRef.current = sheetWorkbook;
+    if (sheetWorkbook === savedWorkbookRef.current) return;
+    const next = sheetWorkbook;
+    const timer = setTimeout(() => {
+      setSaveError(null);
+      void saveSpreadsheet({ botId, threadId, messageId: message.id, workbook: next })
+        .then(() => { savedWorkbookRef.current = next; })
+        .catch((error: unknown) => { setSaveError(error instanceof Error ? error.message : t("app.strip.offline")); });
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [sheet, sheetWorkbook, botId, threadId, message.id]);
+  useEffect(() => () => {
+    const pending = latestWorkbookRef.current;
+    if (sheet && pending && pending !== savedWorkbookRef.current) {
+      void saveSpreadsheet({ botId, threadId, messageId: message.id, workbook: pending }).catch(() => undefined);
+    }
+  }, [sheet, botId, threadId, message.id]);
+  const retrySheetSave = useCallback(() => {
+    const pending = latestWorkbookRef.current;
+    if (!pending) return;
+    setSaveError(null);
+    void saveSpreadsheet({ botId, threadId, messageId: message.id, workbook: pending })
+      .then(() => { savedWorkbookRef.current = pending; })
+      .catch((error: unknown) => { setSaveError(error instanceof Error ? error.message : t("app.strip.offline")); });
+  }, [botId, threadId, message.id]);
   const point = usePagePoint({
     frame: () => (fullScreen ? wide.current : frame.current)?.iframe, view: fullScreen ? "full" : "inline", frameKey: loaded?.key,
     // In the pane the message box stays usable, so the page stays open while the person writes about what they picked.
@@ -231,7 +279,9 @@ function AppRow({ botId, botName, threadId, message, payload, pool, room }: {
 
   const origin = payload.source === "mcp"
     ? t("app.origin.mcp", { server: payload.mcp?.serverTitle || payload.mcp?.server || payload.title })
-    : t("app.origin.page", { bot: botName });
+    : payload.source === "spreadsheet"
+      ? t("app.origin.spreadsheet", { bot: botName })
+      : t("app.origin.page", { bot: botName });
   const serverName = payload.mcp?.serverTitle || payload.mcp?.server;
   const signIn = () => dispatch({ type: "togglePlugins", open: true, surface: "mcp" });
 
@@ -244,6 +294,7 @@ function AppRow({ botId, botName, threadId, message, payload, pool, room }: {
         ? { text: t("app.strip.offline"), action: { label: t("app.strip.retry"), onClick: reloadNow } }
         : { text: loaded.failure.error };
     }
+    if (saveError) return { text: saveError, action: { label: t("app.strip.retry"), onClick: retrySheetSave } };
     const blocked = current?.blocked;
     if (blocked) {
       const text = appBlockedLine(blocked.reason, serverName, blocked.text);
@@ -293,7 +344,15 @@ function AppRow({ botId, botName, threadId, message, payload, pool, room }: {
       inert={(compact && Boolean(current) && !point.pointing) || undefined}
       style={{ height: boxHeight }}>
       {titled && <div data-page-title title={payload.title} className={CARD_TITLE}><bdi dir="auto">{payload.title}</bdi></div>}
-      {current ? (
+      {sheet && current?.workbook ? (
+        <div className="h-full overflow-hidden px-4 pb-3 pt-3">
+          <SpreadsheetArtifact
+            workbook={sheetWorkbook ?? (current.workbook as Workbook)}
+            onChange={setSheetWorkbook}
+            readOnly={readOnly}
+          />
+        </div>
+      ) : current ? (
         <AppFrame
           key={loaded!.key}
           doc={current}

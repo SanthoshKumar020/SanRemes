@@ -14,6 +14,8 @@ export const APP_LIMITS = {
   fallbackExcerpt: 600,
   heightMin: 80,
   heightMax: 720,
+  /** A spreadsheet workbook as JSON, UTF-8 bytes. */
+  spreadsheetJsonBytes: 1_000_000,
   /** ui/message text, and the appMessage on the send route. */
   messageText: 4_000,
   /** ui/update-model-context text, stored per row. */
@@ -35,7 +37,7 @@ export const APP_LIMITS = {
 /** Versions of one bot page kept for stepping back, the current one included. */
 export const APP_PAGE_VERSIONS = 10;
 
-export type AppSource = "html" | "mcp";
+export type AppSource = "html" | "mcp" | "spreadsheet";
 
 /** Origins a frame may reach, after the host's filter. `refused`: what a server asked for and the
  * filter dropped. */
@@ -158,17 +160,21 @@ export interface AppToolResult {
 }
 
 /** What a client fetches to mount a frame (GET /api/threads/:threadId/messages/:messageId/app), never
- * part of a thread load. A document with `tool` is an MCP app; one without is bot HTML. */
+ * part of a thread load. A document with `tool` is an MCP app; one with `workbook` is a spreadsheet;
+ * one with neither is bot HTML. */
 export interface AppDocument {
   v: 1;
   messageId: string;
   rev: number;
   /** Set verbatim as the iframe's srcdoc. Starts with
-   * `<!DOCTYPE html><meta http-equiv="Content-Security-Policy" content="…">`. */
-  srcdoc: string;
-  /** The policy in that meta, repeated for phone network enforcement. */
-  csp: string;
+   * `<!DOCTYPE html><meta http-equiv="Content-Security-Policy" content="…">`.
+   * Absent on a spreadsheet document, which carries `workbook` instead. */
+  srcdoc?: string;
+  /** The policy in that meta, repeated for phone network enforcement. Absent with `srcdoc`. */
+  csp?: string;
   network: { connect: string[]; resources: string[] };
+  /** A spreadsheet document's workbook, as JSON: validate it before rendering. */
+  workbook?: unknown;
   /** MCP only: hostContext.toolInfo.tool, and the two notifications. */
   tool?: AppToolDefinition;
   toolInput?: Record<string, unknown>;

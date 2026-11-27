@@ -95,24 +95,24 @@ const BUDGET_BASELINE: Record<string, number> = {
   "skills+voice": 69907,
   "skills+shared": 71391,
   "skills+shared+voice": 72172,
-  "non-chief": 58257,
-  "voice+non-chief": 59038,
-  "shared+non-chief": 60522,
-  "shared+voice+non-chief": 61303,
-  "skills+non-chief": 60578,
-  "skills+voice+non-chief": 61359,
-  "skills+shared+non-chief": 62843,
-  "skills+shared+voice+non-chief": 63624,
+  "non-chief": 59545,
+  "voice+non-chief": 60326,
+  "shared+non-chief": 61810,
+  "shared+voice+non-chief": 62591,
+  "skills+non-chief": 61866,
+  "skills+voice+non-chief": 62647,
+  "skills+shared+non-chief": 64131,
+  "skills+shared+voice+non-chief": 64912,
   "skills+shared+voice+cloud-home": 71928,
-  "skills+shared+voice+non-chief+cloud-home": 63380,
+  "skills+shared+voice+non-chief+cloud-home": 64668,
   "default+legacy-switches": 66805,
   "default+sanremes": 67456,
   "skills+shared+voice+sanremes": 72823,
   "skills+shared+voice+x": 76011,
   "skills+shared+voice+x+team": 76011,
   "default+no-computer-pick": 65599,
-  "default+room": 62159,
-  "non-chief+room": 53611,
+  "default+room": 63447,
+  "non-chief+room": 54899,
   "skills+shared+voice+x+team+images": 77958,
   "default+images": 68752,
   "skills+shared+voice+x+team+images+hosting": 79821,
@@ -287,7 +287,7 @@ describe("agents proxy tools/list golden", () => {
 
   it("leaves out only the tools of the groups a bot has off", () => {
     const names = (wire: string) => toolsOf(wire).map((tool) => tool.name);
-    const PAGE_TOOLS = ["show_html", "publish_page", "unpublish_page", "share", "build_artifact", "show_whiteboard"];
+    const PAGE_TOOLS = ["show_html", "publish_page", "unpublish_page", "share", "build_artifact", "show_whiteboard", "show_spreadsheet"];
     expect(names(wires["default+tools-off"]!)).toEqual(names(wires.default!).filter((tool) => !PAGE_TOOLS.includes(tool)));
     for (const [name, profile] of Object.entries(PROFILES)) {
       expect(names(wires[name]!).includes("show_html"), name).toBe(profile.env.SANREMES_TOOLS_OFF === undefined);

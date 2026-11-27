@@ -12,7 +12,7 @@ import { SHARE_TOOL_NAMES } from "./agents-share-tool.ts";
 export const TOOL_GROUP_MEMBERS: Readonly<Record<ToolGroup, { tools: ReadonlySet<string>; servers: readonly ("data" | "email")[] }>> = {
   meetings: { tools: MEETING_TOOL_NAMES, servers: [] },
   data: { tools: new Set(["run_python"]), servers: ["data"] },
-  pages: { tools: new Set(["show_html", ...PAGE_TOOL_NAMES, ...HOSTING_TOOL_NAMES, ...SHARE_TOOL_NAMES, "build_artifact", "show_whiteboard"]), servers: [] },
+  pages: { tools: new Set(["show_html", ...PAGE_TOOL_NAMES, ...HOSTING_TOOL_NAMES, ...SHARE_TOOL_NAMES, "build_artifact", "show_whiteboard", "show_spreadsheet"]), servers: [] },
   images: { tools: IMAGE_TOOL_NAMES, servers: [] },
   email: { tools: new Set(), servers: ["email"] },
 };

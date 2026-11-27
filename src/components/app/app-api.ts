@@ -2,6 +2,7 @@ import { t } from "@/lib/i18n";
 import { api, ApiError } from "@/state/store";
 import type { AppBlockedReason, AppDocument } from "../../../shared/app";
 import type { PublishedPageCard } from "../../../shared/published-page";
+import { workbookFromJson, type Workbook } from "../../../shared/spreadsheet/index";
 import { RPC_HOST_REFUSED, type AppContextUpdate, type AppRpcMethod, type JsonRpcError } from "../../../shared/app-frame/bridge";
 import { randomUuid } from "@/lib/random-uuid";
 
@@ -13,7 +14,7 @@ export function appDownloadPath(threadId: string, messageId: string, rev: number
   return `${appDocumentPath(threadId, messageId)}/download?rev=${rev}`;
 }
 
-function appActionPath(botId: string, messageId: string, action: "rpc" | "context"): string {
+function appActionPath(botId: string, messageId: string, action: "rpc" | "context" | "spreadsheet"): string {
   return `/api/bots/${encodeURIComponent(botId)}/apps/${encodeURIComponent(messageId)}/${action}`;
 }
 
@@ -43,7 +44,13 @@ export async function fetchAppDocument(threadId: string, messageId: string, sign
   const query = new URLSearchParams({ origin: window.location.origin, ...(rev === undefined ? {} : { rev: String(rev) }) });
   try {
     const doc = await api<AppDocument>(`${appDocumentPath(threadId, messageId)}?${query}`, { signal });
-    if (!isRecord(doc) || typeof doc.srcdoc !== "string" || !isRecord(doc.can)) throw new AppDocumentError({ offline: false, status: 500, error: t("app.strip.incomplete") });
+    if (!isRecord(doc) || !isRecord(doc.can)) throw new AppDocumentError({ offline: false, status: 500, error: t("app.strip.incomplete") });
+    if (doc.workbook !== undefined) {
+      const parsed = workbookFromJson(JSON.stringify(doc.workbook));
+      if (!parsed.ok) throw new AppDocumentError({ offline: false, status: 500, error: t("app.strip.incomplete") });
+      return { ...doc, workbook: parsed.workbook };
+    }
+    if (typeof doc.srcdoc !== "string") throw new AppDocumentError({ offline: false, status: 500, error: t("app.strip.incomplete") });
     return doc;
   } catch (error) {
     if (error instanceof AppDocumentError) throw error;
@@ -103,6 +110,18 @@ export async function postAppContext(args: { botId: string; threadId: string; me
     method: "POST",
     body: JSON.stringify({ threadId: args.threadId, ...args.update }),
   });
+}
+
+/** Saves the person's in-place edits to a spreadsheet row. Rejects with the server's sentence, or "Offline". */
+export async function saveSpreadsheet(args: { botId: string; threadId: string; messageId: string; workbook: Workbook }): Promise<void> {
+  try {
+    await api(appActionPath(args.botId, args.messageId, "spreadsheet"), {
+      method: "POST",
+      body: JSON.stringify({ threadId: args.threadId, workbook: args.workbook }),
+    });
+  } catch (error) {
+    throw error instanceof ApiError ? new Error(error.message) : new Error(OFFLINE_ERROR.message);
+  }
 }
 
 export const newAppSendId = (): string => randomUuid();

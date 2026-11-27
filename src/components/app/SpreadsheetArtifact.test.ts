@@ -80,4 +80,16 @@ describe("SpreadsheetArtifact", () => {
     expect(onChange).toHaveBeenCalledTimes(1);
     expect((onChange.mock.calls[0]![0] as Workbook).tabs).toHaveLength(3);
   });
+
+  it("read-only shows the sheet but changes nothing", async () => {
+    const onChange = vi.fn();
+    render({ readOnly: true, onChange });
+    await vi.waitFor(() => expect(host.querySelector('[role="grid"]')).not.toBeNull());
+    expect(formulaBar().readOnly).toBe(true);
+    expect(host.querySelector<HTMLButtonElement>('button[aria-label="Bold"]')!.disabled).toBe(true);
+    const add = host.querySelector<HTMLButtonElement>('button[aria-label="Add tab"]')!;
+    expect(add.disabled).toBe(true);
+    flushSync(() => add.click());
+    expect(onChange).not.toHaveBeenCalled();
+  });
 });

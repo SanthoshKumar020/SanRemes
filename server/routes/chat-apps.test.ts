@@ -13,6 +13,7 @@ import { DATA_DIR } from "../config.ts";
 import type { ModelSelection } from "../contracts.ts";
 import { json, readBody } from "../harness/http.ts";
 import type { RequestAuth } from "../request-auth.ts";
+import { createWorkbook, setCell, workbookToJson } from "../../shared/spreadsheet/index.ts";
 import { Store } from "../store.ts";
 import { createChatAppRoutes, type ChatAppRouteDeps, type McpRpcRequest } from "./chat-apps.ts";
 import { dispatchRoutes } from "./table.ts";
@@ -68,6 +69,14 @@ async function fixture(extra: Partial<ChatAppRouteDeps> = {}) {
     if (result instanceof Promise || !result.ok) throw new Error("not shown");
     return result.messageId;
   };
+  const sheet = (threadId = bot.threadId) => {
+    const workbook = createWorkbook("Budget");
+    const filled = setCell(workbook, workbook.tabs[0].id, 0, 0, "Item");
+    if (!filled.ok) throw new Error("not shown");
+    const result = chatApps.createAppCard({ bot, threadId, input: { tool: "show_spreadsheet", workbook: workbookToJson(filled.workbook), title: "Budget" } });
+    if (result instanceof Promise || !result.ok) throw new Error("not shown");
+    return { id: result.messageId, workbook: filled.workbook };
+  };
   const mcpRow = (threadId = bot.threadId) => {
     const stored = chatApps.docs.put({ source: "mcp", html: "<p>view</p>", data: { tool: { name: "get-time" }, network: { connect: [], resources: [] } } });
     if (!stored.ok) throw new Error("not stored");
@@ -85,7 +94,7 @@ async function fixture(extra: Partial<ChatAppRouteDeps> = {}) {
     if (!result.ok) throw new Error(result.error);
     return result.messageId;
   };
-  return { store, bot, other, chatApps, get, post, page, mcpRow, room, folderPage, file, base };
+  return { store, bot, other, chatApps, get, post, page, sheet, mcpRow, room, folderPage, file, base };
 }
 
 describe("GET /api/threads/:threadId/messages/:messageId/app", () => {
@@ -169,6 +178,50 @@ describe("POST /api/bots/:botId/apps/:messageId/context", () => {
     const id = page();
     const statuses: number[] = [];
     for (let index = 0; index < 121; index += 1) statuses.push((await post(`/api/bots/${bot.id}/apps/${id}/context`, { threadId: bot.threadId, content: [{ type: "text", text: String(index) }] })).status);
+    expect(statuses.slice(0, 120).every((status) => status === 200)).toBe(true);
+    expect(statuses[120]).toBe(429);
+  });
+});
+
+describe("POST /api/bots/:botId/apps/:messageId/spreadsheet", () => {
+  it("saves the person's edits in place and tells the bot the new sheet", async () => {
+    const { store, bot, post, sheet } = await fixture();
+    const { id, workbook } = sheet();
+    const edited = setCell(workbook, workbook.tabs[0].id, 0, 1, 24);
+    if (!edited.ok) throw new Error("fixture cell failed");
+    expect(await post(`/api/bots/${bot.id}/apps/${id}/spreadsheet`, { threadId: bot.threadId, workbook: edited.workbook }))
+      .toEqual({ status: 200, body: { ok: true } });
+    const row = store.messagesFor(bot.threadId).find((message) => message.id === id)!;
+    expect(row.app).toMatchObject({ rev: 0 });
+    expect(row.app?.context).toMatchObject({ text: expect.stringContaining("B1: 24"), delivered: false });
+  });
+
+  it("answers only for a spreadsheet row of this bot and thread", async () => {
+    const { bot, other, post, page, sheet } = await fixture();
+    const { id, workbook } = sheet();
+    const pageId = page();
+    const body = { threadId: bot.threadId, workbook };
+    expect(await post(`/api/bots/${bot.id}/apps/${id}/spreadsheet`, { threadId: bot.threadId, workbook: { version: 1 } }))
+      .toMatchObject({ status: 400 });
+    expect(await post(`/api/bots/${bot.id}/apps/${pageId}/spreadsheet`, body)).toMatchObject({ status: 409 });
+    expect(await post(`/api/bots/${bot.id}/apps/nope/spreadsheet`, body)).toMatchObject({ status: 404 });
+    expect(await post(`/api/bots/nobody/apps/${id}/spreadsheet`, body)).toMatchObject({ status: 404, body: { error: "no such bot" } });
+    expect(await post(`/api/bots/${other.id}/apps/${id}/spreadsheet`, body)).toMatchObject({ status: 404, body: { error: "no such conversation" } });
+  });
+
+  it("refuses a spreadsheet's saves in a room", async () => {
+    const { bot, post, sheet, room } = await fixture();
+    const group = room();
+    const { id, workbook } = sheet(group.threadId);
+    expect(await post(`/api/bots/${bot.id}/apps/${id}/spreadsheet`, { threadId: group.threadId, workbook }))
+      .toEqual({ status: 409, body: { error: ROOM_VIEW_ONLY } });
+  });
+
+  it("holds a sheet to 120 saves a minute", async () => {
+    const { bot, post, sheet } = await fixture();
+    const { id, workbook } = sheet();
+    const statuses: number[] = [];
+    for (let index = 0; index < 121; index += 1) statuses.push((await post(`/api/bots/${bot.id}/apps/${id}/spreadsheet`, { threadId: bot.threadId, workbook })).status);
     expect(statuses.slice(0, 120).every((status) => status === 200)).toBe(true);
     expect(statuses[120]).toBe(429);
   });

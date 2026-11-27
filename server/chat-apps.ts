@@ -5,8 +5,9 @@ import {
   type AppCan, type AppDocument, type AppPayload,
 } from "../shared/app.ts";
 import { BOT_HTML_NETWORK } from "../shared/app-frame/csp.ts";
-import { botHtmlDocument, mcpAppDocument, publishedBotHtml, ROOM_CAN } from "../shared/app-frame/document.ts";
+import { botHtmlDocument, mcpAppDocument, publishedBotHtml, ROOM_CAN, spreadsheetAppDocument } from "../shared/app-frame/document.ts";
 import { jsxPublishedHtml } from "../shared/app-frame/jsx-page.ts";
+import { workbookFromJson, workbookToJson, type Workbook } from "../shared/spreadsheet/index.ts";
 import { APP_DOCS_SWEEP_GRACE_MS, AppDocs, type AppDocData, type AppDocPut } from "./app-docs.ts";
 import { speakerIn, type AgentCardResult, type AgentCardStore } from "./chat-widgets.ts";
 import { compileJsxPage } from "./jsx-compile.ts";
@@ -14,6 +15,7 @@ import { appDocRefs } from "./message-db.ts";
 import { createPageFiles, type PageFilesViewer } from "./page-files.ts";
 import { pageSignature, PageBundleError, readBotPageBundle, readPageBundle, skippedNote, stillReadable, type BotFolders, type PageBundle, type PageFile } from "./pages/bundle.ts";
 import { redactSecretsInText } from "./redact.ts";
+import { spreadsheetFallbackText } from "./spreadsheet/text.ts";
 import type { Message, StoreChange } from "./store.ts";
 import { userError, type UserError } from "./user-errors.ts";
 import type { PublishedPageCard as PublishedPage } from "../shared/published-page.ts";
@@ -21,6 +23,7 @@ import type { SanRemesColor } from "../shared/wire.ts";
 
 const NO_SUCH_PAGE = "No page with that id in this conversation.";
 const NOT_A_PAGE = "That app came from an MCP server, not from show_html; it cannot be replaced. Show a new page instead.";
+const NOT_A_SPREADSHEET = "That app is a page or another app, not a spreadsheet; show a new spreadsheet instead.";
 
 export interface ChatAppsStore extends AgentCardStore {
   onChange?(listener: (change: StoreChange) => void): () => void;
@@ -37,6 +40,7 @@ export function appRow(store: Pick<AgentCardStore, "messagesFor">, threadId: str
 
 export function appOrigin(payload: AppPayload): string {
   if (payload.source === "mcp" && payload.mcp) return `${oneLine(payload.mcp.serverTitle || payload.mcp.server)} · ${oneLine(payload.mcp.tool)}`;
+  if (payload.source === "spreadsheet") return "a spreadsheet you made with show_spreadsheet";
   return "a page you made with show_html";
 }
 
@@ -97,6 +101,116 @@ const pageBytes = (page: PageText) => Buffer.byteLength(page.html) + (page.files
 const pageFallback = (title: string, page: PageText, given?: string) =>
   redactSecretsInText(htmlFallbackText(title, page.format === "jsx" ? "" : page.html, given));
 
+function storeSpreadsheet(docs: AppDocs, workbook: Workbook): AppDocPut {
+  return docs.put({ source: "spreadsheet", html: "", data: { workbook } });
+}
+
+type SpreadsheetCardInput = { workbook: Workbook; title?: string; height?: number; appId?: string };
+
+function parseSpreadsheetCardInput(input: Record<string, unknown>, updating: boolean): { ok: true; value: SpreadsheetCardInput } | { ok: false; error: string } {
+  if (updating && (typeof input.app_id !== "string" || !/^[\w-]{1,128}$/.test(input.app_id.trim()))) {
+    return { ok: false, error: "app_id: is required, the id show_spreadsheet returned." };
+  }
+  if (typeof input.workbook !== "string") return { ok: false, error: "workbook: must be a spreadsheet's JSON." };
+  if (utf8Bytes(input.workbook) > APP_LIMITS.spreadsheetJsonBytes) {
+    return { ok: false, error: `workbook: is over the ${APP_LIMITS.spreadsheetJsonBytes.toLocaleString("en-US")}-byte limit; show a smaller sheet.` };
+  }
+  const parsed = workbookFromJson(input.workbook);
+  if (!parsed.ok) return parsed;
+  const out: SpreadsheetCardInput = { workbook: parsed.workbook };
+  if (input.title !== undefined && input.title !== null) {
+    if (typeof input.title !== "string" || !input.title.trim() || input.title.length > APP_LIMITS.title) {
+      return { ok: false, error: "title: must be 1 to 80 characters on one line." };
+    }
+    out.title = input.title.trim();
+  } else if (!updating) {
+    return { ok: false, error: "title: must be 1 to 80 characters on one line." };
+  }
+  if (input.height !== undefined && input.height !== null) {
+    if (typeof input.height !== "number" || !Number.isFinite(input.height)) return { ok: false, error: "height: must be a number of pixels, 80 to 720." };
+    out.height = Math.round(Math.min(APP_LIMITS.heightMax, Math.max(APP_LIMITS.heightMin, input.height)));
+  }
+  if (updating) out.appId = (input.app_id as string).trim();
+  return { ok: true, value: out };
+}
+
+/** Secrets are masked in a sheet's text cells and title before anything is stored, as on a page. */
+function scrubSpreadsheet(workbook: Workbook, title: string): { workbook: Workbook; title: string; masked: boolean } {
+  let masked = false;
+  const tabs = workbook.tabs.map((tab) => {
+    let cells = tab.cells;
+    for (const [key, cell] of Object.entries(tab.cells)) {
+      if (typeof cell.raw !== "string") continue;
+      const clean = redactSecretsInText(cell.raw);
+      if (clean !== cell.raw) {
+        masked = true;
+        cells = { ...cells, [key]: { ...cell, raw: clean } };
+      }
+    }
+    return cells === tab.cells ? tab : { ...tab, cells };
+  });
+  const cleanTitle = oneLine(redactSecretsInText(title)).slice(0, APP_LIMITS.title) || "Sheet";
+  if (cleanTitle !== title) masked = true;
+  return { workbook: { ...workbook, tabs }, title: cleanTitle, masked };
+}
+
+function placeSpreadsheet(
+  args: { store: AgentCardStore; docs: AppDocs; bot: { id: string; name: string; color: SanRemesColor }; threadId: string; authored?(messageId: string): void },
+  value: SpreadsheetCardInput,
+  scrubbed: { workbook: Workbook; title: string; masked: boolean },
+): AgentCardResult {
+  const { store, docs, bot, threadId } = args;
+  const { workbook, title, masked } = scrubbed;
+  if (value.appId === undefined) {
+    const stored = storeSpreadsheet(docs, workbook);
+    const payload: AppPayload = {
+      v: 1, source: "spreadsheet", title, doc: stored.ok ? stored.doc : "", rev: 0,
+      bytes: utf8Bytes(workbookToJson(workbook)),
+      ...(value.height !== undefined ? { height: value.height } : { height: 480 }),
+      border: true,
+      network: { connect: [], resources: [] },
+      ...(stored.ok ? {} : { blocked: "too-large" as const }),
+    };
+    const message = store.appendMessage(threadId, { role: "bot", kind: "app", text: spreadsheetFallbackText(title, workbook), app: payload, ...speakerIn(store, threadId, bot) });
+    args.authored?.(message.id);
+    return { ok: true, messageId: message.id, ...(masked ? { masked: true as const } : {}) };
+  }
+  const existing = appRow(store, threadId, value.appId);
+  if (!existing || (existing.from && existing.from.botId !== bot.id)) return { ok: false, status: 404, error: NO_SUCH_PAGE };
+  if (existing.app.source !== "spreadsheet") return { ok: false, status: 409, error: NOT_A_SPREADSHEET };
+  const patched = replaceSpreadsheet(store, docs, threadId, existing, workbook, title, value.height);
+  if (!patched) return { ok: false, status: 404, error: NO_SUCH_PAGE };
+  args.authored?.(patched.id);
+  return { ok: true, messageId: patched.id, ...(masked ? { masked: true as const } : {}) };
+}
+
+/** The next version of a row's sheet; the row is unchanged when the sheet is the same document. */
+function replaceSpreadsheet(
+  store: Pick<AgentCardStore, "patchMessage">, docs: AppDocs, threadId: string, existing: Message & { app: AppPayload },
+  workbook: Workbook, title: string, height?: number,
+): Message | null {
+  const stored = storeSpreadsheet(docs, workbook);
+  const nextHeight = height ?? existing.app.height;
+  if (stored.ok && stored.doc === existing.app.doc && title === existing.app.title) {
+    if (nextHeight === existing.app.height) return existing;
+    return store.patchMessage(threadId, existing.id, { app: { ...existing.app, ...(nextHeight !== undefined ? { height: nextHeight } : {}) } });
+  }
+  // The sheet reloads: what the old one told the model about itself no longer holds.
+  const { context: _context, blocked: _blocked, history: earlier, ...kept } = existing.app;
+  const history = [...(earlier ?? []), ...(existing.app.doc ? [existing.app.doc] : [])].slice(-(APP_PAGE_VERSIONS - 1));
+  const payload: AppPayload = {
+    ...kept,
+    title,
+    doc: stored.ok ? stored.doc : "",
+    rev: (existing.app.rev ?? 0) + 1,
+    bytes: utf8Bytes(workbookToJson(workbook)),
+    ...(nextHeight !== undefined ? { height: nextHeight } : {}),
+    ...(history.length ? { history } : {}),
+    ...(stored.ok ? {} : { blocked: "too-large" as const }),
+  };
+  return store.patchMessage(threadId, existing.id, { text: spreadsheetFallbackText(title, workbook), app: payload });
+}
+
 /** The route has already checked that the conversation is the calling bot's own. A page from a folder (`path`) is read
  * from the bot's own folders only, so it answers asynchronously. */
 export function createAppCard(args: {
@@ -109,8 +223,15 @@ export function createAppCard(args: {
   folders?: BotFolders;
 }): AgentCardResult | Promise<AgentCardResult> {
   const { store, threadId, input } = args;
-  if (input.tool !== "show_html" && input.tool !== "update_html") {
-    return { ok: false, status: 400, error: "tool: must be show_html or update_html." };
+  if (input.tool !== "show_html" && input.tool !== "update_html" && input.tool !== "show_spreadsheet" && input.tool !== "update_spreadsheet") {
+    return { ok: false, status: 400, error: "tool: must be show_html, update_html, show_spreadsheet or update_spreadsheet." };
+  }
+  if (input.tool === "show_spreadsheet" || input.tool === "update_spreadsheet") {
+    const parsed = parseSpreadsheetCardInput(input, input.tool === "update_spreadsheet");
+    if (!parsed.ok) return { ok: false, status: 400, error: parsed.error };
+    const existing = parsed.value.appId ? appRow(store, threadId, parsed.value.appId) : undefined;
+    const title = parsed.value.title ?? existing?.app.title ?? "Sheet";
+    return placeSpreadsheet(args, parsed.value, scrubSpreadsheet(parsed.value.workbook, title));
   }
   const parsed = input.tool === "show_html" ? parseShowHtmlInput(input) : parseUpdateHtmlInput(input);
   if (!parsed.ok) return { ok: false, status: 400, error: parsed.error };
@@ -220,7 +341,7 @@ export function appDocument(args: {
 }): AppDocument | null {
   const row = appRow(args.store, args.threadId, args.messageId);
   if (!row) return null;
-  const version = pageVersion(row.app, row.app.source === "html" ? args.rev : undefined);
+  const version = pageVersion(row.app, row.app.source === "html" || row.app.source === "spreadsheet" ? args.rev : undefined);
   if (!version) return null;
   const stored = args.docs.read(version.doc);
   if (!stored || stored.source !== row.app.source) return null;
@@ -231,6 +352,12 @@ export function appDocument(args: {
       ? `${args.files.origin}${args.files.folder({ threadId: args.threadId, messageId: row.id, doc: version.doc })}` : undefined;
     return botHtmlDocument({ messageId: row.id, rev, html: stored.html, title: row.app.title,
       ...(stored.data?.format === "jsx" ? { format: "jsx" as const } : {}), ...(files ? { files } : {}), ...(room ? { room } : {}) });
+  }
+  if (stored.source === "spreadsheet") {
+    if (!stored.data?.workbook) return null;
+    const parsed = workbookFromJson(JSON.stringify(stored.data.workbook));
+    if (!parsed.ok) return null;
+    return spreadsheetAppDocument({ messageId: row.id, rev, workbook: parsed.workbook, ...(room ? { room } : {}) });
   }
   if (!stored.data?.tool) return null;
   const access: ReturnType<McpAppAccess> = room ? { can: ROOM_CAN } : (args.mcpAccess ?? MCP_READ_ONLY)(row, args.threadId);
@@ -255,6 +382,7 @@ export type PublishablePage =
 export function publishablePage(args: { store: Pick<AgentCardStore, "messagesFor">; docs: AppDocs; threadId: string; messageId: string; rev?: number }): PublishablePage {
   const row = appRow(args.store, args.threadId, args.messageId);
   if (!row) return { ok: false, status: 404, ...userError("serverError.page.notHere") };
+  if (row.app.source === "spreadsheet") return { ok: false, status: 409, error: "A spreadsheet cannot be published as a page." };
   if (row.app.source !== "html") return { ok: false, status: 409, ...userError("serverError.page.fromMcp") };
   const version = pageVersion(row.app, args.rev);
   const stored = version ? args.docs.read(version.doc) : null;
@@ -334,6 +462,22 @@ export function setAppContext(
   const { context: _previous, ...rest } = row.app;
   const app: AppPayload = text ? { ...rest, context: { text, at: args.now ?? Date.now(), delivered: false } } : rest;
   return store.patchMessage(args.threadId, row.id, { app }) ? { ok: true } : { ok: false, status: 404, error: "That app is not in this conversation." };
+}
+
+/** The person's in-place edits to a spreadsheet row: the workbook is stored again at the same version, so the
+ * card keeps what it shows and no version is made. The caller sets the row's context from the new sheet. */
+export function saveSpreadsheetEdits(
+  store: Pick<AgentCardStore, "messagesFor" | "patchMessage">,
+  docs: AppDocs,
+  args: { threadId: string; messageId: string; workbook: Workbook },
+): AppRouteResult {
+  const row = appRow(store, args.threadId, args.messageId);
+  if (!row) return { ok: false, status: 404, error: "That spreadsheet is not in this conversation." };
+  if (row.app.source !== "spreadsheet") return { ok: false, status: 409, error: "That app is not a spreadsheet." };
+  const stored = storeSpreadsheet(docs, args.workbook);
+  if (!stored.ok) return { ok: false, status: 400, error: "That spreadsheet is too large to store." };
+  const patched = store.patchMessage(args.threadId, row.id, { app: { ...row.app, doc: stored.doc, bytes: utf8Bytes(workbookToJson(args.workbook)) } });
+  return patched ? { ok: true } : { ok: false, status: 404, error: "That spreadsheet is not in this conversation." };
 }
 
 /** An app's words reach the model with the person's message, so they are marked as the app's, not as instructions. */
@@ -464,6 +608,9 @@ export interface ChatApps {
   /** The folder pages' files route, ahead of the sign-in gate: true when the request was its own. */
   serveFile(req: IncomingMessage, res: ServerResponse, path: string, method: string): boolean;
   setAppContext(args: { threadId: string; messageId: string; content?: unknown; structuredContent?: unknown }): AppRouteResult;
+  /** The person's in-place edits to a spreadsheet row: a new stored document at the same version, so the card
+   * keeps what it shows. The caller sets the row's context from the new sheet. */
+  saveSpreadsheet(args: { threadId: string; messageId: string; workbook: Workbook }): AppRouteResult;
   withAppContext(text: string, threadId: string): { text: string; deliver(): void };
   mcpAccess?: McpAppAccess;
   recordMcpAppCall?(args: { bot: { id: string; name: string }; threadId: string; input: Record<string, unknown>; authored?(messageId: string): void }): Promise<AgentCardResult>;
@@ -611,6 +758,7 @@ export function createChatApps(deps: {
     showPublishedPage: (args) => showPublishedPage({ ...args, store: deps.store, docs }),
     serveFile: (req, res, path, method) => files.serve(req, res, path, method),
     setAppContext: (args) => setAppContext(deps.store, args),
+    saveSpreadsheet: (args) => saveSpreadsheetEdits(deps.store, docs, args),
     withAppContext: (text, threadId) => withAppContext(deps.store, text, threadId),
     sweep,
     refreshLive,

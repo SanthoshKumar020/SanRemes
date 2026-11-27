@@ -9,9 +9,10 @@ import { CSP_META_PREFIX } from "../shared/app-frame/document.ts";
 import { APP_HELPER_SOURCE, APP_ROOM_HELPER_SOURCE } from "../shared/app-frame/helper.ts";
 import { AppDocs } from "./app-docs.ts";
 import {
-  appContextBlock, appDocument, AppMessageRate, createAppCard, createChatApps, pageVersion, prepareAppMessage, publishablePage, rowRate, setAppContext,
+  appContextBlock, appDocument, AppMessageRate, createAppCard, createChatApps, pageVersion, prepareAppMessage, publishablePage, rowRate, saveSpreadsheetEdits, setAppContext,
   showPublishedPage, withAppContext, type ChatApps,
 } from "./chat-apps.ts";
+import { createWorkbook, setCell, workbookToJson } from "../shared/spreadsheet/index.ts";
 import { folderPageCsp } from "../shared/app-frame/csp.ts";
 import { PageBundleError, readPageBundle } from "./pages/bundle.ts";
 import { createAgentCard, type AgentCardStore } from "./chat-widgets.ts";
@@ -197,7 +198,7 @@ describe("a jsx page", () => {
     expect(message.app).toMatchObject({ source: "html", format: "jsx", rev: 0, bytes: Buffer.byteLength(JSX_PAGE) });
     expect(docs.read(message.app!.doc)).toMatchObject({ html: JSX_PAGE, data: { format: "jsx" } });
     const doc = appDocument({ store, docs, threadId: THREAD, messageId: "m1" })!;
-    expect(doc.srcdoc.startsWith(`${CSP_META_PREFIX}${BOT_HTML_CSP}">`)).toBe(true);
+    expect(doc.srcdoc!.startsWith(`${CSP_META_PREFIX}${BOT_HTML_CSP}">`)).toBe(true);
     expect(doc.srcdoc).toContain(APP_HELPER_SOURCE);
     expect(doc.srcdoc).toContain("<script type=\"importmap\">");
     expect(doc.srcdoc).toContain(JSON.stringify(JSX_PAGE).replace(/</g, "\\u003c"));
@@ -470,6 +471,14 @@ describe("publishablePage", () => {
     expect(publishablePage({ store, docs, threadId: THREAD, messageId: "m1", rev: 4 })).toMatchObject({ ok: false, status: 404,
       error: "That version of the page is no longer kept.", errorKey: "serverError.page.versionGone" });
   });
+
+  it("refuses a spreadsheet: it is not a page", () => {
+    const { call, store, docs } = setup();
+    const workbook = createWorkbook("Budget");
+    call({ tool: "show_spreadsheet", workbook: workbookToJson(workbook), title: "Budget" });
+    expect(publishablePage({ store, docs, threadId: THREAD, messageId: "m1" })).toEqual(
+      { ok: false, status: 409, error: "A spreadsheet cannot be published as a page." });
+  });
 });
 
 describe("the internal card route", () => {
@@ -491,9 +500,9 @@ describe("appDocument", () => {
     call({ tool: "show_html", html: PAGE, title: "Sales" });
     const doc = appDocument({ store, docs, threadId: THREAD, messageId: "m1" })!;
     expect(doc).toMatchObject({ v: 1, messageId: "m1", rev: 0, csp: BOT_HTML_CSP, network: BOT_HTML_NETWORK });
-    expect(doc.srcdoc.startsWith(`${CSP_META_PREFIX}${BOT_HTML_CSP}">`)).toBe(true);
+    expect(doc.srcdoc!.startsWith(`${CSP_META_PREFIX}${BOT_HTML_CSP}">`)).toBe(true);
     expect(doc.srcdoc).toContain(APP_HELPER_SOURCE);
-    expect(doc.srcdoc.endsWith("<html><head><style>body{margin:0}</style></head><body><h1>Sales</h1><p>Up 12%</p><script>draw()</script></body></html>")).toBe(true);
+    expect(doc.srcdoc!.endsWith("<html><head><style>body{margin:0}</style></head><body><h1>Sales</h1><p>Up 12%</p><script>draw()</script></body></html>")).toBe(true);
     expect(doc.can).toEqual({ serverTools: false, serverResources: false, message: true, openLinks: true, modelContext: true });
     expect(doc).not.toHaveProperty("tool");
   });
@@ -516,6 +525,21 @@ describe("appDocument", () => {
     expect(app).toMatchObject({ room: true, tool: { name: "get-time" }, can: { serverTools: false, serverResources: false, message: false, openLinks: true, modelContext: false } });
     expect(app).not.toHaveProperty("blocked");
     expect(appDocument({ store, docs, threadId: THREAD, messageId: "m2" })).toBeNull();
+  });
+
+  it("serves a spreadsheet's workbook with no frame and no network, view-only in a room", () => {
+    const { call, store, docs } = setup(["room-thread"]);
+    const workbook = createWorkbook("Budget");
+    const filled = setCell(workbook, workbook.tabs[0].id, 0, 0, "Item");
+    if (!filled.ok) throw new Error("fixture cell failed");
+    call({ tool: "show_spreadsheet", workbook: workbookToJson(filled.workbook), title: "Budget" }, "room-thread");
+    const doc = appDocument({ store, docs, threadId: "room-thread", messageId: "m1" })!;
+    expect(doc).toMatchObject({ v: 1, messageId: "m1", rev: 0, room: true, network: { connect: [], resources: [] } });
+    expect(doc.workbook).toMatchObject({ title: "Budget" });
+    expect(doc.can).toEqual({ serverTools: false, serverResources: false, message: false, openLinks: true, modelContext: false });
+    expect(doc).not.toHaveProperty("srcdoc");
+    const own = appDocument({ store, docs, threadId: THREAD, messageId: "m1" });
+    expect(own).toBeNull();
   });
 
   it("is null for a row that is not an app, another thread's row, and a row whose document is not stored", () => {
@@ -884,3 +908,121 @@ describe("a live folder page", () => {
   });
 });
 
+
+describe("show_spreadsheet", () => {
+  function budgetJson() {
+    const workbook = createWorkbook("Budget");
+    const filled = setCell(workbook, workbook.tabs[0].id, 0, 0, "Item");
+    if (!filled.ok) throw new Error("fixture cell failed");
+    const priced = setCell(filled.workbook, workbook.tabs[0].id, 0, 1, 12);
+    if (!priced.ok) throw new Error("fixture cell failed");
+    return { workbook: priced.workbook, json: workbookToJson(priced.workbook) };
+  }
+
+  it("posts a spreadsheet row: the workbook stored by content id, the sheet's text as its fallback", () => {
+    const { call, row, docs } = setup();
+    const { json } = budgetJson();
+    const authored = vi.fn();
+    const result = call({ tool: "show_spreadsheet", workbook: json, title: "Budget" }, THREAD, authored);
+    expect(result).toEqual({ ok: true, messageId: "m1" });
+    expect(authored).toHaveBeenCalledWith("m1");
+    const message = row("m1");
+    expect(message).toMatchObject({ role: "bot", kind: "app", text: "[Spreadsheet] Budget\nSheet1:\nA1: Item\tB1: 12" });
+    expect(message.app).toEqual({
+      v: 1, source: "spreadsheet", title: "Budget", doc: expect.stringMatching(/^[0-9a-f]{64}$/), rev: 0, bytes: Buffer.byteLength(json),
+      height: 480, border: true, network: { connect: [], resources: [] },
+    });
+    expect(docs.read(message.app!.doc)).toMatchObject({ source: "spreadsheet", html: "", data: { workbook: { title: "Budget" } } });
+  });
+
+  it("clamps its height", () => {
+    const { call, row, docs } = setup();
+    const { json } = budgetJson();
+    call({ tool: "show_spreadsheet", workbook: json, title: "Costs", height: 9000 });
+    expect(row("m1").app).toMatchObject({ source: "spreadsheet", title: "Costs", height: 720 });
+    const stored = docs.read(row("m1").app!.doc);
+    expect(stored?.data?.workbook).toMatchObject({ title: "Budget" });
+    expect(row("m1").text).toContain("A1: Item\tB1: 12");
+  });
+
+  it("refuses input over the limits, and writes nothing", () => {
+    const { call, rows } = setup();
+    expect(call({ tool: "show_spreadsheet", workbook: "{broken", title: "t" })).toMatchObject({ ok: false, status: 400, error: "The spreadsheet could not be read." });
+    expect(call({ tool: "show_spreadsheet", workbook: "y".repeat(1_000_001), title: "t" })).toMatchObject({ ok: false, status: 400, error: expect.stringMatching(/^workbook:/) });
+    expect(call({ tool: "show_spreadsheet", workbook: workbookToJson(createWorkbook("x")), title: "t".repeat(81) })).toMatchObject({ ok: false, status: 400, error: expect.stringMatching(/^title:/) });
+    expect(call({ tool: "show_spreadsheet", workbook: workbookToJson(createWorkbook("x")) })).toMatchObject({ ok: false, status: 400 });
+    expect(rows(THREAD)).toEqual([]);
+  });
+
+  it("masks a secret in a cell and in the title, and says so", () => {
+    const { call, row, docs } = setup();
+    const workbook = createWorkbook("Budget");
+    const filled = setCell(workbook, workbook.tabs[0].id, 0, 0, API_KEY);
+    if (!filled.ok) throw new Error("fixture cell failed");
+    const result = call({ tool: "show_spreadsheet", workbook: workbookToJson(filled.workbook), title: `Key ${GITHUB_TOKEN}` });
+    expect(result).toEqual({ ok: true, messageId: "m1", masked: true });
+    const stored = docs.read(row("m1").app!.doc);
+    const raw = String(Object.values(stored?.data?.workbook?.tabs[0]?.cells ?? {})[0]?.raw ?? "");
+    expect(raw).not.toContain("sk-ant-api03");
+    expect(row("m1").app!.title).not.toContain("ghp_");
+  });
+
+  it("replaces a sheet: the version rises and the old one is kept; the same sheet changes nothing", () => {
+    const { call, row, docs } = setup();
+    const { workbook, json } = budgetJson();
+    call({ tool: "show_spreadsheet", workbook: json, title: "Budget" });
+    const firstDoc = row("m1").app!.doc;
+    const edited = setCell(workbook, workbook.tabs[0].id, 0, 1, 24);
+    if (!edited.ok) throw new Error("fixture cell failed");
+    expect(call({ tool: "update_spreadsheet", app_id: "m1", workbook: workbookToJson(edited.workbook), title: "Budget" }))
+      .toEqual({ ok: true, messageId: "m1" });
+    expect(row("m1").app).toMatchObject({ rev: 1, history: [firstDoc] });
+    expect(row("m1").text).toContain("B1: 24");
+    expect(docs.read(row("m1").app!.doc)?.data?.workbook?.tabs[0]?.cells["0:1"]).toMatchObject({ raw: 24 });
+    expect(call({ tool: "update_spreadsheet", app_id: "m1", workbook: workbookToJson(edited.workbook), title: "Budget" }))
+      .toEqual({ ok: true, messageId: "m1" });
+    expect(row("m1").app).toMatchObject({ rev: 1 });
+  });
+
+  it("refuses to replace a page row, and a row that is not there", () => {
+    const { call } = setup();
+    call({ tool: "show_html", html: PAGE, title: "Sales" });
+    const { json } = budgetJson();
+    expect(call({ tool: "update_spreadsheet", app_id: "m1", workbook: json })).toMatchObject({ ok: false, status: 409,
+      error: "That app is a page or another app, not a spreadsheet; show a new spreadsheet instead." });
+    expect(call({ tool: "update_spreadsheet", app_id: "m9", workbook: json })).toMatchObject({ ok: false, status: 404,
+      error: "No page with that id in this conversation." });
+  });
+});
+
+describe("saveSpreadsheetEdits", () => {
+  function budgetJson() {
+    const workbook = createWorkbook("Budget");
+    const filled = setCell(workbook, workbook.tabs[0].id, 0, 1, 12);
+    if (!filled.ok) throw new Error("fixture cell failed");
+    return { workbook: filled.workbook, json: workbookToJson(filled.workbook) };
+  }
+
+  it("stores the person's edits in place: same version, new document, context untouched", () => {
+    const { call, store, docs, row } = setup();
+    const { workbook, json } = budgetJson();
+    call({ tool: "show_spreadsheet", workbook: json, title: "Budget" });
+    const firstDoc = row("m1").app!.doc;
+    const edited = setCell(workbook, workbook.tabs[0].id, 0, 1, 99);
+    if (!edited.ok) throw new Error("fixture cell failed");
+    expect(saveSpreadsheetEdits(store, docs, { threadId: THREAD, messageId: "m1", workbook: edited.workbook })).toEqual({ ok: true });
+    expect(row("m1").app).toMatchObject({ rev: 0 });
+    expect(row("m1").app!.doc).not.toBe(firstDoc);
+    expect(docs.read(row("m1").app!.doc)?.data?.workbook?.tabs[0]?.cells["0:1"]).toMatchObject({ raw: 99 });
+    expect(row("m1").app).not.toHaveProperty("context");
+  });
+
+  it("refuses a row that is not there, and a page row", () => {
+    const { call, store, docs } = setup();
+    const { workbook } = budgetJson();
+    call({ tool: "show_html", html: PAGE, title: "Sales" });
+    expect(saveSpreadsheetEdits(store, docs, { threadId: THREAD, messageId: "m9", workbook })).toMatchObject({ ok: false, status: 404 });
+    expect(saveSpreadsheetEdits(store, docs, { threadId: THREAD, messageId: "m1", workbook })).toMatchObject({ ok: false, status: 409,
+      error: "That app is not a spreadsheet." });
+  });
+});

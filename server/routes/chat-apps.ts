@@ -1,8 +1,10 @@
 import { APP_LIMITS, ROOM_VIEW_ONLY, type AppPayload } from "../../shared/app.ts";
 import { APP_RPC_METHODS, type AppRpcMethod } from "../../shared/app-frame/bridge.ts";
 import { webOrigin } from "../../shared/app-frame/csp.ts";
+import { workbookFromJson } from "../../shared/spreadsheet/index.ts";
 import { appRow, createChatApps, rowRate, type ChatApps } from "../chat-apps.ts";
 import { messageFileDisposition } from "../message-file.ts";
+import { spreadsheetPlainText } from "../spreadsheet/text.ts";
 import type { RequestAuth } from "../request-auth.ts";
 import type { BotRecord, Message, Store } from "../store.ts";
 import { refusalBody, userError } from "../user-errors.ts";
@@ -38,7 +40,7 @@ export interface ChatAppRouteDeps {
 }
 
 const DOCUMENT = /^\/api\/threads\/([\w-]+)\/messages\/([\w-]+)\/app(\/download)?$/;
-const APP_ACTION = /^\/api\/bots\/([\w-]+)\/apps\/([\w-]+)\/(rpc|context)$/;
+const APP_ACTION = /^\/api\/bots\/([\w-]+)\/apps\/([\w-]+)\/(rpc|context|spreadsheet)$/;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -47,6 +49,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export function createChatAppRoutes(deps: ChatAppRouteDeps): RouteHandler {
   const { store, apps } = deps;
   const contextRate = rowRate(120, 60_000);
+  const spreadsheetRate = rowRate(120, 60_000);
 
   return async ({ req, res, url, path, method, auth, json, readBody }) => {
     let m = DOCUMENT.exec(path);
@@ -88,8 +91,8 @@ export function createChatAppRoutes(deps: ChatAppRouteDeps): RouteHandler {
 
     m = APP_ACTION.exec(path);
     if (!m || method !== "POST") return PASS;
-    const [, botId, messageId, action] = m as unknown as [string, string, string, "rpc" | "context"];
-    const body = await readBody(req, action === "rpc" ? APP_LIMITS.rpcArgumentsBytes + 16_384 : 64_000);
+    const [, botId, messageId, action] = m as unknown as [string, string, string, "rpc" | "context" | "spreadsheet"];
+    const body = await readBody(req, action === "rpc" ? APP_LIMITS.rpcArgumentsBytes + 16_384 : action === "spreadsheet" ? APP_LIMITS.spreadsheetJsonBytes + 16_384 : 64_000);
     if (!isRecord(body) || typeof body.threadId !== "string" || !/^[\w-]+$/.test(body.threadId)) {
       return json(res, 400, { error: "threadId is required" });
     }
@@ -107,6 +110,16 @@ export function createChatAppRoutes(deps: ChatAppRouteDeps): RouteHandler {
       if (!contextRate.take(`${threadId}:${row.id}`)) return json(res, 429, { error: "Too many context updates from this app." });
       const result = apps.setAppContext({ threadId, messageId: row.id, content: body.content, structuredContent: body.structuredContent });
       return result.ok ? json(res, 200, { ok: true }) : json(res, result.status, { error: result.error });
+    }
+
+    if (action === "spreadsheet") {
+      if (!spreadsheetRate.take(`${threadId}:${row.id}`)) return json(res, 429, { error: "Too many spreadsheet saves from this sheet." });
+      const parsed = workbookFromJson(JSON.stringify(body.workbook ?? null));
+      if (!parsed.ok) return json(res, 400, { error: parsed.error });
+      const saved = apps.saveSpreadsheet({ threadId, messageId: row.id, workbook: parsed.workbook });
+      if (!saved.ok) return json(res, saved.status, { error: saved.error });
+      apps.setAppContext({ threadId, messageId: row.id, content: [{ type: "text", text: spreadsheetPlainText(parsed.workbook) }] });
+      return json(res, 200, { ok: true });
     }
 
     if (row.app.source !== "mcp") return json(res, 404, { error: "That app has no server to call." });

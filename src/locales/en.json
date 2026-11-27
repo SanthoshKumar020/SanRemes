@@ -7976,6 +7976,7 @@
   "homeScreen.plan": "My Cloud isn't running",
   "app.aria.row": "App: {title}",
   "app.origin.page": "Page made by {bot}",
+  "app.origin.spreadsheet": "Spreadsheet made by {bot}",
   "app.origin.mcp": "App from {server}",
   "app.info": "About this app",
   "app.info.sandbox": "It runs in a locked frame: it cannot see the rest of the app, your other chats or your files.",

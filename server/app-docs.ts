@@ -6,6 +6,7 @@ import { mkdirSync, readdirSync, readFileSync, renameSync, statSync, unlinkSync,
 import { join } from "node:path";
 
 import type { AppNetwork, AppSource, AppToolDefinition, AppToolResult } from "../shared/app.ts";
+import type { Workbook } from "../shared/spreadsheet/index.ts";
 import type { PageVideo } from "./pages/bundle.ts";
 
 export const APP_DOCS_MAX_BYTES = 512 * 1024 * 1024;
@@ -28,6 +29,8 @@ export interface AppDocData {
   toolInput?: Record<string, unknown>;
   toolResult?: AppToolResult;
   network?: AppNetwork;
+  /** A spreadsheet document's workbook; its `html` blob is empty. */
+  workbook?: Workbook;
 }
 
 interface Manifest {
@@ -140,7 +143,7 @@ export class AppDocs {
     try {
       const manifest = JSON.parse(readFileSync(this.path("doc", doc), "utf8")) as Manifest;
       if (manifest.v !== 1 || !ID.test(manifest.html) || (manifest.data !== null && !ID.test(manifest.data))) return null;
-      if (manifest.source !== "html" && manifest.source !== "mcp") return null;
+      if (manifest.source !== "html" && manifest.source !== "mcp" && manifest.source !== "spreadsheet") return null;
       const html = readFileSync(this.path("html", manifest.html), "utf8");
       const data = manifest.data ? JSON.parse(readFileSync(this.path("data", manifest.data), "utf8")) as AppDocData : undefined;
       return { doc, source: manifest.source, html, ...(data ? { data } : {}) };
