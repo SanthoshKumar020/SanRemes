@@ -6,10 +6,12 @@
 // a hand-written node_modules would go, and on a desktop a task workspace can be a project the person also works in.
 // The cache cap's sweeper (cache-sweep/) starts here too; it deletes nothing while a turn or an engine process is alive.
 import { cleanupStaleAttachmentPartials } from "../attachments.ts";
+import { DATA_DIR, loadConfig } from "../config.ts";
 import { incognitoThreadIds } from "../incognito-threads.ts";
 import type { BotRecord } from "../store.ts";
 import { sweepTaskWorkspaceBuildFolders } from "../task-workspace-retention.ts";
 import { sweepThreadEventLogs } from "../thread-retention.ts";
+import { pruneUsage, resolveUsageRetentionDays } from "../usage-ledger.ts";
 
 export const THREAD_LOG_RETENTION_SWEEP_MS = 24 * 60 * 60 * 1000;
 export const TASK_WORKSPACE_RETENTION_ENV = "SANREMES_TASK_WORKSPACE_RETENTION";
@@ -29,6 +31,10 @@ export interface StartUpkeepDeps {
   enginesLive?: () => boolean;
   sweepLogs?: typeof sweepThreadEventLogs;
   sweepWorkspaces?: (candidates: Parameters<typeof sweepTaskWorkspaceBuildFolders>[0]) => string[] | Promise<string[]>;
+  /** Days of usage-ledger months kept, or null to keep them all; read from config.json fresh on each sweep. */
+  usageRetention?: () => number | null;
+  /** Removes usage month files past the window; the real prune against the data directory by default. */
+  pruneUsage?: (days: number, now: number) => Promise<string[]>;
   /** Whether the task workspaces' sweep runs; taskWorkspaceRetentionOn by default (off). */
   workspaceRetention?: () => boolean;
 }
@@ -83,7 +89,19 @@ export function startUpkeep(deps: StartUpkeepDeps): void {
       console.warn(`thread event log retention sweep failed: ${reason(error)}`);
     }
     sweepWorkspacesNow().catch((error: unknown) => console.warn(`task workspace retention sweep failed: ${reason(error)}`));
+    void pruneUsageNow();
   };
+  // The usage ledger is billing evidence, so its prune runs only when the owner set a window; unset keeps every month.
+  async function pruneUsageNow(): Promise<void> {
+    const days = (deps.usageRetention ?? (() => resolveUsageRetentionDays(loadConfig().usage?.retentionDays).days))();
+    if (days === null) return;
+    try {
+      const removed = await (deps.pruneUsage ?? ((window: number, now: number) => pruneUsage(DATA_DIR, window, new Date(now))))(days, Date.now());
+      if (removed.length > 0) console.log(`[retention] removed ${removed.length} usage month file(s) past ${days} day(s)`);
+    } catch (error) {
+      console.warn(`usage retention prune failed: ${reason(error)}`);
+    }
+  }
   setImmediate(() => {
     try {
       const reclaimed = (deps.cleanupPartials ?? cleanupStaleAttachmentPartials)();

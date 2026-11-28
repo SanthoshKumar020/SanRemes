@@ -9,6 +9,8 @@ import { serveStatic } from "./static-files.ts";
 const dir = mkdtempSync(join(tmpdir(), "sanremes-static-"));
 writeFileSync(join(dir, "index.html"), "app");
 writeFileSync(join(dir, "rail.html"), "rail");
+mkdirSync(join(dir, "companion"));
+writeFileSync(join(dir, "companion", "index.html"), "companion");
 mkdirSync(join(dir, "assets"));
 writeFileSync(join(dir, "assets", "rail-1a2b.js"), "js");
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
@@ -27,6 +29,12 @@ describe("serveStatic", () => {
     const rail = get("/rail");
     expect(rail.body).toBe("rail");
     expect(rail.headers).toMatchObject({ "content-type": "text/html", "cache-control": "no-cache", "x-frame-options": "DENY" });
+  });
+
+  it("answers the phone companion at its own address", () => {
+    expect(get("/companion").body).toBe("companion");
+    expect(get("/companion/").body).toBe("companion");
+    expect(get("/companion/index.html").body).toBe("companion");
   });
 
   it("answers the app's paths with the app, and keeps hashed assets for good", () => {

@@ -304,6 +304,11 @@ The [managed agents fixture](managed-agents.md) checks the Managed Agents page's
 list, create, run-now, pause and resume, the hand-off setting, cloud sessions,
 hosted batches and the usage report against an isolated fake-engine server.
 
+The [enterprise admin fixture](enterprise-admin.md) checks the admin surface's
+capabilities, retention settings, compliance mode, Motion toggle and audit-log
+export, and that the phone companion page is served, against an isolated
+fake-engine server with the built UI.
+
 The [interval restrictions recipe](interval-restrictions.md) checks weekday and
 time-window limits on scheduled routines in that same disposable fixture.
 

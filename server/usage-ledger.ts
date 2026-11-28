@@ -1,7 +1,7 @@
 // Append-only usage rows under <data>/usage/ (0600): bookkeeping never fails the turn, and rows never carry message text.
 import { personOf } from "./usage-attribution.ts";
 import { closeSync, fstatSync, openSync, readdirSync, readFileSync } from "node:fs";
-import { appendFile, mkdir } from "node:fs/promises";
+import { appendFile, mkdir, readdir, unlink } from "node:fs/promises";
 import { join } from "node:path";
 import type { TraceParent, TraceStatus, TraceUsageStatus } from "../shared/usage-trace.ts";
 import type { ResolvedSender } from "../shared/wire.ts";
@@ -154,6 +154,55 @@ async function write(dataDir: string, record: UsageRow): Promise<void> {
 
 export async function flushUsageLedger(dataDir: string): Promise<void> {
   await writeQueues.get(dataDir);
+}
+
+/** Usage retention is opt-in and off by default: these rows are billing evidence, so nothing deletes them unless the
+ * owner says so. Bounds match the decision log's (1–3650 days). */
+export const MIN_USAGE_RETENTION_DAYS = 1;
+export const MAX_USAGE_RETENTION_DAYS = 3650;
+export const USAGE_RETENTION_ENV = "SANREMES_USAGE_RETENTION_DAYS";
+
+export function parseUsageRetentionDays(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isInteger(value)) return null;
+  if (value < MIN_USAGE_RETENTION_DAYS || value > MAX_USAGE_RETENTION_DAYS) return null;
+  return value;
+}
+
+export type UsageRetentionSource = "env" | "config" | "default";
+
+export function resolveUsageRetentionDays(configured: number | undefined, env: NodeJS.ProcessEnv = process.env): { days: number | null; source: UsageRetentionSource } {
+  const fromEnv = env[USAGE_RETENTION_ENV]?.trim();
+  const parsedEnv = fromEnv ? parseUsageRetentionDays(Number(fromEnv)) : null;
+  if (parsedEnv !== null) return { days: parsedEnv, source: "env" };
+  const parsedConfig = parseUsageRetentionDays(configured);
+  if (parsedConfig !== null) return { days: parsedConfig, source: "config" };
+  return { days: null, source: "default" };
+}
+
+const USAGE_MONTH_FILE = /^(\d{4})-(\d{2})\.jsonl$/;
+
+/** Deletes month files the window no longer covers; never throws. The current month is never removed: a file is
+ * dropped only once its whole month is past the cutoff. */
+export async function pruneUsage(dataDir: string, days: number, now = new Date()): Promise<string[]> {
+  const cutoff = now.getTime() - days * DAY_MS;
+  const removed: string[] = [];
+  let names: string[] = [];
+  try {
+    names = await readdir(join(dataDir, DIR));
+  } catch {
+    return removed;
+  }
+  for (const name of names) {
+    const match = USAGE_MONTH_FILE.exec(name);
+    if (!match || Date.UTC(Number(match[1]), Number(match[2]), 1) > cutoff) continue;
+    try {
+      await unlink(join(dataDir, DIR, name));
+      parsedFiles.delete(join(dataDir, DIR, name));
+      removed.push(name);
+    } catch {
+    }
+  }
+  return removed;
 }
 
 const isTrigger = (value: unknown): value is UsageTrigger =>

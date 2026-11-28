@@ -186,6 +186,15 @@ export function createStatusRoutes(deps: StatusRouteDeps): RouteHandler {
       if (parsedLimit !== undefined && (!Number.isInteger(parsedLimit) || parsedLimit <= 0)) {
         return json(res, 400, { error: "limit must be a positive whole number" });
       }
+      const fromParam = url.searchParams.get("from");
+      const toParam = url.searchParams.get("to");
+      if (fromParam !== null || toParam !== null) {
+        const range = parseUsageRange(fromParam, toParam);
+        if (!range) return json(res, 400, { error: "from and to must be YYYY-MM-DD, from no later than to, at most a year apart" });
+        const limit = parsedLimit === undefined ? 5000 : Math.min(parsedLimit, 5000);
+        const rows = readDecisionRange(DATA_DIR, range).map(decision);
+        return json(res, 200, { decisions: rows.slice(0, limit), total: rows.length, from: range.from.toISOString(), to: range.to.toISOString() });
+      }
       return json(res, 200, { decisions: readDecisions(DATA_DIR, parsedLimit ?? 200).map(decision) });
     }
     if (method === "GET" && (path === "/api/admin-activity" || path === "/api/admin-activity.csv")) {

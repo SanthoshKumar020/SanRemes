@@ -190,6 +190,13 @@ no Bot API on a Cloud's Starter plan.
 
 ## Apps built on it
 
+- **SanRemes companion** (`/companion/` on this server): a thin phone web app over the Bot API, built
+  in this repository (`public/companion/`). Add a bot with the address and key from its Bot API card;
+  the key stays in the phone browser and goes only to the address it was saved for. It lists the
+  bots saved on the phone, reads and sends messages, shows running threads, and shows a thread that
+  stopped at an approval as waiting for the person in the SanRemes app — approvals cannot be given
+  from outside, and the companion does not try. The Bot API has no list of bots or threads, so only
+  the bots and conversations saved on the phone appear. See [Enterprise admin](enterprise-admin.md).
 - [SanRemes Notch](https://github.com/jgonzalez007/sanremes-notch) (community,
   macOS): a notch app that talks to your bots through the Bot API. **Option+Space**
   opens and closes the notch. It is maintained outside this repository.

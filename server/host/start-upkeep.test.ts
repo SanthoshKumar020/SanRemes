@@ -106,6 +106,43 @@ describe("start-up upkeep", () => {
     expect(seen).toEqual(["bot/idle 20", "bot/working 1 busy"]);
   });
 
+  it("prunes usage months only when the owner set a window, on the first pass and daily", async () => {
+    vi.useFakeTimers();
+    const pruned: Array<[number, number]> = [];
+    let window: number | null = 90;
+    startUpkeep({
+      bots: () => [{ id: "bot", tasks: [task("old")] }],
+      retentionDays: () => null,
+      busy: () => false,
+      openDirectHandoff: () => false,
+      cleanupPartials: () => 0,
+      usageRetention: () => window,
+      pruneUsage: async (days, now) => { pruned.push([days, now]); return [`${days}`]; },
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(pruned).toHaveLength(1);
+    expect(pruned[0]![0]).toBe(90);
+    window = null;
+    await vi.advanceTimersByTimeAsync(THREAD_LOG_RETENTION_SWEEP_MS);
+    expect(pruned).toHaveLength(1);
+  });
+
+  it("keeps going when the usage prune fails", async () => {
+    vi.useFakeTimers();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    startUpkeep({
+      bots: () => [{ id: "bot", tasks: [task("old")] }],
+      retentionDays: () => null,
+      busy: () => false,
+      openDirectHandoff: () => false,
+      cleanupPartials: () => 0,
+      usageRetention: () => 90,
+      pruneUsage: async () => { throw new Error("usage gone"); },
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(warn).toHaveBeenCalledWith("usage retention prune failed: usage gone");
+  });
+
   it("starts the cache cap's sweeper, telling it to wait whenever a thread is busy or an engine process lives", () => {
     vi.useFakeTimers();
     let working = "", warm = false;
