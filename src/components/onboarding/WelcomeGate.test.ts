@@ -91,18 +91,18 @@ describe("who gets the welcome flow", () => {
     expect(store.dispatch).toHaveBeenCalledWith({ type: "toggleWelcome", open: false });
   });
 
-  it("on a first run with Jobs still to set up, lands on the Jobs page instead of the chat", () => {
+  it("on a first run, lands on Home even with Jobs still to set up", () => {
     vi.stubGlobal("window", LOCAL_PAGE);
     store.state = { ...store.state, bots: [{ id: "sanremes", chiefOfStaff: true }, { id: "research" }] };
     gate(LOCAL_VIEWER).tree!.props.onDone!("research");
-    expect(store.dispatch).toHaveBeenCalledWith({ type: "showJobs" });
+    expect(store.dispatch).toHaveBeenCalledWith({ type: "showHome" });
     expect(store.dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ type: "select" }));
     // A replay from Settings stays where the person was, even with Jobs still to set up.
     fixture.values = [];
     store.dispatch.mockReset();
     store.state = { ...store.state, welcomeOpen: true, config: { onboarding: { ...EMPTY_ONBOARDING, completedAt: "2026-10-23T00:00:00.000Z", version: WELCOME_VERSION } } };
     gate(LOCAL_VIEWER).tree!.props.onDone!(null);
-    expect(store.dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ type: "showJobs" }));
+    expect(store.dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ type: "showHome" }));
     expect(store.dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ type: "select" }));
   });
 
