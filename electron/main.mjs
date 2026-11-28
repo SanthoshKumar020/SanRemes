@@ -1979,6 +1979,14 @@ ipcMain.handle("installed-app:install", localOnly("installed-app:install", (even
 ipcMain.handle("installed-app:list", localOnly("installed-app:list", () => installedApps.list()));
 ipcMain.handle("installed-app:open", localOnly("installed-app:open", (_event, id) => installedApps.open(id) !== null));
 ipcMain.handle("installed-app:uninstall", localOnly("installed-app:uninstall", (_event, id) => installedApps.uninstall(id)));
+ipcMain.handle("installed-app:set-permission-level", localOnly("installed-app:set-permission-level", (event, id, level) => {
+  const owner = BrowserWindow.fromWebContents(event.sender);
+  return installedApps.setPermissionLevel(id, level, owner ?? undefined);
+}));
+ipcMain.handle("installed-app:reconfirm-permissions", localOnly("installed-app:reconfirm-permissions", (event, id, contentHash) => {
+  const owner = BrowserWindow.fromWebContents(event.sender);
+  return installedApps.reconfirmPermissions(id, contentHash, owner ?? undefined);
+}));
 
 // URL validation, sandboxing, session isolation and the one-interactive-pane rule stay here, not in the renderer.
 ipcMain.handle("desktop-workspace:open", localOnly("desktop-workspace:open", (event, input) =>

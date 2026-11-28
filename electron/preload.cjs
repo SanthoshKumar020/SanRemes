@@ -385,6 +385,8 @@ const bridge = {
     list: () => ipcRenderer.invoke("installed-app:list"),
     open: (id) => ipcRenderer.invoke("installed-app:open", id),
     uninstall: (id) => ipcRenderer.invoke("installed-app:uninstall", id),
+    setPermissionLevel: (id, level) => ipcRenderer.invoke("installed-app:set-permission-level", id, level),
+    reconfirmPermissions: (id, contentHash) => ipcRenderer.invoke("installed-app:reconfirm-permissions", id, contentHash),
   },
   desktopWorkspace: {
     open: (input) => ipcRenderer.invoke("desktop-workspace:open", input),
