@@ -32,6 +32,7 @@ function railPage(): Plugin {
 }
 
 const include = [
+  "chrome-extension/**/*.test.ts",
   "evals/**/*.test.ts",
   "server/**/*.test.ts",
   "skills/**/*.test.ts",

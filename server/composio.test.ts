@@ -14,6 +14,7 @@ import {
   connectionMode,
   connectionStatus,
   listConnectorTools,
+  listToolkitTools,
   listToolkits,
   toolkitCategories,
   mcpIntegration,
@@ -39,6 +40,26 @@ import { EMAIL_READ_TOOL_NAMES, EMAIL_SLUG } from "../shared/email.ts";
 let api: Server;
 it("lists exactly the curated apps product analytics may name, in the same order", () => {
   expect(CURATED_SLUGS).toEqual([...CURATED_CONNECTOR_SLUGS]);
+});
+
+it("lists the Microsoft 365 apps in the curated fallback, grouped and with the account note", async () => {
+  // No project key and no managed service: the fallback is the curated list. Delete the env vars rather than pinning
+  // the broker off, so later tests can still read the service from the environment.
+  delete process.env.SANREMES_COMPOSIO_BROKER_URL;
+  delete process.env.SANREMES_COMPOSIO_BROKER_TOKEN;
+  const { cards, source } = await listToolkits({});
+  expect(source).toBe("curated");
+  expect(cards.filter((card) => ["outlook", "one_drive", "share_point", "microsoft_teams"].includes(card.slug))
+    .map((card) => [card.slug, card.label, card.categories])).toEqual([
+    ["outlook", "Outlook", ["Communication", "Microsoft 365"]],
+    ["one_drive", "OneDrive", ["Files", "Microsoft 365"]],
+    ["share_point", "SharePoint", ["Files", "Microsoft 365"]],
+    ["microsoft_teams", "Microsoft Teams", ["Communication", "Microsoft 365"]],
+  ]);
+  expect(cards.find((card) => card.slug === "microsoft_teams")!.blurb).toContain("work or school account");
+  expect(cards.find((card) => card.slug === "share_point")!.blurb).toContain("work or school account");
+  expect(cards.find((card) => card.slug === "outlook")!.blurb).not.toContain("work or school");
+  expect(cards.find((card) => card.slug === "one_drive")!.blurb).not.toContain("work or school");
 });
 
 it("only sends Session MCP credentials over HTTPS or loopback HTTP", () => {
@@ -386,6 +407,18 @@ beforeAll(async () => {
         next_cursor: "accounts-page-2",
       }));
     }
+    if (req.method === "GET" && url.pathname === "/api/v3.1/tools") {
+      res.writeHead(200, { "content-type": "application/json" });
+      if (url.searchParams.get("toolkit_slug") === "gmail") {
+        return res.end(JSON.stringify({ items: [
+          { slug: "GMAIL_SEND_EMAIL", description: "Send an email" },
+          { slug: "GMAIL_READ_EMAIL", description: "Read an email" },
+          { slug: "GMAIL_SEND_EMAIL", description: "Send an email" },
+          { slug: "GMAIL_LIST_LABELS" },
+        ] }));
+      }
+      return res.end(JSON.stringify({ items: [] }));
+    }
     if (req.method === "POST" && url.pathname.endsWith("/link")) {
       // twitter has no Composio-managed auth: the link only works when the
       // Session was created with the project's own config for it
@@ -579,6 +612,24 @@ describe.sequential("Composio Sessions", () => {
 
     expect(cards.map((card) => card.slug)).toEqual(["gmail", "deepgram"]);
     expect(calls.slice(before).filter((call) => call.path === "/api/v3/toolkits")).toHaveLength(2);
+  });
+
+  it("lists one toolkit's tools for the tile preview, de-duplicated and without inventing descriptions", async () => {
+    const before = calls.length;
+    const tools = await listToolkitTools({ composio: { apiKey: "ak_test" } }, "GMAIL");
+    expect(tools).toEqual([
+      { name: "GMAIL_SEND_EMAIL", description: "Send an email" },
+      { name: "GMAIL_READ_EMAIL", description: "Read an email" },
+      { name: "GMAIL_LIST_LABELS" },
+    ]);
+    const request = calls.slice(before).find((call) => call.path === "/api/v3.1/tools");
+    expect(request?.query).toContain("toolkit_slug=gmail");
+    await expect(listToolkitTools({ composio: { apiKey: "ak_test" } }, "outlook")).resolves.toEqual([]);
+  });
+
+  it("says plainly when no project key can answer a tool list", async () => {
+    await expect(listToolkitTools({}, "gmail")).rejects.toMatchObject({ status: 503 });
+    await expect(listToolkitTools({}, "gmail")).rejects.toThrow("own Composio project key");
   });
 
   it("drops a managed MCP session when routing switches to a user project", async () => {

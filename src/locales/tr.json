@@ -4346,7 +4346,6 @@
   "apps.filter.mcp": "MCP sunucuları",
   "apps.connected": "Bağlı",
   "apps.usedBy": "{names} tarafından kullanılıyor",
-  "apps.showAll": "Tüm {count} uygulamayı göster",
   "apps.mcp.add": "MCP sunucusu ekle",
   "apps.connectedCount": "{count} bağlı",
   "apps.categoriesAria": "Kategoriler",

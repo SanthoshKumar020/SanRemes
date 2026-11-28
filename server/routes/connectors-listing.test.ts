@@ -7,6 +7,7 @@ import { PASS, type RouteContext } from "./table.ts";
 function setup(overrides: Partial<ConnectorListingDeps["composio"]> = {}) {
   const composio = {
     listToolkits: vi.fn(async () => ({ cards: [{ slug: "gmail", label: "Gmail", blurb: "", logo: null, domain: null }], source: "api" as const, pagination: { items: 1, stalled: false, complete: true }, fresh: false })),
+    listToolkitTools: vi.fn(async () => [{ name: "GMAIL_SEND_EMAIL", description: "Send an email" }]),
     configured: () => true,
     connectionMode: () => "managed" as const,
     connectorSetup: vi.fn(() => "ready" as const),
@@ -48,6 +49,22 @@ describe("the Apps page's listing routes", () => {
     const { composio, call } = setup({ connectorAvailability: () => availability });
     expect((await call("GET", "/api/connectors/connected")).answer![2]).toEqual({ configured: false, credentialStore, services: {} });
     expect(composio.sharedConnectedInventory).not.toHaveBeenCalled();
+  });
+
+  it("answers one toolkit's tools for the tile preview, and leaves the tools inventory route alone", async () => {
+    const { composio, call } = setup();
+    const { answer } = await call("GET", "/api/connectors/gmail/tools");
+    expect(answer![1]).toBe(200);
+    expect(answer![2]).toEqual({ tools: [{ name: "GMAIL_SEND_EMAIL", description: "Send an email" }] });
+    expect(composio.listToolkitTools).toHaveBeenCalledWith({}, "gmail");
+    expect((await call("GET", "/api/connectors/tools")).out).toBe(PASS);
+  });
+
+  it("answers a refused tool list with the refusal's status instead of a generic failure", async () => {
+    const { call } = setup({ listToolkitTools: async () => { throw Object.assign(new Error("Tool lists need your own Composio project key."), { status: 503 }); } });
+    const { answer } = await call("GET", "/api/connectors/gmail/tools");
+    expect(answer![1]).toBe(503);
+    expect(answer![2]).toEqual({ error: "Tool lists need your own Composio project key." });
   });
 
   it("leaves every other connector route to its own handler", async () => {

@@ -4977,7 +4977,6 @@
   "apps.filter.mcp": "Servidores MCP",
   "apps.connected": "Conectada",
   "apps.usedBy": "En uso por {names}",
-  "apps.showAll": "Mostrar las {count} apps",
   "apps.mcp.add": "Añadir servidor MCP",
   "apps.connectedCount": "{count} conectadas",
   "apps.categoriesAria": "Categorías",

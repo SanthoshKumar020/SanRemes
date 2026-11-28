@@ -5880,7 +5880,6 @@
   "apps.filter.mcp": "MCP 서버",
   "apps.connected": "연결됨",
   "apps.usedBy": "{names} 사용 중",
-  "apps.showAll": "앱 {count}개 모두 보기",
   "apps.mcp.add": "MCP 서버 추가",
   "apps.connectedCount": "{count}개 연결됨",
   "apps.categoriesAria": "카테고리",

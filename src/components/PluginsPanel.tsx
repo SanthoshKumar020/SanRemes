@@ -24,7 +24,7 @@ import {
   type ConnectorStatus,
 } from "@/lib/connector-status";
 import { SidebarPopoverMenu } from "./SidebarPopoverMenu";
-import { appCategoryLabel, CATEGORY_SECTION_SIZE, catalogSections, connectorDescription, inCategory, rankCategories } from "@/lib/app-catalog";
+import { appCategoryLabel, CATEGORY_SECTION_SIZE, catalogSections, connectorDescription, inCategory, isMicrosoft365Card, MICROSOFT_365_CATEGORY, rankCategories, type CatalogSection } from "@/lib/app-catalog";
 import { McpServersPanel } from "./McpServersPanel";
 import { HOSTED_MCP_APPS, mcpServerConnected, ownMcpServer, type HostedApp, type HostedConnections } from "@/lib/hosted-mcp-apps";
 import { isRemoteMcpListing, type McpServerListing } from "./mcp-draft";
@@ -138,7 +138,9 @@ export function PluginsPanel() {
   const [error, setError] = useState<string | { key: LocaleKey } | null>(null);
   const [typed, setSearch] = useState("");
   const [tab, setTab] = useState<"marketplace" | "connected">("marketplace");
-  const [showAllApps, setShowAllApps] = useState(false);
+  const [appPages, setAppPages] = useState(1);
+  /** The bots each tile's install-time picker grants, chosen before the connection exists. */
+  const [installGrants, setInstallGrants] = useState<Record<string, ReadonlySet<string>>>({});
   const [hostedConnected, setHostedConnected] = useState<HostedConnections | null>(null);
   const [cardsRefresh, setCardsRefresh] = useState(0);
   const [category, setCategory] = useState<string | null>(null);
@@ -325,12 +327,20 @@ export function PluginsPanel() {
     }
   };
 
-  const startPolling = (slug: string, before: ConnectorStatus | undefined, firstConnection: boolean) => {
+  const startPolling = (slug: string, before: ConnectorStatus | undefined, firstConnection: boolean, chosenBots?: ReadonlySet<string>) => {
     polls.current.get(slug)?.();
     const stop = pollConnector(before, () => refreshStatus([slug]).then((services) => services[slug]), (result) => {
       if (polls.current.get(slug) === stop) polls.current.delete(slug);
       connectorConnect(slug, result);
-      if (result === "connected" && firstConnection) appGrants.appConnected(slug, cards?.find((card) => card.slug === slug)?.label ?? slug);
+      if (result === "connected" && firstConnection) {
+        appGrants.appConnected(slug, cards?.find((card) => card.slug === slug)?.label ?? slug, chosenBots);
+        setInstallGrants((current) => {
+          if (!(slug in current)) return current;
+          const next = { ...current };
+          delete next[slug];
+          return next;
+        });
+      }
     });
     polls.current.set(slug, stop);
   };
@@ -365,7 +375,7 @@ export function PluginsPanel() {
       }));
       setAliasSlug(null);
       setAliasDraft("");
-      startPolling(slug, status[slug], firstConnection);
+      startPolling(slug, status[slug], firstConnection, installGrants[slug]);
       if (!await launch.open(url) && opening.current === launch) {
         setError({ key: "connectors.popupBlockedContinue" });
       }
@@ -438,11 +448,26 @@ export function PluginsPanel() {
   const nativeCardsShown = (!inCategoryView && (shownHosted.size > 0 || showEmail || showX)) || postizHere || (filter === "connected" && ownServers.some((server) => server.enabled && ownServerShown(server)));
   const categoryCards = useMemo(() => inCategoryView ? visible.filter((card) => inCategory(card, category)) : visible, [inCategoryView, visible, category]);
   const sectioned = filter === "all" && !searching && category === null;
-  const sections = useMemo(() => sectioned ? catalogSections(visible, isConnected, ranked.inline) : [], [sectioned, visible, isConnected, ranked]);
+  const sections = useMemo(() => {
+    if (!sectioned) return [];
+    const base = catalogSections(visible, isConnected, ranked.inline);
+    const featured = visible.filter((card) => isMicrosoft365Card(card) && !isConnected(card.slug));
+    if (!featured.length) return base;
+    const section: CatalogSection<ToolkitCard> = {
+      kind: "category",
+      category: MICROSOFT_365_CATEGORY,
+      cards: featured.slice(0, CATEGORY_SECTION_SIZE),
+      more: featured.length > CATEGORY_SECTION_SIZE,
+    };
+    const next = [...base];
+    const at = next.findIndex((candidate) => candidate.kind !== "connected");
+    next.splice(at === -1 ? next.length : at, 0, section);
+    return next;
+  }, [sectioned, visible, isConnected, ranked]);
   const allSection = sections.find((section) => section.kind === "all");
   const allCards = sectioned ? allSection?.cards ?? [] : categoryCards;
-  const allCapped = sectioned && !showAllApps && allCards.length > APPS_PREVIEW_COUNT;
-  const allShown = allCapped ? allCards.slice(0, APPS_PREVIEW_COUNT) : allCards;
+  const allShown = sectioned ? allCards.slice(0, appPages * APPS_PREVIEW_COUNT) : allCards;
+  const allCapped = sectioned && allCards.length > allShown.length;
   const connectedCards = useMemo(() => (cards ?? []).filter((card) => hasActiveConnection(status[card.slug])), [cards, status]);
   const botLists = useMemo(() => {
     const cached = (find: (slug: string) => Bot[]) => {
@@ -454,10 +479,22 @@ export function PluginsPanel() {
   const tileActions = useTileActions({
     connect: (slug, alias, replacing) => void connect(slug, alias, replacing),
     openUrl: (url) => { setError(null); void openConnectUrl(url).catch((e) => setError(e.message)); },
-    toggleAlias: (slug) => { setAliasSlug((current) => current === slug ? null : slug); setAliasDraft(""); },
+    toggleAlias: (slug) => {
+      if (aliasSlug !== slug && installGrants[slug] === undefined && appGrants.canChange) {
+        setInstallGrants((current) => ({
+          ...current,
+          // The bots the old auto-grant would have given it to: ones that may already use it, and ones whose apps
+          // are on. The bot a connection was started from joins later, in appConnected.
+          [slug]: new Set(botsForApps(bots, instances).filter((bot) => botAppScope(bot, slug) !== null || bot.composio !== false).map((bot) => bot.id)),
+        }));
+      }
+      setAliasSlug((current) => current === slug ? null : slug);
+      setAliasDraft("");
+    },
     setAliasDraft,
     aliasRequired: () => setError({ key: "connectors.aliasRequired" }),
     changeBots: appGrants.change,
+    grantSelection: (slug, next) => setInstallGrants((current) => ({ ...current, [slug]: next })),
     disconnect: setDisconnecting,
     openBotApps: (botId) => { close(); openBotSettings(dispatch, "access", { botId, page: "apps" }); },
   });
@@ -467,6 +504,9 @@ export function PluginsPanel() {
     setTab("marketplace");
     if (surface !== "apps") dispatch({ type: "togglePlugins", open: true, surface: "apps" });
   };
+  // The page resets when the list itself changes: a search, a category, or the connected tab. The surface is left out on
+  // purpose — flipping to MCP servers and back must not lose the page the list was on.
+  useEffect(() => { setAppPages(1); }, [search, category, tab]);
   const listTitle = searching
     ? t("connectors.section.results")
     : filter === "connected"
@@ -692,7 +732,7 @@ export function PluginsPanel() {
                     ? ` — ${t("connectors.marketplace.partialReason", { reason: pagination.reason })}`
                     : ""}`
                   : undefined}
-                viewAll={allCapped ? { label: t("apps.viewAll"), onClick: () => setShowAllApps(true) } : undefined}
+                viewAll={allCapped ? { label: t("apps.showMore", { remaining: allCards.length - allShown.length }), onClick: () => setAppPages((pages) => pages + 1) } : undefined}
                 after={(
                   <>
                     {cards === null && (
@@ -701,13 +741,14 @@ export function PluginsPanel() {
                       </div>
                     )}
                     {allCapped && (
-                      <div className="mt-4 flex justify-center">
+                      <div className="mt-4 flex flex-col items-center gap-2">
+                        <div className="text-[12px] text-ink-secondary">{t("apps.showingCount", { shown: allShown.length, total: allCards.length })}</div>
                         <button
                           type="button"
-                          onClick={() => setShowAllApps(true)}
+                          onClick={() => setAppPages((pages) => pages + 1)}
                           className={cn(pill, "bg-control/70 px-4 text-ink hover:bg-raised-hover")}
                         >
-                          {t("apps.showAll", { count: allCards.length.toLocaleString(intlLocale()) })}
+                          {t("apps.showMore", { remaining: allCards.length - allShown.length })}
                         </button>
                       </div>
                     )}
@@ -800,6 +841,8 @@ export function PluginsPanel() {
         usedBy={standing.connected || standing.included ? botLists.usedBy(card.slug) : NO_BOTS}
         limited={serviceStatus?.connected || standing.included ? botLists.limited(card.slug) : NO_BOTS}
         canChangeBots={appGrants.canChange}
+        grantBots={aliasSlug === card.slug ? appGrants.bots : NO_BOTS}
+        grantSelection={installGrants[card.slug] ?? null}
         actions={tileActions}
       />
     );

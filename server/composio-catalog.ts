@@ -7,6 +7,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 
+import { MICROSOFT_365_CONNECTOR_SLUGS } from "../shared/connector-curated.ts";
 import { writeFileAtomic } from "./atomic.ts";
 import { canonicalToolkitSlug, MAX_CONNECTED_ACCOUNT_PAGES } from "./composio-project.ts";
 
@@ -19,6 +20,10 @@ export interface ToolkitCard {
   noAuth?: boolean;
   domain: string | null;
   categories?: string[];
+  /** How many tools Composio lists for the toolkit, when its catalog page carries the count. */
+  toolCount?: number;
+  /** How many triggers Composio lists for the toolkit, when its catalog page carries the count. */
+  triggerCount?: number;
 }
 
 export type CatalogStopReason =
@@ -28,7 +33,22 @@ export type CatalogStopReason =
   | "cursor-repeated"
   | "http-error"
   | "bad-page"
+  | "timeout"
   | "limit";
+
+/** The longest one walk of the marketplace may run. A page fetch already times out on its own; without this bound a
+ * slow catalog could hold the first Apps read for the whole page allowance. */
+export const CATALOG_WALK_MS = 60_000;
+
+const MICROSOFT_365_SLUGS = new Set<string>(MICROSOFT_365_CONNECTOR_SLUGS);
+export const MICROSOFT_365_CATEGORY = "Microsoft 365";
+
+/** The four Microsoft 365 apps group under their own category, whatever Composio files them under. */
+export function withMicrosoft365Category(slug: string, categories: string[] | undefined): string[] | undefined {
+  if (!MICROSOFT_365_SLUGS.has(slug)) return categories;
+  const rest = (categories ?? []).filter((category) => category !== MICROSOFT_365_CATEGORY);
+  return [MICROSOFT_365_CATEGORY, ...rest].slice(0, 4);
+}
 
 export interface CatalogPagination {
   items: number;
@@ -94,12 +114,14 @@ const savedCatalogSchema = z.object({
     noAuth: z.boolean().optional(),
     domain: z.string().nullable(),
     categories: z.array(z.string()).optional(),
+    toolCount: z.number().int().nonnegative().optional(),
+    triggerCount: z.number().int().nonnegative().optional(),
   })).min(1),
   pagination: z.object({
     items: z.number(),
     totalItems: z.number().optional(),
     stalled: z.boolean(),
-    reason: z.enum(["end", "total-reached", "page-stuck", "cursor-repeated", "http-error", "bad-page", "limit"]).optional(),
+    reason: z.enum(["end", "total-reached", "page-stuck", "cursor-repeated", "http-error", "bad-page", "timeout", "limit"]).optional(),
     complete: z.boolean(),
   }),
 });
@@ -173,7 +195,10 @@ function announceChange(): void {
 
 const digestOf = (cards: readonly ToolkitCard[]) => createHash("sha256").update(JSON.stringify(cards)).digest("hex");
 
-async function walkCatalog(readPage: CatalogPageReader): Promise<{ cards: ToolkitCard[]; pagination: CatalogPagination } | null> {
+/** One walk of the marketplace's pages, bounded by page count and by wall clock: a walk that runs past its budget
+ * stops with what it has, and the partial catalog is served with the reason instead of hanging the Apps read. */
+export async function walkCatalog(readPage: CatalogPageReader, budgetMs: number = CATALOG_WALK_MS): Promise<{ cards: ToolkitCard[]; pagination: CatalogPagination } | null> {
+  const startedAt = Date.now();
   const items: any[] = [];
   const seenCursors = new Set<string>();
   let cursor: string | undefined;
@@ -182,6 +207,10 @@ async function walkCatalog(readPage: CatalogPageReader): Promise<{ cards: Toolki
   let reportedTotalPages: number | undefined;
   let stop: CatalogStopReason = "limit";
   for (let page = 0; page < MAX_CONNECTED_ACCOUNT_PAGES; page += 1) {
+    if (Date.now() - startedAt > budgetMs) {
+      stop = "timeout";
+      break;
+    }
     const res = await readPage(cursor).catch(() => null);
     if (!res?.ok) {
       stop = "http-error";
@@ -229,15 +258,27 @@ async function walkCatalog(readPage: CatalogPageReader): Promise<{ cards: Toolki
     cursor = next;
   }
   if (!items.length) return null;
-  const cards: ToolkitCard[] = items.map((t: any) => ({
-    slug: canonicalToolkitSlug(String(t.slug ?? t.key ?? t.name ?? "")),
-    label: t.name ?? t.slug ?? "",
-    blurb: (t.meta?.description ?? t.description ?? "").slice(0, 90),
-    logo: t.meta?.logo ?? t.logo ?? null,
-    noAuth: t.no_auth === true,
-    domain: null,
-    ...(toolkitCategories(t.meta?.categories) ? { categories: toolkitCategories(t.meta?.categories) } : {}),
-  }));
+  const countOf = (value: unknown): number | undefined => {
+    const count = Number(value);
+    return Number.isInteger(count) && count >= 0 ? count : undefined;
+  };
+  const cards: ToolkitCard[] = items.map((t: any) => {
+    const slug = canonicalToolkitSlug(String(t.slug ?? t.key ?? t.name ?? ""));
+    const toolCount = countOf(t.meta?.tools_count);
+    const triggerCount = countOf(t.meta?.triggers_count);
+    const categories = withMicrosoft365Category(slug, toolkitCategories(t.meta?.categories));
+    return {
+      slug,
+      label: t.name ?? t.slug ?? "",
+      blurb: (t.meta?.description ?? t.description ?? "").slice(0, 90),
+      logo: t.meta?.logo ?? t.logo ?? null,
+      noAuth: t.no_auth === true,
+      domain: null,
+      ...(categories ? { categories } : {}),
+      ...(toolCount !== undefined ? { toolCount } : {}),
+      ...(triggerCount !== undefined ? { triggerCount } : {}),
+    };
+  });
   const uniqueCards = cards.filter(
     (card, index) => card.slug && cards.findIndex((candidate) => candidate.slug === card.slug) === index,
   );

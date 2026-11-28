@@ -1,6 +1,7 @@
-import { memo, useMemo, useRef } from "react";
-import { Check, Loader2 } from "lucide-react";
+import { memo, useMemo, useRef, useState } from "react";
+import { Check, ChevronDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { api } from "@/state/store";
 import { t } from "@/lib/i18n";
 import { connectorDescription } from "@/lib/app-catalog";
 import { reusableConnectionUrl, type PendingAuthorization } from "@/lib/connector-oauth";
@@ -16,6 +17,7 @@ import {
 import type { AppState, Bot } from "@/state/store";
 import { managedConnectorUnavailableReason } from "../../shared/connector-availability";
 import { BotAvatar } from "./Avatar";
+import { BotSwitch } from "./bot-panel/rows";
 import { ServiceIcon, type ToolkitCard } from "./ServiceIcon";
 
 export const USED_BY_AVATAR_SIZE = 16;
@@ -28,6 +30,8 @@ export interface AppTileActions {
   setAliasDraft(value: string): void;
   aliasRequired(): void;
   changeBots(slug: string): void;
+  /** The bots the tile's install-time picker grants this app to, chosen before the connection exists. */
+  grantSelection(slug: string, bots: ReadonlySet<string>): void;
   disconnect(target: { slug: string; label: string; account: ConnectorAccount }): void;
   openBotApps(botId: string): void;
 }
@@ -47,6 +51,11 @@ export interface AppTileProps {
   /** The bots that may use only some of this app's tools. */
   limited: readonly Bot[];
   canChangeBots: boolean;
+  /** The bots the install-time picker may grant; empty while this tile's form is closed, so untouched tiles keep
+   * their props and are not rendered again. */
+  grantBots: readonly Bot[];
+  /** The picker's current choice for this app; null means every grantable bot. */
+  grantSelection: ReadonlySet<string> | null;
   actions: AppTileActions;
 }
 
@@ -71,13 +80,76 @@ export function useTileActions(actions: AppTileActions): AppTileActions {
     setAliasDraft: (value) => latest.current.setAliasDraft(value),
     aliasRequired: () => latest.current.aliasRequired(),
     changeBots: (slug) => latest.current.changeBots(slug),
+    grantSelection: (slug, bots) => latest.current.grantSelection(slug, bots),
     disconnect: (target) => latest.current.disconnect(target),
     openBotApps: (botId) => latest.current.openBotApps(botId),
   }), []);
 }
 
-/** One app in the Apps panel. Props only and no hooks: it is rendered again only when something it shows changed. */
-export function AppTileView({ card, serviceStatus, pendingUrl, aliasDraft, busy, configured, inventoryPhase, mode, policy, usedBy, limited, canChangeBots, actions }: AppTileProps) {
+/** The tool list a tile fetches on demand. Kept in a child so the tile above stays a plain render with no hooks. */
+function AppTileTools({ slug, toolCountText }: { slug: string; toolCountText: string }) {
+  const [open, setOpen] = useState(false);
+  const [tools, setTools] = useState<readonly { name: string; description?: string }[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const toggle = () => {
+    const opening = !open;
+    setOpen(opening);
+    if (opening && tools === null && !loading) {
+      setLoading(true);
+      setError(null);
+      api<{ tools?: Array<{ name: string; description?: string }> }>(`/api/connectors/${encodeURIComponent(slug)}/tools`)
+        .then((r) => setTools(r.tools ?? []))
+        .catch((e) => setError(e instanceof Error ? e.message : String(e)))
+        .finally(() => setLoading(false));
+    }
+  };
+  return (
+    <>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={toggle}
+        className="-ms-1 inline-flex items-center gap-1 rounded-full px-1 font-medium text-ink-secondary transition-colors hover:bg-raised-hover hover:text-ink"
+      >
+        {toolCountText}
+        <ChevronDown size={12} aria-hidden="true" className={cn("transition-transform motion-reduce:transition-none", open && "rotate-180")} />
+      </button>
+      {open && (
+        <div className="mt-1">
+          {loading ? (
+            <div className="flex items-center gap-2">
+              <Loader2 size={12} className="animate-spin" />
+              {t("apps.tools.loading")}
+            </div>
+          ) : error ? (
+            <div className="text-danger">{error}</div>
+          ) : tools !== null && (
+            <div className="space-y-0.5">
+              {tools.length === 0 ? (
+                <div>{t("apps.tools.empty")}</div>
+              ) : (
+                <>
+                  {tools.slice(0, 8).map((tool) => (
+                    <div key={tool.name} className="truncate" title={tool.description ?? tool.name}>
+                      <span className="font-mono text-ink">{tool.name}</span>
+                      {tool.description ? <span> — {tool.description}</span> : null}
+                    </div>
+                  ))}
+                  {tools.length > 8 && <div>{t("apps.tools.more", { count: tools.length - 8 })}</div>}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
+/** One app in the Apps panel. Everything it shows comes in as props, and the tool preview lives in a child component so
+ * this tile stays a plain render with no hooks of its own. */
+export function AppTileView({ card, serviceStatus, pendingUrl, aliasDraft, busy, configured, inventoryPhase, mode, policy, usedBy, limited, canChangeBots, grantBots, grantSelection, actions }: AppTileProps) {
   const { failed, pending, accounts, included, connected } = tileStanding(card, serviceStatus);
   const pendingAuthorization = pending && !failed ? pendingUrl : undefined;
   const authorizationUrl = reusableConnectionUrl(pendingAuthorization);
@@ -97,6 +169,18 @@ export function AppTileView({ card, serviceStatus, pendingUrl, aliasDraft, busy,
           ? t("connectors.authExpired")
           : connectorDescription(card)
   );
+  const toolCountText = card.toolCount === undefined ? null : [
+    card.toolCount === 1 ? t("apps.toolsCountOne") : t("apps.toolsCount", { count: card.toolCount }),
+    ...(card.triggerCount !== undefined
+      ? [card.triggerCount === 1 ? t("apps.triggersCountOne") : t("apps.triggersCount", { count: card.triggerCount })]
+      : []),
+  ].join(" · ");
+  const effectiveGrants = grantSelection ?? new Set(grantBots.map((bot) => bot.id));
+  const toggleGrant = (botId: string) => {
+    const next = new Set(effectiveGrants);
+    if (!next.delete(botId)) next.add(botId);
+    actions.grantSelection(card.slug, next);
+  };
   return (
     <div
       data-app-tile={card.slug}
@@ -171,6 +255,11 @@ export function AppTileView({ card, serviceStatus, pendingUrl, aliasDraft, busy,
         </button>
       </div>
       <div className="ps-[52px]">
+        {toolCountText !== null && (
+          <div className="mt-1.5 text-[12px] leading-5 text-ink-secondary">
+            {mode === "self-hosted" ? <AppTileTools slug={card.slug} toolCountText={toolCountText} /> : <span>{toolCountText}</span>}
+          </div>
+        )}
         {authorizationUrl && (
           <a href={authorizationUrl} target="_blank" rel="noopener noreferrer" onClick={(event) => {
             if (!reusableConnectionUrl(pendingAuthorization)) {
@@ -292,6 +381,25 @@ export function AppTileView({ card, serviceStatus, pendingUrl, aliasDraft, busy,
               {t("connectors.action.continue")}
             </button>
           </form>
+        )}
+        {addingAccount && accounts.length === 0 && canChangeBots && grantBots.length > 0 && (
+          <div className="mt-3">
+            <div className="text-[12px] font-medium leading-5 text-ink-secondary">{t("apps.whichBots", { app: card.label })}</div>
+            <div className="mt-1">
+              {grantBots.map((bot) => (
+                <div key={bot.id} className="flex min-h-11 items-center gap-2.5">
+                  <BotAvatar bot={bot} size={24} animated={false} />
+                  <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-ink">{bot.name}</span>
+                  <BotSwitch
+                    color={bot.color}
+                    checked={effectiveGrants.has(bot.id)}
+                    aria-label={t("botSettings.simple.appToggle", { name: bot.name, app: card.label })}
+                    onClick={() => toggleGrant(bot.id)}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </div>

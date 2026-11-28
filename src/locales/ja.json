@@ -6127,7 +6127,6 @@
   "apps.filter.mcp": "MCP サーバー",
   "apps.connected": "接続済み",
   "apps.usedBy": "{names} が使用中",
-  "apps.showAll": "{count} 個のアプリをすべて表示",
   "apps.mcp.add": "MCP サーバーを追加",
   "apps.connectedCount": "{count} 件接続済み",
   "apps.categoriesAria": "カテゴリー",

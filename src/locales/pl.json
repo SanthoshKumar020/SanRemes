@@ -5420,7 +5420,6 @@
   "apps.filter.mcp": "Serwery MCP",
   "apps.connected": "Połączone",
   "apps.usedBy": "Używane przez: {names}",
-  "apps.showAll": "Pokaż wszystkie aplikacje: {count}",
   "apps.mcp.add": "Dodaj serwer MCP",
   "apps.connectedCount": "Połączone: {count}",
   "apps.categoriesAria": "Kategorie",

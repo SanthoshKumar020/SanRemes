@@ -1,0 +1,1 @@
+{"action":{"default_title":"Ask SanRemes"},"background":{"service_worker":"background.js"},"description":"Ask your SanRemes bot about the page you are on.","host_permissions":["http://localhost:8799/*"],"manifest_version":3,"name":"SanRemes","permissions":["sidePanel","activeTab","scripting","storage"],"side_panel":{"default_path":"panel.html"},"version":"0.1.0"}

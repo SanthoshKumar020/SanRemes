@@ -5469,7 +5469,6 @@
   "apps.filter.mcp": "MCP-серверы",
   "apps.connected": "Подключено",
   "apps.usedBy": "Используется: {names}",
-  "apps.showAll": "Показать все приложения ({count})",
   "apps.mcp.add": "Добавить MCP-сервер",
   "apps.connectedCount": "Подключено: {count}",
   "apps.categoriesAria": "Категории",

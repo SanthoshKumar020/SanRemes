@@ -6316,7 +6316,6 @@
   "apps.filter.mcp": "MCP 伺服器",
   "apps.connected": "已連線",
   "apps.usedBy": "使用者：{names}",
-  "apps.showAll": "顯示全部 {count} 個應用程式",
   "apps.mcp.add": "新增 MCP 伺服器",
   "apps.connectedCount": "{count} 個已連線",
   "apps.categoriesAria": "類別",

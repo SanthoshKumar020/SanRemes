@@ -10,6 +10,13 @@ export const INLINE_CATEGORY_COUNT = 5;
 export const CATEGORY_SECTION_COUNT = 3;
 export const CATEGORY_SECTION_SIZE = 4;
 
+/** The category the four Microsoft 365 apps group under in the catalog. */
+export const MICROSOFT_365_CATEGORY = "Microsoft 365";
+
+export function isMicrosoft365Card(card: CatalogCard): boolean {
+  return (card.categories ?? []).includes(MICROSOFT_365_CATEGORY);
+}
+
 /** Categories by how many apps they hold; `keep` ones (an app of SanRemes's own lives there) always show inline. */
 export function rankCategories(cards: readonly CatalogCard[], inline = INLINE_CATEGORY_COUNT, keep: readonly string[] = []): { inline: string[]; more: string[] } {
   const counts = new Map<string, number>();
@@ -83,6 +90,10 @@ const CONNECTOR_COPY: Record<string, string> = {
   airtable: "airtable",
   figma: "figma",
   stripe: "stripe",
+  outlook: "outlook",
+  onedrive: "oneDrive",
+  sharepoint: "sharePoint",
+  "microsoft teams": "microsoftTeams",
 };
 
 export function appCategoryLabel(name: string): string {

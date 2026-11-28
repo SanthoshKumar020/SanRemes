@@ -115,13 +115,26 @@ export function useAppGrants({ status, emailConnected, inventoryReady }: { statu
   const latest = useRef({ admin, bots, allowed, startingBot, write });
   latest.current = { admin, bots, allowed, startingBot, write };
 
-  const appConnected = useCallback((slug: string, app: string) => {
+  const appConnected = useCallback((slug: string, app: string, chosen?: ReadonlySet<string>) => {
     const now = latest.current;
     const fromBot = now.startingBot;
     now.startingBot = null;
     setStartingBot(null);
     if (now.admin !== true || !now.bots.length) return;
     if (now.allowed && !now.allowed.allowAll && !now.allowed.allowlist.includes(slug)) return;
+    if (chosen !== undefined) {
+      // The tile's install-time choice, made before the connection existed: grant exactly that set, plus the bot the
+      // connection was started from, and take the app off every bot left out of it.
+      const on = new Set(chosen);
+      if (fromBot) on.add(fromBot);
+      let using = 0;
+      for (const bot of now.bots) {
+        if (on.has(bot.id) !== (botAppScope(bot, slug) !== null)) now.write(bot, slug, on.has(bot.id));
+        if (on.has(bot.id)) using += 1;
+      }
+      showAppGrantNotice({ slug, text: t(using ? "apps.botsCanUse" : "apps.noBotsUse", { app }) });
+      return;
+    }
     let using = 0;
     for (const bot of now.bots) {
       if (botAppScope(bot, slug) !== null) using += 1;

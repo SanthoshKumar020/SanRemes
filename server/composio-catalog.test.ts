@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { CATALOG_FILE, catalogWalksSettled, forgetCatalogs, onCatalogChange, rememberCatalogIn } from "./composio-catalog.ts";
+import { CATALOG_FILE, catalogWalksSettled, forgetCatalogs, onCatalogChange, rememberCatalogIn, walkCatalog, withMicrosoft365Category, type CatalogPageReader } from "./composio-catalog.ts";
 import { removeTempDir } from "./testing/cleanup.ts";
 import { listToolkits, setManagedBrokerAccess } from "./composio.ts";
 import { startFakeCatalogService, waitedOnService, type FakeCatalogService } from "./testing/fake-catalog-service.ts";
@@ -157,6 +157,21 @@ describe("the catalog kept in the data folder", () => {
     expect(fake.requests.catalog).toBe(0);
   });
 
+  it("starts from a saved catalog that carries tool counts and a timed-out walk", async () => {
+    await listToolkits({});
+    const file = join(dataDir, CATALOG_FILE);
+    const saved = JSON.parse(readFileSync(file, "utf8")) as { cards: Array<Record<string, unknown>>; pagination: Record<string, unknown> };
+    saved.cards[0] = { ...saved.cards[0], toolCount: 12, triggerCount: 2 };
+    saved.pagination = { items: 6, totalItems: 8, stalled: true, reason: "timeout", complete: false };
+    writeFileSync(file, JSON.stringify(saved));
+    forgetCatalogs();
+    fake.requests.catalog = 0;
+    const afterRestart = await listToolkits({});
+    expect(afterRestart.cards[0]).toMatchObject({ toolCount: 12, triggerCount: 2 });
+    expect(afterRestart.pagination).toEqual({ items: 6, totalItems: 8, stalled: true, reason: "timeout", complete: false });
+    expect(fake.requests.catalog).toBe(0);
+  });
+
   it("still answers when the file can't be written", async () => {
     if (process.platform === "win32" || process.getuid?.() === 0) return;
     chmodSync(dataDir, 0o500);
@@ -165,6 +180,70 @@ describe("the catalog kept in the data folder", () => {
     } finally {
       chmodSync(dataDir, 0o700);
     }
+  });
+});
+
+describe("the walk's bounds and the Microsoft 365 grouping", () => {
+  const page = (items: unknown[], nextCursor?: string) => new Response(JSON.stringify({
+    items,
+    next_cursor: nextCursor ?? null,
+    current_page: 1,
+    total_pages: 1,
+  }), { status: 200, headers: { "content-type": "application/json" } });
+  const toolkit = (slug: string, meta: Record<string, unknown> = {}) => ({ slug, name: slug, meta });
+
+  it("keeps the tool and trigger counts the catalog page carries, and none it does not", async () => {
+    const read: CatalogPageReader = async () => page([
+      toolkit("gmail", { description: "mail", tools_count: 42, triggers_count: 3 }),
+      toolkit("slack", { description: "chat", tools_count: "many" }),
+      toolkit("notion", { description: "pages" }),
+    ]);
+    const found = await walkCatalog(read);
+    expect(found?.cards).toEqual([
+      expect.objectContaining({ slug: "gmail", toolCount: 42, triggerCount: 3 }),
+      expect.objectContaining({ slug: "slack" }),
+      expect.objectContaining({ slug: "notion" }),
+    ]);
+    expect(found?.cards[1]).not.toHaveProperty("toolCount");
+    expect(found?.cards[2]).not.toHaveProperty("toolCount");
+    expect(found?.cards[2]).not.toHaveProperty("triggerCount");
+    expect(found?.pagination).toEqual({ items: 3, stalled: false, complete: true });
+  });
+
+  it("files the Microsoft 365 apps under their own category in the live catalog", async () => {
+    const read: CatalogPageReader = async () => page([
+      toolkit("outlook", { description: "mail", categories: [{ name: "Communication" }] }),
+      toolkit("one_drive", { description: "files" }),
+      toolkit("share_point", { description: "sites", categories: [{ name: "Files" }, { name: "Productivity" }, { name: "A" }, { name: "B" }] }),
+      toolkit("gmail", { description: "mail", categories: [{ name: "Communication" }] }),
+    ]);
+    const found = await walkCatalog(read);
+    expect(found?.cards).toEqual([
+      expect.objectContaining({ slug: "outlook", categories: ["Microsoft 365", "Communication"] }),
+      expect.objectContaining({ slug: "one_drive", categories: ["Microsoft 365"] }),
+      expect.objectContaining({ slug: "share_point", categories: ["Microsoft 365", "Files", "Productivity", "A"] }),
+      expect.objectContaining({ slug: "gmail", categories: ["Communication"] }),
+    ]);
+    expect(withMicrosoft365Category("gmail", ["Communication"])).toEqual(["Communication"]);
+    expect(withMicrosoft365Category("gmail", undefined)).toBeUndefined();
+  });
+
+  it("stops at its wall-clock budget with the partial catalog and a timeout reason, never a hung walk", async () => {
+    let pages = 0;
+    const read: CatalogPageReader = async () => {
+      pages += 1;
+      later(5_000);
+      return new Response(JSON.stringify({
+        items: [toolkit(`app${pages}`, { description: "thing" })],
+        next_cursor: `cursor-${pages + 1}`,
+        current_page: pages,
+        total_pages: 100,
+      }), { status: 200, headers: { "content-type": "application/json" } });
+    };
+    const found = await walkCatalog(read, 0);
+    expect(pages).toBe(1);
+    expect(found?.cards).toHaveLength(1);
+    expect(found?.pagination).toEqual({ items: 1, stalled: true, complete: false, reason: "timeout" });
   });
 });
 

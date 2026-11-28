@@ -7035,7 +7035,6 @@
   "apps.whichBots": "Quali bot possono usare {app}?",
   "apps.botsCanUse": "Ora i tuoi bot possono utilizzare {app}.",
   "apps.noBotsUse": "Nessun utilizzo del bot {app} sistemi innovativi.",
-  "apps.showAll": "Mostra tutte le {count} app",
   "apps.mcp.add": "Aggiungi server MCP",
   "apps.mcp.manage": "Gestisci",
   "apps.connectedCount": "{count} collegate",

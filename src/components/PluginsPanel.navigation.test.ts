@@ -71,13 +71,13 @@ const CARDS = 0;
 const CONFIGURED = 3;
 const STATUS = 6;
 const PHASE = 13;
-const X_CONNECTED = 21;
-const CATEGORY = 20;
-const POSTIZ_CONNECTED = 22;
-const EMAIL_CONNECTED = 23;
+const X_CONNECTED = 22;
+const CATEGORY = 21;
+const POSTIZ_CONNECTED = 23;
+const EMAIL_CONNECTED = 24;
 const MODE = 4;
 const SEARCH = 15;
-const HOSTED_CONNECTED = 18;
+const HOSTED_CONNECTED = 19;
 const TAB = 16;
 
 type Node = ReactElement<{ children?: ReactNode; "aria-pressed"?: boolean; "data-apps-filter"?: string; onClick?: () => void; [key: string]: unknown }>;
@@ -526,10 +526,10 @@ describe("Apps pop-up", () => {
   });
 
   it("drops a selected category when a filter is chosen, so the MCP section comes back", () => {
-    fixture.overrides.set(20, "Design");
+    fixture.overrides.set(CATEGORY, "Design");
     expect(render().html).not.toContain("MCP inventory");
     chip(render().nodes, "mcp").props.onClick!();
-    expect(fixture.overrides.get(20)).toBeNull();
+    expect(fixture.overrides.get(CATEGORY)).toBeNull();
     expect(render().html).toContain("MCP inventory");
   });
 
@@ -566,16 +566,16 @@ describe("Apps pop-up", () => {
     expect([...design.html.matchAll(/<h3 id="[^"]*"[^>]*>([^<]*)/g)].map((match) => match[1])).toEqual(["Design"]);
     expect(chip(design.nodes, "all").props["aria-pressed"]).toBe(false);
     expect(design.nodes.find((node) => node.props["data-apps-category"] === "Design")!.props["aria-pressed"]).toBe(true);
-    fixture.overrides.set(20, null);
+    fixture.overrides.set(CATEGORY, null);
     const again = render();
     expect(again.html.match(/>View all</g)).toHaveLength(1);
     const sections = again.nodes.filter((node) => node.props.viewAll);
     expect(sections.map((node) => node.props.title)).toEqual(["Productivity"]);
     (sections[0]!.props.viewAll as { onClick: () => void }).onClick();
-    expect(fixture.overrides.get(20)).toBe("Productivity");
+    expect(fixture.overrides.get(CATEGORY)).toBe("Productivity");
   });
 
-  const MCP_SERVERS = 24, SUGGESTIONS = 28;
+  const MCP_SERVERS = 25, SUGGESTIONS = 29;
   const headings = (html: string) => [...html.matchAll(/<h3 id="[^"]*"[^>]*>([^<]*)/g)].map((match) => match[1]);
   const tiles = (html: string) => [...html.matchAll(/data-app-tile="([^"]*)"/g)].map((match) => match[1]).filter((slug) => !HOSTED_MCP_APPS.some((app) => app.id === slug));
   const server = (name: string, extra: Record<string, unknown> = {}) => ({ name, type: "http", url: `https://${name}.example/mcp`, headerKeys: [], enabled: true, ...extra });
@@ -663,8 +663,8 @@ describe("Apps pop-up", () => {
   it("doesn't call the Connected view empty while an MCP server is listed there", () => {
     fixture.overrides.set(STATUS, {});
     fixture.overrides.set(TAB, "connected");
-    fixture.overrides.set(21, false); fixture.overrides.set(22, false); fixture.overrides.set(23, false);
-    fixture.overrides.set(18, Object.fromEntries(HOSTED_MCP_APPS.map((app) => [app.id, false])));
+    fixture.overrides.set(X_CONNECTED, false); fixture.overrides.set(POSTIZ_CONNECTED, false); fixture.overrides.set(EMAIL_CONNECTED, false);
+    fixture.overrides.set(HOSTED_CONNECTED, Object.fromEntries(HOSTED_MCP_APPS.map((app) => [app.id, false])));
     const emptyTitle = connectedInventoryCopy("ready").title;
     expect(render().html).toContain(emptyTitle);
     fixture.overrides.set(MCP_SERVERS, [server("docs")]);
@@ -685,7 +685,8 @@ describe("Apps pop-up", () => {
     fixture.overrides.set(CARDS, Array.from({ length: APPS_PREVIEW_COUNT + 5 }, (_, index) => card(`app${index}`)));
     const { html } = render();
     expect(html.match(/data-app-tile=/g)).toHaveLength(APPS_PREVIEW_COUNT);
-    expect(html).toContain(`Show all ${APPS_PREVIEW_COUNT + 5} apps`);
+    expect(html).toContain("Show 5 more");
+    expect(html).toContain(`Showing ${APPS_PREVIEW_COUNT} of ${APPS_PREVIEW_COUNT + 5}`);
   });
 
   it("keeps the stale notice reachable and no longer sends people to a settings page for per-bot access", () => {

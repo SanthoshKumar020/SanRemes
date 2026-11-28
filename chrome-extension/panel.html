@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SanRemes</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 12px; font: 14px/1.5 system-ui, sans-serif; color: #1a1a1a; }
+  h1 { font-size: 15px; margin: 0 0 8px; }
+  details { margin-bottom: 12px; }
+  summary { cursor: pointer; font-weight: 600; }
+  label { display: block; margin-top: 8px; font-size: 12px; color: #555; }
+  input, textarea { width: 100%; margin-top: 2px; padding: 8px; border: 1px solid #ccc; border-radius: 8px; font: inherit; }
+  textarea { min-height: 72px; resize: vertical; }
+  #log { display: flex; flex-direction: column; gap: 8px; margin: 0 0 12px; }
+  #log .you, #log .bot { padding: 8px 10px; border-radius: 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  #log .you { background: #e8f0fe; align-self: flex-end; max-width: 95%; }
+  #log .bot { background: #f1f1f1; }
+  #log .note { color: #666; font-size: 12px; }
+  .row { display: flex; gap: 8px; margin-top: 8px; }
+  button { flex: 1; padding: 9px 10px; border: 0; border-radius: 8px; background: #1a73e8; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  button.secondary { background: #e8e8e8; color: #1a1a1a; }
+  #status { min-height: 20px; margin-top: 8px; font-size: 12px; color: #666; }
+</style>
+</head>
+<body>
+<h1>SanRemes</h1>
+<details>
+  <summary>Connection</summary>
+  <label>Bot ID <input id="botId" autocomplete="off" placeholder="bot_…"></label>
+  <label>SanRemes address <input id="baseUrl" autocomplete="off" placeholder="http://localhost:8799"></label>
+  <label>Bot API key <input id="key" type="password" autocomplete="off" placeholder="Paste the key from Bot settings"></label>
+  <p style="font-size:12px;color:#666">In the app: Bot settings → Advanced: Access → Bot API → “Let apps talk to this bot”. The key is kept only in this browser.</p>
+</details>
+<div id="log"></div>
+<textarea id="question" placeholder="Ask about this page…" aria-label="Your question"></textarea>
+<div class="row">
+  <button id="askPage" type="button">Ask about this page</button>
+  <button id="send" type="button" class="secondary">Send</button>
+</div>
+<div id="status" role="status"></div>
+<script src="panel.js"></script>
+</body>
+</html>

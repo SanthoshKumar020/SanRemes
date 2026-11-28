@@ -10,6 +10,10 @@ export interface ToolkitCard {
   noAuth?: boolean;
   domain: string | null;
   categories?: string[];
+  /** How many tools Composio lists for the app, when the catalog carried the count. */
+  toolCount?: number;
+  /** How many triggers Composio lists for the app, when the catalog carried the count. */
+  triggerCount?: number;
 }
 
 /** An app's logo, then its site's favicon, then its initial. */

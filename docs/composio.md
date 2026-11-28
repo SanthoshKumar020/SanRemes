@@ -254,3 +254,11 @@ A bot with no grant record at all keeps the legacy behavior: every tool on every
 Grants are enforced on the real tool names at call time (including batches inside the MULTI_EXECUTE meta-tool), the tool list offered to the model is filtered to the granted set, and every allow/deny writes a decision-log row. Refusals do not enumerate what else is granted. Paired phones see each bot's grants read-only in its profile (What this bot does → App tools); grants are assigned on the computer, never from a phone.
 
 Connected-app sends also follow the bot's **Permissions → Sending on your behalf** setting at every access level, including Full access. **Ask every time** requires approval for each send regardless of prompt language. **Send without asking** lets sends go out on their own, with no daily limit. A Full-access bot with no setting here sends without asking. Reading and drafting are not sends; below Full access, code the app can't read always asks, even under Send without asking; at Full access it goes out without a card unless the rule is Ask every time.
+
+## Microsoft 365 apps
+
+Outlook, OneDrive, SharePoint and Microsoft Teams are first-class connectors, listed with Gmail and Google Drive in the Apps panel under their own **Microsoft 365** section. They connect the same way — managed OAuth through the Composio broker, or the person's own Composio project key — and per-bot grants work on them exactly as on any other app: choose which bots may use one while connecting it, or change it later from the app's tile or a bot's Connected apps.
+
+One account note, said on the tile rather than hidden: **Teams and SharePoint need a work or school Microsoft account**; a personal Microsoft account cannot sign into them. Outlook and OneDrive work with a personal account.
+
+The tool list a tile can name for an app — the "3 tools · 1 trigger" line, opening to the tool names — is available only where the install has its own Composio project key (`GET /api/connectors/:slug/tools`). The managed broker has no per-toolkit tool route, so on a managed install the tile shows the counts from the catalog and no names. That is a display limit only; connecting and granting work the same either way.

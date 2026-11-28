@@ -6313,7 +6313,6 @@
   "apps.filter.mcp": "MCP 服务器",
   "apps.connected": "已连接",
   "apps.usedBy": "使用：{names}",
-  "apps.showAll": "显示全部 {count} 个应用",
   "apps.mcp.add": "添加 MCP 服务器",
   "apps.connectedCount": "{count} 个已连接",
   "apps.categoriesAria": "分类",

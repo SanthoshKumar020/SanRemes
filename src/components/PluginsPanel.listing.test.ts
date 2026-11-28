@@ -55,7 +55,7 @@ vi.mock("./PostizCard", () => ({ PostizCard: () => null }));
 vi.mock("./EmailCard", () => ({ EmailCard: () => null }));
 vi.mock("./Avatar", () => ({ BotAvatar: () => null }));
 
-const { PluginsPanel } = await import("./PluginsPanel");
+const { APPS_PREVIEW_COUNT, PluginsPanel } = await import("./PluginsPanel");
 const { StoreSourceContext } = await import("@/state/store-context");
 const { t } = await import("@/lib/i18n");
 
@@ -169,7 +169,7 @@ describe("how often the Apps panel renders its tiles", () => {
     expect(tiles()).toBeGreaterThan(0);
     expect(await tileRenders(storeChange)).toBe(0);
 
-    const showAll = Array.from(host.querySelectorAll("button")).find((button) => button.textContent === t("apps.showAll", { count: String(APPS) }))!;
+    const showAll = Array.from(host.querySelectorAll("button")).find((button) => button.textContent === t("apps.showMore", { remaining: String(APPS - APPS_PREVIEW_COUNT) }))!;
     const shown = await rendersAndAdded(() => showAll.click());
     expect(shown.renders).toBe(shown.added);
     expect(tiles()).toBeGreaterThan(0);

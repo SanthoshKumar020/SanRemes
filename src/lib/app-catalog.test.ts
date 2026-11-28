@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CATEGORY_SECTION_SIZE, catalogSections, inCategory, rankCategories } from "./app-catalog";
+import { CATEGORY_SECTION_SIZE, catalogSections, connectorDescription, inCategory, isMicrosoft365Card, MICROSOFT_365_CATEGORY, rankCategories } from "./app-catalog";
 
 const card = (slug: string, ...categories: string[]) => ({ slug, categories });
 
@@ -24,6 +24,26 @@ describe("inCategory", () => {
     expect(inCategory({ slug: "x" }, null)).toBe(true);
     expect(inCategory(card("x", "Design"), "Design")).toBe(true);
     expect(inCategory({ slug: "x" }, "Design")).toBe(false);
+  });
+});
+
+describe("isMicrosoft365Card", () => {
+  it("recognises the four Microsoft 365 apps by their category, and nothing else", () => {
+    expect(MICROSOFT_365_CATEGORY).toBe("Microsoft 365");
+    expect(isMicrosoft365Card(card("outlook", "Communication", "Microsoft 365"))).toBe(true);
+    expect(isMicrosoft365Card(card("one_drive", "Microsoft 365"))).toBe(true);
+    expect(isMicrosoft365Card(card("gmail", "Communication"))).toBe(false);
+    expect(isMicrosoft365Card({ slug: "teams" })).toBe(false);
+  });
+});
+
+describe("connectorDescription", () => {
+  it("names the Microsoft 365 apps in plain words, including the work-or-school limit where it applies", () => {
+    expect(connectorDescription({ label: "Outlook", blurb: "fallback" })).toBe("Read and send mail, calendar and tasks");
+    expect(connectorDescription({ label: "OneDrive", blurb: "fallback" })).toBe("Files and folders, upload and share");
+    expect(connectorDescription({ label: "SharePoint", blurb: "fallback" })).toContain("work or school account");
+    expect(connectorDescription({ label: "Microsoft Teams", blurb: "fallback" })).toContain("work or school account");
+    expect(connectorDescription({ label: "Unknown App", blurb: "fallback" })).toBe("fallback");
   });
 });
 

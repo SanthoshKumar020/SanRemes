@@ -6,7 +6,7 @@ import { PASS, type RouteHandler } from "./table.ts";
 
 export interface ConnectorListingDeps {
   cfg(): AppConfig;
-  composio: Pick<typeof Composio, "listToolkits" | "configured" | "connectionMode" | "connectorSetup" | "connectorAvailability" | "sharedConnectedInventory">;
+  composio: Pick<typeof Composio, "listToolkits" | "listToolkitTools" | "configured" | "connectionMode" | "connectorSetup" | "connectorAvailability" | "sharedConnectedInventory">;
   /** The desktop app or a Cloud home: a host the managed service comes with. */
   managedHost: boolean;
 }
@@ -45,6 +45,17 @@ export function createConnectorListingRoutes(deps: ConnectorListingDeps): RouteH
         inventoryComplete: inventory.complete,
         services: inventory.services,
       });
+    }
+    const toolsMatch = path.match(/^\/api\/connectors\/([\w-]+)\/tools$/);
+    if (toolsMatch) {
+      const cfg = deps.cfg();
+      try {
+        return json(res, 200, { tools: await composio.listToolkitTools(cfg, toolsMatch[1]!) });
+      } catch (error) {
+        const maybeStatus = (error as { status?: unknown }).status;
+        const status = typeof maybeStatus === "number" ? maybeStatus : 502;
+        return json(res, status, { error: error instanceof Error ? error.message : String(error) });
+      }
     }
     return PASS;
   };

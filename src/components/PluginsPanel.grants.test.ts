@@ -72,6 +72,7 @@ const tile = (slug = "apollo") => host.querySelector<HTMLElement>(`[data-app-til
 const button = (scope: ParentNode, label: string) => Array.from(scope.querySelectorAll("button")).find((candidate) => candidate.textContent === label || candidate.getAttribute("aria-label") === label)!;
 const prompt = () => host.querySelector<HTMLElement>("[data-app-grant-prompt]");
 const switchOf = (name: string) => prompt()!.querySelector<HTMLElement>(`[aria-label="${name} can use Apollo"]`)!;
+const tileSwitchOf = (name: string) => tile().querySelector<HTMLElement>(`[aria-label="${name} can use Apollo"]`)!;
 const click = (element: HTMLElement) => act(async () => { element.click(); });
 const type = async (input: HTMLInputElement, value: string) => {
   await act(async () => {
@@ -278,6 +279,67 @@ describe("after connecting an app", () => {
     await settlePoll();
     expect(writes()).toEqual([]);
     expect(toast()).toBeNull();
+  });
+});
+
+describe("choosing which bots get an app while connecting it", () => {
+  it("offers the picker on the tile, on for every bot by default, and grants only the ones left on", async () => {
+    fixture.state.bots = [bot("scout"), bot("ada")];
+    await open();
+    await click(tile().querySelector("button")!);
+    expect(tile().textContent).toContain("Which bots can use Apollo?");
+    expect(tileSwitchOf("Scout").getAttribute("aria-checked")).toBe("true");
+    expect(tileSwitchOf("Ada").getAttribute("aria-checked")).toBe("true");
+    await click(tileSwitchOf("Scout"));
+    expect(tileSwitchOf("Scout").getAttribute("aria-checked")).toBe("false");
+    await type(tile().querySelector("form input") as HTMLInputElement, "work");
+    await act(async () => { tile().querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
+    await flush();
+    await settlePoll();
+    expect(writes()).toEqual([
+      { type: "updateBot", botId: "scout", patch: { connectorScopes: { apps: {} } } },
+    ]);
+    expect(toast()?.textContent).toContain("Your bots can now use Apollo.");
+  });
+
+  it("grants nothing when every bot is switched off on the tile, and says so", async () => {
+    fixture.state.bots = [bot("scout"), bot("ada")];
+    await open();
+    await click(tile().querySelector("button")!);
+    await click(tileSwitchOf("Scout"));
+    await click(tileSwitchOf("Ada"));
+    await type(tile().querySelector("form input") as HTMLInputElement, "work");
+    await act(async () => { tile().querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
+    await flush();
+    await settlePoll();
+    expect(writes()).toEqual([
+      { type: "updateBot", botId: "scout", patch: { connectorScopes: { apps: {} } } },
+      { type: "updateBot", botId: "ada", patch: { connectorScopes: { apps: {} } } },
+    ]);
+    expect(toast()?.textContent).toBe("No bot uses Apollo yet.Change");
+  });
+
+  it("offers no picker when adding a second account to an app that is already connected", async () => {
+    fixture.state.bots = [bot("scout"), bot("ada")];
+    fixture.services = { apollo: { connected: true, accounts: [{ id: "ca_old", status: "ACTIVE" }] } };
+    fixture.after = { connected: true, accounts: [{ id: "ca_old", status: "ACTIVE" }, { id: "ca_new", status: "ACTIVE" }] };
+    await open();
+    await click(button(tile(), "Add account"));
+    expect(tile().textContent).not.toContain("Which bots can use Apollo?");
+    await type(tile().querySelector("form input") as HTMLInputElement, "second");
+    await act(async () => { tile().querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
+    await flush();
+    await settlePoll();
+    expect(writes()).toEqual([]);
+    expect(toast()).toBeNull();
+  });
+
+  it("offers no picker to someone who cannot change bots", async () => {
+    fixture.admin = false;
+    fixture.state.bots = [bot("scout")];
+    await open();
+    await click(tile().querySelector("button")!);
+    expect(tile().textContent).not.toContain("Which bots can use Apollo?");
   });
 });
 

@@ -542,6 +542,41 @@ export async function listConnectorTools(
 
 const CONNECTOR_TOOLS_CACHE_MS = 60_000;
 let connectorToolsCache: { at: number; identity: string; services: Record<string, ConnectorToolListing[]> } | null = null;
+
+/** What one toolkit can do, by tool name, for the Apps panel's tile preview. Only a project of the person's own can
+ * answer it: Composio's tools list takes the project key, and the managed service has no per-toolkit tools route, so
+ * there the panel shows the catalog's tool count instead. */
+export async function listToolkitTools(cfg: AppConfig, slug: string): Promise<ConnectorToolListing[]> {
+  const apiKey = projectApiKey(cfg);
+  if (!apiKey) throw inputError("Tool lists need your own Composio project key. Add it in Settings → API keys.", 503);
+  const normalized = canonicalToolkitSlug(slug);
+  if (!normalized) throw inputError("A toolkit slug is required", 400);
+  const params = new URLSearchParams({ toolkit_slug: normalized, limit: "100" });
+  const res = await fetch(`${apiBase()}/tools?${params}`, {
+    headers: projectHeaders(apiKey),
+    signal: AbortSignal.timeout(15_000),
+  }).catch(() => null);
+  if (!res) throw new Error("Composio tools: unreachable");
+  if (!res.ok) throw new Error(await responseError(res, `Composio tools: HTTP ${res.status}`));
+  const json: unknown = await res.json().catch(() => null);
+  const items = json && typeof json === "object" && Array.isArray((json as { items?: unknown }).items)
+    ? (json as { items: unknown[] }).items
+    : null;
+  if (!items) throw new Error("Composio returned a tools list without a tools array");
+  const tools: ConnectorToolListing[] = [];
+  for (const item of items) {
+    if (!item || typeof item !== "object") continue;
+    const record = item as { slug?: unknown; name?: unknown; description?: unknown };
+    const name = typeof record.slug === "string" && record.slug ? record.slug
+      : typeof record.name === "string" && record.name ? record.name : null;
+    if (!name || tools.some((tool) => tool.name === name)) continue;
+    tools.push({
+      name,
+      ...(typeof record.description === "string" && record.description ? { description: record.description.slice(0, 140) } : {}),
+    });
+  }
+  return tools;
+}
 /** Cache key per backend, so a config switch never serves the previous backend's tools. */
 function connectorToolsIdentity(cfg: AppConfig, as?: BrokerAccess): string {
   const apiKey = as ? null : projectApiKey(cfg);
@@ -913,6 +948,10 @@ const CURATED: Array<ToolkitCard & { slug: CuratedConnectorSlug }> = [
   { slug: "airtable", label: "Airtable", blurb: "Bases and records", domain: "airtable.com", logo: null, categories: ["Productivity"] },
   { slug: "figma", label: "Figma", blurb: "Files and comments", domain: "figma.com", logo: null, categories: ["Design"] },
   { slug: "stripe", label: "Stripe", blurb: "Payments and customers", domain: "stripe.com", logo: null, categories: ["Finance"] },
+  { slug: "outlook", label: "Outlook", blurb: "Read and send mail, calendar and tasks", domain: "outlook.com", logo: null, categories: ["Communication", "Microsoft 365"] },
+  { slug: "one_drive", label: "OneDrive", blurb: "Files and folders, upload and share", domain: "onedrive.live.com", logo: null, categories: ["Files", "Microsoft 365"] },
+  { slug: "share_point", label: "SharePoint", blurb: "Sites, lists and libraries — needs a work or school account", domain: "sharepoint.com", logo: null, categories: ["Files", "Microsoft 365"] },
+  { slug: "microsoft_teams", label: "Microsoft Teams", blurb: "Chats, channels and meetings — needs a work or school account", domain: "teams.microsoft.com", logo: null, categories: ["Communication", "Microsoft 365"] },
 ];
 
 export async function listToolkits(cfg: AppConfig): Promise<{ cards: ToolkitCard[]; source: "api" | "curated"; pagination?: CatalogPagination; fresh?: boolean }> {

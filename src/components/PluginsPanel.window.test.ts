@@ -44,7 +44,6 @@ vi.mock("./Avatar", () => ({ BotAvatar: () => null }));
 
 const { PluginsPanel } = await import("./PluginsPanel");
 const { StoreSourceContext } = await import("@/state/store-context");
-const { t } = await import("@/lib/i18n");
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -105,10 +104,13 @@ const scrollTo = async (top: number) => {
   await act(async () => { scroller().dispatchEvent(new Event("scroll")); });
   await flush();
 };
-const button = (text: string) => Array.from(host.querySelectorAll("button")).find((candidate) => candidate.textContent === text)!;
 const showAll = async () => {
-  await act(async () => button(t("apps.showAll", { count: APPS.toLocaleString("en-US") })).click());
-  await flush();
+  for (;;) {
+    const more = Array.from(host.querySelectorAll("button")).find((candidate) => /^Show \d[\d,]* more$/.test(candidate.textContent ?? ""));
+    if (!more) return;
+    await act(async () => { more.click(); });
+    await flush();
+  }
 };
 const type = async (text: string) => {
   const input = host.querySelector("input")!;

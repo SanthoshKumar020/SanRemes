@@ -4346,7 +4346,6 @@
   "apps.filter.mcp": "Máy chủ MCP",
   "apps.connected": "Đã kết nối",
   "apps.usedBy": "Được dùng bởi {names}",
-  "apps.showAll": "Hiển thị tất cả {count} ứng dụng",
   "apps.mcp.add": "Thêm máy chủ MCP",
   "apps.connectedCount": "{count} đã kết nối",
   "apps.categoriesAria": "Danh mục",
