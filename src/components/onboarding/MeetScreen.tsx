@@ -56,7 +56,7 @@ function DemoComposer({ reduced, onTyping }: { reduced: boolean; onTyping: (typi
 }
 
 /** The first run's first screen: the app's name, its mascot and a composer typing one sentence, then one pill. With
- * no AI working yet the pills are the sign-ins (Groq's free key, Claude, ChatGPT and OpenCode), and Next comes once
+ * no AI working yet the pills are the sign-ins (Copilot, Groq's free key, Claude, ChatGPT and OpenCode), and Next comes once
  * the AI has answered its test message. */
 export function MeetScreen({ hosted, onNext }: { hosted: boolean; onNext: () => void }) {
   const { state } = useStore();
@@ -82,6 +82,7 @@ export function MeetScreen({ hosted, onNext }: { hosted: boolean; onNext: () => 
   const choice = (kind: FirstAiKind) => first.find((entry) => entry.kind === kind)?.instance;
   const lead = first.length ? undefined : recommended;
   const pills = {
+    copilot: useSignInPill(choice("copilot"), "meet"),
     groq: useSignInPill(choice("groq"), "meet"),
     claude: useSignInPill(choice("claude") ?? lead, "meet"),
     chatgpt: useSignInPill(choice("chatgpt"), "meet"),

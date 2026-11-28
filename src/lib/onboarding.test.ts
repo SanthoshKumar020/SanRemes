@@ -160,11 +160,13 @@ describe("connecting an AI in the welcome", () => {
   type Row = { id: string; driverKind: string; access?: string; readOnly?: boolean };
   const row = (id: string, driverKind: string, extra: Partial<Row> = {}): Row => ({ id, driverKind, ...extra });
 
-  it("recommends a Claude account first, then a ChatGPT plan, and folds every other way under it", () => {
+  it("recommends Copilot first, then a Claude account, then a ChatGPT plan, and folds every other way under it", () => {
     const grok = row("grok", "grokAgent");
     const codex = row("codex", "codex");
     const claudeKey = row("claude-api", "claudeAgent", { access: "api" });
     const claude = row("claude", "claudeAgent");
+    const copilot = row("copilot", "copilotAgent");
+    expect(aiChoices([grok, codex, claudeKey, claude, copilot])).toEqual({ recommended: copilot, others: [grok, codex, claudeKey, claude] });
     expect(aiChoices([grok, codex, claudeKey, claude])).toEqual({ recommended: claude, others: [grok, codex, claudeKey] });
     expect(aiChoices([grok, claudeKey, codex]).recommended).toBe(codex);
     expect(aiChoices([grok, claudeKey]).recommended).toBe(grok);
@@ -188,9 +190,9 @@ describe("the welcome's first three ways to connect an AI", () => {
   const row = (id: string, driverKind: string, extra: Partial<Row> = {}): Row => ({ id, driverKind, ...extra });
   const first = (rows: Row[]) => firstAis(rows, (r) => r.ready === true).map(({ kind, instance }) => [kind, instance.id]);
 
-  it("are Groq's free key, Claude, ChatGPT and OpenCode, in that order, whatever order they are listed in", () => {
-    expect(first([row("opencodeGo", "opencodeGo"), row("grok", "grokAgent"), row("groq", "groq", { access: "api" }), row("codex", "codex"), row("claude", "claudeAgent")]))
-      .toEqual([["groq", "groq"], ["claude", "claude"], ["chatgpt", "codex"], ["opencode", "opencodeGo"]]);
+  it("are Copilot, Groq's free key, Claude, ChatGPT and OpenCode, in that order, whatever order they are listed in", () => {
+    expect(first([row("opencodeGo", "opencodeGo"), row("grok", "grokAgent"), row("groq", "groq", { access: "api" }), row("codex", "codex"), row("claude", "claudeAgent"), row("copilot", "copilotAgent")]))
+      .toEqual([["copilot", "copilot"], ["groq", "groq"], ["claude", "claude"], ["chatgpt", "codex"], ["opencode", "opencodeGo"]]);
     expect(first([row("grok", "grokAgent")])).toEqual([]);
   });
 
@@ -232,6 +234,8 @@ describe("the AI the welcome stands on", () => {
   });
 
   it("is the best ready AI, waiting on its test, and works once it answered", () => {
+    expect(stand([ai("copilot", "copilotAgent"), ai("claude", "claudeAgent"), ai("grok", "grokAgent")])).toEqual({ id: "copilot", state: "testing" });
+    expect(stand([ai("copilot", "copilotAgent", { ready: false }), ai("claude", "claudeAgent")])).toEqual({ id: "claude", state: "testing" });
     expect(stand([ai("grok", "grokAgent"), ai("claude", "claudeAgent")])).toEqual({ id: "claude", state: "testing" });
     expect(stand([ai("grok", "grokAgent"), ai("claude", "claudeAgent", { aiTest: "testing" })])).toEqual({ id: "claude", state: "testing" });
     expect(stand([ai("grok", "grokAgent"), ai("claude", "claudeAgent", { aiTest: "passed" })])).toEqual({ id: "claude", state: "passed" });
@@ -243,6 +247,7 @@ describe("the AI the welcome stands on", () => {
   });
 
   it("walks past an AI that didn't answer to the next, and says so when none is left", () => {
+    expect(stand([ai("claude", "claudeAgent", { aiTest: "passed" }), ai("copilot", "copilotAgent", { aiTest: "failed" })])).toEqual({ id: "claude", state: "passed" });
     expect(stand([ai("grok", "grokAgent", { aiTest: "passed" }), ai("claude", "claudeAgent", { aiTest: "failed" })])).toEqual({ id: "grok", state: "passed" });
     expect(stand([ai("grok", "grokAgent"), ai("claude", "claudeAgent", { aiTest: "failed" })])).toEqual({ id: "grok", state: "testing" });
     expect(stand([ai("claude", "claudeAgent", { aiTest: "failed" }), ai("opencodeGo", "opencodeGo", { snapshot: { freeFallback: true } })]))

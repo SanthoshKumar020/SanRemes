@@ -167,8 +167,16 @@ describe("new bot default: one ranking with the welcome, tested AIs first", () =
   const kimi = ready("kimi", "kimiAgent", "kimi-default");
   const chatgpt = ready("chatgpt", "codex", "gpt-default", { chatgptPlan: true });
   const claudeReady = ready("claude", "claudeAgent", "claude-default");
+  const copilot = ready("copilot", "copilotAgent", "copilot-default");
+  const groq = ready("groq", "groq", "groq-default");
   const openCodeFree = ready("opencodeGo", "opencodeGo", "opencode/big-pickle", { freeFallback: true });
   const pick = (instances: SelectableInstance[], context = {}) => selectDefaultModelSelection(instances, undefined, context).instanceId;
+
+  it("picks Copilot first, then Groq's free key, ahead of Claude and Grok", () => {
+    expect(pick([grok, kimi, claudeReady, groq, copilot])).toBe("copilot");
+    expect(pick([grok, claudeReady, groq])).toBe("groq");
+    expect(pick([grok, kimi, claudeReady])).toBe("claude");
+  });
 
   it("picks Claude over Grok even though Grok comes first in the app's list", () => {
     expect(pick([grok, kimi, claudeReady])).toBe("claude");
@@ -194,6 +202,7 @@ describe("new bot default: one ranking with the welcome, tested AIs first", () =
 
   it("moves off an AI that failed its test to the best one that answered, and keeps the ranking until a test says otherwise", () => {
     const failed = (...ids: string[]) => (instance: SelectableInstance) => ids.includes(instance.instanceId) ? false : undefined;
+    expect(pick([copilot, groq, claudeReady], { answered: failed("copilot") })).toBe("groq");
     expect(pick([grok, claudeReady, chatgpt], { answered: failed("claude") })).toBe("chatgpt");
     expect(pick([grok, claudeReady, chatgpt], { answered: (instance: SelectableInstance) => instance.instanceId === "claude" ? false : instance.instanceId === "grok" })).toBe("grok");
     expect(pick([grok, claudeReady], { answered: () => undefined })).toBe("claude");

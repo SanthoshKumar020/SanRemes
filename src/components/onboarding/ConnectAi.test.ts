@@ -100,11 +100,12 @@ describe("connecting an AI on the first screen", () => {
     expect(text()).not.toContain("Couldn't check your AI connections");
   });
 
-  it("leads with Claude's, ChatGPT's and OpenCode's own setups, then lists every other way, with no status list and no engine talk", async () => {
-    f.instances.push(openCode());
+  it("leads with Copilot, then Groq's free key, Claude's, ChatGPT's and OpenCode's own setups, then lists every other way, with no status list and no engine talk", async () => {
+    f.instances = [engine("grok", "grokAgent", "Grok", false), engine("copilot", "copilotAgent", "GitHub Copilot", false),
+      engine("groq", "groq", "Groq", false), engine("claude", "claudeAgent", "Claude", false), engine("codex", "codex", "Codex", false), openCode()];
     await show();
-    expect([...host.querySelectorAll("[data-engine-setup]")].map((node) => node.getAttribute("data-engine-setup"))).toEqual(["claude", "codex", "opencodeGo"]);
-    expect([...host.querySelectorAll("[data-ai-recommended]")].map((node) => node.getAttribute("data-ai-recommended"))).toEqual(["claude", "codex", "opencodeGo"]);
+    expect([...host.querySelectorAll("[data-engine-setup]")].map((node) => node.getAttribute("data-engine-setup"))).toEqual(["copilot", "groq", "claude", "codex", "opencodeGo"]);
+    expect([...host.querySelectorAll("[data-ai-recommended]")].map((node) => node.getAttribute("data-ai-recommended"))).toEqual(["copilot", "groq", "claude", "codex", "opencodeGo"]);
     const rows = [...host.querySelectorAll("button[aria-expanded]")].map((node) => node.textContent);
     expect(rows).toEqual(["Grok"]);
     expect(text()).not.toContain("Other ways");
@@ -115,6 +116,7 @@ describe("connecting an AI on the first screen", () => {
     const signsIn = (instance: InstanceInfo, method?: "paste-code" | "device-code"): InstanceInfo =>
       ({ ...instance, snapshot: { state: "available", authenticated: false }, ...(method ? { authentication: { method } } : {}) });
     f.instances = [
+      signsIn(engine("copilot", "copilotAgent", "GitHub Copilot", false), "device-code"),
       signsIn(engine("claude", "claudeAgent", "Claude", false), "paste-code"),
       signsIn(engine("grok", "grokAgent", "Grok", false), "device-code"),
       signsIn(engine("kimi", "kimiAgent", "Kimi", false)),
@@ -126,6 +128,7 @@ describe("connecting an AI on the first screen", () => {
     const setup = (id: string) => host.querySelector(`[data-engine-setup="${id}"]`);
     const plain = (name: string) => `Use the ${name} account you already have. You sign in on their own website, so your password stays with them.`;
     await show();
+    expect(setup("copilot")?.getAttribute("data-description")).toBe(plain("GitHub Copilot"));
     expect(setup("claude")?.getAttribute("data-description")).toBe(plain("Claude"));
     expect(setup("codex")?.hasAttribute("data-description"), "Codex is finished in Terminal: its setup keeps its own instructions").toBe(false);
     expect(setup("opencodeGo")?.hasAttribute("data-description"), "OpenCode installs with nothing to sign in to").toBe(false);

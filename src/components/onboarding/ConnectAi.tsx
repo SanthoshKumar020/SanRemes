@@ -44,7 +44,7 @@ function OtherWay({ instance, open, onToggle }: { instance: InstanceInfo; open: 
   );
 }
 
-/** Every way to connect an AI, until one has answered a test message (`tested`, from useWelcomeAi): Groq's free key,
+/** Every way to connect an AI, until one has answered a test message (`tested`, from useWelcomeAi): Copilot's, Groq's free key,
  * Claude's, ChatGPT's and OpenCode's own setups first (else the recommended one's), then the organization and every
  * other AI. One that didn't answer says why, with Check again; OpenCode's free model is only a backup until the
  * person picks it (`onChoose`). */
