@@ -23,6 +23,8 @@ import { Sidebar } from "@/components/Sidebar";
 import { PrimaryRail, type PrimaryRailDestination } from "@/components/PrimaryRail";
 import { ChatView } from "@/components/ChatView";
 import { HomeDashboard } from "@/components/HomeDashboard";
+import { NeedsYouPage } from "@/components/NeedsYouPage";
+import { TeamPage } from "@/components/TeamPage";
 import { HandoffExchangeHost } from "@/components/HandoffExchange";
 import { GroupView } from "@/components/GroupView";
 import { ForkPanel } from "@/components/ForkPanel";
@@ -220,9 +222,11 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
   // Open beside a panel below 1280, the sidebar keeps to 280 so the chat keeps its 440; Simple's bot panel never moves it.
   const sidebarBesidePanel = anySidePanel(panelsMovingSidebar(sidePanels)) && !sidebarAndPanelFit;
   const railActive: PrimaryRailDestination =
-    state.computerOpen ? "computer" : state.appSettingsOpen ? "settings" : state.activeView === "home" ? "home" : "chat";
+    state.computerOpen ? "computer" : state.appSettingsOpen ? "settings" : state.activeView === "team" ? "team" : state.activeView === "needs-you" ? "needs-you" : state.activeView === "home" ? "home" : "chat";
   const selectRailDestination = (destination: PrimaryRailDestination) => {
     if (destination === "home") dispatch({ type: "showHome" });
+    else if (destination === "team") dispatch({ type: "showTeam" });
+    else if (destination === "needs-you") dispatch({ type: "showNeedsYou" });
     else if (destination === "chat") dispatch({ type: "showChat" });
     else if (destination === "computer") {
       const computerBot = bot ?? state.bots[0];
@@ -492,6 +496,10 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
         <CloudEngineSignIn />
       ) : chiefStep ? (
         <EmptyChatShell />
+      ) : state.activeView === "team" ? (
+        <TeamPage />
+      ) : state.activeView === "needs-you" ? (
+        <NeedsYouPage />
       ) : state.activeView === "home" ? (
         <HomeDashboard />
       ) : group && roomFeed ? (

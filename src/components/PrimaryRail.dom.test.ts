@@ -41,10 +41,12 @@ afterEach(async () => {
 });
 
 describe("PrimaryRail", () => {
-  it("renders only Home, Chats, Computer and Settings, each a 36px button with a 16px icon, a title and an aria-label, and no badges", async () => {
+  it("renders only Home, Team, Needs you, Chats, Computer and Settings, each a 36px button with a 16px icon, a title and an aria-label, and no badges", async () => {
     await mount({ active: "chat" });
     expect(destinations().map((button) => [button.getAttribute("data-primary-rail-destination"), button.getAttribute("aria-label"), button.getAttribute("title")])).toEqual([
       ["home", "Home", "Home"],
+      ["team", "Team", "Team"],
+      ["needs-you", "Needs you", "Needs you"],
       ["chat", "Chats", "Chats"],
       ["computer", "Computer", "Computer"],
       ["settings", "Settings", "Settings"],
@@ -54,7 +56,7 @@ describe("PrimaryRail", () => {
       expect(button.querySelector("svg")?.getAttribute("width")).toBe("16");
       expect(button.textContent).toBe("");
     }
-    expect(host.querySelectorAll("button")).toHaveLength(5);
+    expect(host.querySelectorAll("button")).toHaveLength(7);
     expect(host.textContent).toBe("");
   });
 
@@ -67,13 +69,19 @@ describe("PrimaryRail", () => {
     expect(destinations().filter((button) => button.className.includes("bg-accent/12"))).toHaveLength(1);
   });
 
-  it("calls onSelect with the destination clicked, including Home", async () => {
+  it("calls onSelect with the destination clicked, including Home, Team and Needs you", async () => {
     const onSelect = vi.fn();
     await mount({ active: "chat", onSelect });
-    await click(destinations()[2]);
+    await click(destinations()[4]);
     expect(onSelect).toHaveBeenCalledExactlyOnceWith("computer");
-    await click(destinations()[0]);
+    await click(destinations()[2]);
     expect(onSelect).toHaveBeenCalledTimes(2);
+    expect(onSelect).toHaveBeenLastCalledWith("needs-you");
+    await click(destinations()[1]);
+    expect(onSelect).toHaveBeenCalledTimes(3);
+    expect(onSelect).toHaveBeenLastCalledWith("team");
+    await click(destinations()[0]);
+    expect(onSelect).toHaveBeenCalledTimes(4);
     expect(onSelect).toHaveBeenLastCalledWith("home");
   });
 
@@ -86,7 +94,7 @@ describe("PrimaryRail", () => {
     await click(pin());
     expect(rail()?.className).toContain("w-40");
     expect(rail()?.hasAttribute("data-primary-rail-pinned")).toBe(true);
-    expect(destinations().map((button) => button.textContent)).toEqual(["Home", "Chats", "Computer", "Settings"]);
+    expect(destinations().map((button) => button.textContent)).toEqual(["Home", "Team", "Needs you", "Chats", "Computer", "Settings"]);
     expect(pin()?.getAttribute("aria-label")).toBe("Unpin rail");
     expect(pin()?.getAttribute("aria-pressed")).toBe("true");
     expect(window.localStorage.getItem(PRIMARY_RAIL_PINNED_KEY)).toBe("true");
@@ -99,7 +107,7 @@ describe("PrimaryRail", () => {
     window.localStorage.setItem(PRIMARY_RAIL_PINNED_KEY, "true");
     await mount({ active: "settings" });
     expect(rail()?.className).toContain("w-40");
-    expect(destinations().map((button) => button.textContent)).toEqual(["Home", "Chats", "Computer", "Settings"]);
+    expect(destinations().map((button) => button.textContent)).toEqual(["Home", "Team", "Needs you", "Chats", "Computer", "Settings"]);
   });
 
   it("in controlled mode reports the toggle instead of remembering it", async () => {

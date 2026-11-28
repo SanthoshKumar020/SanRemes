@@ -1,12 +1,12 @@
 import { useState, type CSSProperties } from "react";
-import { House, MessageSquare, Monitor, Pin, PinOff, Settings } from "lucide-react";
+import { House, LayoutGrid, MessageSquare, Monitor, Pin, PinOff, Settings, UserCheck } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/i18n";
 import type { LocaleKey } from "@/locales";
 import { useDesktopCapabilities, windowFramed } from "./DesktopCapabilities";
 
 /** The places the rail moves between: only destinations that exist. */
-export type PrimaryRailDestination = "home" | "chat" | "computer" | "settings";
+export type PrimaryRailDestination = "home" | "team" | "needs-you" | "chat" | "computer" | "settings";
 
 /** Whether the rail shows labels, remembered like the sidebar's width: layout state, not a setting. */
 export const PRIMARY_RAIL_PINNED_KEY = "sanremes.primaryRailPinned";
@@ -34,6 +34,8 @@ export function savePrimaryRailPinned(pinned: boolean, storage?: Pick<Storage, "
 
 const DESTINATIONS: ReadonlyArray<{ id: PrimaryRailDestination; key: LocaleKey; Icon: typeof House }> = [
   { id: "home", key: "primaryRail.home", Icon: House },
+  { id: "team", key: "primaryRail.team", Icon: LayoutGrid },
+  { id: "needs-you", key: "needsYou.title", Icon: UserCheck },
   { id: "chat", key: "primaryRail.chats", Icon: MessageSquare },
   { id: "computer", key: "primaryRail.computer", Icon: Monitor },
   { id: "settings", key: "primaryRail.settings", Icon: Settings },
