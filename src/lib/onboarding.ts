@@ -95,14 +95,6 @@ export function hintSeenPatch(
   return { onboarding: { hintsSeen: [...(record?.hintsSeen ?? []), id] } };
 }
 
-/** Total RAM below which the free local AI runs slowly: its model is sized for 8 GB machines. */
-export const LOW_MEMORY_BYTES = 8 * 2 ** 30;
-
-/** Whether a machine's total RAM is below the level the free local AI is sized for; unknown memory is not low. */
-export function isLowMemory(totalMemoryBytes: number | null | undefined): boolean {
-  return typeof totalMemoryBytes === "number" && totalMemoryBytes > 0 && totalMemoryBytes < LOW_MEMORY_BYTES;
-}
-
 
 export type BeatId = "meet" | "chief";
 

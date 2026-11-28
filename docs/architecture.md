@@ -235,15 +235,15 @@ commit `d5bdd06f`); the rest of the tree is upstream-derived.
   30-minute lease (`TASK_LOCK_LEASE_MS`), run history.
   `server/routes/task-queue.ts` (`/api/tasks`). Design doc:
   `docs/plans/task-queue-v016.md` (v0.1.6).
-- **Qwen local setup.** `server/ollama-setup.ts`:
-  `LOCAL_QWEN_MODEL = "qwen3:4b"`, `LOCAL_QWEN_URL =
-  http://127.0.0.1:11434`. On boot (`startLocalQwenOnBoot`, called
-  from `server/index.ts`) the server starts a bundled Ollama
-  (Windows installer ships `ollama.exe` under the resources dir),
-  pulls `qwen3:4b`, registers it as an OpenAI-compatible endpoint
-  and makes it the first-run default bot's model. `server/drivers/ollama.ts`
-  is the driver; local models get a long first-token wait
-  (30 min at the time of writing, per commit history).
+- **Optional Ollama install.** `server/ollama-setup.ts` keeps
+  `LOCAL_QWEN_MODEL = "qwen3:4b"` and `LOCAL_QWEN_URL =
+  http://127.0.0.1:11434` for the optional path only: the Keys page
+  Ollama panel probes a running Ollama and downloads `qwen3:4b`
+  through `pullOllamaModel` (`server/routes/instances.ts`
+  `/api/instances/ollama/pull`). Nothing installs Ollama or Qwen at
+  first run, and the Windows installer ships no Ollama bundle.
+  `server/drivers/ollama.ts` is the driver; local models get a long
+  first-token wait (30 min at the time of writing, per commit history).
 - **Terminal-window fix — not verified as a SanRemes change.** No
   commit or file in the tree could be tied to a distinct SanRemes
   "terminal-window fix". The one terminal-window behaviour verified
