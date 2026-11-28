@@ -2,8 +2,41 @@
 
 ```sh
 pnpm exec vitest run server/drivers/acp/copilot.test.ts server/drivers/acp/custom-model-catalog.test.ts
+pnpm exec vitest run server/drivers/copilot-device-auth.test.ts server/drivers/device-auth.test.ts
+pnpm exec vitest run src/components/EngineSetup.copilot.test.ts src/components/DeviceSignIn.test.ts
 pnpm exec vitest run server/copilot-engine.e2e.test.ts src/components/CopilotModelPicker.test.ts
 ```
+
+Sign-in from the app uses the device-code flow: Settings (or the welcome
+screen's Copilot row) starts `copilot login --device-code`, the server reads
+the code and the `https://github.com/login/device` page from the CLI's own
+line — "To authenticate, visit https://github.com/login/device and enter code
+XXXX-XXXX" — and the app shows the code with an "Open GitHub sign-in" link
+that opens the system browser. The CLI stores the token itself, in the OS
+credential store or, without one, a plain-text file under `~/.copilot/`; SanRemes
+never holds or writes it. Copilot CLI 1.0.117 has no `login status` subcommand,
+so the flow is confirmed by the login command's own exit: it only exits 0
+once it has stored the token. There is no pre-check for an existing login and
+no sign-out from the app — the CLI has no logout command — so the setup offers
+sign-in only while the snapshot says signed out. The sign-in probe then runs
+the way a turn sees it: the success refreshes the models, which re-runs the
+ACP discovery, and the snapshot flips to signed in. Copilot Free is $0 with no
+card, and its CLI advertises exactly one ACP auth method, `copilot-login`,
+whose `_meta.terminal-auth` runs `copilot login` in a terminal, which ACP
+cannot drive; turns therefore never authenticate over the wire and
+`pickAuthMethod` stays null, as Kimi's does for its terminal-only method. On a
+desktop the terminal command stays behind "Prefer a terminal?" as a fallback.
+The driver tests cover the parser against the CLI's exact lines (including its
+clipboard-failure reprint, an unfinished code, and untrusted pages), the
+controller with a fake CLI (code, exit confirmation with no status probe,
+safe failures, cancel killing the child, expiry, and the shared-home lock),
+and the whole driver: a fake login writes its marker, the flow succeeds, and
+the snapshot probe then reports signed in. The EngineSetup tests cover the
+device flow for a signed-out Copilot on the web and the terminal fallback on a
+desktop, and that a signed-in Copilot shows no sign-in. These checks use the
+fake CLI only: no live GitHub sign-in was completed, so the browser-authorize
+step itself is unverified, and the pinned install is 1.0.106 while these
+observations are against the real CLI 1.0.117.
 
 The driver tests run `copilotAgent` against the repository's `fake-acp-cli.ts`.
 They cover registration in fresh and existing fleets, catalog discovery

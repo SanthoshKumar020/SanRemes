@@ -13,6 +13,7 @@ import type { ModelCatalog, ProviderErrorCode } from "../../contracts.ts";
 import { createAcpDriver, type AccountErrorCode, type AcpConfig, type AcpSupport } from "./core.ts";
 import { AcpDiscoveryRpcError, discoverAcpModels, DISCOVERY_CLIENT_NAME, type AcpDiscoveryOptions } from "./custom-model-catalog.ts";
 import { offeredModels } from "./config-options.ts";
+import { COPILOT_DEVICE_SIGN_IN } from "../copilot-device-auth.ts";
 import { writeFileAtomicIfChanged } from "../../atomic.ts";
 
 const AUTO = "auto";
@@ -217,7 +218,11 @@ const SUPPORT: AcpSupport = {
   },
   restartOnMcpChange: true,
   mcpServersFromLaunch: true,
+  // Copilot CLI 1.0.117 advertises exactly one auth method, `copilot-login`, whose `_meta.terminal-auth` runs
+  // `copilot login` in a terminal: a device-code flow ACP cannot drive, so turns never authenticate over the wire
+  // and sign-in goes through the device flow below instead.
   pickAuthMethod: () => null,
+  deviceSignIn: COPILOT_DEVICE_SIGN_IN,
   authFailure: "continue",
   isAuthenticated: (env, config) => copilotSignedIn(env, config),
   classifyError: classifyCopilotError,

@@ -1,12 +1,12 @@
 // Where a person enters the one-time code that signs an engine's CLI in on
 // the machine running SanRemes (`codex login --device-auth`, `grok login
-// --device-auth`, `kimi login`), or, for a CLI that prints no code (`cursor-agent
+// --device-auth`, `kimi login`, `copilot login --device-code`), or, for a CLI that prints no code (`cursor-agent
 // login`), the one link that finishes its sign-in. The server reads the page and
 // the code from the CLI's output with these rules, and the app checks them again
 // before it shows a link. Neither ever turns arbitrary output into a link, or lets
 // a token ride along in one.
 
-export type DeviceSignInProvider = "codex" | "grok" | "kimi" | "cursor";
+export type DeviceSignInProvider = "codex" | "grok" | "kimi" | "cursor" | "copilot";
 
 const CODEX_PAGE = "https://auth.openai.com/codex/device";
 
@@ -24,6 +24,8 @@ const RULES: Record<DeviceSignInProvider, {
   code: RegExp | null;
   /** The words a CLI prints before the page or the code on the same line. */
   label?: RegExp;
+  /** The code when the CLI prints it on the page's own line, as one capture group. */
+  inlineCode?: RegExp;
 }> = {
   codex: {
     page: (value) => (/^https:\/\/auth\.openai\.com\/codex\/device\/?$/.test(value) ? CODEX_PAGE : null),
@@ -69,6 +71,15 @@ const RULES: Record<DeviceSignInProvider, {
     code: null,
     label: /^[^:]*\blink:\s+/i,
   },
+  copilot: {
+    // Copilot CLI 1.0.117 prints one line: "To authenticate, visit https://github.com/login/device and enter code
+    // XXXX-XXXX", then waits. The page is that one GitHub address, with the code on the same line.
+    page: (value) => (/^https:\/\/github\.com\/login\/device(?: and enter code [A-Z0-9]{4}-[A-Z0-9]{4})?$/.test(value)
+      ? "https://github.com/login/device" : null),
+    code: /^[A-Z0-9]{4}-[A-Z0-9]{4}$/,
+    label: /^.*?visit\s+/i,
+    inlineCode: /\benter code ([A-Z0-9]{4}-[A-Z0-9]{4})/,
+  },
 };
 
 /** Whether this provider's CLI prints a code to enter, or only a link that finishes the sign-in. */
@@ -97,7 +108,7 @@ export function isDeviceSignInCode(provider: DeviceSignInProvider, value: string
  * pair when its code expires (kimi-code 2.4.1 does). `text` is already free
  * of terminal styling. */
 export function deviceSignInPrompt(provider: DeviceSignInProvider, text: string): { authorizationUrl: string; userCode?: string } | null {
-  const { page, label } = RULES[provider];
+  const { page, label, inlineCode } = RULES[provider];
   const lines = text.split(/\r?\n/).slice(0, -1).map((line) => (label ? line.trim().replace(label, "") : line.trim()));
   let prompt: { authorizationUrl: string; userCode?: string } | null = null;
   for (const [at, line] of lines.entries()) {
@@ -106,7 +117,9 @@ export function deviceSignInPrompt(provider: DeviceSignInProvider, text: string)
       prompt = { authorizationUrl: page(line)! };
       continue;
     }
-    const userCode = lines.slice(at + 1).map((next) => next.replace(/^code:\s*/i, "")).find((next) => isDeviceSignInCode(provider, next));
+    const inline = inlineCode?.exec(line)?.[1];
+    const userCode = (inline && isDeviceSignInCode(provider, inline) ? inline : undefined)
+      ?? lines.slice(at + 1).map((next) => next.replace(/^code:\s*/i, "")).find((next) => isDeviceSignInCode(provider, next));
     const authorizationUrl = userCode ? deviceSignInLink(provider, line, userCode) : null;
     if (authorizationUrl && userCode) prompt = { authorizationUrl, userCode };
   }
