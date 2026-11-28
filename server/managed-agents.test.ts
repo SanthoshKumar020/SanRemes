@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import type { AgentExecutor, ExecutorPromptResult } from "./executors.ts";
 import {
-  agentSpend, capStopReason, ManagedAgentStore, nextDailyRun, nextManagedAgentRun,
+  agentSpend, capStopReason, ManagedAgentStore, nextDailyRun, nextManagedAgentRun, outcomeSummary,
   runDueManagedAgents, runManagedAgent, scheduleFromRoutine,
 } from "./managed-agents.ts";
 import type { Routine } from "./routines.ts";
@@ -257,5 +257,68 @@ describe("runDueManagedAgents", () => {
     expect(runs.map((run) => run.agentId).sort()).toEqual([due.id, failing.id].sort());
     expect(runs.find((run) => run.agentId === failing.id)?.status).toBe("failed");
     expect(runs.find((run) => run.agentId === due.id)?.status).toBe("completed");
+  });
+});
+
+describe("outcomeSummary", () => {
+  it("adds up counts, rates, durations and costs", () => {
+    const summary = outcomeSummary([
+      { id: "r1", agentId: "a", status: "completed", executor: "local", manual: false, startedAt: 0, finishedAt: 1000, durationMs: 1000, inputTokens: 10, outputTokens: 5, costUsd: 0.01, usageReported: true },
+      { id: "r2", agentId: "a", status: "failed", executor: "local", manual: false, startedAt: 0, finishedAt: 2000, durationMs: 2000, usageReported: false },
+      { id: "r3", agentId: "a", status: "stopped", executor: "local", manual: false, startedAt: 0, finishedAt: 500, durationMs: 500, usageReported: false },
+    ]);
+    expect(summary).toEqual({
+      runs: 3, completed: 1, failed: 1, stopped: 1, successRate: 1 / 3,
+      avgDurationMs: 1167, totalCostUsd: 0.01, totalInputTokens: 10, totalOutputTokens: 5,
+    });
+  });
+
+  it("reports null rates with no runs", () => {
+    expect(outcomeSummary([])).toMatchObject({ runs: 0, successRate: null, avgDurationMs: null, totalCostUsd: null });
+  });
+
+  it("surfaces outcomes in the agent summaries", () => {
+    const agent = store.create({ name: "Tracked", botId: "scout", instructions: "Go." });
+    store.recordRun({ id: "r1", agentId: agent.id, status: "completed", executor: "local", manual: true, startedAt: 0, finishedAt: 100, durationMs: 100, usageReported: true });
+    expect(store.summaries()[0]?.outcomes).toMatchObject({ runs: 1, completed: 1, successRate: 1 });
+  });
+});
+
+describe("agent chaining", () => {
+  const bookUsage = async (row: Parameters<typeof appendUsage>[1]) => appendUsage(dir, row);
+
+  it("queues the next agent when a run ends, and only when its condition matches", async () => {
+    const first = store.create({ name: "First", botId: "scout", instructions: "Go." });
+    const second = store.create({ name: "Second", botId: "scout", instructions: "Go.", afterRun: undefined });
+    const chained = store.create({ name: "Chained", botId: "scout", instructions: "Go.", afterRun: { agentId: second.id, when: "completed" } });
+    await runManagedAgent({ store, dataDir: dir, executor: fakeExecutor(), bookUsage }, chained, { manual: true });
+    expect(store.get(second.id)?.nextRunAt).not.toBeNull();
+    expect(store.get(second.id)?.pendingChain).toEqual([chained.id]);
+
+    const failing = store.create({ name: "Failing", botId: "scout", instructions: "Go.", afterRun: { agentId: first.id, when: "completed" } });
+    const broken: AgentExecutor = { ...fakeExecutor(), runPrompt: async () => { throw new Error("Down."); } };
+    await runManagedAgent({ store, dataDir: dir, executor: broken, bookUsage }, failing, { manual: true });
+    expect(store.get(first.id)?.nextRunAt).toBeNull();
+
+    const always = store.create({ name: "Always", botId: "scout", instructions: "Go.", afterRun: { agentId: first.id, when: "always" } });
+    await runManagedAgent({ store, dataDir: dir, executor: broken, bookUsage }, always, { manual: true });
+    expect(store.get(first.id)?.nextRunAt).not.toBeNull();
+    void first;
+  });
+
+  it("refuses chains that repeat an agent, point at the source, or pass five hops", () => {
+    const a = store.create({ name: "A", botId: "scout", instructions: "Go." });
+    const b = store.create({ name: "B", botId: "scout", instructions: "Go." });
+    const c = store.create({ name: "C", botId: "scout", instructions: "Go." });
+    const off = store.create({ name: "Off", botId: "scout", instructions: "Go.", enabled: false });
+    expect(store.queueChained(a.id, b.id, [])).toBe(true);
+    expect(store.queueChained(a.id, a.id, [])).toBe(false);
+    expect(store.queueChained(a.id, "missing", [])).toBe(false);
+    expect(store.queueChained(a.id, off.id, [])).toBe(false);
+    expect(store.queueChained(b.id, a.id, [a.id])).toBe(false);
+    expect(store.queueChained(b.id, c.id, [a.id])).toBe(true);
+    expect(store.queueChained(c.id, a.id, [a.id, b.id, c.id, "d", "e"])).toBe(false);
+    expect(store.consumeChain(b.id)).toEqual([a.id]);
+    expect(store.consumeChain(b.id)).toEqual([]);
   });
 });

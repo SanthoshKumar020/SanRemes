@@ -27,6 +27,10 @@ export interface ManagedAgent {
   capPeriod: "day" | "month";
   /** A cost-code tag: usage rows this agent books carry it, so the usage report groups spend by project. */
   project?: string;
+  /** Run this agent when the named agent's run ends: `completed` chains only on success, `always` on any ending. */
+  afterRun?: { agentId: string; when: "completed" | "always" };
+  /** The chain this queued run belongs to, oldest first: a chain stops before it repeats an agent or passes five hops. */
+  pendingChain?: string[];
   enabled: boolean;
   executorPreference: HandoffPreference;
   nextRunAt: number | null;
@@ -61,6 +65,21 @@ export interface ManagedAgentSummary {
   lastRun: ManagedAgentRun | null;
   runs: number;
   failures: number;
+  /** What the agent's runs add up to: counts, success rate, average duration and total cost. */
+  outcomes: ManagedAgentOutcomes;
+}
+
+export interface ManagedAgentOutcomes {
+  runs: number;
+  completed: number;
+  failed: number;
+  stopped: number;
+  /** Completed share of runs that ended, null when no run ended yet. */
+  successRate: number | null;
+  avgDurationMs: number | null;
+  totalCostUsd: number | null;
+  totalInputTokens: number;
+  totalOutputTokens: number;
 }
 
 export interface CloudUsageAgentRow {

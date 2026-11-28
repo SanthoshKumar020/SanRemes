@@ -9,6 +9,7 @@ import { HandoffStore } from "../cloud-handoff.ts";
 import { createExecutorRegistry, createLocalExecutor } from "../executors.ts";
 import { json, readBody } from "../harness/http.ts";
 import { ManagedAgentStore } from "../managed-agents.ts";
+import { ManagedAgentDigestStore, dreamManagedAgents } from "../managed-agent-digests.ts";
 import { ParallelSessionStore, type GhRunner, type GitRunner } from "../parallel-sessions.ts";
 import type { RequestAuth } from "../request-auth.ts";
 import { TasksStore } from "../tasks-store.ts";
@@ -48,6 +49,7 @@ async function serve() {
   const tasks = new TasksStore({ dataDir });
   const sessions = new ParallelSessionStore({ dataDir });
   const store = new ManagedAgentStore({ dataDir });
+  const digests = new ManagedAgentDigestStore({ dataDir });
   const local = createLocalExecutor({
     sessions, tasks, git: fakeGit(), gh: fakeGh(),
     runPrompt: async () => "brief done",
@@ -68,6 +70,7 @@ async function serve() {
     botExists: (id) => id === "scout",
     visible: () => ({ bot: (id: string) => id === "scout" }),
     bookUsage: (row) => appendUsage(dataDir, row),
+    digests,
   })];
   const server = createServer(async (req, res) => {
     const url = new URL(req.url ?? "/", "http://localhost");
@@ -81,7 +84,7 @@ async function serve() {
     const response = await fetch(`${base}${path}`, init);
     return { status: response.status, body: await response.json() as Record<string, unknown> };
   };
-  return { call, store };
+  return { call, store, digests };
 }
 
 const createPayload = {
@@ -159,5 +162,29 @@ describe("managed agent routes", () => {
     expect(handoff.status).toBe(200);
     expect((handoff.body as { executor: string }).executor).toBe("local");
     expect((handoff.body as { note: string }).note).toContain("No cloud executor is attached");
+  });
+});
+
+describe("managed agent outcomes and digests", () => {
+  it("reads outcomes from runs and the latest nightly digest", async () => {
+    const { call, store, digests } = await serve();
+    const created = await call("/api/managed-agents", {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(createPayload),
+    });
+    const id = (created.body.agent as { id: string }).id;
+    store.recordRun({ id: "run-1", agentId: id, status: "completed", executor: "local", manual: true, startedAt: 1000, finishedAt: 2000, durationMs: 1000, inputTokens: 10, outputTokens: 5, costUsd: 0.01, usageReported: true, result: "Briefed." });
+    store.recordRun({ id: "run-2", agentId: id, status: "failed", executor: "local", manual: true, startedAt: 3000, finishedAt: 4000, durationMs: 1000, usageReported: false, error: "Down." });
+    const outcomes = await call(`/api/managed-agents/${id}/outcomes`);
+    expect(outcomes.status).toBe(200);
+    expect(outcomes.body.outcomes).toMatchObject({ runs: 2, completed: 1, failed: 1, successRate: 0.5, totalCostUsd: 0.01 });
+    expect((outcomes.body.recent as unknown[])).toHaveLength(2);
+
+    const noDigest = await call(`/api/managed-agents/${id}/digest`);
+    expect(noDigest.status).toBe(404);
+    expect(dreamManagedAgents({ store, digests, now: () => 10_000 })).toEqual([id]);
+    const digest = await call(`/api/managed-agents/${id}/digest`);
+    expect(digest.status).toBe(200);
+    expect((digest.body.digest as { runs: number }).runs).toBe(2);
+    expect((digest.body.digest as { text: string }).text).toContain("1 completed, 1 failed");
   });
 });

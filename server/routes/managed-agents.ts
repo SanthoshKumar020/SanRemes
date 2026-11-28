@@ -1,13 +1,15 @@
 // Managed agents over HTTP: create one from scratch or from a routine, list them with
-// their last run, pause and resume, run one now, and read or change where work runs.
+// their last run, pause and resume, run one now, read an agent's outcomes and its latest
+// nightly digest, and read or change where work runs.
 import { z } from "zod";
 
 import type { RequestAuth } from "../request-auth.ts";
 import { HandoffStore, type HandoffDecision } from "../cloud-handoff.ts";
 import type { ExecutorRegistry } from "../executors.ts";
 import {
-  ManagedAgentStore, managedAgentRunning, runManagedAgent, type ManagedAgentPatch,
+  ManagedAgentStore, managedAgentRunning, outcomeSummary, runManagedAgent, type ManagedAgentPatch,
 } from "../managed-agents.ts";
+import type { ManagedAgentDigestStore } from "../managed-agent-digests.ts";
 import type { Routine } from "../routines.ts";
 import type { UsageRow } from "../usage-ledger.ts";
 import type { HandoffPreference, ManagedAgent, ManagedAgentRun, ManagedAgentSchedule } from "../../shared/managed-agents.ts";
@@ -24,6 +26,8 @@ export interface ManagedAgentRouteDeps {
   bookUsage(row: Omit<UsageRow, "at">): Promise<boolean>;
   /** Runs one agent once; the default runs it through the executor its preference resolves to. */
   runAgent?(agent: ManagedAgent, manual: boolean): Promise<ManagedAgentRun>;
+  /** The nightly digest store; absent, the digest read answers that none is available. */
+  digests?: ManagedAgentDigestStore;
 }
 
 const scheduleSchema = z.union([
@@ -43,6 +47,7 @@ const createBody = z.object({
   capTokens: z.number().int().positive().max(1_000_000_000).optional(),
   capPeriod: z.enum(["day", "month"]).optional(),
   project: z.string().min(1).max(100).optional(),
+  afterRun: z.object({ agentId: z.string().min(1).max(128), when: z.enum(["completed", "always"]) }).strict().optional(),
   enabled: z.boolean().optional(),
   executorPreference: z.enum(["auto", "local", "cloud"]).optional(),
 }).strict();
@@ -55,6 +60,7 @@ const patchBody = z.object({
   capTokens: z.number().int().positive().max(1_000_000_000).nullable().optional(),
   capPeriod: z.enum(["day", "month"]).optional(),
   project: z.string().min(1).max(100).nullable().optional(),
+  afterRun: z.object({ agentId: z.string().min(1).max(128), when: z.enum(["completed", "always"]) }).strict().nullable().optional(),
   enabled: z.boolean().optional(),
   executorPreference: z.enum(["auto", "local", "cloud"]).optional(),
 }).strict();
@@ -98,7 +104,7 @@ export function createManagedAgentRoutes(deps: ManagedAgentRouteDeps): RouteHand
       if (!parsed.success) return json(res, 400, { error: "Send a name, a bot, and what the agent should do." });
       if (deps.botExists && !deps.botExists(parsed.data.botId)) return json(res, 404, { error: "No such bot." });
       try {
-        const agent = deps.store.create(parsed.data as { name: string; botId: string; instructions: string; schedule?: ManagedAgentSchedule; routineId?: string; allowedTools?: string[]; capUsd?: number; capTokens?: number; capPeriod?: "day" | "month"; project?: string; enabled?: boolean; executorPreference?: HandoffPreference });
+        const agent = deps.store.create(parsed.data as { name: string; botId: string; instructions: string; schedule?: ManagedAgentSchedule; routineId?: string; allowedTools?: string[]; capUsd?: number; capTokens?: number; capPeriod?: "day" | "month"; project?: string; afterRun?: { agentId: string; when: "completed" | "always" }; enabled?: boolean; executorPreference?: HandoffPreference });
         return json(res, 201, { agent });
       } catch (error) {
         return json(res, 400, { error: error instanceof Error ? error.message : "Could not create that agent." });
@@ -117,6 +123,21 @@ export function createManagedAgentRoutes(deps: ManagedAgentRouteDeps): RouteHand
       return json(res, 201, { agent: deps.store.createFromRoutine(routine) });
     }
     const single = AGENT_PATH.exec(path);
+    const outcomes = /^\/api\/managed-agents\/([\w-]{1,128})\/outcomes$/.exec(path);
+    const digestPath = /^\/api\/managed-agents\/([\w-]{1,128})\/digest$/.exec(path);
+    if (outcomes || digestPath) {
+      const id = (outcomes ?? digestPath)![1]!;
+      const agent = deps.store.get(id);
+      if (!agent) return json(res, 404, { error: "No such managed agent." });
+      if (!deps.visible(auth).bot(agent.botId)) return json(res, 404, { error: "No such managed agent." });
+      if (method !== "GET") return json(res, 405, { error: "Use GET." });
+      if (outcomes) {
+        return json(res, 200, { agent, outcomes: outcomeSummary(deps.store.runsFor(id)), recent: deps.store.runsFor(id).slice(0, 10) });
+      }
+      const digest = deps.digests?.latest(id);
+      if (!digest) return json(res, 404, { error: "No digest for this agent yet." });
+      return json(res, 200, { digest });
+    }
     if (!single) return PASS;
     const id = single[1]!;
     const agent = deps.store.get(id);

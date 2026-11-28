@@ -12,7 +12,7 @@ import type { AgentExecutor } from "./executors.ts";
 import type { Routine } from "./routines.ts";
 import { readUsage, type UsageRow } from "./usage-ledger.ts";
 import type {
-  HandoffPreference, ManagedAgent, ManagedAgentRun, ManagedAgentSchedule,
+  HandoffPreference, ManagedAgent, ManagedAgentOutcomes, ManagedAgentRun, ManagedAgentSchedule,
   ManagedAgentSummary,
 } from "../shared/managed-agents.ts";
 
@@ -38,6 +38,8 @@ const agentSchema = z.object({
   capTokens: z.number().int().positive().optional(),
   capPeriod: z.enum(["day", "month"]),
   project: z.string().min(1).max(100).optional(),
+  afterRun: z.object({ agentId: z.string(), when: z.enum(["completed", "always"]) }).strict().optional(),
+  pendingChain: z.array(z.string()).optional(),
   enabled: z.boolean(),
   executorPreference: z.enum(["auto", "local", "cloud"]),
   nextRunAt: z.number().nullable(),
@@ -74,6 +76,7 @@ export interface ManagedAgentInput {
   capTokens?: number;
   capPeriod?: "day" | "month";
   project?: string;
+  afterRun?: { agentId: string; when: "completed" | "always" };
   enabled?: boolean;
   executorPreference?: HandoffPreference;
 }
@@ -87,8 +90,29 @@ export interface ManagedAgentPatch {
   capTokens?: number | null;
   capPeriod?: "day" | "month";
   project?: string | null;
+  afterRun?: { agentId: string; when: "completed" | "always" } | null;
   enabled?: boolean;
   executorPreference?: HandoffPreference;
+}
+
+/** What an agent's runs add up to: counts, success rate, average duration and total cost. */
+export function outcomeSummary(runs: readonly ManagedAgentRun[]): ManagedAgentOutcomes {
+  const completed = runs.filter((run) => run.status === "completed").length;
+  const failed = runs.filter((run) => run.status === "failed").length;
+  const stopped = runs.filter((run) => run.status === "stopped").length;
+  const ended = completed + failed + stopped;
+  const cost = runs.reduce<number | null>((sum, run) => (typeof run.costUsd === "number" ? (sum ?? 0) + run.costUsd : sum), null);
+  return {
+    runs: runs.length,
+    completed,
+    failed,
+    stopped,
+    successRate: ended ? completed / ended : null,
+    avgDurationMs: runs.length ? Math.round(runs.reduce((sum, run) => sum + run.durationMs, 0) / runs.length) : null,
+    totalCostUsd: cost,
+    totalInputTokens: runs.reduce((sum, run) => sum + (run.inputTokens ?? 0), 0),
+    totalOutputTokens: runs.reduce((sum, run) => sum + (run.outputTokens ?? 0), 0),
+  };
 }
 
 /** The next local run of a daily schedule, or null when no day is allowed. */
@@ -175,8 +199,37 @@ export class ManagedAgentStore {
         lastRun,
         runs: own.length,
         failures: own.filter((run) => run.status === "failed").length,
+        outcomes: outcomeSummary(own),
       };
     });
+  }
+
+  /** Takes the chain a queued run belongs to, clearing it: the run consumes the chain it was queued by. */
+  consumeChain(id: string): string[] {
+    const state = this.read();
+    const agent = state.agents.find((one) => one.id === id);
+    if (!agent) return [];
+    const chain = agent.pendingChain ?? [];
+    if (agent.pendingChain !== undefined) {
+      delete agent.pendingChain;
+      this.write(state);
+    }
+    return chain;
+  }
+
+  /** Queues the target to run now as the next hop of a chain. False when the chain may not continue: no such agent,
+   * a disabled one, the source itself, a repeat, or a sixth hop. */
+  queueChained(sourceId: string, targetId: string, chain: readonly string[]): boolean {
+    if (sourceId === targetId) return false;
+    const next = [...chain, sourceId];
+    if (next.length > 5 || next.includes(targetId)) return false;
+    const state = this.read();
+    const target = state.agents.find((one) => one.id === targetId);
+    if (!target || !target.enabled) return false;
+    target.nextRunAt = this.now();
+    target.pendingChain = next;
+    this.write(state);
+    return true;
   }
 
   runsFor(agentId: string): ManagedAgentRun[] {
@@ -207,6 +260,7 @@ export class ManagedAgentStore {
       ...(input.capUsd !== undefined ? { capUsd: input.capUsd } : {}),
       ...(input.capTokens !== undefined ? { capTokens: input.capTokens } : {}),
       ...(input.project ? { project: input.project.trim() } : {}),
+      ...(input.afterRun ? { afterRun: input.afterRun } : {}),
       capPeriod: input.capPeriod ?? "month",
       enabled: input.enabled ?? true,
       executorPreference: input.executorPreference ?? "auto",
@@ -261,6 +315,10 @@ export class ManagedAgentStore {
     if (patch.project !== undefined) {
       if (patch.project === null) delete agent.project;
       else agent.project = patch.project.trim();
+    }
+    if (patch.afterRun !== undefined) {
+      if (patch.afterRun === null) delete agent.afterRun;
+      else agent.afterRun = patch.afterRun;
     }
     if (patch.enabled !== undefined) agent.enabled = patch.enabled;
     if (patch.executorPreference !== undefined) agent.executorPreference = patch.executorPreference;
@@ -351,8 +409,13 @@ export async function runManagedAgent(
 ): Promise<ManagedAgentRun> {
   if (runningAgents.has(agent.id)) throw new Error("This agent already has a run going. Wait for it to finish.");
   runningAgents.add(agent.id);
+  const chain = deps.store.consumeChain(agent.id);
   try {
-    return await runManagedAgentOnce(deps, agent, options);
+    const run = await runManagedAgentOnce(deps, agent, options);
+    if (agent.afterRun && (agent.afterRun.when === "always" || run.status === "completed")) {
+      deps.store.queueChained(agent.id, agent.afterRun.agentId, chain);
+    }
+    return run;
   } finally {
     runningAgents.delete(agent.id);
   }
