@@ -170,8 +170,18 @@ function openConversation(bot, threadId) {
   var root = document.getElementById("view-thread");
   root.hidden = false;
   renderConversation();
-  pollTimer = setInterval(renderConversation, POLL_MS);
+  if (!document.hidden) pollTimer = setInterval(renderConversation, POLL_MS);
 }
+
+// A hidden tab polls nothing: the conversation resumes polling when it is visible again.
+document.addEventListener("visibilitychange", function () {
+  if (!openThread) return;
+  if (document.hidden) {
+    stopPolling();
+  } else if (pollTimer === null) {
+    pollTimer = setInterval(renderConversation, POLL_MS);
+  }
+});
 
 async function renderConversation() {
   if (!openThread) return;
@@ -283,6 +293,23 @@ function renderSettings() {
     var card = el("div", undefined, "card");
     card.append(el("h2", bot.label || bot.id));
     card.append(el("p", bot.origin + " · " + bot.id, "muted"));
+    var test = el("button", "Test connection");
+    test.addEventListener("click", async function () {
+      test.disabled = true;
+      try {
+        await callBot(bot, "GET", "/messages?thread=__sanremes_companion_test__");
+        statusLine("Connected: the key works for " + (bot.label || bot.id) + ".");
+      } catch (error) {
+        // A working key with no such thread answers 404; a bad key answers 401 first.
+        if (String(error.message).indexOf("no such thread") !== -1) {
+          statusLine("Connected: the key works for " + (bot.label || bot.id) + ".");
+        } else {
+          statusLine(error.message);
+        }
+      } finally {
+        test.disabled = false;
+      }
+    });
     var remove = el("button", "Remove bot");
     remove.addEventListener("click", function () {
       state.bots.splice(index, 1);
@@ -290,7 +317,7 @@ function renderSettings() {
       save(state);
       renderSettings();
     });
-    card.append(remove);
+    card.append(test, remove);
     root.append(card);
   });
   var form = el("div", undefined, "card");
