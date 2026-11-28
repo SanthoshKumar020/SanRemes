@@ -69,5 +69,5 @@ if (isEntry()) {
     console.warn(`The data folder's lease could not be checked: ${error instanceof Error ? error.message : String(error)}`);
   }
   const server = serverCommand(dirname(fileURLToPath(import.meta.url)), process.env);
-  void superviseServer(() => spawn(process.execPath, server.args, { stdio: "inherit", env: server.env })).then((code) => { process.exitCode = code; });
+  void superviseServer(() => spawn(process.execPath, server.args, { stdio: "inherit", env: server.env, windowsHide: true })).then((code) => { process.exitCode = code; });
 }

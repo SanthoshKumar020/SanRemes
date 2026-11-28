@@ -29,7 +29,7 @@ function psRows(): Row[] {
   let listing: string;
   try {
     listing = execFileSync(process.platform === "darwin" ? "/bin/ps" : "ps", ["-A", "-o", "pid=,ppid=,stat=,lstart="],
-      { encoding: "utf8", timeout: 2_000, maxBuffer: 8 * 1024 * 1024, env: { ...process.env, LC_ALL: "C" }, stdio: ["ignore", "pipe", "ignore"] });
+      { encoding: "utf8", timeout: 2_000, maxBuffer: 8 * 1024 * 1024, env: { ...process.env, LC_ALL: "C" }, stdio: ["ignore", "pipe", "ignore"], windowsHide: true });
   } catch { return []; }
   const rows: Row[] = [];
   for (const line of listing.split("\n")) {

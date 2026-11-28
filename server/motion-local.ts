@@ -2,16 +2,14 @@
 // become scenes, each a title card that fades in and out over an alternating background with a sliding accent bar.
 // It is animation, not AI-generated footage: no model, no key, no network. It needs ffmpeg and a TrueType font on
 // the machine; without either it refuses in plain words and the paid stub stands.
-import { execFile, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
-import { promisify } from "node:util";
 
+import { execFileInGroupAsync } from "./group-exec.ts";
 import { LOCAL_MOTION_ID, type MotionProvider, type MotionResult } from "./motion.ts";
-
-const execFileAsync = promisify(execFile);
 const MAX_SCENES = 8;
 const MAX_SCENE_CHARS = 120;
 const WRAP_WIDTH = 34;
@@ -70,7 +68,7 @@ export function resolveMotionFont(): string | null {
 
 function findFfmpeg(): boolean {
   try {
-    return spawnSync("ffmpeg", ["-version"], { timeout: 5000, stdio: "ignore" }).status === 0;
+    return spawnSync("ffmpeg", ["-version"], { timeout: 5000, stdio: "ignore", windowsHide: true }).status === 0;
   } catch {
     return false;
   }
@@ -123,7 +121,7 @@ export function createLocalMotionProvider(options: LocalMotionProviderOptions): 
           );
         });
         const concat = scenes.map((_, index) => `[v${index}]`).join("") + `concat=n=${scenes.length}:v=1:a=0[out]`;
-        await execFileAsync("ffmpeg", [
+        await execFileInGroupAsync("ffmpeg", [
           "-hide_banner", "-loglevel", "error", "-y",
           ...inputs,
           "-filter_complex", [...filters, concat].join(";"),

@@ -151,6 +151,7 @@ function probeLoginShellPath(): void {
   const child = spawn(shell, ["-l", "-i", "-c", 'printf "__SANREMES_PATH__%s__SANREMES_END__" "$PATH"'], {
     detached: true,
     stdio: ["ignore", "pipe", "ignore"],
+    windowsHide: true,
   });
   let stdout = "";
   let bytes = 0;

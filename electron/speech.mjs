@@ -270,7 +270,7 @@ export function startSpeech(target, options = {}) {
     sink.end({ code: 1, reason: "helper-start-failed" });
   };
   try {
-    execFile("/usr/bin/mkfifo", ["-m", "600", lifelinePath], { timeout: 5_000 }, (error) => {
+    execFile("/usr/bin/mkfifo", ["-m", "600", lifelinePath], { timeout: 5_000, windowsHide: true }, (error) => {
       if (cleaned) return;
       if (error) {
         failed();
@@ -304,7 +304,7 @@ export function startSpeech(target, options = {}) {
             "--lifeline-file",
             lifelinePath,
           ],
-          { stdio: "ignore" },
+          { stdio: "ignore", windowsHide: true },
         );
         speechSession.proc = proc;
         watchFile(outputPath, { interval: 50, persistent: false }, drain);

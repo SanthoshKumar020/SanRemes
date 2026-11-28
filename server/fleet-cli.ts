@@ -177,7 +177,7 @@ process.stdout.write(JSON.stringify(result));
 
 function tenantIo(owner: string, file: string, action: "read" | "write" | "mkdir" | "usage", content?: string, mode?: number): string | null | FleetUsageTotals {
   assertUnixUser(owner);
-  const options = { encoding: "utf8" as const, timeout: 5_000, killSignal: "SIGKILL" as const, cwd: "/", env: { PATH: "/usr/bin:/bin" }, stdio: ["pipe", "pipe", "pipe"] as ["pipe", "pipe", "pipe"] };
+  const options = { encoding: "utf8" as const, timeout: 5_000, killSignal: "SIGKILL" as const, cwd: "/", env: { PATH: "/usr/bin:/bin" }, stdio: ["pipe", "pipe", "pipe"] as ["pipe", "pipe", "pipe"], windowsHide: true };
   const account = execFileSync("/usr/bin/getent", ["passwd", owner], { ...options, maxBuffer: 8192 }).trim().split(":");
   const uid = Number(account[2]);
   const gid = Number(account[3]);
@@ -201,7 +201,7 @@ export function defaultFleetDeps(): FleetDeps {
         const [command, ...args] = argv;
         let output = "";
         try {
-          const child = spawn(command!, args, { stdio: ["ignore", "pipe", "pipe"] });
+          const child = spawn(command!, args, { stdio: ["ignore", "pipe", "pipe"], windowsHide: true });
           const receive = (chunk: Buffer) => { if (output.length < 16_384) output += chunk.toString("utf8"); };
           child.stdout.on("data", receive);
           child.stderr.on("data", receive);

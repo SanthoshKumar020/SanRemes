@@ -37,7 +37,7 @@ const PS = process.platform === "darwin" ? "/bin/ps" : "ps";
 
 function psText(args: string[]): Promise<string | null> {
   return new Promise((done) => {
-    execFile(PS, args, { encoding: "utf8", timeout: 10_000, maxBuffer: 64 * 1024 * 1024, env: { ...process.env, LC_ALL: "C" } }, (error, stdout) => done(error ? null : stdout));
+    execFile(PS, args, { encoding: "utf8", timeout: 10_000, maxBuffer: 64 * 1024 * 1024, windowsHide: true, env: { ...process.env, LC_ALL: "C" } }, (error, stdout) => done(error ? null : stdout));
   });
 }
 
@@ -80,7 +80,7 @@ async function processes(): Promise<Listed[] | null> {
 
 function startOf(pid: number): string | null {
   if (process.platform === "linux") return linuxStat(pid)?.[19] ?? null;
-  try { return execFileSync(PS, ["-o", "lstart=", "-p", String(pid)], { encoding: "utf8", timeout: 5_000, stdio: ["ignore", "pipe", "ignore"], env: { ...process.env, LC_ALL: "C" } }).trim() || null; }
+  try { return execFileSync(PS, ["-o", "lstart=", "-p", String(pid)], { encoding: "utf8", timeout: 5_000, stdio: ["ignore", "pipe", "ignore"], windowsHide: true, env: { ...process.env, LC_ALL: "C" } }).trim() || null; }
   catch { return null; }
 }
 
@@ -89,7 +89,7 @@ function startOf(pid: number): string | null {
 function bootId(): string | null {
   try {
     if (process.platform === "linux") return readFileSync("/proc/sys/kernel/random/boot_id", "utf8").trim() || null;
-    if (process.platform === "darwin") return execFileSync("/usr/sbin/sysctl", ["-n", "kern.bootsessionuuid"], { encoding: "utf8", timeout: 5_000, stdio: ["ignore", "pipe", "ignore"] }).trim() || null;
+    if (process.platform === "darwin") return execFileSync("/usr/sbin/sysctl", ["-n", "kern.bootsessionuuid"], { encoding: "utf8", timeout: 5_000, stdio: ["ignore", "pipe", "ignore"], windowsHide: true }).trim() || null;
   } catch {}
   return null;
 }

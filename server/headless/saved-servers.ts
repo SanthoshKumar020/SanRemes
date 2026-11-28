@@ -36,7 +36,7 @@ const KEYCHAIN_SERVICE = "sanremes-cli";
 const NAME = /^[\w.-]{1,80}$/;
 
 const runSecurity: SecurityRunner = (args, stdin) => {
-  const result = spawnSync("/usr/bin/security", [...args], { input: stdin, encoding: "utf8", timeout: 15_000 });
+  const result = spawnSync("/usr/bin/security", [...args], { input: stdin, encoding: "utf8", timeout: 15_000, windowsHide: true });
   return { status: result.status, stdout: result.stdout ?? "" };
 };
 

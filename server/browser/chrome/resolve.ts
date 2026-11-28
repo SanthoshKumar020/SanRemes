@@ -175,7 +175,7 @@ export function registryData(output: string, name: string | undefined): string |
 /** NSWorkspace's application lookup, which is what `open -b` uses; a missing app answers nothing. */
 function launchServicesApp(bundleId: string): string | null {
   const script = `ObjC.import("AppKit"); const url = $.NSWorkspace.sharedWorkspace.URLForApplicationWithBundleIdentifier(${JSON.stringify(bundleId)}); url.isNil() ? "" : url.path.js`;
-  const result = spawnSync("osascript", ["-l", "JavaScript", "-e", script], { encoding: "utf8", timeout: 3_000 });
+  const result = spawnSync("osascript", ["-l", "JavaScript", "-e", script], { encoding: "utf8", timeout: 3_000, windowsHide: true });
   return result.status === 0 && result.stdout.trim().endsWith(".app") ? result.stdout.trim() : null;
 }
 

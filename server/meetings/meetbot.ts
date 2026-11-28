@@ -627,17 +627,17 @@ export async function runSession(parts: SessionParts): Promise<EndReason> {
 
 function nullSink(dir: string): { sink: string; unload(): void } {
   const sink = `meetbot_${process.pid}`;
-  const module = execFileSync("pactl", ["load-module", "module-null-sink", `sink_name=${sink}`, `sink_properties=device.description=${sink}`]).toString().trim();
+  const module = execFileSync("pactl", ["load-module", "module-null-sink", `sink_name=${sink}`, `sink_properties=device.description=${sink}`], { windowsHide: true }).toString().trim();
   writeFileSync(join(dir, "sink-module"), module);
-  return { sink, unload: () => { try { execFileSync("pactl", ["unload-module", module]); } catch { /* already gone */ } } };
+  return { sink, unload: () => { try { execFileSync("pactl", ["unload-module", module], { windowsHide: true }); } catch { /* already gone */ } } };
 }
 
 async function launchChrome(dir: string, config: MeetbotConfig, sink: string): Promise<{ chrome: ChildProcess; cdp: Cdp }> {
   const media = join(dir, "media");
   mkdirSync(media, { recursive: true });
   const silence = join(media, "silence.wav"), black = join(media, "black.y4m");
-  execFileSync("ffmpeg", ["-loglevel", "error", "-y", "-f", "lavfi", "-t", "5", "-i", "anullsrc=r=48000:cl=mono", silence]);
-  execFileSync("ffmpeg", ["-loglevel", "error", "-y", "-f", "lavfi", "-i", "color=c=black:s=320x180:r=5", "-frames:v", "5", "-pix_fmt", "yuv420p", black]);
+  execFileSync("ffmpeg", ["-loglevel", "error", "-y", "-f", "lavfi", "-t", "5", "-i", "anullsrc=r=48000:cl=mono", silence], { windowsHide: true });
+  execFileSync("ffmpeg", ["-loglevel", "error", "-y", "-f", "lavfi", "-i", "color=c=black:s=320x180:r=5", "-frames:v", "5", "-pix_fmt", "yuv420p", black], { windowsHide: true });
   const profile = config.profileDir ?? join(dir, "profile");
   rmSync(join(profile, "DevToolsActivePort"), { force: true });
   const [width, height] = config.platform === "jitsi" ? [800, 600] : [1280, 800];
@@ -646,7 +646,7 @@ async function launchChrome(dir: string, config: MeetbotConfig, sink: string): P
     "--disable-blink-features=AutomationControlled", "--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream",
     `--use-file-for-fake-audio-capture=${silence}`, `--use-file-for-fake-video-capture=${black}`, "--autoplay-policy=no-user-gesture-required",
     "--lang=en-US", "--disable-features=Translate", "about:blank",
-  ], { env: { ...process.env, PULSE_SINK: sink, DISPLAY: process.env.DISPLAY ?? ":0" }, stdio: "ignore" });
+  ], { env: { ...process.env, PULSE_SINK: sink, DISPLAY: process.env.DISPLAY ?? ":0" }, stdio: "ignore", windowsHide: true });
   const portFile = join(profile, "DevToolsActivePort");
   for (let i = 0; i < 100 && !existsSync(portFile); i++) await sleep(200);
   const port = readFileSync(portFile, "utf8").split("\n")[0];
@@ -801,11 +801,11 @@ function whisperStream(emit: SessionParts["emit"], onWords: (words: Word[]) => v
     if (!existsSync(python)) {
       emit("stt", { status: "installing" });
       await new Promise<void>((resolve, reject) => {
-        const install = spawn("bash", ["-c", `python3 -m venv ${JSON.stringify(join(home, "venv"))} && ${JSON.stringify(join(home, "venv", "bin", "pip"))} install -q faster-whisper numpy`], { stdio: "ignore" });
+        const install = spawn("bash", ["-c", `python3 -m venv ${JSON.stringify(join(home, "venv"))} && ${JSON.stringify(join(home, "venv", "bin", "pip"))} install -q faster-whisper numpy`], { stdio: "ignore", windowsHide: true });
         install.on("exit", (code) => (code === 0 ? resolve() : reject(new Error(`installing local speech-to-text failed (${code})`))));
       });
     }
-    worker = spawn(python, [join(home, "whisper_worker.py")], { stdio: ["pipe", "pipe", "ignore"] });
+    worker = spawn(python, [join(home, "whisper_worker.py")], { stdio: ["pipe", "pipe", "ignore"], windowsHide: true });
     let pending = "";
     worker.stdout!.on("data", (data) => {
       pending += data;
@@ -905,7 +905,7 @@ export function chunkStream(emit: SessionParts["emit"], takeWords: Mail["takeWor
 
 function encodeOpus(pcm: Buffer): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    const ffmpeg = spawn("ffmpeg", ["-loglevel", "error", "-f", "s16le", "-ar", "16000", "-ac", "1", "-i", "-", "-c:a", "libopus", "-b:a", "32k", "-f", "ogg", "-"], { stdio: ["pipe", "pipe", "ignore"] });
+    const ffmpeg = spawn("ffmpeg", ["-loglevel", "error", "-f", "s16le", "-ar", "16000", "-ac", "1", "-i", "-", "-c:a", "libopus", "-b:a", "32k", "-f", "ogg", "-"], { stdio: ["pipe", "pipe", "ignore"], windowsHide: true });
     const out: Buffer[] = [];
     ffmpeg.stdout!.on("data", (data: Buffer) => out.push(data));
     ffmpeg.on("error", reject);
@@ -931,7 +931,7 @@ function capture(dir: string, config: MeetbotConfig, sink: string, page: CallPag
       if (!timeline.length || timeline.at(-1)!.name !== name) timeline.push({ at: Date.now(), name });
     }).catch(() => {});
   }, 250);
-  const ffmpeg = spawn("ffmpeg", ["-loglevel", "error", "-f", "pulse", "-i", `${sink}.monitor`, "-ac", "1", "-ar", "16000", "-f", "s16le", "-"], { stdio: ["ignore", "pipe", "ignore"] });
+  const ffmpeg = spawn("ffmpeg", ["-loglevel", "error", "-f", "pulse", "-i", `${sink}.monitor`, "-ac", "1", "-ar", "16000", "-f", "s16le", "-"], { stdio: ["ignore", "pipe", "ignore"], windowsHide: true });
   ffmpeg.stdout!.on("data", (chunk: Buffer) => stt.write(chunk));
   return {
     async stop() {

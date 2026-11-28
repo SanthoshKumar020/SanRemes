@@ -598,7 +598,7 @@ async function unpack(release: StandaloneRelease, archivePath: string, staging: 
 }
 
 const runCodesign: CodesignRunner = (args) => new Promise((resolveRun) => {
-  execFile("/usr/bin/codesign", args, { timeout: 120_000, maxBuffer: 256 * 1024, encoding: "utf8" }, (error, stdout, stderr) => {
+  execFile("/usr/bin/codesign", args, { timeout: 120_000, maxBuffer: 256 * 1024, encoding: "utf8", windowsHide: true }, (error, stdout, stderr) => {
     const code = error ? (typeof (error as { code?: unknown }).code === "number" ? (error as { code: number }).code : null) : 0;
     resolveRun({ code, output: `${stdout}${stderr}` });
   });

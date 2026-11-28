@@ -236,7 +236,7 @@ async function attachStandalone(signal) {
     signal.throwIfAborted();
     // Through LaunchServices so Accessibility/Screen Recording stay on com.trycua.driver, the identity already granted.
     const launch = execFileAsync("/usr/bin/open", ["-a", "CuaDriver"], {
-      timeout: 8_000, killSignal: "SIGKILL", maxBuffer: 8_192,
+      timeout: 8_000, killSignal: "SIGKILL", maxBuffer: 8_192, windowsHide: true,
     });
     // execFile's AbortSignal can send TERM regardless of killSignal; bound a launcher that ignores TERM.
     const abort = () => launch.child.kill("SIGKILL");

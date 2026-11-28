@@ -53,7 +53,7 @@ export function cidrAsRange(entry) {
 
 function scutilProxy() {
   return new Promise((resolve) => {
-    execFile("/usr/sbin/scutil", ["--proxy"], { timeout: 2_000, encoding: "utf8" }, (error, stdout) => resolve(error ? "" : String(stdout)));
+    execFile("/usr/sbin/scutil", ["--proxy"], { timeout: 2_000, encoding: "utf8", windowsHide: true }, (error, stdout) => resolve(error ? "" : String(stdout)));
   });
 }
 

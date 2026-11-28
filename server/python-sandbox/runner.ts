@@ -150,7 +150,7 @@ function spawnBoxed(argv: string[], env: Record<string, string>, seccompFd: numb
     try {
       const stdio: ("ignore" | "pipe" | number)[] = ["ignore", "pipe", "pipe"];
       if (seccompFd !== null) stdio.push(seccompFd);
-      child = spawn(argv[0]!, argv.slice(1), { env, stdio, detached: true });
+      child = spawn(argv[0]!, argv.slice(1), { env, stdio, detached: true, windowsHide: true });
     } catch {
       resolvePromise({ stdout: "", stderr: "", exitCode: null, timedOut: false, truncated: false });
       return;
@@ -214,7 +214,7 @@ function spawnBoxedSync(argv: string[], seccompFd: number | null): boolean {
   try {
     const stdio: ("ignore" | "pipe" | number)[] = ["ignore", "ignore", "ignore"];
     if (seccompFd !== null) stdio.push(seccompFd);
-    const result = spawnSync(argv[0]!, argv.slice(1), { stdio, timeout: PROBE_TIMEOUT_MS });
+    const result = spawnSync(argv[0]!, argv.slice(1), { stdio, timeout: PROBE_TIMEOUT_MS, windowsHide: true });
     return result.status === 0;
   } catch {
     return false;
