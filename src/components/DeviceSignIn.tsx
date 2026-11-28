@@ -23,6 +23,7 @@ export function deviceSignInProvider(driverKind: string): DeviceSignInProvider {
     case "grokAgent": return "grok";
     case "kimiAgent": return "kimi";
     case "cursorAgent": return "cursor";
+    case "copilotAgent": return "copilot";
     default: return "codex";
   }
 }
@@ -72,6 +73,17 @@ export const DEVICE_SIGN_IN_COPY: Record<DeviceSignInProvider, Record<"descripti
     connectedAccount: "engineSetup.cursor.connectedAccount",
     failed: "engineSetup.cursor.failed",
     invalidChallenge: "engineSetup.cursor.invalidChallenge",
+  },
+  copilot: {
+    description: "copilotSignIn.description",
+    start: "copilotSignIn.start",
+    enterCode: "copilotSignIn.enterCode",
+    open: "copilotSignIn.open",
+    security: "copilotSignIn.security",
+    connected: "copilotSignIn.connected",
+    connectedAccount: "copilotSignIn.connectedAccount",
+    failed: "copilotSignIn.failed",
+    invalidChallenge: "copilotSignIn.invalidChallenge",
   },
 };
 

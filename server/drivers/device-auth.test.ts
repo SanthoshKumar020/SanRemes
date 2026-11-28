@@ -20,7 +20,13 @@ if (args.join(' ') === 'logout') {
   console.error(had ? 'Signed out' : 'Not signed in');
   process.exit(0);
 }
-process.exit(4);
+if (args.join(' ') === 'login') {
+  if (process.env.FAKE_AUTH_MODE === 'login-no-prompt') process.exit(0);
+  console.error('https://auth.openai.com/codex/device');
+  console.error('ABCD-EFGH');
+  if (process.env.FAKE_AUTH_MODE === 'login-crash') setTimeout(() => { console.error('login failed'); process.exit(1); }, 50);
+  else setTimeout(() => process.exit(0), 60);
+} else process.exit(4);
 `;
 
 function spec(logoutArgs?: readonly string[], overrides: Partial<DeviceSignIn> = {}): DeviceSignIn {
@@ -121,5 +127,33 @@ describe("device sign-out without a status command", () => {
     });
     await expect(controller.signOut()).rejects.toThrow("Fake did not confirm a Fake sign-in.");
     expect(existsSync(join(home, ".fake-provider", "auth.json"))).toBe(true);
+  });
+
+  it("succeeds on the login's exit when the spec says the exit confirms it, without a status probe", async () => {
+    const controller = create(undefined, undefined, { provider: "codex", loginExitConfirms: true });
+    const start = await controller.start();
+    expect(start).toMatchObject({ phase: "waiting", userCode: "ABCD-EFGH", authorizationUrl: "https://auth.openai.com/codex/device" });
+    await expect.poll(() => controller.get(start.flowId!), { timeout: 5_000 }).toMatchObject({ phase: "succeeded" });
+    expect(calls().map((call) => call.args)).toEqual([["login"]]);
+  });
+
+  it("fails closed without the flag when nothing confirms the login", async () => {
+    const controller = create(undefined, undefined, { provider: "codex" });
+    const start = await controller.start();
+    await expect.poll(() => controller.get(start.flowId!), { timeout: 5_000 }).toMatchObject({ phase: "failed" });
+    expect((await controller.get(start.flowId!)).message).toContain("did not confirm");
+    expect(calls().map((call) => call.args)).toEqual([["login"]]);
+  });
+
+  it("reports a failed login without a status probe", async () => {
+    const controller = create(undefined, "login-crash", { provider: "codex", loginExitConfirms: true });
+    const start = await controller.start();
+    await expect.poll(() => controller.get(start.flowId!), { timeout: 5_000 }).toMatchObject({ phase: "failed" });
+    expect(calls().map((call) => call.args)).toEqual([["login"]]);
+  });
+
+  it("fails when the login exits without a code", async () => {
+    const controller = create(undefined, "login-no-prompt", { provider: "codex", loginExitConfirms: true });
+    await expect(controller.start()).rejects.toThrow("did not finish");
   });
 });

@@ -25,7 +25,8 @@ vi.mock("@/lib/app-links", async (original) => ({ ...await original<typeof impor
 vi.mock("@/components/EngineSetup", async () => {
   const { createElement: h } = await import("react");
   return { EngineSetup: ({ instance, intent, description }: { instance: InstanceInfo; intent: string; description?: string }) =>
-    h("div", { "data-engine-setup": instance.instanceId, "data-intent": intent, "data-description": description }) };
+    h("div", { "data-engine-setup": instance.instanceId, "data-intent": intent, "data-description": description }),
+    needsSignIn: (instance: InstanceInfo | undefined) => instance?.snapshot.state === "available" && instance.snapshot.authenticated === false };
 });
 // The row has its own tests; here only whether the first screen offers it.
 vi.mock("./beats/OrganisationRow", () => ({ OrganisationRow: (props: NonNullable<typeof f.row>) => { f.row = props; return null; } }));
@@ -261,6 +262,23 @@ describe("connecting an AI on the first screen", () => {
     f.row!.onOpenSettings();
     expect(f.dispatch).toHaveBeenCalledWith({ type: "toggleAppSettings", open: true, section: "organization" });
     delete window.ogb;
+  });
+
+  it("names Copilot's sign-in on its row, and opens its setup from it", async () => {
+    const copilot: InstanceInfo = {
+      ...engine("copilot", "copilotAgent", "GitHub Copilot", false),
+      snapshot: { state: "available", authenticated: false },
+      authentication: { method: "device-code" },
+    } as InstanceInfo;
+    f.instances = [...f.instances, copilot];
+    await show();
+    await otherWays();
+    const signIn = [...host.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent === "Sign in with GitHub")!;
+    expect(signIn).toBeTruthy();
+    expect(host.querySelector('[data-engine-setup="copilot"]')).toBeNull();
+    await act(async () => { signIn.click(); });
+    expect(host.querySelector('[data-engine-setup="copilot"]')).toBeTruthy();
+    expect([...host.querySelectorAll("button")].some((button) => button.textContent === "Sign in with GitHub")).toBe(false);
   });
 
   it("opens as the Connect an AI dialog, which Escape and a click outside close", async () => {

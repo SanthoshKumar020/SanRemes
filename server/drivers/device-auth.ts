@@ -1,5 +1,5 @@
-// Device-code CLI sign-in from the app (`codex login --device-auth`, `grok login --device-auth`), or a CLI's own login
-// that prints one link to finish it (`cursor-agent login`), confirmed the way turns will see it; a DeviceSignIn holds the
+// Device-code CLI sign-in from the app (`codex login --device-auth`, `grok login --device-auth`, `copilot login
+// --device-code`), or a CLI's own login that prints one link to finish it (`cursor-agent login`), confirmed the way turns will see it; a DeviceSignIn holds the
 // per-CLI parts.
 import type { ChildProcess } from "node:child_process";
 import { randomUUID } from "node:crypto";
@@ -42,6 +42,8 @@ export interface DeviceSignIn {
   failure(output: string): string;
   /** Checked before a sign-in, so a working one is never replaced, and after it to confirm. */
   status?: { args: readonly string[]; read(code: number | null, output: string): DeviceSignInState };
+  /** Without a status command: the login command only exits 0 once it has stored the token, so the exit confirms it. */
+  loginExitConfirms?: boolean;
   /** Without a status command: whether the sign-in a turn uses is now there. */
   signedIn?(env: Env): boolean;
   /** The sign-out probe when a plain boolean is not enough: a credential folder that cannot be read is `unknown`,
@@ -248,6 +250,10 @@ export class DeviceAuthController {
     const status = this.spec.status;
     if (status) {
       this.run(flow, [...status.args], env, home, (code, output) => done(status.read(code, output) === "signed-in"));
+      return;
+    }
+    if (this.spec.loginExitConfirms === true) {
+      done(true);
       return;
     }
     let signedIn = false;
