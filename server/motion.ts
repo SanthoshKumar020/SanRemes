@@ -5,6 +5,9 @@ import type { AdminSettings } from "./admin-settings.ts";
 
 export const MOTION_NOT_CONFIGURED = "Motion needs a paid video-generation key — none is configured";
 
+/** The free local provider's id: a local provider renders without any key, so it is ready without the paid toggle. */
+export const LOCAL_MOTION_ID = "local";
+
 export interface MotionResult {
   ok: boolean;
   /** Where the finished video is, when a provider produced one. */
@@ -35,7 +38,8 @@ export interface MotionStatus {
   reason: string;
 }
 
-/** What the admin surface reports: Motion is never ready while no provider is attached, toggle or no toggle. */
+/** What the admin surface reports: Motion is never ready while no provider is attached, toggle or no toggle. A local
+ * provider is ready on its own; a paid one still needs the toggle. */
 export function motionStatus(settings: Pick<AdminSettings, "motionPaid">, provider: MotionProvider = createStubMotionProvider()): MotionStatus {
   if (provider.id === "none") {
     return {
@@ -45,21 +49,23 @@ export function motionStatus(settings: Pick<AdminSettings, "motionPaid">, provid
       reason: settings.motionPaid ? MOTION_NOT_CONFIGURED : "Motion is off. It also needs a paid video-generation key.",
     };
   }
+  const ready = provider.id === LOCAL_MOTION_ID ? true : settings.motionPaid;
   return {
     paidEnabled: settings.motionPaid,
     provider: provider.id,
-    ready: settings.motionPaid,
-    reason: settings.motionPaid ? "" : "Motion is off.",
+    ready,
+    reason: ready ? "" : "Motion is off.",
   };
 }
 
-/** The one call path: off refuses before the provider is consulted, and a stub provider refuses with its own words. */
+/** The one call path: off refuses before the provider is consulted, and a stub provider refuses with its own words.
+ * The paid gate applies to paid providers only; the local provider is free. */
 export async function generateMotion(
   settings: Pick<AdminSettings, "motionPaid">,
   prompt: string,
   provider: MotionProvider = createStubMotionProvider(),
 ): Promise<MotionResult> {
-  if (!settings.motionPaid) return { ok: false, reason: "Motion is off. Switch on the paid toggle first — it still needs a video-generation key." };
+  if (provider.id !== LOCAL_MOTION_ID && !settings.motionPaid) return { ok: false, reason: "Motion is off. Switch on the paid toggle first — it still needs a video-generation key." };
   if (!prompt.trim()) return { ok: false, reason: "Say what the video should show." };
   return provider.generate(prompt);
 }

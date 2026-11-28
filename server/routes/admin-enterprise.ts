@@ -5,6 +5,7 @@
 // other setting; the decision-log and memory-journal prunes read the live config, so those two apply at the next
 // restart, while usage retention is read fresh on each daily sweep.
 import { z } from "zod";
+import { join } from "node:path";
 
 import { appendAdminAction, countAdminActions, type AdminActionRow } from "../admin-activity.ts";
 import { createAdminSettingsStore, type AdminSettingsStore } from "../admin-settings.ts";
@@ -12,7 +13,8 @@ import { parseAllowlist } from "../bot-api-allowlist.ts";
 import { DATA_DIR, loadConfig, saveConfig, threadEventLogRetentionDays, type AppConfig } from "../config.ts";
 import { resolveRetentionDays, type DecisionActor } from "../decision-log.ts";
 import { resolveMemoryJournalRetention } from "../memory-journal.ts";
-import { generateMotion, motionStatus } from "../motion.ts";
+import { generateMotion, createStubMotionProvider, motionStatus } from "../motion.ts";
+import { createLocalMotionProvider, localMotionStatus } from "../motion-local.ts";
 import type { RequestAuth } from "../request-auth.ts";
 import { capabilityRefusal, may, roleOf, teamCapabilities } from "../team-capabilities.ts";
 import { resolveUsageRetentionDays } from "../usage-ledger.ts";
@@ -67,6 +69,10 @@ export function createAdminEnterpriseRoutes(deps: AdminEnterpriseRouteDeps = def
   };
   const record = (auth: RequestAuth, row: Omit<AdminActionRow, "at" | "actor">) =>
     appendAdminAction(deps.dataDir, { ...row, actor: actorOf(auth) });
+  const motionState = (settings: ReturnType<typeof deps.settings.read>) =>
+    motionStatus(settings, localMotionStatus().available
+      ? createLocalMotionProvider({ outDir: join(deps.dataDir, "motion") })
+      : createStubMotionProvider());
   return async ({ req, res, path, method, auth, json, readBody }) => {
     if (path === "/api/admin/capabilities") {
       if (method !== "GET") return json(res, 405, { error: "Use GET." });
@@ -124,7 +130,7 @@ export function createAdminEnterpriseRoutes(deps: AdminEnterpriseRouteDeps = def
           auditStrict: settings.auditStrict,
           retention: retentionState(),
           adminActionsThisMonth: countAdminActions(deps.dataDir),
-          motion: motionStatus(settings),
+          motion: motionState(settings),
           botApiAllowlistCount: settings.botApiAllowlist.length,
         });
       }
@@ -163,14 +169,15 @@ export function createAdminEnterpriseRoutes(deps: AdminEnterpriseRouteDeps = def
         capabilities: role === null ? [] : teamCapabilities(role),
         retention: retentionState(),
         auditStrict: settings.auditStrict,
-        motion: motionStatus(settings),
+        motion: motionState(settings),
         botApiAllowlist: settings.botApiAllowlist,
       });
     }
     if (path === "/api/admin/motion") {
       if (method === "GET") {
         if (!may(auth, "audit.read")) return json(res, 403, { error: capabilityRefusal(auth, "audit.read") });
-        return json(res, 200, motionStatus(deps.settings.read()));
+        const settings = deps.settings.read();
+        return json(res, 200, motionState(settings));
       }
       if (method !== "PUT") return json(res, 405, { error: "Use GET or PUT." });
       if (!may(auth, "motion.change")) return json(res, 403, { error: capabilityRefusal(auth, "motion.change") });
@@ -179,7 +186,7 @@ export function createAdminEnterpriseRoutes(deps: AdminEnterpriseRouteDeps = def
       if (!parsed.success) return json(res, 400, { error: "Send {\"paidEnabled\": true | false}." });
       const saved = deps.settings.save({ motionPaid: parsed.data.paidEnabled });
       record(auth, { category: "config", action: "motion.update", changed: ["motionPaid"], after: { motionPaid: saved.motionPaid } });
-      return json(res, 200, motionStatus(saved));
+      return json(res, 200, motionState(saved));
     }
     if (path === "/api/admin/motion/generate") {
       if (method !== "POST") return json(res, 405, { error: "Use POST." });
@@ -188,6 +195,11 @@ export function createAdminEnterpriseRoutes(deps: AdminEnterpriseRouteDeps = def
       const parsed = generateBody.safeParse(await readBody(req, 64_000));
       if (!parsed.success) return json(res, 400, { error: "Send {\"prompt\": \"…\"}." });
       const settings = deps.settings.read();
+      if (localMotionStatus().available) {
+        const result = await generateMotion(settings, parsed.data.prompt, createLocalMotionProvider({ outDir: join(deps.dataDir, "motion") }));
+        if (result.ok) return json(res, 200, { file: result.file, provider: "local" });
+        return json(res, 500, { error: result.reason });
+      }
       const result = await generateMotion(settings, parsed.data.prompt);
       if (!settings.motionPaid) return json(res, 409, { error: result.reason });
       return json(res, 501, { error: result.reason });

@@ -116,17 +116,26 @@ and certified-view pieces (local sharing links over the existing share surface;
 certified = a view pinned to a query + source, with the source shown, not a
 certification claim). Files: `server/data/*` additions, routes module, tests.
 
-## 9. Claude Motion (Beta, Team/Enterprise) — STUB + evaluate
+## 9. Claude Motion (Beta, Team/Enterprise) — BUILT (Group K, free/local)
 
 Phase 6 left a paid-gated stub (`server/motion.ts`, `server/admin-settings.ts`):
 provider interface, stub refusing in plain words, owner-only paid toggle default
-off, `POST /api/admin/motion/generate` 409/501. A working version needs a paid
-video-generation key; no money is spent in this job. Group K evaluates ONE free/local
-path — a local template-based animated explainer rendered on this machine
-(Remotion-style local rendering; the user has used Remotion before) — and builds a
-minimal version ONLY if it genuinely fits without a paid key and without AI video
-generation. Otherwise the stub stays and the reason is recorded here. Group K must
-not touch the admin routes; `server/motion.ts` additions only.
+off, `POST /api/admin/motion/generate` 409/501. Group K built the free/local path
+after all: `server/motion-local.ts` — a template-based animated explainer rendered
+on this machine with ffmpeg (no model, no key, no network): the prompt's sentences
+become title cards that fade in and out over alternating backgrounds with a sliding
+accent bar, rendered as a real 1280x720 H.264 MP4. It needs ffmpeg and a TrueType
+font on the machine (both present on this VM and on a stock Windows install via
+`C:\Windows\Fonts\arial.ttf`); without either it refuses in plain words. The
+seam in `server/motion.ts` gained `LOCAL_MOTION_ID`: a local provider is ready
+without the paid toggle, and the paid gate applies to paid providers only. The
+admin routes (`server/routes/admin-enterprise.ts`) now serve the local provider
+when it is available: `GET /api/admin/motion` reports `provider: "local",
+ready: true`, and `POST /api/admin/motion/generate` renders and returns the file
+path; without ffmpeg/font it falls back to the paid stub path (409 when off, 501
+when on). No money spent, no key bought. The paid stub stays for machines without
+ffmpeg/font. Verified: a real MP4 rendered and ffprobe-checked in
+`server/motion-local.test.ts`.
 
 ## 10. Enterprise & Platform Security — NOT POSSIBLE (EFS) + BUILD local equivalents
 
@@ -193,6 +202,6 @@ no model work in this job. Record only.
 | H | Enterprise security, local equivalents | `Enterprise security:` |
 | I | Managed agents gaps (orchestration, dreaming, outcomes) | `Managed agents:` |
 | J | One Claude unified experience + companion polish | `One Claude:` |
-| K | Motion free/local path (or keep stub) | `Motion:` |
+| K | Motion free/local path (ffmpeg template explainer, built) | `Motion:` |
 
 Wave 1: A, B, C, D, E, F. Wave 2: G, H, I, J, K.

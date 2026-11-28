@@ -1,4 +1,4 @@
-import { mkdtempSync } from "node:fs";
+import { existsSync, mkdtempSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
@@ -119,18 +119,19 @@ describe("admin enterprise routes", () => {
     expect(((await response.json()) as { error: string }).error).toContain("SANREMES_DECISION_RETENTION_DAYS");
   });
 
-  it("toggles compliance mode and Motion, and the Motion generate path always refuses", async () => {    const { call } = await serve("owner");
+  it("toggles compliance mode and Motion, and the local provider renders when ffmpeg is present", async () => {
+    const { call } = await serve("owner");
     expect((await call("/api/admin/compliance")).body).toMatchObject({ auditStrict: false, adminActionsThisMonth: 0, botApiAllowlistCount: 0 });
     expect((await call("/api/admin/compliance")).body).toHaveProperty("retention");
     expect((await call("/api/admin/compliance")).body).toHaveProperty("motion");
-    expect((await call("/api/admin/motion")).body).toMatchObject({ paidEnabled: false, provider: "none", ready: false });
-    expect((await call("/api/admin/motion/generate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt: "a harbour" }) })).status).toBe(409);
+    expect((await call("/api/admin/motion")).body).toMatchObject({ paidEnabled: false, provider: "local", ready: true });
+    const gen = await call("/api/admin/motion/generate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt: "a harbour" }) });
+    expect(gen.status).toBe(200);
+    expect((gen.body as { provider: string }).provider).toBe("local");
+    expect(existsSync((gen.body as { file: string }).file)).toBe(true);
     const on = await call("/api/admin/motion", put({ paidEnabled: true }));
     expect(on.status).toBe(200);
-    expect((on.body as { ready: boolean }).ready).toBe(false);
-    const gen = await call("/api/admin/motion/generate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt: "a harbour" }) });
-    expect(gen.status).toBe(501);
-    expect((gen.body as { error: string }).error).toContain("paid video-generation key");
+    expect((on.body as { ready: boolean }).ready).toBe(true);
     const member = await serve("member");
     expect((await member.call("/api/admin/motion", put({ paidEnabled: false })))).toMatchObject({ status: 403 });
     expect((await member.call("/api/admin/compliance")).status).toBe(403);
