@@ -36,9 +36,19 @@ lists them. The rest rely on review.
 
 ## 2. Where things go
 
-The app has three places: the **sidebar** (bots and conversations), the
+The app has four places: **Home** (the dashboard: where to start, what needs
+the person, what is going on), the **sidebar** (bots and conversations), the
 **chat**, and the **bot panel** (everything about one bot). Put new things
-where they belong instead of adding new places.
+where they belong instead of adding new places. A narrow **primary rail**
+sits beside the sidebar and holds the places: Home, Chats, Computer and
+Settings, each a Lucide icon with a label. It is how the person moves
+between places, so the sidebar stops doing two jobs: it holds bots and
+conversations only. The rail holds only destinations that exist: never a
+teaser for an unbuilt page.
+
+- **The rail's pinned state is layout state, not a setting.** Whether the
+  rail shows labels stays with the window like the sidebar's width: it is
+  remembered, it is not in Settings, and it never hides a destination.
 
 - **No new header buttons.** The chat header shows the bot, its model and its
   screen; Advanced mode's composer shows the model under its field instead. Anything else goes in the bot panel, a menu or the command palette.
@@ -50,7 +60,14 @@ where they belong instead of adding new places.
   place in the header as tabs, with the plus at their end. With it off, Simple
   mode's pill opens a bot's threads once it has two, and the plus sits at their end.
 - **No count badges and no "needs you" summaries** above the sidebar list or
-  in the header. A status mark on the row it belongs to is fine.
+  in the header. A status mark on the row it belongs to is fine. A card on
+  Home that says something needs the person is a page, not a summary, and
+  shows only when there is something to decide; it carries a status mark,
+  never a count.
+- **Home's getting-started list is a first-run guide, not a nag.** It shows
+  only until the person has done its steps or dismissed it, then it stays
+  gone; it never returns, never counts down and never blocks the rest of
+  Home.
 - **Settings for one bot live in its bot panel.** App-wide settings live in
   Settings. Don't add a second home for the same setting.
 - **No new settings.** No new global settings, toggles or hidden flags. Make
@@ -194,6 +211,14 @@ element's job and never a pixel value:
   36px avatar; every row hovers at `bg-ink/[0.06]`. The sidebar is 280px wide
   in both modes; pinned bots are 95 × 92px tiles with a 60px avatar. Pinned
   pages never join them: a bot's pages are in its bot panel's Library tab.
+- **Primary rail:** 64px wide, icon-only at rest, beside the sidebar; each
+  destination is a 36px button with a 16px Lucide icon, a `title` and an
+  `aria-label`, and a label when pinned. Pinning expands it to show labels;
+  hover and keyboard focus show the label as a tooltip instead, never by
+  expanding the rail: a control that only appears on hover must also appear
+  on touch and on focus (see [section 14](#14-accessibility)). The rail stays
+  visible while the sidebar folds; the sidebar is still 280px wide beside
+  it.
 - **With Room feed on, a room is a feed of its threads.** Each row is a
   thread's first line, its reply count, who replied and when; a row, a room
   thread opened from anywhere, and an Inbox line open their thread in a panel
