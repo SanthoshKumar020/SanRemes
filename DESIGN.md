@@ -232,11 +232,11 @@ element's job and never a pixel value:
   which is everyone's. The feed's composer starts a new thread. Below 768px the
   room is today's single transcript.
 - **The sidebar stays open beside a side panel** while the chat keeps 440px:
-  from 1040px with a 320px panel (a room, Simple's inbox, Notifications), from
-  1280px with a wider one. Narrower, it folds to its avatars.
+  from 1104px with a 320px panel (a room, Simple's inbox, Notifications), from
+  1344px with a wider one. Narrower, it folds to its avatars.
 - **Simple's bot panel never moves the sidebar.** Opening or closing it leaves
   the sidebar's width and its pinned bots exactly as they were. The chat makes
-  the room; under 920px, where the chat would get less than 320px, the panel
+  the room; under 984px, where the chat would get less than 320px, the panel
   floats over the chat's edge instead.
 - **Simple's chat header floats over the transcript** (see [section 8](#8-surfaces-and-depth)):
   the first message rests just below it at the top of the history, and only its
@@ -345,6 +345,10 @@ Motion explains a change. It never decorates.
   something, for a beat that explains a change, and under the pointer (its
   eyes follow, it blinks). Every change blends in over about 300ms, and it
   settles and stops when the reason ends.
+- **Character and skin ambience are the exception.** A mascot's motions and
+  a skin's seasonal ambience may run longer than 300ms and may loop: they
+  are character, not a change to explain. They still stop under reduced
+  motion, and they never carry information.
 - **Respect reduced motion.** Pair every transition with
   `motion-reduce:transition-none` and every animation with
   `motion-reduce:animate-none`, or gate it in CSS on
