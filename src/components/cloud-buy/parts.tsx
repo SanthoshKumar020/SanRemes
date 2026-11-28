@@ -64,7 +64,7 @@ export function Checklist({ items, label }: { label?: string; items: Array<{ key
 export function ProgressBar({ value, label }: { value: number; label: string }) {
   const percent = Math.round(Math.max(0, Math.min(1, value)) * 100);
   return <div role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} className="h-1 overflow-hidden rounded-full bg-ink/10">
-    <div className="h-full rounded-full bg-ink transition-[width] duration-500 ease-out motion-reduce:transition-none" style={{ width: `${percent}%` }} />
+    <div className="h-full rounded-full bg-ink transition-[width] duration-300 ease-out motion-reduce:transition-none" style={{ width: `${percent}%` }} />
   </div>;
 }
 

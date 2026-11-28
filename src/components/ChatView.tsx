@@ -909,7 +909,7 @@ export const ChatView = memo(function ChatView({ bot: profile, inForkPanel = fal
             onClick={(event) => { if (!state.computerOpen) rememberComputerPanelOpen({ botId: bot.id, opener: event.currentTarget, tabs: event.detail === 0 }); dispatch({ type: "toggleComputer" }); }}
             className={cn(
               "relative",
-              "flex size-9 items-center justify-center rounded-full", ELEVATED_FLOAT, ELEVATED_HOVER,
+              "flex size-9 items-center justify-center rounded-full touch:size-11", ELEVATED_FLOAT, ELEVATED_HOVER,
               state.computerOpen ? "text-accent" : "text-ink-secondary hover:text-ink",
             )}
             title={t("chat.computer")} aria-label={busy && place === "browser" ? `${t("chat.computer")}, ${t("place.live")}` : t("chat.computer")}

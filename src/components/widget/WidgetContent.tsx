@@ -101,7 +101,7 @@ export function WidgetProgress({ node }: { node: WidgetNode }) {
         aria-valuetext={label ? `${percent}%, ${label}` : undefined}
         className="h-1.5 overflow-hidden rounded-full bg-ink/[0.1]"
       >
-        <div className="h-full rounded-full bg-accent transition-[width] duration-300" style={{ width: `${percent}%` }} />
+        <div className="h-full rounded-full bg-accent transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${percent}%` }} />
       </div>
       <div className="mt-2 flex items-baseline justify-between gap-3 text-[13px] leading-[18px]">
         <span className="tabular-nums text-ink-secondary">{percent}%</span>

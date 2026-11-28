@@ -10,12 +10,12 @@ const fitsAt = (width: number) => ({ wide: width >= minWidth(SIDEBAR_AND_PANEL_F
 const folds = (panels: Partial<OpenSidePanels>, width: number) => sidebarFoldsForPanel({ ...none, ...panels }, fitsAt(width));
 
 describe("when the sidebar folds beside a side panel", () => {
-  it("sets the narrow fit at the open sidebar, a 440 chat and a 320 panel", () => {
-    expect(minWidth(SIDEBAR_AND_NARROW_PANEL_FIT)).toBe(280 + 440 + 320);
+  it("sets the narrow fit at the rail, the open sidebar, a 440 chat and a 320 panel", () => {
+    expect(minWidth(SIDEBAR_AND_NARROW_PANEL_FIT)).toBe(64 + 280 + 440 + 320);
   });
 
   it("never folds with no side panel open, at any width", () => {
-    for (const width of [800, 1039, 1040, 1279, 1280]) expect(folds({}, width)).toBe(false);
+    for (const width of [800, 1103, 1104, 1343, 1344]) expect(folds({}, width)).toBe(false);
   });
 
   it.each([
@@ -23,11 +23,11 @@ describe("when the sidebar folds beside a side panel", () => {
     ["Simple's inbox", { inbox: true }],
     ["Notifications", { notifications: true }],
     ["Simple's bot panel with Notifications", { bot: true, notifications: true }],
-  ])("keeps the sidebar open beside %s from 1040 up, and folds it narrower", (_name, panels) => {
-    expect(folds(panels, 1039)).toBe(true);
-    expect(folds(panels, 1040)).toBe(false);
-    expect(folds(panels, 1100)).toBe(false);
-    expect(folds(panels, 1280)).toBe(false);
+  ])("keeps the sidebar open beside %s from 1104 up, and folds it narrower", (_name, panels) => {
+    expect(folds(panels, 1103)).toBe(true);
+    expect(folds(panels, 1104)).toBe(false);
+    expect(folds(panels, 1200)).toBe(false);
+    expect(folds(panels, 1344)).toBe(false);
   });
 
   it.each([
@@ -37,21 +37,21 @@ describe("when the sidebar folds beside a side panel", () => {
     ["a widened inbox", { inbox: true, inboxWide: true }],
     ["Computer, Inspector, Activity or Fork", { wide: true }],
     ["the bot panel with a wide one", { bot: true, wide: true }],
-  ])("keeps folding beside %s until 1280, since it is wider than 320", (_name, panels) => {
+  ])("keeps folding beside %s until 1344, since it is wider than 320", (_name, panels) => {
     expect(onlyNarrowSidePanels({ ...none, ...panels })).toBe(false);
-    expect(folds(panels, 1040)).toBe(true);
-    expect(folds(panels, 1279)).toBe(true);
-    expect(folds(panels, 1280)).toBe(false);
+    expect(folds(panels, 1104)).toBe(true);
+    expect(folds(panels, 1343)).toBe(true);
+    expect(folds(panels, 1344)).toBe(false);
   });
 });
 
 describe("Simple's bot panel and the sidebar", () => {
-  it("never folds or narrows the sidebar, at any width: the chat makes the room, and below 920 the panel floats", () => {
-    expect(minWidth(SIDEBAR_AND_BOT_PANEL_FIT)).toBe(280 + 320 + 320);
-    for (const width of [760, 900, 919, 920, 1039, 1040, 1100, 1279, 1280, 1600]) {
+  it("never folds or narrows the sidebar, at any width: the chat makes the room, and below 984 the panel floats", () => {
+    expect(minWidth(SIDEBAR_AND_BOT_PANEL_FIT)).toBe(64 + 280 + 320 + 320);
+    for (const width of [760, 900, 983, 984, 1103, 1104, 1200, 1343, 1344, 1600]) {
       expect(folds({ bot: true }, width)).toBe(false);
       expect(anySidePanel(panelsMovingSidebar({ ...none, bot: true }))).toBe(false);
-      expect(botPanelFloats({ ...none, bot: true }, width >= minWidth(SIDEBAR_AND_BOT_PANEL_FIT))).toBe(width < 920);
+      expect(botPanelFloats({ ...none, bot: true }, width >= minWidth(SIDEBAR_AND_BOT_PANEL_FIT))).toBe(width < 984);
     }
   });
 

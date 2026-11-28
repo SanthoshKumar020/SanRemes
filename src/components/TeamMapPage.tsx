@@ -364,7 +364,7 @@ export function TeamMapPage() {
           <button onClick={() => setShowComputers(!showComputers)} aria-pressed={showComputers} title={t("canvas.showComputersHint")}
             className={cn("flex items-center gap-2 rounded-lg border px-3 py-2 text-[12px] font-medium transition-colors", showComputers ? "border-accent/40 bg-accent/10 text-ink" : "border-hairline/60 bg-panel text-ink-secondary hover:bg-control hover:text-ink")}>
             <span aria-hidden className={cn("relative h-4 w-7 shrink-0 rounded-full transition-colors", showComputers ? "bg-accent" : "bg-control")}>
-              <span className={cn("absolute top-0.5 size-3 rounded-full bg-white shadow-sm transition-[left]", showComputers ? "left-3.5" : "left-0.5")} />
+              <span className={cn("absolute top-0.5 size-3 rounded-full bg-white shadow-sm transition-[left] motion-reduce:transition-none", showComputers ? "left-3.5" : "left-0.5")} />
             </span>
             {t("canvas.showComputers")}
           </button>

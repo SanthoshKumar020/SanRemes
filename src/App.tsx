@@ -217,9 +217,9 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
     closeAppPreview();
     closeFilePreview();
   });
-  // A 320 panel leaves room for the open sidebar from 1040 up; a wider one from 1280. Narrower, the sidebar folds.
+  // A 320 panel leaves room for the open sidebar from 1104 up; a wider one from 1344. Narrower, the sidebar folds.
   const collapseSidebar = sidebarFoldsForPanel(sidePanels, { wide: sidebarAndPanelFit, narrow: sidebarAndNarrowPanelFit });
-  // Open beside a panel below 1280, the sidebar keeps to 280 so the chat keeps its 440; Simple's bot panel never moves it.
+  // Open beside a panel below 1344, the sidebar keeps to 280 so the chat keeps its 440; Simple's bot panel never moves it.
   const sidebarBesidePanel = anySidePanel(panelsMovingSidebar(sidePanels)) && !sidebarAndPanelFit;
   const railActive: PrimaryRailDestination =
     state.computerOpen ? "computer" : state.appSettingsOpen ? "settings" : state.activeView === "team" ? "team" : state.activeView === "needs-you" ? "needs-you" : state.activeView === "home" ? "home" : "chat";

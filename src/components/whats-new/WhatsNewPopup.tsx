@@ -128,7 +128,7 @@ export function WhatsNewPopup({ view, report, onBuy, onDone }: {
           <div className="flex flex-1 items-center justify-center gap-1.5">
             {view.slides.map((of, index) => <button key={of} type="button" aria-label={t("whatsNew.slideOf", { n: index + 1, count })} aria-current={index === at ? "true" : undefined}
               onClick={() => go(index)} className="grid size-6 place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-focus">
-              <span aria-hidden="true" className={cn("block h-1.5 rounded-full transition-all duration-300 motion-reduce:transition-none", index === at ? "w-4 bg-ink" : "w-1.5 bg-ink/25")} />
+              <span aria-hidden="true" className={cn("block h-1.5 rounded-full transition-colors duration-120 motion-reduce:transition-none", index === at ? "w-4 bg-ink" : "w-1.5 bg-ink/25")} />
             </button>)}
           </div>
           <div className="flex items-center gap-1.5">

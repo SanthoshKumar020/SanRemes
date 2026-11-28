@@ -61,7 +61,7 @@ export function NeedsYouPage() {
           <h1 className="text-[20px] font-semibold leading-7 tracking-[-0.01em] text-ink">{t("needsYou.title")}</h1>
           {anyUnread && (
             <button type="button" data-needs-you-mark-all onClick={markAllInboxRead} disabled={markingAll}
-              className="mt-1 shrink-0 whitespace-nowrap text-[12px] text-accent hover:underline disabled:opacity-50 disabled:hover:no-underline">
+              className="mt-1 inline-flex shrink-0 items-center whitespace-nowrap rounded-md px-1 text-[12px] text-accent hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-focus disabled:opacity-50 disabled:hover:no-underline touch:min-h-10 touch:px-2">
               {t("inbox.markAllRead")}
             </button>
           )}
@@ -71,7 +71,7 @@ export function NeedsYouPage() {
         ) : empty ? (
           <div className="flex flex-col items-start gap-3">
             <p role="status" className="text-[13px] leading-[18px] text-ink-secondary">{t("needsYouPage.empty")}</p>
-            <button type="button" className="ui-button" onClick={() => dispatch({ type: "showChat" })}>{t("needsYouPage.emptyAction")}</button>
+            <button type="button" className="ui-button touch:min-h-10" onClick={() => dispatch({ type: "showChat" })}>{t("needsYouPage.emptyAction")}</button>
           </div>
         ) : (
           <>

@@ -12,6 +12,7 @@ vi.mock("@/state/store", async (original) => ({ ...await original<typeof import(
 vi.mock("@/state/store-ref", () => ({ useOptionalStoreRef: () => ({ dispatch: (action: unknown) => fixture.dispatched.push(action), state: () => fixture.state }) }));
 
 const { closeFilePreview } = await import("@/lib/file-preview");
+const { SIDEBAR_AND_PANEL_FIT } = await import("@/lib/use-media-query");
 const { openAppPreview, closeAppPreview } = await import("@/lib/app-preview");
 const { AttachedFileChip } = await import("./AttachmentPreview");
 const { FilePreviewPanel } = await import("./FilePreviewPanel");
@@ -25,7 +26,7 @@ let host: HTMLDivElement, root: Root;
 
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  vi.stubGlobal("matchMedia", (query: string) => ({ matches: fixture.wide && query === "(min-width: 1280px)", addEventListener() {}, removeEventListener() {} }));
+  vi.stubGlobal("matchMedia", (query: string) => ({ matches: fixture.wide && query === SIDEBAR_AND_PANEL_FIT, addEventListener() {}, removeEventListener() {} }));
   vi.stubGlobal("fetch", vi.fn(async () => new Response("# Observing plan\n\nBring a red flashlight.")));
   fixture.state = { computerOpen: false, settingsOpen: false, inspectorOpen: false, activityOpen: false, activeView: "chat" };
   fixture.dispatched.length = 0;

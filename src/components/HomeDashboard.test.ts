@@ -35,7 +35,7 @@ vi.mock("@/state/inbox", async (original) => {
   return { ...actual, useInboxView: () => inboxView, useInboxSupport: () => inboxSupport, openInbox: (...args: Parameters<typeof actual.openInbox>) => openInboxMock(...args) };
 });
 
-const { HomeDashboard, recentConversations, guideSteps, homeGuideDismissed } = await import("./HomeDashboard");
+const { HomeDashboard, recentConversations, guideSteps, homeGuideDismissed, homeGuideComputerOpened, markHomeGuideComputerOpened } = await import("./HomeDashboard");
 const { initialState } = await import("@/state/store");
 
 const makeMessage = (over: Record<string, unknown> = {}): Message => ({
@@ -122,13 +122,14 @@ describe("recentConversations", () => {
 });
 
 describe("guideSteps", () => {
-  it("reads bot, model and first message from existing state", () => {
-    expect(guideSteps([], [])).toEqual({ bot: false, model: false, message: false });
+  it("reads bot, model, first message and computer from existing state", () => {
+    expect(guideSteps([], [])).toEqual({ bot: false, model: false, message: false, computer: false });
     expect(guideSteps(
       [makeBot({ messages: [makeMessage()] })],
       [makeInstance("available")],
-    )).toEqual({ bot: true, model: true, message: true });
-    expect(guideSteps([makeBot()], [makeInstance("offline")])).toEqual({ bot: true, model: false, message: false });
+      true,
+    )).toEqual({ bot: true, model: true, message: true, computer: true });
+    expect(guideSteps([makeBot()], [makeInstance("offline")])).toEqual({ bot: true, model: false, message: false, computer: false });
   });
 });
 
@@ -253,12 +254,48 @@ describe("HomeDashboard", () => {
   });
 
   it("getting-started list stays gone once every step is done", () => {
+    markHomeGuideComputerOpened();
     state = {
       ...state,
       bots: [makeBot({ messages: [makeMessage()] })],
       instances: [makeInstance("available")],
     };
     render();
+    expect(host.querySelector('[data-home-section="guide"]')).toBeNull();
+    expect(host.querySelector('[data-home-section="guide-ready"]')).not.toBeNull();
+  });
+
+  it("computer step opens the computer and checks itself off", () => {
+    state = { ...state, bots: [makeBot()], selectedId: "bot-1" };
+    render();
+    expect(host.querySelector('[data-home-section="guide"]')?.textContent).toContain("Open your computer");
+    click(button("Open your computer"));
+    expect(dispatched).toContainEqual({ type: "toggleComputer", open: true, botId: "bot-1" });
+    expect(homeGuideComputerOpened()).toBe(true);
+    expect(button("Open your computer")).toBeNull();
+  });
+
+  it("computer step is disabled with no bot", () => {
+    render();
+    expect(button("Open your computer")?.disabled).toBe(true);
+  });
+
+  it("ready card dismisses and stays gone", () => {
+    markHomeGuideComputerOpened();
+    state = {
+      ...state,
+      bots: [makeBot({ messages: [makeMessage()] })],
+      instances: [makeInstance("available")],
+    };
+    render();
+    const ready = host.querySelector('[data-home-section="guide-ready"]');
+    expect(ready?.textContent).toContain("You're ready");
+    expect(ready?.textContent).toContain("Your first bot is set up and ready to work.");
+    click(ready?.querySelector('button[aria-label="Dismiss"]') ?? null);
+    expect(host.querySelector('[data-home-section="guide-ready"]')).toBeNull();
+    expect(homeGuideDismissed()).toBe(true);
+    render();
+    expect(host.querySelector('[data-home-section="guide-ready"]')).toBeNull();
     expect(host.querySelector('[data-home-section="guide"]')).toBeNull();
   });
 

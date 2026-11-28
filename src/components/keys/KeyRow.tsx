@@ -12,7 +12,7 @@ import { keyEntry, keyForInstance, looksLikeOtherKey, savedState, shownKeyEntry,
 import { checkKey, cleanKey, looksLikeKey, saveKey } from "./key-save";
 
 export const KEY_FIELD = `h-8 w-full min-w-0 rounded-lg ${FIELD_EDGE} bg-app px-2 text-[13px] leading-5 text-ink placeholder:text-ink-tertiary focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus disabled:opacity-40`;
-export const KEY_ROW = "group flex scroll-mt-24 flex-col gap-2 px-4 py-3 transition-[background-color,box-shadow] duration-500 data-[key-highlight]:bg-accent/10 data-[key-highlight]:ring-1 data-[key-highlight]:ring-accent/40 motion-reduce:transition-none";
+export const KEY_ROW = "group flex scroll-mt-24 flex-col gap-2 px-4 py-3 transition-[background-color,box-shadow] duration-300 data-[key-highlight]:bg-accent/10 data-[key-highlight]:ring-1 data-[key-highlight]:ring-accent/40 motion-reduce:transition-none";
 const MASK = "••••••••";
 
 export function KeyMarkIcon({ entry }: { entry: KeyEntry }) {

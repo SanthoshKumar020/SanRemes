@@ -1,4 +1,7 @@
 // @vitest-environment happy-dom
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -109,5 +112,13 @@ describe("thread tab strip", () => {
     act(() => { setValue.call(input, "Call with Dana"); input.dispatchEvent(new Event("input", { bubbles: true })); });
     act(() => { input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); });
     expect(sent()).toEqual([{ type: "renameTask", botId: "kiwi", threadId: "notes", title: "Call with Dana" }]);
+  });
+
+  it("keeps the tab on the §6 control scale, matching the sliding indicator's height", () => {
+    render(kiwi(FIVE, "launch"));
+    expect(tab("Launch plan").className).toContain(" h-8 ");
+    const styles = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "styles.css"), "utf8");
+    expect(styles).toContain(".thread-tab-indicator {");
+    expect(styles).toMatch(/\.thread-tab-indicator \{[^}]*height: 32px;/);
   });
 });

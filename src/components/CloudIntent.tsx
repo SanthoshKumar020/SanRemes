@@ -183,7 +183,7 @@ export function CloudIntent() {
               aria-label={t("cloudIntent.send")}
               title={`${t("cloudIntent.send")} (${sendKeyLabel(sendKey)})`}
               className={cn(
-                "absolute bottom-3 right-3 flex size-8 items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 ease-out active:scale-95",
+                "absolute bottom-3 right-3 flex size-8 items-center justify-center rounded-full transition-[background-color,color] duration-150 ease-out",
                 filled ? "bg-accent text-white" : "bg-raised text-ink-secondary",
               )}
             >
@@ -209,7 +209,7 @@ export function CloudIntent() {
                 onFocus={() => setPeek(text)}
                 onBlur={() => setPeek(null)}
                 className={cn(
-                  "animate-rise inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] transition-[background-color,border-color,color,transform] duration-150 ease-out active:scale-[0.97]",
+                  "animate-rise inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] transition-[background-color,border-color,color] duration-150 ease-out",
                   chosen ? "border-accent/45 bg-accent/10 text-ink" : "border-hairline/50 bg-card/40 text-ink-secondary hover:border-hairline hover:bg-card hover:text-ink",
                 )}
                 style={staggerIndex(4 + index)}

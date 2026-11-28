@@ -286,7 +286,7 @@ export function CallTargetButton({
         style={fill && !active ? { backgroundColor: fill, color: ink } : undefined}
         className={cn(
           "relative flex shrink-0 items-center justify-center disabled:opacity-60",
-          round ? "rounded-full transition-[color,background,filter]" : "rounded-l-3xl rounded-r-lg active:rounded-3xl transition-[color,background,border-radius]",
+          round ? "rounded-full transition-[color,background,filter]" : "rounded-l-3xl rounded-r-lg transition-[color,background]",
           composer && fill ? "size-7" : composer || placement === "panel" ? "size-8" : "size-9",
           active
             ? "bg-danger text-white hover:brightness-110"
@@ -330,7 +330,7 @@ export function CallTargetButton({
           className={cn(
               "grid place-content-center",
               "bg-control w-8 hover:bg-raised-hover text-ink-secondary hover:text-ink disabled:opacity-40 transition-colors",
-              "rounded-l-lg rounded-r-3xl active:rounded-3xl transition-[color,background,border-radius]",
+              "rounded-l-lg rounded-r-3xl transition-[color,background]",
               composer ? "h-8" : "h-9"
             )}
         >

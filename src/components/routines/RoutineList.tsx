@@ -43,14 +43,14 @@ export function RoutineList({ routines, runs, bots, pausedBots, heldBots, loadin
           </button>
           {switched
             ? <Switch checked={routine.enabled} aria-label={t("routines.toggle", { name: routine.name })} onClick={() => onToggle(routine)} />
-            : <span className={cn("shrink-0 rounded-full bg-inset px-2 py-0.5 text-[10px]", routine.enabled && routine.nextRunAt != null ? "text-accent" : "text-ink-secondary")}>{routineScheduleState(routine)}</span>}
+            : <span className={cn("shrink-0 rounded-full bg-inset px-2 py-0.5 text-[11px]", routine.enabled && routine.nextRunAt != null ? "text-accent" : "text-ink-secondary")}>{routineScheduleState(routine)}</span>}
         </div>
         {(switched || routineNextLabel(routine) !== routineScheduleState(routine)) && <div className="mt-2 text-[12px] text-ink-secondary">{routineNextLabel(routine)}</div>}
         <div className="mt-1 flex items-start justify-between gap-2">
           <div className="min-w-0 text-[12px]">
-            {latest ? <><span className={routineRunTone(latest)}>{t("routines.latestRun", { status: routineRunLabel(latest) })}</span><span className="block text-[11px] text-ink-secondary">{routineDateTime(latest.finishedAt ?? latest.startedAt ?? latest.scheduledFor)}</span></> : <span className="text-ink-secondary">{t("routines.neverRun")}</span>}
+            {latest ? <><span className={routineRunTone(latest)}>{t("routines.latestRun", { status: routineRunLabel(latest) })}</span><span className="block text-[12px] text-ink-secondary">{routineDateTime(latest.finishedAt ?? latest.startedAt ?? latest.scheduledFor)}</span></> : <span className="text-ink-secondary">{t("routines.neverRun")}</span>}
           </div>
-          <button type="button" onClick={() => onLogs(routine)} aria-label={t("routines.logsFor", { name: routine.name })} className="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-[11px] text-ink-secondary hover:bg-raised hover:text-ink"><FileText size={12} />{t("routines.logs")}</button>
+          <button type="button" onClick={() => onLogs(routine)} aria-label={t("routines.logsFor", { name: routine.name })} className="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-[12px] text-ink-secondary hover:bg-raised hover:text-ink"><FileText size={12} />{t("routines.logs")}</button>
         </div>
         {latest && said && <p className={cn("mt-2 line-clamp-2 whitespace-pre-wrap text-[12px] leading-relaxed", latest.error ? "text-danger" : "text-ink-secondary")}>{routineRunText(latest, said)}</p>}
         {!!routine.failureStreak && <p className="mt-2 text-[12px] text-danger">{t("routines.failureStreak", { count: routine.failureStreak })}</p>}

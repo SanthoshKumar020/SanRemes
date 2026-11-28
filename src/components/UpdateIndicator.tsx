@@ -96,7 +96,7 @@ export function UpdateIndicator({ className, bar }: { className?: string; bar?: 
         title={label}
         onClick={() => setOpen(true)}
         className={cn(
-          "relative flex size-7 shrink-0 items-center justify-center rounded-full bg-white text-neutral-900 shadow-sm ring-1 ring-black/10 transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+          "relative flex size-7 shrink-0 items-center justify-center rounded-full bg-white text-neutral-900 shadow-sm ring-1 ring-black/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
         )}
       >
         <ArrowDown size={16} strokeWidth={2.25} aria-hidden className={cn(!ready && "animate-pulse")} />
@@ -268,7 +268,7 @@ export function UpdateCard({
             aria-valuemax={100}
             aria-valuenow={percent}
           >
-            <div className="h-full rounded-full bg-accent transition-[width] duration-300" style={{ width: `${percent}%` }} />
+            <div className="h-full rounded-full bg-accent transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${percent}%` }} />
           </div>
         )}
 

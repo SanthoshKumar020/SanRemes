@@ -49,17 +49,20 @@ export interface GuideSteps {
   bot: boolean;
   model: boolean;
   message: boolean;
+  computer: boolean;
 }
 
-export function guideSteps(bots: readonly StoreBot[], instances: ReadonlyArray<{ snapshot: { state: string } }>): GuideSteps {
+export function guideSteps(bots: readonly StoreBot[], instances: ReadonlyArray<{ snapshot: { state: string } }>, computerOpened = false): GuideSteps {
   return {
     bot: bots.some((bot) => !bot.hidden),
     model: instances.some((instance) => instance.snapshot.state === "available"),
     message: bots.some((bot) => bot.messages.some((message) => message.role === "user")),
+    computer: computerOpened,
   };
 }
 
 const HOME_GUIDE_DISMISSED_KEY = "sanremes-home-guide-dismissed";
+const HOME_GUIDE_COMPUTER_KEY = "sanremes-home-guide-computer-opened";
 
 export function homeGuideDismissed(): boolean {
   try {
@@ -72,6 +75,21 @@ export function homeGuideDismissed(): boolean {
 function dismissHomeGuide(): void {
   try {
     globalThis.localStorage?.setItem(HOME_GUIDE_DISMISSED_KEY, "1");
+  } catch {
+  }
+}
+
+export function homeGuideComputerOpened(): boolean {
+  try {
+    return globalThis.localStorage?.getItem(HOME_GUIDE_COMPUTER_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function markHomeGuideComputerOpened(): void {
+  try {
+    globalThis.localStorage?.setItem(HOME_GUIDE_COMPUTER_KEY, "1");
   } catch {
   }
 }
@@ -98,11 +116,12 @@ export function HomeDashboard() {
   const inboxSupport = useInboxSupport();
   const showThreads = useShowThreads();
   const [guideDismissed, setGuideDismissed] = useState(homeGuideDismissed);
+  const [computerOpened, setComputerOpened] = useState(homeGuideComputerOpened);
   const bots = useMemo(() => state.bots.filter((bot) => !bot.hidden), [state.bots]);
   const selected = bots.find((bot) => bot.id === state.selectedId) ?? bots[0] ?? null;
   const recent = useMemo(() => recentConversations(state.bots), [state.bots]);
-  const steps = useMemo(() => guideSteps(state.bots, state.instances), [state.bots, state.instances]);
-  const guideDone = steps.bot && steps.model && steps.message;
+  const steps = useMemo(() => guideSteps(state.bots, state.instances, computerOpened), [state.bots, state.instances, computerOpened]);
+  const guideDone = steps.bot && steps.model && steps.message && steps.computer;
   const needs = team?.needsYou ?? [];
   const attention = needs[0] ?? null;
   const attentionRow = !attention ? (inbox?.rows.find((row) => row.tab === "needs-you") ?? null) : null;
@@ -110,6 +129,16 @@ export function HomeDashboard() {
   const newChat = () => {
     if (selected && selected.yourAccess !== "view") dispatch({ type: "newTask", botId: selected.id });
     else dispatch({ type: "newBot" });
+  };
+  const openComputer = () => {
+    if (!selected) return;
+    markHomeGuideComputerOpened();
+    setComputerOpened(true);
+    dispatch({ type: "toggleComputer", open: true, botId: selected.id });
+  };
+  const dismissGuide = () => {
+    dismissHomeGuide();
+    setGuideDismissed(true);
   };
   const openRecent = (row: RecentConversation) => {
     const bot = state.bots.find((candidate) => candidate.id === row.botId);
@@ -164,21 +193,21 @@ export function HomeDashboard() {
         </header>
 
         <div data-home-section="actions" className="flex flex-wrap gap-2">
-          <button type="button" className="ui-button ui-button-primary ui-button-pill" onClick={newChat}>
+          <button type="button" className="ui-button ui-button-primary ui-button-pill touch:min-h-10" onClick={newChat}>
             <MessageSquarePlus size={16} aria-hidden="true" />
             {t("home.newChat")}
           </button>
-          <button type="button" className="ui-button ui-button-pill" onClick={() => dispatch({ type: "newBot" })}>
+          <button type="button" className="ui-button ui-button-pill touch:min-h-10" onClick={() => dispatch({ type: "newBot" })}>
             <Plus size={16} aria-hidden="true" />
             {t("home.createBot")}
           </button>
-          <button type="button" className="ui-button ui-button-pill" disabled={!selected} title={!selected ? t("home.openComputer.noBot") : undefined}
-            onClick={() => selected && dispatch({ type: "toggleComputer", open: true, botId: selected.id })}>
+          <button type="button" className="ui-button ui-button-pill touch:min-h-10" disabled={!selected} title={!selected ? t("home.openComputer.noBot") : undefined}
+            onClick={openComputer}>
             <Monitor size={16} aria-hidden="true" />
             {t("home.openComputer")}
           </button>
           {inboxSupport !== "no" && (
-            <button type="button" className="ui-button ui-button-pill" onClick={() => openInbox()}>
+            <button type="button" className="ui-button ui-button-pill touch:min-h-10" onClick={() => openInbox()}>
               <Inbox size={16} aria-hidden="true" />
               {t("home.checkApprovals")}
             </button>
@@ -190,7 +219,7 @@ export function HomeDashboard() {
           {recent.length === 0 ? (
             <div className="mt-3 flex flex-col items-start gap-3">
               <p className="text-[13px] leading-[18px] text-ink-secondary">{t("home.recent.empty")}</p>
-              <button type="button" className="ui-button" onClick={newChat}>{t("home.newChat")}</button>
+              <button type="button" className="ui-button touch:min-h-10" onClick={newChat}>{t("home.newChat")}</button>
             </div>
           ) : (
             <ul className="mt-2 flex flex-col">
@@ -217,7 +246,7 @@ export function HomeDashboard() {
           {bots.length === 0 ? (
             <div className="mt-3 flex flex-col items-start gap-3">
               <p className="text-[13px] leading-[18px] text-ink-secondary">{t("home.bots.empty")}</p>
-              <button type="button" className="ui-button" onClick={() => dispatch({ type: "newBot" })}>{t("home.createBot")}</button>
+              <button type="button" className="ui-button touch:min-h-10" onClick={() => dispatch({ type: "newBot" })}>{t("home.createBot")}</button>
             </div>
           ) : (
             <ul className="mt-2 flex flex-col">
@@ -226,7 +255,7 @@ export function HomeDashboard() {
                 return (
                   <li key={bot.id}>
                     <button type="button" onClick={() => openBot(dispatch, bot, showThreads)}
-                      className="flex w-full min-w-0 items-center gap-3 rounded-xl px-3 py-2 text-left hover:bg-ink/[0.06] focus-visible:outline focus-visible:outline-2 focus-visible:outline-focus">
+                      className="flex w-full min-w-0 items-center gap-3 rounded-xl px-3 py-2 text-left hover:bg-ink/[0.06] focus-visible:outline focus-visible:outline-2 focus-visible:outline-focus touch:py-3">
                       <span aria-hidden="true" className={cn("size-2 shrink-0 rounded-full", status.dot)} />
                       <span className="min-w-0 flex-1 truncate text-[13px] font-medium leading-[18px] text-ink">{bot.name}</span>
                       <span className="shrink-0 text-[12px] leading-4 text-ink-secondary">{t(status.key)}</span>
@@ -247,7 +276,7 @@ export function HomeDashboard() {
                 <p className="mt-0.5 truncate text-[13px] leading-[18px] text-ink">{attentionTitle}</p>
                 {attentionText && <p className="mt-0.5 truncate text-[13px] leading-[18px] text-ink-secondary">{attentionText}</p>}
               </div>
-              <button type="button" className="ui-button shrink-0" onClick={openAttention}>
+              <button type="button" className="ui-button shrink-0 touch:min-h-10" onClick={openAttention}>
                 {t(attentionRow || !attention?.threadId ? "home.attention.openInbox" : "home.attention.openConversation")}
               </button>
             </div>
@@ -259,7 +288,7 @@ export function HomeDashboard() {
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-[17px] font-semibold leading-6 text-ink">{t("home.guide.title")}</h2>
               <button type="button" aria-label={t("home.guide.dismiss")} title={t("home.guide.dismiss")}
-                onClick={() => { dismissHomeGuide(); setGuideDismissed(true); }}
+                onClick={dismissGuide}
                 className="flex size-8 shrink-0 items-center justify-center rounded-full text-ink-secondary hover:bg-ink/[0.06] hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-focus">
                 <X size={16} aria-hidden="true" />
               </button>
@@ -273,7 +302,38 @@ export function HomeDashboard() {
                   <span className={cn("text-[13px] leading-[18px]", item.done ? "text-ink-secondary" : "text-ink")}>{t(item.key)}</span>
                 </li>
               ))}
+              <li className="flex items-center gap-2.5">
+                {steps.computer ? (
+                  <>
+                    <span className="flex size-4 shrink-0 items-center justify-center"><Check size={14} aria-hidden="true" className="text-ink-secondary" /></span>
+                    <span className="text-[13px] leading-[18px] text-ink-secondary">{t("home.guide.openComputer")}</span>
+                  </>
+                ) : (
+                  <>
+                    <span aria-hidden="true" className="size-4 shrink-0 rounded-full border border-ink-tertiary" />
+                    <button type="button" disabled={!selected} title={!selected ? t("home.openComputer.noBot") : undefined} onClick={openComputer}
+                      className="flex items-center gap-1 rounded text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-focus disabled:opacity-50">
+                      <span className="text-[13px] leading-[18px] text-ink">{t("home.guide.openComputer")}</span>
+                      <ChevronRight size={14} aria-hidden="true" className="shrink-0 text-ink-tertiary rtl:-scale-x-100" />
+                    </button>
+                  </>
+                )}
+              </li>
             </ul>
+          </section>
+        )}
+
+        {guideDone && !guideDismissed && (
+          <section data-home-section="guide-ready" aria-label={t("home.guide.ready")} className="rounded-xl border border-hairline bg-card p-4">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-[17px] font-semibold leading-6 text-ink">{t("home.guide.ready")}</h2>
+              <button type="button" aria-label={t("home.guide.dismiss")} title={t("home.guide.dismiss")}
+                onClick={dismissGuide}
+                className="flex size-8 shrink-0 items-center justify-center rounded-full text-ink-secondary hover:bg-ink/[0.06] hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-focus">
+                <X size={16} aria-hidden="true" />
+              </button>
+            </div>
+            <p className="mt-1 text-[13px] leading-[18px] text-ink-secondary">{t("home.guide.readyBody")}</p>
           </section>
         )}
       </div>

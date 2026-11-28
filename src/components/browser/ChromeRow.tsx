@@ -153,7 +153,7 @@ export const ChromeRow = forwardRef<HTMLInputElement, {
           className="mx-1 min-w-0 flex-1 rounded-lg bg-transparent px-2 py-1.5 text-center text-[12px] outline-none placeholder:text-ink-secondary focus:bg-inset focus:text-left"
         />
         {props.menu}
-        <div aria-hidden="true" data-loading={nav.loading} className={`pointer-events-none absolute bottom-0 left-0 h-0.5 bg-accent transition-[width,opacity] duration-500 ${nav.loading ? "w-2/3 opacity-100" : "w-full opacity-0"}`} />
+        <div aria-hidden="true" data-loading={nav.loading} className={`pointer-events-none absolute bottom-0 left-0 h-0.5 bg-accent transition-[width,opacity] duration-300 ${nav.loading ? "w-2/3 opacity-100" : "w-full opacity-0"}`} />
       </form>
     </div>
   );

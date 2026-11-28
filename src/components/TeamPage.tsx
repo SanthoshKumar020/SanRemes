@@ -67,7 +67,7 @@ export function TeamPage() {
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-6 py-8">
         <header className="flex items-center justify-between gap-3">
           <h1 className="text-[20px] font-semibold leading-7 tracking-[-0.01em] text-ink">{t("team.title")}</h1>
-          <button type="button" className="ui-button ui-button-primary ui-button-pill" onClick={() => dispatch({ type: "newBot" })}>
+          <button type="button" className="ui-button ui-button-primary ui-button-pill touch:min-h-10" onClick={() => dispatch({ type: "newBot" })}>
             <Plus size={16} aria-hidden="true" />
             {t("sidebar.newBot")}
           </button>
@@ -96,9 +96,9 @@ export function TeamPage() {
                 {t(bots.length === 0 ? "home.bots.empty" : "team.emptyFiltered")}
               </p>
               {bots.length === 0 ? (
-                <button type="button" className="ui-button" onClick={() => dispatch({ type: "newBot" })}>{t("sidebar.newBot")}</button>
+                <button type="button" className="ui-button touch:min-h-10" onClick={() => dispatch({ type: "newBot" })}>{t("sidebar.newBot")}</button>
               ) : (
-                <button type="button" className="ui-button" onClick={clearFilters}>{t("team.clearFilters")}</button>
+                <button type="button" className="ui-button touch:min-h-10" onClick={clearFilters}>{t("team.clearFilters")}</button>
               )}
             </div>
           ) : (

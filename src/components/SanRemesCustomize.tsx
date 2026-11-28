@@ -54,7 +54,7 @@ export function SanRemesCustomize({ preview, name, nameRef, image, onName, onPat
               title={t(MAUS_COLOR_LABEL[color])}
               data-sanremes-welcome-color={color}
               onClick={() => shape({ color })}
-              className={cn("size-6 rounded-full border-2 transition-transform hover:scale-110", !picture && preview.color === color ? "border-ink" : "border-transparent")}
+              className={cn("size-6 rounded-full border-2 transition-colors duration-120 motion-reduce:transition-none", !picture && preview.color === color ? "border-ink" : "border-transparent")}
               style={{ background: colorSwatch(color) }}
             />
           ))}

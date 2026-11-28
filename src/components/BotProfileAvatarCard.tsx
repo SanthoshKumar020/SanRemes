@@ -158,7 +158,7 @@ export function BotProfileAvatarCard({
               aria-pressed={!bot.mascotBodyColor && bot.color === color}
               onClick={() => onPatch({ color, ...(bot.mascotBodyColor ? { mascotBodyColor: null } : {}) })}
               className={cn(
-                "size-10 rounded-full border-2 border-transparent transition-transform hover:scale-110 disabled:opacity-50",
+                "size-10 rounded-full border-2 border-transparent disabled:opacity-50",
                 !bot.mascotBodyColor && bot.color === color && "ring-2 ring-accent-border ring-offset-2 ring-offset-card",
               )}
               style={{ background: colorSwatch(color) }}
@@ -170,7 +170,7 @@ export function BotProfileAvatarCard({
             bot={bot}
             disabled={busy}
             onPatch={onPatch}
-            className="size-10 transition-transform hover:scale-110"
+            className="size-10"
             selectedClassName="ring-2 ring-accent-border ring-offset-2 ring-offset-card"
             holeClassName="bg-card"
           />

@@ -97,7 +97,7 @@ function ProgressRing({ value = 0, waiting = false }: { value?: number; waiting?
     className={cn("pointer-events-none absolute -left-[3px] -top-[3px]", waiting && "animate-pulse motion-reduce:animate-none")}>
     <path d={edge} fill="none" stroke="var(--color-hairline)" strokeWidth={2} />
     <path d={edge} fill="none" stroke="var(--color-accent)" strokeWidth={2} strokeLinecap="round" strokeDasharray={`${shown * around} ${around}`}
-      className="transition-[stroke-dasharray] duration-500 motion-reduce:transition-none" />
+      className="transition-[stroke-dasharray] duration-300 motion-reduce:transition-none" />
   </svg>;
 }
 

@@ -147,7 +147,7 @@ export function ReactAction({ threadId, message }: { threadId: string; message: 
                 close(true);
               }}
               className={cn(
-                "flex size-8 items-center justify-center rounded-full text-[18px] leading-none transition-transform hover:scale-110 hover:bg-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus motion-reduce:transition-none motion-reduce:hover:scale-100",
+                "flex size-8 items-center justify-center rounded-full text-[18px] leading-none transition-colors duration-120 hover:bg-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus motion-reduce:transition-none",
                 mine === emoji && "bg-accent/15",
               )}
             >

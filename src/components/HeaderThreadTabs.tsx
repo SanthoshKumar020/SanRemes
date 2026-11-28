@@ -14,7 +14,7 @@ import { botShowsTabs, neighbourOf, openTabId, showsTabs, threadTabs, type Threa
 import { useSlidingIndicator, useTabMotion } from "./thread-tab-motion";
 import { UndoToast, useUndoToast } from "./UndoToast";
 
-const TAB = "thread-tab group/tab relative z-[1] flex h-8.5 min-w-24 max-w-42 shrink items-center rounded-t-lg ps-3 pe-1 pb-0.5 text-[13px] leading-[18px] outline-none transition-colors duration-[120ms] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus motion-reduce:transition-none";
+const TAB = "thread-tab group/tab relative z-[1] flex h-8 min-w-24 max-w-42 shrink items-center rounded-t-lg ps-3 pe-1 pb-0.5 text-[13px] leading-[18px] outline-none transition-colors duration-[120ms] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus motion-reduce:transition-none";
 const CLOSE = "pointer-events-none ms-1 flex size-5 shrink-0 items-center justify-center rounded-full text-ink-tertiary opacity-0 transition-opacity duration-[120ms] hover:bg-ink/[0.08] hover:text-ink group-hover/tab:pointer-events-auto group-hover/tab:opacity-100 group-focus-within/tab:pointer-events-auto group-focus-within/tab:opacity-100 touch:pointer-events-auto touch:opacity-100 motion-reduce:transition-none";
 const FADE = 24;
 
