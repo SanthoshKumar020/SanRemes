@@ -13,9 +13,7 @@ import {
   hostedMember,
   spotlightsQuiet,
   hintSeenPatch,
-  isLowMemory,
   LOCAL_VIEWER,
-  LOW_MEMORY_BYTES,
   MET_CHIEF_HINT,
   onboardingCloudOffered,
   ONBOARDING_CLOUD_HINT,
@@ -325,23 +323,5 @@ describe("welcomeFinishedThisLaunch", () => {
     vi.stubGlobal("sessionStorage", { getItem: () => { throw new Error("blocked"); }, setItem: () => { throw new Error("blocked"); } });
     expect(() => markWelcomeFinished()).not.toThrow();
     expect(welcomeFinishedThisLaunch()).toBe(true);
-  });
-});
-
-describe("isLowMemory", () => {
-  const GiB = 2 ** 30;
-  it("flags machines below 8 GiB, and only those", () => {
-    expect(LOW_MEMORY_BYTES).toBe(8 * GiB);
-    expect(isLowMemory(7.2 * GiB)).toBe(true);
-    expect(isLowMemory(4 * GiB)).toBe(true);
-    expect(isLowMemory(8 * GiB)).toBe(false);
-    expect(isLowMemory(16 * GiB)).toBe(false);
-  });
-
-  it("treats unknown or impossible memory as not low", () => {
-    expect(isLowMemory(undefined)).toBe(false);
-    expect(isLowMemory(null)).toBe(false);
-    expect(isLowMemory(0)).toBe(false);
-    expect(isLowMemory(-1)).toBe(false);
   });
 });

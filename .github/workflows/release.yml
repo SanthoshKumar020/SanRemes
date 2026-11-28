@@ -374,8 +374,6 @@ jobs:
       - run: pnpm package:win
       - name: "Gate: release hygiene (no maps, no plaintext secrets, fuses set)"
         run: node scripts/check-release-hygiene.mjs --app release/win-unpacked --platform win32
-      - name: Smoke the staged Windows Ollama bundle
-        run: pnpm smoke:ollama-win
       - name: "Gate: bundled browser works with an empty home"
         run: node scripts/smoke-browser-bundle.mjs --resources "${{ github.workspace }}/release/win-unpacked/resources"
       - name: "Gate: packaged Windows server discovers its browser"
@@ -404,9 +402,6 @@ jobs:
           if grep -q "publisherName" "$res/app-update.yml"; then
             echo "::error::publisherName on an unsigned build breaks every update"; exit 1
           fi
-          # missing → first-run Qwen setup has no Ollama binary to start
-          [ -f "$res/ollama/ollama.exe" ] || { echo "::error::missing $res/ollama/ollama.exe"; exit 1; }
-          [ -f "$res/ollama/lib/ollama/ggml-base.dll" ] || { echo "::error::missing $res/ollama/lib/ollama/ggml-base.dll"; exit 1; }
           HOME="$RUNNER_TEMP/smoke" USERPROFILE="$RUNNER_TEMP/smoke" SANREMES_PORT=21987 \
             node "$res/server/index.js" > "$RUNNER_TEMP/server.log" 2>&1 &
           pid=$!

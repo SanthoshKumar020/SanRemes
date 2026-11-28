@@ -202,9 +202,6 @@ win:
       to: cua-driver-background.exe
     - from: dist-native/cua-win32-x64/cua-sdk
       to: cua-sdk
-    # Bundled Ollama for Windows — the first-run setup starts it and pulls Qwen from it
-    - from: dist-native/ollama-win32-x64
-      to: ollama
   # No signing config yet (would go under win.signtoolOptions or
   # win.azureSignOptions — eb 26 nests it, there is no top-level
   # win.certificateFile). The installer is unsigned, so SmartScreen shows
