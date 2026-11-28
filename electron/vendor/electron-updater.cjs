@@ -14800,7 +14800,7 @@ var require_BaseUpdater = __commonJS({
         this._logger.info(`Executing: ${cmd} with args: ${args}`);
         return new Promise((resolve, reject) => {
           try {
-            const params = { stdio, env, detached: true };
+            const params = { stdio, env, detached: true, windowsHide: true };
             const p = (0, child_process_1.spawn)(cmd, args, params);
             p.on("error", (error) => {
               reject(error);
@@ -15577,7 +15577,8 @@ var require_windowsExecutableCodeSignatureVerifier = __commonJS({
       const args = ["-NoProfile", "-NonInteractive", "-InputFormat", "None", "-Command", command];
       const options = {
         shell: true,
-        timeout
+        timeout,
+        windowsHide: true
       };
       return [executable, args, options];
     }

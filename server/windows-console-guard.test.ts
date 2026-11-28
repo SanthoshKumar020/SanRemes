@@ -32,7 +32,6 @@ const EXEMPT: Record<string, string> = {
   "server/browser/desktop/displays.ts": "Xvnc launch; findXvnc returns null unless Linux.",
   "server/browser/desktop/policy.ts": "bwrap probe; only reached on Linux.",
   "server/host/conversation-folder-cleanup.ts": "rm/nice/chmod; gated behind gnuRm(), Linux-only.",
-  "server/tts/system-voices.ts": "/usr/bin/say; macOS-only.",
   "server/cloud-home-start.ts": "Linux cloud-home entry; never runs on the Windows desktop.",
   "server/oom-score.ts": "its `spawn` is a caller-supplied callback, not child_process.spawn.",
   "server/browser/memory-cgroup.ts": "its `spawn` is a caller-supplied callback; the only caller is the Linux cgroup path.",
@@ -99,6 +98,28 @@ function unhiddenSpawns(source: string): { line: number; call: string }[] {
   return found;
 }
 
+// A promisified spawn hides behind its alias (`run(...)`, `execute(...)`),
+// so the call scan above cannot see it: the same check, over each alias's
+// own call sites.
+const ALIAS_DEF = /const\s+(\w+)\s*=\s*promisify\((execFile|execFileSync|spawn|spawnSync)\)/g;
+
+function unhiddenAliasSpawns(source: string): { line: number; call: string }[] {
+  const stripped = stripComments(source);
+  const found: { line: number; call: string }[] = [];
+  for (const def of stripped.matchAll(ALIAS_DEF)) {
+    const alias = def[1];
+    const callPattern = new RegExp(`(?<![\\w$.])${alias}\\s*\\(`, "g");
+    for (const match of stripped.matchAll(callPattern)) {
+      const forward = stripped.slice(match.index, match.index + WINDOW);
+      if (HIDDEN.test(forward)) continue;
+      const args = forward.slice(0, 300);
+      if (/,\s*[A-Za-z_$][\w$]*\s*[,)]/.test(args) && HIDDEN.test(stripped.slice(Math.max(0, match.index - BACK_WINDOW), match.index))) continue;
+      found.push({ line: stripped.slice(0, match.index).split("\n").length, call: `${alias} (promisified ${def[2]})` });
+    }
+  }
+  return found;
+}
+
 describe("windows console guard", () => {
   it("the shared spawn options hide the console", () => {
     expect(OWN_GROUP.windowsHide).toBe(true);
@@ -115,9 +136,25 @@ describe("windows console guard", () => {
         for (const { line, call } of unhiddenSpawns(source)) {
           failures.push(`${relative}:${line}: ${call} has no windowsHide: true (or OWN_GROUP) in its options`);
         }
+        for (const { line, call } of unhiddenAliasSpawns(source)) {
+          failures.push(`${relative}:${line}: ${call} has no windowsHide: true (or OWN_GROUP) in its options`);
+        }
       }
     }
     expect(failures).toEqual([]);
+  });
+
+  // electron/vendor/electron-updater.cjs is vendored upstream code, so the
+  // scan above skips it (it requires "child_process", not
+  // "node:child_process"). Its two Windows-reachable spawns — the NSIS
+  // installer launch and the PowerShell signature check — are checked by
+  // name instead; a re-vendor that drops the flag fails here.
+  it("the vendored updater's Windows spawns hide their console", () => {
+    const source = readFileSync(join(ROOT, "electron/vendor/electron-updater.cjs"), "utf8");
+    const spawnLog = source.slice(source.indexOf("async spawnLog("));
+    expect(spawnLog.slice(0, 800)).toContain("windowsHide: true");
+    const psExec = source.slice(source.indexOf("function preparePowerShellExec("));
+    expect(psExec.slice(0, 600)).toContain("windowsHide: true");
   });
 
   it("the deliberate visible spawns stay visible", () => {

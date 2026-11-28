@@ -1,17 +1,16 @@
 // Website sign-ins in the Local VM live in its browsers' profiles. Chrome and Chromium have always kept theirs in the durable
 // workspace; Firefox, the image's own browser, kept its profile in the container (/home/cua/.mozilla) until image layer 6.
 // Before such a desktop is removed, its Firefox profile is copied into the workspace, where the new image points ~/.mozilla.
-import { execFile } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { lstat, mkdir, open, readdir, readlink, rename, rm, rmdir, type FileHandle } from "node:fs/promises";
 import { join } from "node:path";
-import { promisify } from "node:util";
 
 import { shellQuote } from "./browser/chrome/wrapper.ts";
 import type { ContainerComputerStatus, LocalVmTarget } from "./container-computer.ts";
 import { augmentedPath, resolveCliSpawn } from "./env-path.ts";
+import { execFileInGroupAsync } from "./group-exec.ts";
 
-const run = promisify(execFile);
+const run = execFileInGroupAsync;
 const PROFILE_IN_CONTAINER = "/home/cua/.mozilla";
 const APPS_IN_CONTAINER = "/home/cua/.local";
 // docker: "Could not find the file … in container"; podman: "… could not be found on container …: no such file or directory".

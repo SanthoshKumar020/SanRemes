@@ -15,7 +15,7 @@ export function systemVoicesAvailable(platform: string = process.platform): bool
 
 export type Runner = (file: string, args: string[], timeout: number) => Promise<{ stdout: string }>;
 
-const defaultRun: Runner = (file, args, timeout) => execFileAsync(file, args, { timeout, maxBuffer: 4 * 1024 * 1024 });
+const defaultRun: Runner = (file, args, timeout) => execFileAsync(file, args, { timeout, maxBuffer: 4 * 1024 * 1024, windowsHide: true });
 
 /** The header above `say -v ?`'s table is localized, so anything without the `name  lang  # sample` shape is ignored. */
 export function parseVoiceList(stdout: string): Voice[] {
