@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { tasksFileSchema, taskSchema, type Task, type TasksData, type TaskState } from "../shared/tasks.ts";
+import { tasksFileSchema, taskSchema, type Task, type TaskAttempt, type TasksData, type TaskState } from "../shared/tasks.ts";
 
 import { writeFileAtomic } from "./atomic.ts";
 
@@ -14,7 +14,7 @@ export const TASKS_FILE = "tasks.json";
 export const TASK_LOCK_LEASE_MS = 30 * 60_000;
 
 /** History entries the store itself writes; anything else in history is a bot's finish outcome. */
-const SYSTEM_RESULTS = new Set(["claimed", "started", "lock expired", "requeued"]);
+const SYSTEM_RESULTS = new Set(["claimed", "started", "lock expired", "requeued", "interrupted by restart"]);
 
 /** How many times this task has failed: every finish outcome that is not one of the store's own entries. */
 export function failedAttempts(task: Task): number {
@@ -42,6 +42,28 @@ export class TasksStore {
   constructor(options: { dataDir: string; now?: () => number }) {
     this.file = join(options.dataDir, TASKS_FILE);
     this.now = options.now ?? Date.now;
+    this.reconcileAfterRestart();
+  }
+
+  /** A restart cut these tasks off mid-claim: no bot holds them any more, so they go back to the queue with the
+   * interruption on the record, ready for the same bot — or another — to claim them again. Runs once, when the
+   * store opens over a data directory left by a previous process. */
+  reconcileAfterRestart(): Task[] {
+    const at = this.now();
+    const interrupted: Task[] = [];
+    this.update((data) => {
+      for (const task of data.tasks) {
+        if (task.state !== "claimed" && task.state !== "running") continue;
+        task.history.push({ at, result: "interrupted by restart", botId: task.lockedBy ?? undefined });
+        task.history = task.history.slice(-100);
+        task.state = "queued";
+        task.lockedBy = null;
+        task.lockedAt = null;
+        task.updatedAt = at;
+        interrupted.push(structuredClone(task));
+      }
+    });
+    return interrupted;
   }
 
   private read(): TasksData {
@@ -85,6 +107,20 @@ export class TasksStore {
     const task: Task = taskSchema.parse({
       ...input, id: randomUUID(), assigneeBotId: input.assigneeBotId ?? null,
       state: "queued", lockedBy: null, lockedAt: null, history: [], createdAt: at, updatedAt: at,
+    });
+    this.update((data) => { data.tasks.push(task); });
+    return task;
+  }
+
+  /** A task handed off from another home: a fresh id, queued, with the other home's record kept and the hand-off
+   * noted, so the work — not the live turn, which cannot move — continues where it left off. */
+  importTask(input: { title: string; goal?: string; assigneeBotId?: string | null; history?: TaskAttempt[] }): Task {
+    const at = this.now();
+    const task: Task = taskSchema.parse({
+      id: randomUUID(), title: input.title, goal: input.goal, assigneeBotId: input.assigneeBotId ?? null,
+      state: "queued", lockedBy: null, lockedAt: null,
+      history: [...(input.history ?? []).slice(-99), { at, result: "handed off from another home" }],
+      createdAt: at, updatedAt: at,
     });
     this.update((data) => { data.tasks.push(task); });
     return task;

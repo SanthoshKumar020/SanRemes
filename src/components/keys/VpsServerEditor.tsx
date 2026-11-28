@@ -104,6 +104,8 @@ export function VpsServerEditor({ onRemoved, hint = true, ...which }: VpsServerE
   const [cpus, setCpus] = useState(asText(savedCpus));
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [verifyResult, setVerifyResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [verifying, setVerifying] = useState(false);
   useEffect(() => setName(savedName), [savedName]);
   useEffect(() => setMemory(asText(savedMemory)), [savedMemory]);
   useEffect(() => setCpus(asText(savedCpus)), [savedCpus]);
@@ -144,6 +146,14 @@ export function VpsServerEditor({ onRemoved, hint = true, ...which }: VpsServerE
     const work = isDefault ? run({ vps: { sshAlias: "" } }) : run({ vpsServers: named.filter((server) => server.sshAlias !== alias) });
     work.then((removedNotice) => onRemoved?.(removedNotice), () => undefined);
   };
+  const testConnection = () => {
+    if (verifying || !alias) return;
+    setVerifying(true);
+    setVerifyResult(null);
+    api<{ ok: boolean; stage: string; message: string }>("/api/vps/verify", { method: "POST", body: JSON.stringify({ alias }) })
+      .then(setVerifyResult, (e) => setVerifyResult({ ok: false, message: e instanceof Error ? e.message : String(e) }))
+      .finally(() => setVerifying(false));
+  };
 
   const ids = { name: `${fieldId}-name`, memory: `${fieldId}-memory`, cpus: `${fieldId}-cpus` };
   return (
@@ -177,10 +187,14 @@ export function VpsServerEditor({ onRemoved, hint = true, ...which }: VpsServerE
         <button type="button" onClick={submit} disabled={busy || !valid || !dirty} className="ui-button ui-button-primary shrink-0">
           {saving === alias && dirty ? <Loader2 size={13} className="animate-spin" aria-hidden="true" /> : t("common.save")}
         </button>
+        <button type="button" onClick={testConnection} disabled={busy || verifying || !alias} className="ui-button shrink-0">
+          {verifying ? <><Loader2 size={13} className="animate-spin" aria-hidden="true" /> {t("keys.vps.verifying")}</> : t("keys.vps.verify")}
+        </button>
         <button type="button" onClick={remove} disabled={busy} aria-label={t("keys.vps.servers.removeAria", { name: label })} data-danger="" className="ui-button ms-auto shrink-0 text-danger!">
           {saving === alias && !dirty ? <Loader2 size={13} className="animate-spin" aria-hidden="true" /> : t("keys.row.remove")}
         </button>
       </div>
+      {verifyResult && <div role={verifyResult.ok ? "status" : "alert"} className={cn("text-[12px] leading-4", verifyResult.ok ? "text-ink-secondary" : "text-danger")}>{verifyResult.message}</div>}
       {notice && <div role="status" className="text-[12px] leading-4 text-ink-secondary">{notice}</div>}
       {error && <div role="alert" className="text-[12px] leading-4 text-danger">{error}</div>}
     </div>

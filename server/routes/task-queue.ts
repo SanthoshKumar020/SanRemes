@@ -3,7 +3,7 @@
 // This is the queue, not the conversation tasks in routes/tasks.ts.
 import { z } from "zod";
 
-import { taskStateSchema } from "../../shared/tasks.ts";
+import { taskAttemptSchema, taskStateSchema } from "../../shared/tasks.ts";
 import { failedAttempts, type TasksStore } from "../tasks-store.ts";
 import { PASS, type RouteHandler } from "./table.ts";
 
@@ -25,7 +25,18 @@ const createBody = z.object({
 }).strict();
 const claimBody = z.object({ botId: z.string().max(128) }).strict();
 const finishBody = z.object({ botId: z.string().max(128), result: z.string().max(500).optional() }).strict();
+const importBody = z.object({
+  version: z.literal(1),
+  exportedAt: z.number().optional(),
+  task: z.object({
+    title: z.string().min(1).max(300),
+    goal: z.string().max(5000).optional(),
+    assigneeBotId: z.string().max(128).nullable().optional(),
+    history: z.array(taskAttemptSchema).max(100).optional(),
+  }),
+}).strict();
 const ACTION = /^([\w-]{1,128})\/(claim|complete|fail|start|requeue)$/u;
+const EXPORT = /^([\w-]{1,128})\/export$/u;
 
 export function createTaskQueueRoutes(deps: TaskQueueRouteDeps): RouteHandler {
   const { store } = deps;
@@ -49,6 +60,23 @@ export function createTaskQueueRoutes(deps: TaskQueueRouteDeps): RouteHandler {
       return json(res, 201, { task: store.create(body.data) });
     }
     if (!path.startsWith(`${TASKS_PATH}/`)) return PASS;
+    if (path === `${TASKS_PATH}/import`) {
+      if (method !== "POST") return json(res, 405, { error: "Use POST." });
+      if (!isJson(req)) return json(res, 415, { error: "content-type must be application/json" });
+      const parsed = importBody.safeParse(await readBody(req, 64_000));
+      if (!parsed.success) return json(res, 400, { error: "Send a version 1 task export." });
+      if (parsed.data.task.assigneeBotId && deps.botExists && !deps.botExists(parsed.data.task.assigneeBotId)) {
+        return json(res, 400, { error: "No such bot." });
+      }
+      return json(res, 201, { task: store.importTask(parsed.data.task), ...state() });
+    }
+    const exported = EXPORT.exec(path.slice(TASKS_PATH.length + 1));
+    if (exported) {
+      if (method !== "GET") return json(res, 405, { error: "Use GET." });
+      const task = store.get(exported[1]!);
+      if (!task) return json(res, 404, { error: "no such task" });
+      return json(res, 200, { version: 1, exportedAt: Date.now(), task });
+    }
     const action = ACTION.exec(path.slice(TASKS_PATH.length + 1));
     if (!action) return json(res, 404, { error: "no such task" });
     const [id, verb] = [action[1]!, action[2]! as "claim" | "complete" | "fail" | "start" | "requeue"];

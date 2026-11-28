@@ -70,6 +70,7 @@ Use only mapped, tested commands:
 - [Waits: tell me when, with no AI while waiting](waits.md)
 - [Check-backs: a bot comes back later by itself](check-backs.md)
 - [Hand-off status: who's working on what](handoff-status.md)
+- [Running tasks: what's working right now](running-tasks.md)
 - [A new Cloud's first hour](first-hour.md)
 - [Chat widgets](widgets.md)
 - [Pages and apps in a room](room-pages.md)

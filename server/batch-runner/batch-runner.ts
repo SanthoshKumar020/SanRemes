@@ -1,10 +1,15 @@
 import { randomUUID } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { z } from "zod";
 
 import { TasksStore } from "../tasks-store.ts";
+import { writeFileAtomic } from "../atomic.ts";
 
 export const MAX_BATCH_PROMPTS = 50;
 export const MAX_BATCH_PROMPT_CHARS = 5_000;
 const MAX_RESULT_CHARS = 500;
+const BATCHES_FILE = "batches.json";
 
 export type BatchItemStatus = "done" | "failed";
 
@@ -26,15 +31,60 @@ export interface BatchRun {
   results: BatchItemResult[];
 }
 
+const batchItemResultSchema = z.object({
+  index: z.number().int().min(0),
+  prompt: z.string().max(MAX_BATCH_PROMPT_CHARS),
+  taskId: z.string(),
+  status: z.enum(["done", "failed"]),
+  result: z.string().max(MAX_RESULT_CHARS).optional(),
+  error: z.string().max(MAX_RESULT_CHARS).optional(),
+}).strict();
+const batchRunSchema = z.object({
+  id: z.string(),
+  botId: z.string(),
+  createdAt: z.number(),
+  prompts: z.array(z.string().max(MAX_BATCH_PROMPT_CHARS)).min(1).max(MAX_BATCH_PROMPTS),
+  taskIds: z.array(z.string()),
+  results: z.array(batchItemResultSchema),
+}).strict();
+const batchesFileSchema = z.object({ version: z.literal(1), batches: z.array(batchRunSchema) }).strict();
+
 export type BatchExecutor = (prompt: string, item: { index: number; taskId: string }) => Promise<string>;
 
 /** A batch is a list of prompts, one queued task each, run in order through the task queue. */
 export class BatchRunner {
   private readonly store: TasksStore;
+  private readonly file: string | null;
   private readonly batches = new Map<string, BatchRun>();
 
-  constructor(store: TasksStore) {
+  constructor(store: TasksStore, options?: { dataDir?: string }) {
     this.store = store;
+    this.file = options?.dataDir ? join(options.dataDir, BATCHES_FILE) : null;
+    if (this.file && existsSync(this.file)) {
+      try {
+        const parsed = batchesFileSchema.parse(JSON.parse(readFileSync(this.file, "utf8")));
+        for (const batch of parsed.batches) this.batches.set(batch.id, batch);
+      } catch {
+        console.warn("batches: batches.json could not be read; past batches are not listed");
+      }
+    }
+  }
+
+  private save(): void {
+    if (!this.file) return;
+    mkdirSync(join(this.file, ".."), { recursive: true });
+    writeFileAtomic(this.file, `${JSON.stringify(batchesFileSchema.parse({ version: 1, batches: [...this.batches.values()] }), null, 2)}\n`);
+  }
+
+  /** Every batch this process knows, including ones a restart cut off: the record survives, so a batch
+   * started before a restart can be listed and resumed instead of vanishing with the process. */
+  list(): BatchRun[] {
+    return [...this.batches.values()].sort((a, b) => b.createdAt - a.createdAt);
+  }
+
+  /** Batches with prompts still to run. */
+  listActive(): BatchRun[] {
+    return this.list().filter((batch) => batch.results.length < batch.prompts.length);
   }
 
   createBatch(botId: string, prompts: readonly string[]): BatchRun {
@@ -60,11 +110,30 @@ export class BatchRunner {
       }).id,
     );
     this.batches.set(batch.id, batch);
+    this.save();
     return batch;
   }
 
   getBatch(id: string): BatchRun | undefined {
     return this.batches.get(id);
+  }
+
+  /** Runs the prompts a restart — or a failure — left unrun, in their original order; prompts already done or
+   * failed are not run again. */
+  async resumeBatch(
+    batch: BatchRun,
+    executor: BatchExecutor,
+    onItem?: (result: BatchItemResult) => void,
+  ): Promise<BatchRun> {
+    for (let index = batch.results.length; index < batch.prompts.length; index += 1) {
+      const prompt = batch.prompts[index]!;
+      const taskId = batch.taskIds[index]!;
+      const result = await this.runItem(batch.botId, index, prompt, taskId, executor);
+      batch.results.push(result);
+      this.save();
+      onItem?.(result);
+    }
+    return batch;
   }
 
   /** Runs each prompt through its task and records the outcome per item; one failure never stops the batch. */
@@ -78,6 +147,7 @@ export class BatchRunner {
       const taskId = batch.taskIds[index]!;
       const result = await this.runItem(batch.botId, index, prompt, taskId, executor);
       batch.results.push(result);
+      this.save();
       onItem?.(result);
     }
     return batch;

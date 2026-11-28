@@ -78,3 +78,37 @@ describe("BatchRunner.runBatch", () => {
     expect(BATCH_RUNNER_TOOL.inputSchema.properties.prompts.maxItems).toBe(50);
   });
 });
+
+describe("BatchRunner persistence", () => {
+  it("lists a batch after a restart and resumes only its unrun prompts", async () => {
+    const persisted = new BatchRunner(store, { dataDir: dir });
+    const batch = persisted.createBatch("scout", ["a", "b"]);
+    let releaseB!: () => void;
+    const bGate = new Promise<void>((resolve) => { releaseB = resolve; });
+    const running = persisted.runBatch(batch, async (prompt) => {
+      if (prompt === "b") await bGate;
+      return `done ${prompt}`;
+    });
+    for (let i = 0; i < 100 && batch.results.length < 1; i++) await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(batch.results).toHaveLength(1);
+    expect(batch.results[0]).toMatchObject({ prompt: "a", status: "done" });
+
+    const reopened = new BatchRunner(new TasksStore({ dataDir: dir }), { dataDir: dir });
+    const found = reopened.getBatch(batch.id);
+    expect(found?.results).toHaveLength(1);
+    expect(reopened.listActive()).toHaveLength(1);
+    const resumed = await reopened.resumeBatch(found!, async (prompt) => `done ${prompt}`);
+    expect(resumed.results.map((result) => result.prompt)).toEqual(["a", "b"]);
+    expect(resumed.results.map((result) => result.status)).toEqual(["done", "done"]);
+    expect(reopened.listActive()).toEqual([]);
+    releaseB();
+    await running;
+  });
+
+  it("keeps working without a data directory", () => {
+    const memoryOnly = new BatchRunner(store);
+    const batch = memoryOnly.createBatch("scout", ["one"]);
+    expect(memoryOnly.getBatch(batch.id)).toBe(batch);
+    expect(memoryOnly.listActive()).toEqual([batch]);
+  });
+});

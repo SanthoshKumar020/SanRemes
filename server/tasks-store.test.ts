@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { tasksFileSchema } from "../shared/tasks.ts";
-import { TasksStore } from "./tasks-store.ts";
+import { failedAttempts, TasksStore } from "./tasks-store.ts";
 import { removeTempDir } from "./testing/cleanup.ts";
 
 const START = new Date("2026-11-26T10:00:00+05:30").getTime();
@@ -179,5 +179,31 @@ describe("tasks.json", () => {
     expect(store.requeue(task.id)).toBe("retry-cap");
     expect(store.get(task.id)).toMatchObject({ state: "failed" });
     expect(store.requeue("missing")).toBeNull();
+  });
+
+  it("returns tasks a restart cut off to the queue, with the interruption on the record", () => {
+    const { dataDir, store } = makeStore();
+    const running = store.create({ title: "Running when the server stopped" });
+    const claimed = store.create({ title: "Claimed when the server stopped" });
+    const queued = store.create({ title: "Still queued" });
+    const done = store.create({ title: "Already done" });
+    store.claim(running.id, "job-bot");
+    store.start(running.id, "job-bot");
+    store.claim(claimed.id, "job-bot");
+    store.claim(done.id, "job-bot");
+    store.complete(done.id, "job-bot", "completed");
+    const reopened = new TasksStore({ dataDir, now: () => START + 60_000 });
+    expect(reopened.get(running.id)).toMatchObject({ state: "queued", lockedBy: null, lockedAt: null, assigneeBotId: "job-bot" });
+    expect(reopened.get(running.id)?.history).toEqual([
+      { at: START, result: "claimed", botId: "job-bot" },
+      { at: START, result: "started", botId: "job-bot" },
+      { at: START + 60_000, result: "interrupted by restart", botId: "job-bot" },
+    ]);
+    expect(reopened.get(claimed.id)).toMatchObject({ state: "queued", lockedBy: null, lockedAt: null });
+    expect(reopened.get(queued.id)).toMatchObject({ state: "queued" });
+    expect(reopened.get(done.id)).toMatchObject({ state: "done" });
+    expect(failedAttempts(reopened.get(running.id)!)).toBe(0);
+    const again = reopened.claim(running.id, "job-bot");
+    expect(again).toMatchObject({ state: "claimed", lockedBy: "job-bot" });
   });
 });

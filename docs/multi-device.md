@@ -43,6 +43,15 @@ backup first if you still need what is on it. API keys, engine sign-ins and pair
 devices stay where they are on both sides, and routines arrive paused: sign in to your AI on the new home and turn the
 routines you want back on.
 
+## Handing one task to another device
+
+To move a single queued task — not a whole home — from one device to another that shares the same home, export the
+task on the first device (`GET /api/tasks/:id/export`) and import it on the second (`POST /api/tasks/import`). The
+imported copy starts queued and keeps the original's notes and history, plus a line saying it was handed off from
+another home, so the new device's bot can claim it and carry on. A task that is already running or claimed when you
+export it still arrives queued: the live turn itself cannot move (it runs in the first device's memory), so stop the
+turn first or let it finish before handing the task over.
+
 ## When a device looks wrong
 
 | What you see | Why, and what to do |

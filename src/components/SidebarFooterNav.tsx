@@ -1,4 +1,4 @@
-import { AppWindow, Briefcase, FolderOpen, FolderTree, Globe, Puzzle, Rocket, UsersRound, Zap } from "lucide-react";
+import { Activity, AppWindow, Briefcase, FolderOpen, FolderTree, Globe, Puzzle, Rocket, UsersRound, Zap } from "lucide-react";
 import { useMemo, type ReactNode } from "react";
 
 import { useAppTriggers } from "@/lib/app-triggers";
@@ -138,6 +138,15 @@ export function SidebarFooterNav({
     icon={(active) => <Briefcase size={iconSize} className={tone(active)} />}
     onClick={() => dispatch({ type: "showJobs" })}
   />;
+  const runningRow = <NavRow
+    id="running"
+    label={t("sidebar.nav.running")}
+    tourId="nav-running"
+    iconsOnly={iconsOnly || toolbar}
+    active={state.activeView === "running"}
+    icon={(active) => <Activity size={iconSize} className={tone(active)} />}
+    onClick={() => dispatch({ type: "showRunning" })}
+  />;
   const automationsRow = <NavRow
     id="automations"
     label={t("sidebar.nav.automations")}
@@ -174,6 +183,7 @@ export function SidebarFooterNav({
     <>
       {automationsRow}
       {jobsRow}
+      {runningRow}
       {appsRow}
       {(advanced || iconsOnly) && (
         <NavRow

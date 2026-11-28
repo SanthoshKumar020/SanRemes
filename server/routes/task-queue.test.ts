@@ -169,3 +169,34 @@ it("requeues a failed task, refuses a live one and a third failure, and refuses 
   expect((await service.api(`/api/tasks/${id}/requeue`, { method: "POST", body: "{}" })).status).toBe(403);
   expect(store.get(id)?.state).toBe("failed");
 });
+
+it("exports a task and imports it on another home as a fresh queued task", async () => {
+  const { api, store } = await serve();
+  const id = await seed(api);
+  await api(`/api/tasks/${id}/claim`, { method: "POST", body: JSON.stringify({ botId: "job-bot" }) });
+  await api(`/api/tasks/${id}/fail`, { method: "POST", body: JSON.stringify({ botId: "job-bot", result: "The inbox moved." }) });
+  const exported = await api(`/api/tasks/${id}/export`);
+  expect(exported.status).toBe(200);
+  expect(exported.body).toMatchObject({ version: 1, task: { id, title: "Triage the inbox", state: "failed" } });
+  expect(exported.body.task.history).toHaveLength(2);
+  expect((await api("/api/tasks/missing/export")).status).toBe(404);
+
+  const other = await serve();
+  const imported = await other.api("/api/tasks/import", { method: "POST", body: JSON.stringify(exported.body) });
+  expect(imported.status).toBe(201);
+  expect(imported.body.task).toMatchObject({ title: "Triage the inbox", state: "queued", lockedBy: null, assigneeBotId: "job-bot" });
+  expect(imported.body.task.id).not.toBe(id);
+  expect(imported.body.task.history).toHaveLength(3);
+  expect(imported.body.task.history.at(-1)).toMatchObject({ result: "handed off from another home" });
+  expect(imported.body.task.history[0]).toMatchObject({ result: "claimed", botId: "job-bot" });
+  const again = await other.api(`/api/tasks/${imported.body.task.id}/claim`, { method: "POST", body: JSON.stringify({ botId: "qa-bot" }) });
+  expect(again.status).toBe(200);
+  expect(store.get(id)?.state).toBe("failed");
+});
+
+it("refuses a malformed task import", async () => {
+  const { api } = await serve();
+  expect((await api("/api/tasks/import", { method: "POST", body: JSON.stringify({ version: 2, task: { title: "x" } }) })).status).toBe(400);
+  expect((await api("/api/tasks/import", { method: "POST", body: JSON.stringify({ version: 1, task: { title: "" } }) })).status).toBe(400);
+  expect((await api("/api/tasks/import", { method: "POST", body: JSON.stringify({ version: 1, task: { title: "x", assigneeBotId: "ghost" } }) })).status).toBe(400);
+});

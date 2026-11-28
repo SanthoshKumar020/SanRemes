@@ -109,7 +109,9 @@ To pick servers from a list instead of typing aliases, add them under **Named se
 then gets a server picker in Bot settings → Computer → Where … works: the default server, every named server, or
 **Other SSH alias…** for one that is not on the list, then **Save**. The list is stored as `vpsServers` in `config.json`
 (`[{ "name": "Home lab", "sshAlias": "home-lab" }]`); saving or removing an entry never moves a bot, and the
-picker writes the same `vpsAlias` field. Only owner and admin sessions see the list.
+picker writes the same `vpsAlias` field. Only owner and admin sessions see the list. Next to **Save**, each named
+server also has a **Test connection** button: it runs `docker` on the server over SSH and says in plain words
+whether the server answered, or why it could not be reached.
 
 A bot cannot be moved to another server while its computer still lives on the old one, and the default alias
 cannot change while any computer it manages still exists: remove the computer first from Settings → Local VM →
