@@ -7,7 +7,7 @@ import { cn } from "@/lib/cn";
 // The page a Tools entry opens in place of the chat (Automations and its calendar, Published apps): one header with
 // Back, the title and the page's own controls, over the page's body.
 
-export const TOOL_PAGE_TITLE = "mr-1 text-[18px] font-semibold tracking-tight text-ink";
+export const TOOL_PAGE_TITLE = "mr-1 text-[20px] font-semibold tracking-[-0.01em] text-ink";
 
 // SAFETY: Electron's -webkit-app-region is not in React's CSSProperties type; the renderer accepts it as an inline style.
 const DRAG = { WebkitAppRegion: "drag" } as CSSProperties, NO_DRAG = { WebkitAppRegion: "no-drag" } as CSSProperties;

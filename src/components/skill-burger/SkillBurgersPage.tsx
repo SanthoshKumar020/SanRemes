@@ -118,9 +118,8 @@ export function SkillBurgersPage() {
             </section>
           ) : skills && skills.length === 0 ? (
             <section aria-label={t("skillBurger.page.empty")} className="flex flex-col items-center px-6 py-16 text-center">
-              <MiniBurger skill={{ layers: [{ kind: "app", app: "googlesheets", label: "" }, { kind: "ai", label: "" }, { kind: "app", app: "gmail", label: "" }] }} />
-              <h2 className="mt-4 text-[17px] font-semibold text-ink">{t("skillBurger.page.empty")}</h2>
-              <p className="mx-auto mt-2 max-w-sm text-[14px] leading-relaxed text-ink-secondary">{t("skillBurger.list.empty")}</p>
+              <h2 className="text-[17px] font-semibold text-ink">{t("skillBurger.page.empty")}</h2>
+              <p className="mx-auto mt-2 max-w-sm text-[13px] leading-[18px] text-ink-secondary">{t("skillBurger.list.empty")}</p>
             </section>
           ) : skills ? (
             <ul aria-label={t("skillBurger.list.title")} className="grid grid-cols-[repeat(auto-fill,minmax(min(320px,100%),1fr))] gap-4">

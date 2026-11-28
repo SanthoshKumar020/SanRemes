@@ -549,7 +549,7 @@ export function ApprovalCard({
             </>
           )}
         </div>
-        {displayTool && !titled && !outbound && <span className="shrink-0 font-mono text-[11px] text-ink-secondary">{displayTool}</span>}
+        {displayTool && !titled && !outbound && <span className="shrink-0 font-mono text-[12px] text-ink-secondary">{displayTool}</span>}
       </div>
       {outbound?.summary && <div className="mt-0.5 text-[13px] text-ink-secondary">{outbound.summary}</div>}
 

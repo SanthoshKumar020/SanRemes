@@ -46,6 +46,12 @@ export function ChatHeadPill({ bot, avatar, privacy, onToggle, switcher = false 
   const elsewhere = sidebarBotActivityTasks(bot, pendingQueued).filter((task) => task.threadId !== bot.threadId).length;
   const privacyLabel = privacyLabelOf(privacy);
   const PrivacyIcon = privacy ? PRIVACY_ICONS[privacy.kind] : Users;
+  const marks = (
+    <>
+      {privacyLabel && <span data-chathead-privacy={privacy?.kind} title={privacyLabel} className="flex shrink-0 text-ink-tertiary"><PrivacyIcon size={13} aria-hidden="true" /><span className="sr-only">{privacyLabel}</span></span>}
+      {elsewhere > 0 && <span role="img" data-chathead-elsewhere aria-label={t("task.otherActivity", { count: elsewhere })} className="size-1.5 shrink-0 rounded-full bg-accent" />}
+    </>
+  );
   const title = bot.tasks?.find((task) => task.threadId === bot.threadId)?.title;
   // Simple mode calls an untitled conversation what it is, never a "thread".
   const conversation = !awayFromMainThread(bot, false) ? (privacy?.kind === "shared" ? t("task.sharedChat") : null)
@@ -56,8 +62,7 @@ export function ChatHeadPill({ bot, avatar, privacy, onToggle, switcher = false 
     const head = <>
       <BotAvatar bot={bot} size={28} {...avatar} />
       <span dir="auto" className="min-w-0 truncate text-[14px] font-medium leading-5">{bot.name}</span>
-      {privacyLabel && <span data-chathead-privacy={privacy?.kind} title={privacyLabel} className="flex shrink-0 text-ink-tertiary"><PrivacyIcon size={13} aria-hidden="true" /><span className="sr-only">{privacyLabel}</span></span>}
-      {elsewhere > 0 && <span role="img" data-chathead-elsewhere aria-label={t("task.otherActivity", { count: elsewhere })} className="size-1.5 shrink-0 rounded-full bg-accent" />}
+      {marks}
     </>;
     return <ThreadSwitcherPill bot={bot} tabs={tabs} head={<span className="flex min-w-0 items-center gap-2 pe-1">{head}</span>} label={label} panelOpen={open} onToggle={onToggle} />;
   }
@@ -81,15 +86,7 @@ export function ChatHeadPill({ bot, avatar, privacy, onToggle, switcher = false 
           <span data-chathead-conversation dir="auto" className="min-w-0 max-w-[180px] truncate text-[14px] font-medium leading-5 text-ink-secondary">{conversation}</span>
         </>
       )}
-      {privacyLabel && (
-        <span data-chathead-privacy={privacy?.kind} title={privacyLabel} className="flex shrink-0 text-ink-tertiary">
-          <PrivacyIcon size={13} aria-hidden="true" />
-          <span className="sr-only">{privacyLabel}</span>
-        </span>
-      )}
-      {elsewhere > 0 && (
-        <span role="img" data-chathead-elsewhere aria-label={t("task.otherActivity", { count: elsewhere })} className="size-1.5 shrink-0 rounded-full bg-accent" />
-      )}
+      {marks}
       {!open && !conversation && (
         // Hidden at rest and folded into the gap, so the pill stays tight; it slides in on hover or keyboard focus.
         <span aria-hidden="true" data-chathead-chevron className={cn("-ml-2 flex w-0 shrink-0 overflow-hidden opacity-0 transition-[width,margin,opacity] group-hover:-ml-0.5 group-hover:w-3 group-hover:opacity-100 group-focus-visible:-ml-0.5 group-focus-visible:w-3 group-focus-visible:opacity-100", CHEVRON_MOTION)}>

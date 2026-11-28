@@ -20,7 +20,9 @@ import { cloudAccountBridge, openCloudOnWeb } from "@/lib/cloud-add-web";
 import { parseComputerHelp } from "@/lib/computer-control";
 import { viewerClosedRelease } from "@/components/computer-takeover";
 import { Sidebar } from "@/components/Sidebar";
+import { PrimaryRail, type PrimaryRailDestination } from "@/components/PrimaryRail";
 import { ChatView } from "@/components/ChatView";
+import { HomeDashboard } from "@/components/HomeDashboard";
 import { HandoffExchangeHost } from "@/components/HandoffExchange";
 import { GroupView } from "@/components/GroupView";
 import { ForkPanel } from "@/components/ForkPanel";
@@ -93,6 +95,7 @@ import { useReadShownChatOnFocus } from "@/hooks/use-read-shown-chat";
 import { usePresence } from "@/hooks/use-presence"; import { useFeature } from "@/lib/use-feature";
 import { ChatNotice } from "@/components/ChatErrorBanner";
 import { loadingLine } from "@/lib/app-loading";
+import { readLastConversation } from "@/lib/last-conversation";
 import { useAiSwitchKeeper } from "@/lib/ai-switch";
 import { useChiefStepOpen } from "@/lib/default-bot";
 import { useSessionEnded } from "@/lib/session-ended";
@@ -216,6 +219,16 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
   const collapseSidebar = sidebarFoldsForPanel(sidePanels, { wide: sidebarAndPanelFit, narrow: sidebarAndNarrowPanelFit });
   // Open beside a panel below 1280, the sidebar keeps to 280 so the chat keeps its 440; Simple's bot panel never moves it.
   const sidebarBesidePanel = anySidePanel(panelsMovingSidebar(sidePanels)) && !sidebarAndPanelFit;
+  const railActive: PrimaryRailDestination =
+    state.computerOpen ? "computer" : state.appSettingsOpen ? "settings" : state.activeView === "home" ? "home" : "chat";
+  const selectRailDestination = (destination: PrimaryRailDestination) => {
+    if (destination === "home") dispatch({ type: "showHome" });
+    else if (destination === "chat") dispatch({ type: "showChat" });
+    else if (destination === "computer") {
+      const computerBot = bot ?? state.bots[0];
+      if (computerBot) dispatch({ type: "toggleComputer", open: true, botId: computerBot.id });
+    } else dispatch({ type: "toggleAppSettings", open: true });
+  };
   const notificationTray = notificationFeed && !calendarFocus;
 
   const noEngines =
@@ -231,12 +244,12 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
   const cloudJobWaiting = Boolean(viewer?.cloudHome && viewer.canSave && cloudIntent.pending);
   const welcome = useCloudWelcome();
   const welcomeOnScreen = cloudWelcomeVisible({ viewer, connected: state.connected, enginesKnown: state.instances.length > 0, onboarding: state.config?.onboarding }, welcome)
-    && state.activeView === "chat" && !(!remoteClient && localVmWorkspaceBotId);
+    && (state.activeView === "chat" || state.activeView === "home") && !(!remoteClient && localVmWorkspaceBotId);
   const firstRun = cloudFirstRun({ welcome: welcomeOnScreen, intent: cloudAsk, signIn: cloudSignIn || cloudJobWaiting });
   const team = state.config?.team ?? null;
   const invited = invitedToTeam(viewer);
   const teamWelcomeRecord = useTeamWelcomeRecord(team && invited ? team.id : null);
-  const teamWelcomeOn = teamWelcomeDue({ team, invited, record: teamWelcomeRecord }) && state.activeView === "chat";
+  const teamWelcomeOn = teamWelcomeDue({ team, invited, record: teamWelcomeRecord }) && (state.activeView === "chat" || state.activeView === "home");
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -299,6 +312,14 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
     }
     previousViewRef.current = state.activeView;
   }, [state.activeView]);
+
+  const [resumedAtStart] = useState(() => readLastConversation());
+  const landedHomeRef = useRef(false);
+  useEffect(() => {
+    if (landedHomeRef.current || state.hydrated !== true || state.activeView !== "chat" || resumedAtStart) return;
+    landedHomeRef.current = true;
+    dispatch({ type: "showHome" });
+  }, [state.hydrated, state.activeView, resumedAtStart, dispatch]);
 
   useEffect(() => {
     if (
@@ -423,6 +444,7 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
         data-look={framed ? "window" : undefined} className={framed ? "relative flex min-w-0 flex-1 flex-col overflow-hidden rounded-t-[12px] rounded-bl-[12px] bg-app" : "contents"}>
       {framed && strips}
       <div className={framed ? "relative flex min-h-0 flex-1 overflow-x-clip" : "contents"}>
+      {!calendarFocus && <PrimaryRail active={railActive} onSelect={selectRailDestination} />}
       {!calendarFocus && <Sidebar
         collapseToIcons={collapseSidebar}
         besidePanel={sidebarBesidePanel}
@@ -470,6 +492,8 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
         <CloudEngineSignIn />
       ) : chiefStep ? (
         <EmptyChatShell />
+      ) : state.activeView === "home" ? (
+        <HomeDashboard />
       ) : group && roomFeed ? (
         <RoomFeedView key={group.id} group={group} />
       ) : group ? (

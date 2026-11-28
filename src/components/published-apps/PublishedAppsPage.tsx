@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Globe } from "lucide-react";
 
 import type { PublishedApp, PublishedAppDeleteRefusal, PublishedAppsList } from "../../../shared/published-apps";
 import { openExternalLink } from "@/lib/app-links";
@@ -92,9 +91,8 @@ export function PublishedAppsPage() {
             </section>
           ) : apps && apps.length === 0 ? (
             <section aria-label={t("publishedApps.empty.title")} className="px-6 py-16 text-center">
-              <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-accent/10 text-accent"><Globe size={22} /></div>
               <h2 className="text-[17px] font-semibold text-ink">{t("publishedApps.empty.title")}</h2>
-              <p className="mx-auto mt-2 max-w-sm text-[14px] leading-relaxed text-ink-secondary">{t("publishedApps.empty.body")}</p>
+              <p className="mx-auto mt-2 max-w-sm text-[13px] leading-[18px] text-ink-secondary">{t("publishedApps.empty.body")}</p>
             </section>
           ) : apps ? (
             <ul aria-label={t("publishedApps.title")} className="grid grid-cols-[repeat(auto-fill,minmax(min(340px,100%),1fr))] gap-4">

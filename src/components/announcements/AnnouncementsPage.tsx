@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
-import { Cloud, Gift, Megaphone, Rocket, UsersRound } from "lucide-react";
+import { Cloud, Gift, Rocket, UsersRound } from "lucide-react";
 import type { CloudOffer } from "../../../electron/cloud-home.mjs";
 import { itemSeen, rememberNoticeSeen, withDownloadedUpdate, type HistoryAction, type HistoryItem, type HistoryMark, type HistoryModal } from "@/lib/announcement-history";
 import { appVersion, desktopAppVersion } from "@/lib/app-links";
@@ -100,8 +100,7 @@ export function AnnouncementList({ items, locale = activeLocale(), onModal, canR
 }) {
   if (!items.length) {
     return <section aria-label={t("announcements.empty")} className="px-6 py-16 text-center">
-      <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-accent/10 text-accent"><Megaphone size={22} /></div>
-      <p className="text-[14px] text-ink-secondary">{t("announcements.empty")}</p>
+      <p className="text-[13px] text-ink-secondary">{t("announcements.empty")}</p>
     </section>;
   }
   return <ul aria-label={t("announcements.title")} className="flex flex-col divide-y divide-hairline/40 rounded-2xl border border-hairline/50 bg-card/40">
