@@ -176,24 +176,24 @@ interface AiChoice {
   snapshot?: { freeFallback?: boolean };
 }
 
-/** The one way the welcome recommends to connect an AI, in the new-bot default's own order (shared/ai-ranking.ts: a Claude
- * account first, then a ChatGPT plan), and every other way. */
+/** The one way the welcome recommends to connect an AI, in the new-bot default's own order (shared/ai-ranking.ts: a
+ * Copilot plan first, then Groq's free key, then a Claude account, then a ChatGPT plan), and every other way. */
 export function aiChoices<Instance extends AiChoice>(instances: readonly Instance[]): { recommended?: Instance; others: Instance[] } {
   const plan = (instance: Instance) => !instance.readOnly && instance.access !== "api" && instance.access !== "custom";
   const recommended = rankAis(instances.filter(plan))[0] ?? instances.find((instance) => !instance.readOnly);
   return { recommended, others: instances.filter((instance) => instance !== recommended) };
 }
 
-export type FirstAiKind = "groq" | "claude" | "chatgpt" | "opencode";
+export type FirstAiKind = "copilot" | "groq" | "claude" | "chatgpt" | "opencode";
 
 interface FirstAi extends AiChoice {
   authentication?: { method?: string };
   snapshot?: { freeFallback?: boolean; authenticationUnavailableReason?: string };
 }
 
-const FIRST_AIS: ReadonlyArray<[FirstAiKind, string]> = [["groq", "groq"], ["claude", "claudeAgent"], ["chatgpt", "codex"], ["opencode", "opencodeGo"]];
+const FIRST_AIS: ReadonlyArray<[FirstAiKind, string]> = [["copilot", "copilotAgent"], ["groq", "groq"], ["claude", "claudeAgent"], ["chatgpt", "codex"], ["opencode", "opencodeGo"]];
 
-/** The welcome's first ways to connect an AI, in this order: a free Groq API key, a Claude account, a ChatGPT account
+/** The welcome's first ways to connect an AI, in this order: Copilot's free plan, a free Groq API key, a Claude account, a ChatGPT account
  * through Codex and OpenCode. Groq is the one API key offered here, because its free tier needs no subscription; every
  * other API key stays under the other ways. Each is the provider's own sign-in that can work here: one already `ready`
  * first, then ChatGPT's plan sign-in in the browser, else the first listed (on a Cloud, which refuses the plan

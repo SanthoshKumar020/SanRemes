@@ -1,7 +1,7 @@
 // Which of a person's AIs a new bot uses, and which one the welcome offers first: one ranking for the server's new-bot
-// default and the welcome. A free Groq API key first (no subscription), then a Claude account, then a ChatGPT plan,
-// then Gemini, then Grok, then every other AI in the order the app lists them; OpenCode running only its free
-// no-login models comes last, as a backup.
+// default and the welcome. Copilot's free plan first (no card), then a free Groq API key, then a Claude account, then a
+// ChatGPT plan, then Gemini, then Grok, then every other AI in the order the app lists them; OpenCode running only its
+// free no-login models comes last, as a backup.
 
 export interface RankableAi {
   driverKind: string;
@@ -20,16 +20,17 @@ export const AI_TEST_REASONS = [
 export type AiTestReason = (typeof AI_TEST_REASONS)[number];
 
 const TIERS: Readonly<Record<string, number>> = {
-  groq: 0,
-  claudeAgent: 1,
-  codex: 2,
-  geminiAgent: 3,
-  antigravityAgent: 3,
-  grokAgent: 4,
-  grok: 4,
+  copilotAgent: 0,
+  groq: 1,
+  claudeAgent: 2,
+  codex: 3,
+  geminiAgent: 4,
+  antigravityAgent: 4,
+  grokAgent: 5,
+  grok: 5,
 };
-const OTHER = 5;
-const FREE_FALLBACK = 6;
+const OTHER = 6;
+const FREE_FALLBACK = 7;
 
 /** Ready only through OpenCode's free models: no login, no subscription, no key of the person's own. */
 export function freeFallback(instance: RankableAi): boolean {

@@ -10,6 +10,8 @@ const ids = (rows: readonly Row[]) => rows.map((entry) => entry.id);
 const grok = row("grok", "grokAgent");
 const kimi = row("kimi", "kimiAgent");
 const droid = row("droid", "droidAgent");
+const copilot = row("copilot", "copilotAgent");
+const groq = row("groq", "groq");
 const claude = row("claude", "claudeAgent");
 const codex = row("codex", "codex");
 const chatgpt = row("chatgpt", "codex");
@@ -20,9 +22,9 @@ const xai = row("xai", "grok");
 const gemini = row("gemini", "geminiAgent");
 
 describe("one ranking of the AIs a new person has", () => {
-  it("puts a Claude account first, then a ChatGPT plan, then Gemini, then Grok, then the rest in config order", () => {
-    expect(ids(rankAis([grok, kimi, droid, claude, codex, chatgpt, antigravity, openCodeFree])))
-      .toEqual(["claude", "codex", "chatgpt", "antigravity", "grok", "kimi", "droid", "opencodeGo"]);
+  it("puts Copilot first, then Groq's free key, then a Claude account, then a ChatGPT plan, then Gemini, then Grok, then the rest in config order", () => {
+    expect(ids(rankAis([grok, kimi, droid, copilot, groq, claude, codex, chatgpt, antigravity, openCodeFree])))
+      .toEqual(["copilot", "groq", "claude", "codex", "chatgpt", "antigravity", "grok", "kimi", "droid", "opencodeGo"]);
     expect(ids(rankAis([xai, gemini, kimi]))).toEqual(["gemini", "xai", "kimi"]);
   });
 
