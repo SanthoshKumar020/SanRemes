@@ -264,7 +264,7 @@ describe("connecting an AI on the first screen", () => {
     delete window.ogb;
   });
 
-  it("names Copilot's sign-in on its row, and opens its setup from it", async () => {
+  it("puts Copilot's setup on the first screen, first, with no row to open", async () => {
     const copilot: InstanceInfo = {
       ...engine("copilot", "copilotAgent", "GitHub Copilot", false),
       snapshot: { state: "available", authenticated: false },
@@ -272,13 +272,9 @@ describe("connecting an AI on the first screen", () => {
     } as InstanceInfo;
     f.instances = [...f.instances, copilot];
     await show();
-    await otherWays();
-    const signIn = [...host.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent === "Sign in with GitHub")!;
-    expect(signIn).toBeTruthy();
-    expect(host.querySelector('[data-engine-setup="copilot"]')).toBeNull();
-    await act(async () => { signIn.click(); });
+    expect([...host.querySelectorAll("[data-ai-recommended]")].map((node) => node.getAttribute("data-ai-recommended"))[0]).toBe("copilot");
     expect(host.querySelector('[data-engine-setup="copilot"]')).toBeTruthy();
-    expect([...host.querySelectorAll("button")].some((button) => button.textContent === "Sign in with GitHub")).toBe(false);
+    expect([...host.querySelectorAll("button[aria-expanded]")].map((node) => node.textContent)).not.toContain("GitHub Copilot");
   });
 
   it("opens as the Connect an AI dialog, which Escape and a click outside close", async () => {

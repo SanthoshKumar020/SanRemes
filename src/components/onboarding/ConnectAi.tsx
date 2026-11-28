@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, ChevronDown, LoaderCircle, RefreshCw, X } from "lucide-react";
-import { EngineSetup, needsSignIn } from "@/components/EngineSetup";
+import { EngineSetup } from "@/components/EngineSetup";
 import { engineReady } from "@/components/EngineLibrary";
 import { InstanceProviderMark } from "@/components/ProviderIcons";
 import { ModelgoOption } from "@/components/ModelgoOffer";
@@ -25,8 +25,6 @@ function setupFor(instance: InstanceInfo) {
 }
 
 function OtherWay({ instance, open, onToggle }: { instance: InstanceInfo; open: boolean; onToggle: () => void }) {
-  // A signed-out Copilot names its sign-in on the row, so a first-run user finds it without opening the row first.
-  const copilotSignIn = !open && instance.driverKind === "copilotAgent" && needsSignIn(instance);
   return (
     <div>
       <button
@@ -41,15 +39,6 @@ function OtherWay({ instance, open, onToggle }: { instance: InstanceInfo; open: 
         <span className="min-w-0 flex-1 truncate text-[14px] text-ink">{engineDisplayName(instance)}</span>
         <ChevronDown size={14} className={cn("shrink-0 text-ink-secondary transition-transform duration-200", open && "rotate-180")} />
       </button>
-      {copilotSignIn && (
-        <button
-          type="button"
-          onClick={onToggle}
-          className="mx-4 mb-2 text-[12px] font-medium text-accent hover:underline"
-        >
-          {t("copilotSignIn.start")}
-        </button>
-      )}
       {open && <EngineSetup instance={instance} {...setupFor(instance)} className="mx-4 mb-3.5 border-0 bg-inset" />}
     </div>
   );
