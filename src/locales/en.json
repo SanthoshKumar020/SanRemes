@@ -7175,6 +7175,7 @@
   "sidebar.nav.jobs": "Jobs",
   "sidebar.nav.running": "Running",
   "sidebar.nav.managedAgents": "Managed agents",
+  "sidebar.nav.meetings": "Meetings",
   "managedAgents.title": "Managed agents",
   "managedAgents.subtitle": "Long-running agents, defined once and run on a schedule or by hand.",
   "managedAgents.reload": "Reload",

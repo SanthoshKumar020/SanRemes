@@ -1,4 +1,4 @@
-import { Activity, AppWindow, Bot, Briefcase, FolderOpen, FolderTree, Globe, Puzzle, Rocket, UsersRound, Zap } from "lucide-react";
+import { Activity, AppWindow, Bot, Briefcase, FolderOpen, FolderTree, Globe, Puzzle, Rocket, UsersRound, Video, Zap } from "lucide-react";
 import { useMemo, type ReactNode } from "react";
 
 import { useAppTriggers } from "@/lib/app-triggers";
@@ -147,6 +147,15 @@ export function SidebarFooterNav({
     icon={(active) => <Bot size={iconSize} className={tone(active)} />}
     onClick={() => dispatch({ type: "showManagedAgents" })}
   />;
+  const meetingsRow = <NavRow
+    id="meetings"
+    label={t("sidebar.nav.meetings")}
+    tourId="nav-meetings"
+    iconsOnly={iconsOnly || toolbar}
+    active={state.activeView === "meetings"}
+    icon={(active) => <Video size={iconSize} className={tone(active)} />}
+    onClick={() => dispatch({ type: "showMeetings" })}
+  />;
   const runningRow = <NavRow
     id="running"
     label={t("sidebar.nav.running")}
@@ -194,6 +203,7 @@ export function SidebarFooterNav({
       {jobsRow}
       {runningRow}
       {managedAgentsRow}
+      {meetingsRow}
       {appsRow}
       {(advanced || iconsOnly) && (
         <NavRow
