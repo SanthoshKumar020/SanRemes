@@ -36,12 +36,15 @@ lists them. The rest rely on review.
 
 ## 2. Where things go
 
-The app has four places: **Home** (the dashboard: where to start, what needs
-the person, what is going on), the **sidebar** (bots and conversations), the
-**chat**, and the **bot panel** (everything about one bot). Put new things
-where they belong instead of adding new places. A narrow **primary rail**
-sits beside the sidebar and holds the places: Home, Chats, Computer and
-Settings, each a Lucide icon with a label. It is how the person moves
+The app has six places: **Home** (the dashboard: where to start, what needs
+the person, what is going on), **Team** (all bots: their model, status and
+last active; opening one opens its bot panel), **Needs you** (approvals, team
+fixes and attention threads: what needs the person to decide), the
+**sidebar** (bots and conversations), the **chat**, and the **bot panel**
+(everything about one bot). Put new things where they belong instead of
+adding new places. A narrow **primary rail** sits beside the sidebar and
+holds the destinations: Home, Team, Needs you, Chats, Computer and Settings,
+each a Lucide icon with a label. It is how the person moves
 between places, so the sidebar stops doing two jobs: it holds bots and
 conversations only. The rail holds only destinations that exist: never a
 teaser for an unbuilt page.
@@ -64,6 +67,9 @@ teaser for an unbuilt page.
   Home that says something needs the person is a page, not a summary, and
   shows only when there is something to decide; it carries a status mark,
   never a count.
+- **Needs you shows what exists, nothing more.** Its lists come from the
+  inbox (approvals and questions, team fixes, attention threads). Duet's
+  proactive attention list is unbuilt; the page does not claim it.
 - **Home's getting-started list is a first-run guide, not a nag.** It shows
   only until the person has done its steps or dismissed it, then it stays
   gone; it never returns, never counts down and never blocks the rest of
@@ -406,6 +412,9 @@ on. Simple is the default for new installs.
   hover. A second: Advanced mode's composer puts
   the field on its own line with a footer row under it, and the model and
   effort picker sits in that footer, next to the + menu both modes share.
+  A third: Usage and the Inspector are available in Simple mode (pinned by
+  `ChatMoreMenu.test.ts`), and the Bot API card appears in both the Simple bot
+  panel and Advanced settings.
 - **Switching modes never loses data.**
 
 ## 14. Accessibility
