@@ -183,7 +183,7 @@ export function subtree(root: TurnNode): TurnNode[] {
   return out;
 }
 
-const SOURCES: Record<UsageTrigger["kind"], TraceSource> = { user: "person", owner: "owner", routine: "routine", bot: "bot", helper: "helper" };
+const SOURCES: Record<UsageTrigger["kind"], TraceSource> = { user: "person", owner: "owner", routine: "routine", bot: "bot", helper: "helper", "managed-agent": "routine", "cloud-job": "bot" };
 
 export function rootIdOf(node: TurnNode): string {
   return node.turnId ? traceRootId(node.threadId, node.turnId) : `row~${encodeURIComponent(node.key.slice(4))}`;

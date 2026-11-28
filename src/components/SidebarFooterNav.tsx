@@ -1,4 +1,4 @@
-import { Activity, AppWindow, Briefcase, FolderOpen, FolderTree, Globe, Puzzle, Rocket, UsersRound, Zap } from "lucide-react";
+import { Activity, AppWindow, Bot, Briefcase, FolderOpen, FolderTree, Globe, Puzzle, Rocket, UsersRound, Zap } from "lucide-react";
 import { useMemo, type ReactNode } from "react";
 
 import { useAppTriggers } from "@/lib/app-triggers";
@@ -138,6 +138,15 @@ export function SidebarFooterNav({
     icon={(active) => <Briefcase size={iconSize} className={tone(active)} />}
     onClick={() => dispatch({ type: "showJobs" })}
   />;
+  const managedAgentsRow = <NavRow
+    id="managed-agents"
+    label={t("sidebar.nav.managedAgents")}
+    tourId="nav-managed-agents"
+    iconsOnly={iconsOnly || toolbar}
+    active={state.activeView === "managed-agents"}
+    icon={(active) => <Bot size={iconSize} className={tone(active)} />}
+    onClick={() => dispatch({ type: "showManagedAgents" })}
+  />;
   const runningRow = <NavRow
     id="running"
     label={t("sidebar.nav.running")}
@@ -184,6 +193,7 @@ export function SidebarFooterNav({
       {automationsRow}
       {jobsRow}
       {runningRow}
+      {managedAgentsRow}
       {appsRow}
       {(advanced || iconsOnly) && (
         <NavRow

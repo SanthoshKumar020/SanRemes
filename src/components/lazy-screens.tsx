@@ -95,6 +95,7 @@ export const PublishedAppsPage = lazyScreen("PublishedAppsPage", async () => (aw
 export const SkillBurgersPage = lazyScreen("SkillBurgersPage", async () => (await import("./skill-burger/SkillBurgersPage")).SkillBurgersPage);
 export const JobsPage = lazyScreen("JobsPage", async () => (await import("./jobs/JobBotPage")).JobBotPage);
 export const RunningTasksPage = lazyScreen("RunningTasksPage", async () => (await import("./RunningTasksPage")).RunningTasksPage);
+export const ManagedAgentsPage = lazyScreen("ManagedAgentsPage", async () => (await import("./ManagedAgentsPage")).ManagedAgentsPage);
 export const AnnouncementsPage = lazyScreen("AnnouncementsPage", async () => (await import("./announcements/AnnouncementsPage")).AnnouncementsPage);
 export const InboxPanel = lazyScreen("InboxPanel", async () => (await import("./inbox/InboxPanel")).InboxPanel);
 export const TeamDialog = lazyScreen("TeamDialog", async () => (await import("./TeamDialog")).TeamDialog);

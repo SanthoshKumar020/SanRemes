@@ -17,7 +17,9 @@ export type UsageTrigger =
   | { kind: "owner"; email?: string }
   | { kind: "routine"; routineId?: string; label?: string; runId?: string; email?: string }
   | { kind: "bot"; botId?: string; email?: string }
-  | { kind: "helper"; botId?: string; job?: string; email?: string };
+  | { kind: "helper"; botId?: string; job?: string; email?: string }
+  | { kind: "managed-agent"; agentId: string; agentName?: string; executor?: "local" | "cloud"; runId?: string; email?: string }
+  | { kind: "cloud-job"; jobId?: string; label?: string; executor?: "local" | "cloud"; email?: string };
 
 export interface UsageRow {
   at: string;
@@ -308,6 +310,10 @@ export function triggerKey(trigger: UsageTrigger): string {
       return `routine:${trigger.routineId ?? trigger.label ?? "unknown"}`;
     case "helper":
       return "helper";
+    case "managed-agent":
+      return `managed-agent:${trigger.agentId}`;
+    case "cloud-job":
+      return `cloud-job:${trigger.jobId ?? trigger.label ?? "unknown"}`;
     default:
       return "bot";
   }
@@ -323,6 +329,10 @@ export function triggerLabel(trigger: UsageTrigger): string {
       return trigger.routineId === PRIVATE_ROUTINE.routineId ? PRIVATE_ROUTINE.label : `Routine: ${trigger.label ?? trigger.routineId ?? "unknown"}`;
     case "helper":
       return "Helper model";
+    case "managed-agent":
+      return `Managed agent: ${trigger.agentName ?? trigger.agentId}`;
+    case "cloud-job":
+      return `Cloud job: ${trigger.label ?? trigger.jobId ?? "unknown"}`;
     default:
       return "Bot to bot";
   }

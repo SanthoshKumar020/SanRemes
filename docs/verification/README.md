@@ -300,6 +300,10 @@ The [routines fixture](routines.md) checks confirmed proposals, manual and
 scheduled runs, central run logs, List/Calendar views, and bot-scoped routines
 using the real renderer and an isolated fake-engine server.
 
+The [managed agents fixture](managed-agents.md) checks the Managed Agents page's
+list, create, run-now, pause and resume, the hand-off setting, cloud sessions,
+hosted batches and the usage report against an isolated fake-engine server.
+
 The [interval restrictions recipe](interval-restrictions.md) checks weekday and
 time-window limits on scheduled routines in that same disposable fixture.
 
