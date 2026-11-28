@@ -17,6 +17,8 @@ export interface CloudUsageReportInput {
 export function buildCloudUsageReport(input: CloudUsageReportInput): CloudUsageReport {
   const agents = new Map<string, { runs: number; input: number; output: number; cost: number | null; unreported: number }>();
   const jobs = new Map<string, { label: string; executor: "local" | "cloud"; runs: number; input: number; output: number; cost: number | null }>();
+  const projects = new Map<string, { runs: number; input: number; output: number; cost: number | null }>();
+  const projectRunIds = new Map<string, Set<string>>();
   let totalInput = 0;
   let totalOutput = 0;
   let totalCost: number | null = null;
@@ -41,6 +43,29 @@ export function buildCloudUsageReport(input: CloudUsageReportInput): CloudUsageR
         agent.cost = (agent.cost ?? 0) + row.costUsd;
         totalCost = (totalCost ?? 0) + row.costUsd;
       } else unpriced += 1;
+      const projectKey = row.project ?? "Untagged";
+      let project = projects.get(projectKey);
+      if (!project) {
+        project = { runs: 0, input: 0, output: 0, cost: null };
+        projects.set(projectKey, project);
+      }
+      project.input += row.input;
+      project.output += row.output;
+      if (typeof row.costUsd === "number") project.cost = (project.cost ?? 0) + row.costUsd;
+      const runId = trigger.runId;
+      if (runId) {
+        let ids = projectRunIds.get(projectKey);
+        if (!ids) {
+          ids = new Set();
+          projectRunIds.set(projectKey, ids);
+        }
+        if (!ids.has(runId)) {
+          ids.add(runId);
+          project.runs += 1;
+        }
+      } else {
+        project.runs += 1;
+      }
     } else if (trigger.kind === "cloud-job") {
       const key = trigger.jobId ?? trigger.label ?? "unknown";
       let job = jobs.get(key);
@@ -103,6 +128,13 @@ export function buildCloudUsageReport(input: CloudUsageReportInput): CloudUsageR
       outputTokens: row.output,
       costUsd: row.cost,
     })).sort((a, b) => b.inputTokens + b.outputTokens - (a.inputTokens + a.outputTokens)),
+    projects: [...projects.entries()].map(([project, row]) => ({
+      project,
+      runs: row.runs,
+      inputTokens: row.input,
+      outputTokens: row.output,
+      costUsd: row.cost,
+    })).sort((a, b) => b.inputTokens + b.outputTokens - (a.inputTokens + a.outputTokens)),
     totalInputTokens: totalInput,
     totalOutputTokens: totalOutput,
     totalCostUsd: totalCost,
@@ -122,6 +154,12 @@ export function cloudUsageCsv(report: CloudUsageReport): string {
     lines.push([
       "cloud-job", job.jobId, job.label, job.executor, job.runs, job.inputTokens,
       job.outputTokens, job.costUsd, "",
+    ].map(csvCell).join(","));
+  }
+  for (const project of report.projects) {
+    lines.push([
+      "project", project.project, "", "", project.runs, project.inputTokens,
+      project.outputTokens, project.costUsd, "",
     ].map(csvCell).join(","));
   }
   return `${lines.join("\n")}\n`;

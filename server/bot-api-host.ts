@@ -12,6 +12,7 @@ import { z } from "zod";
 import { redactSecretsInText } from "../shared/redact.ts";
 import { BOT_API_UPGRADE, botApiEndpoint, type BotApiReply } from "../shared/bot-api.ts";
 import type { AdminActionRow } from "./admin-activity.ts";
+import { isAllowedIp } from "./bot-api-allowlist.ts";
 import { BOT_API_MAX_MESSAGE_CHARS, BOT_API_MAX_PENDING, BotApiManager, botApiOwnerPrompt, botApiPrompt, withoutAttachedImages, type BotApiAttempt, type BotApiStatus } from "./bot-api.ts";
 import { personKey } from "./person-key.ts";
 import type { RequestAuth } from "./request-auth.ts";
@@ -67,6 +68,8 @@ export interface BotApiHostDeps {
   manageRefusal(auth: RequestAuth, botId: string): string | null;
   /** The same claim a webhook delivery makes on arrival (wakes, moves, maintenance). */
   claimRequest?(): () => void;
+  /** The addresses that may call the Bot API at all, read fresh on every call so a change counts at once. Absent: unrestricted. */
+  allowlist?(): readonly string[];
   /** Settings → Activity on a Team Cloud. */
   record?(auth: RequestAuth, row: Omit<AdminActionRow, "at" | "actor">): void;
   /** Whether a key may act as the owner here. Absent: never. */
@@ -260,6 +263,11 @@ export function createBotApiHost(deps: BotApiHostDeps) {
     // A call can wait minutes for its reply: the claim that holds off maintenance ends once the turn has started.
     const release = () => { claim?.(); claim = undefined; };
     try {
+      if (!isAllowedIp(req.socket.remoteAddress, deps.allowlist?.() ?? [])) {
+        manager.recordRefused(botId, 403, "This address is not on the Bot API allowlist");
+        json(res, 403, { error: "This address is not on the Bot API allowlist" });
+        return true;
+      }
       if (!manager.enabled(botId) || !deps.store.bot(botId)) {
         if (deps.store.bot(botId)) manager.recordRefused(botId, 403, "The Bot API is off for this bot");
         json(res, 403, { error: "The Bot API is off for this bot" });

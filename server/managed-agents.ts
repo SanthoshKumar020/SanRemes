@@ -37,6 +37,7 @@ const agentSchema = z.object({
   capUsd: z.number().positive().optional(),
   capTokens: z.number().int().positive().optional(),
   capPeriod: z.enum(["day", "month"]),
+  project: z.string().min(1).max(100).optional(),
   enabled: z.boolean(),
   executorPreference: z.enum(["auto", "local", "cloud"]),
   nextRunAt: z.number().nullable(),
@@ -72,6 +73,7 @@ export interface ManagedAgentInput {
   capUsd?: number;
   capTokens?: number;
   capPeriod?: "day" | "month";
+  project?: string;
   enabled?: boolean;
   executorPreference?: HandoffPreference;
 }
@@ -84,6 +86,7 @@ export interface ManagedAgentPatch {
   capUsd?: number | null;
   capTokens?: number | null;
   capPeriod?: "day" | "month";
+  project?: string | null;
   enabled?: boolean;
   executorPreference?: HandoffPreference;
 }
@@ -203,6 +206,7 @@ export class ManagedAgentStore {
       allowedTools: [...new Set((input.allowedTools ?? []).map((tool) => tool.trim()).filter(Boolean))],
       ...(input.capUsd !== undefined ? { capUsd: input.capUsd } : {}),
       ...(input.capTokens !== undefined ? { capTokens: input.capTokens } : {}),
+      ...(input.project ? { project: input.project.trim() } : {}),
       capPeriod: input.capPeriod ?? "month",
       enabled: input.enabled ?? true,
       executorPreference: input.executorPreference ?? "auto",
@@ -254,6 +258,10 @@ export class ManagedAgentStore {
       else agent.capTokens = patch.capTokens;
     }
     if (patch.capPeriod !== undefined) agent.capPeriod = patch.capPeriod;
+    if (patch.project !== undefined) {
+      if (patch.project === null) delete agent.project;
+      else agent.project = patch.project.trim();
+    }
     if (patch.enabled !== undefined) agent.enabled = patch.enabled;
     if (patch.executorPreference !== undefined) agent.executorPreference = patch.executorPreference;
     agent.nextRunAt = !agent.enabled || agent.schedule.type === "routine"
@@ -403,6 +411,7 @@ async function runManagedAgentOnce(
         output: result.outputTokens ?? 0,
         costUsd: result.costUsd ?? null,
         trigger: { kind: "managed-agent", agentId: agent.id, agentName: agent.name, executor: deps.executor.kind, runId: run.id },
+        ...(agent.project ? { project: agent.project } : {}),
       });
     }
     return run;

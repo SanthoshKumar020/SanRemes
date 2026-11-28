@@ -1,12 +1,14 @@
 // The admin surface for the enterprise tail: who may do what (server/team-capabilities.ts), retention policies,
-// compliance-mode settings and the Motion paid toggle. Settings changes are owner-only; reading the audit posture is
-// owner or admin. Retention changes are saved to config.json like every other setting; the decision-log and
-// memory-journal prunes read the live config, so those two apply at the next restart, while usage retention is read
-// fresh on each daily sweep.
+// compliance-mode settings, the Bot API IP allowlist and the Motion paid toggle, plus one consolidated settings read
+// and the compliance data (retention state, admin-action counts, Motion and allowlist state). Settings changes are
+// owner-only; reading the audit posture is owner or admin. Retention changes are saved to config.json like every
+// other setting; the decision-log and memory-journal prunes read the live config, so those two apply at the next
+// restart, while usage retention is read fresh on each daily sweep.
 import { z } from "zod";
 
-import { appendAdminAction, type AdminActionRow } from "../admin-activity.ts";
+import { appendAdminAction, countAdminActions, type AdminActionRow } from "../admin-activity.ts";
 import { createAdminSettingsStore, type AdminSettingsStore } from "../admin-settings.ts";
+import { parseAllowlist } from "../bot-api-allowlist.ts";
 import { DATA_DIR, loadConfig, saveConfig, threadEventLogRetentionDays, type AppConfig } from "../config.ts";
 import { resolveRetentionDays, type DecisionActor } from "../decision-log.ts";
 import { resolveMemoryJournalRetention } from "../memory-journal.ts";
@@ -38,6 +40,7 @@ const retentionBody = z.object({
   usageDays: z.number().int().min(1).max(3650).nullable().optional(),
 }).strict();
 const complianceBody = z.object({ auditStrict: z.boolean() }).strict();
+const allowlistBody = z.object({ allowlist: z.array(z.string()).max(1000) }).strict();
 const motionBody = z.object({ paidEnabled: z.boolean() }).strict();
 const generateBody = z.object({ prompt: z.string().min(1).max(20_000) }).strict();
 
@@ -116,7 +119,14 @@ export function createAdminEnterpriseRoutes(deps: AdminEnterpriseRouteDeps = def
     if (path === "/api/admin/compliance") {
       if (method === "GET") {
         if (!may(auth, "audit.read")) return json(res, 403, { error: capabilityRefusal(auth, "audit.read") });
-        return json(res, 200, { auditStrict: deps.settings.read().auditStrict });
+        const settings = deps.settings.read();
+        return json(res, 200, {
+          auditStrict: settings.auditStrict,
+          retention: retentionState(),
+          adminActionsThisMonth: countAdminActions(deps.dataDir),
+          motion: motionStatus(settings),
+          botApiAllowlistCount: settings.botApiAllowlist.length,
+        });
       }
       if (method !== "PUT") return json(res, 405, { error: "Use GET or PUT." });
       if (!may(auth, "compliance.change")) return json(res, 403, { error: capabilityRefusal(auth, "compliance.change") });
@@ -126,6 +136,36 @@ export function createAdminEnterpriseRoutes(deps: AdminEnterpriseRouteDeps = def
       const saved = deps.settings.save({ auditStrict: parsed.data.auditStrict });
       record(auth, { category: "config", action: "compliance.update", changed: ["auditStrict"], after: { auditStrict: saved.auditStrict } });
       return json(res, 200, { auditStrict: saved.auditStrict });
+    }
+    if (path === "/api/admin/bot-api-allowlist") {
+      if (method === "GET") {
+        if (!may(auth, "audit.read")) return json(res, 403, { error: capabilityRefusal(auth, "audit.read") });
+        return json(res, 200, { allowlist: deps.settings.read().botApiAllowlist });
+      }
+      if (method !== "PUT") return json(res, 405, { error: "Use GET or PUT." });
+      if (!may(auth, "compliance.change")) return json(res, 403, { error: capabilityRefusal(auth, "compliance.change") });
+      if (!isJson(req)) return json(res, 415, { error: "content-type must be application/json" });
+      const parsed = allowlistBody.safeParse(await readBody(req, 64_000));
+      if (!parsed.success) return json(res, 400, { error: "Send {\"allowlist\": [\"203.0.113.5\", \"198.51.100.0/24\"]}." });
+      const allowlist = parseAllowlist(parsed.data.allowlist);
+      if (allowlist === null) return json(res, 400, { error: "Every entry must be an IP address or an IPv4 CIDR range." });
+      const saved = deps.settings.save({ botApiAllowlist: allowlist });
+      record(auth, { category: "bot-api", action: "bot-api.update", changed: ["botApiAllowlist"], after: { botApiAllowlist: saved.botApiAllowlist } });
+      return json(res, 200, { allowlist: saved.botApiAllowlist });
+    }
+    if (path === "/api/admin/settings") {
+      if (method !== "GET") return json(res, 405, { error: "Use GET." });
+      if (!may(auth, "audit.read")) return json(res, 403, { error: capabilityRefusal(auth, "audit.read") });
+      const role = roleOf(auth);
+      const settings = deps.settings.read();
+      return json(res, 200, {
+        role,
+        capabilities: role === null ? [] : teamCapabilities(role),
+        retention: retentionState(),
+        auditStrict: settings.auditStrict,
+        motion: motionStatus(settings),
+        botApiAllowlist: settings.botApiAllowlist,
+      });
     }
     if (path === "/api/admin/motion") {
       if (method === "GET") {

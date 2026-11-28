@@ -76,6 +76,15 @@ export async function flushAdminActivity(dataDir: string): Promise<void> {
   await writeQueues.get(dataDir);
 }
 
+/** How many admin actions were recorded in a month; zero when nothing was recorded yet. */
+export function countAdminActions(dataDir: string, at = new Date()): number {
+  try {
+    return readFileSync(adminActivityFileFor(dataDir, at), "utf8").split("\n").filter((line) => line.trim() !== "").length;
+  } catch {
+    return 0;
+  }
+}
+
 
 /** Name parts that mark a credential (case-insensitive substring), plus `key` alone or as a suffix (apiKey, xai_key). */
 const SECRET_PARTS = ["token", "secret", "password", "passwd", "passphrase", "credential", "authorization", "cookie", "bearer", "apikey", "api_key"];

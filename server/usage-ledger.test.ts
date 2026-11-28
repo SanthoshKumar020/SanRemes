@@ -336,7 +336,7 @@ describe("usage summaries", () => {
       ["owner", 1],
     ]);
     expect(summarizeUsage(booked, "routine").groups[0]).toMatchObject({ key: "routine:r1", turns: 1 });
-    expect(usageCsv([booked[1]!]).split("\n")[1]).toMatch(/,Finance,ada@example\.test$/);
+    expect(usageCsv([booked[1]!]).split("\n")[1]).toMatch(/,Finance,,ada@example\.test$/);
   });
 
   it("names a person by email before device label and never throws on an empty trigger", () => {
@@ -360,7 +360,7 @@ describe("usage summaries", () => {
     expect(summarizeUsage([helper], "bot").groups.map((group) => group.label)).toEqual(["Clerk"]);
     expect(summarizeUsage([helper], "engine").groups.map((group) => group.label)).toEqual(["claudeAgent"]);
     expect(summarizeUsage([helper], "routine").groups.map((group) => group.key)).toEqual(["manual"]);
-    expect(usageCsv([helper]).split("\n")[1]).toBe("2026-09-02T11:00:00.000Z,Clerk,claude-haiku-4-5,claudeAgent,Helper model,1200,300,900,0.002,reported,memory-1,,");
+    expect(usageCsv([helper]).split("\n")[1]).toBe("2026-09-02T11:00:00.000Z,Clerk,claude-haiku-4-5,claudeAgent,Helper model,1200,300,900,0.002,reported,memory-1,,,");
   });
 
   it("exports spreadsheet-safe CSV with one line per turn", () => {
@@ -369,11 +369,11 @@ describe("usage summaries", () => {
       { ...rows[1]!, botName: '=HYPERLINK("x")', trigger: { kind: "user", email: "a,b@example.test" } },
     ]);
     const lines = csv.trim().split("\n");
-    expect(lines[0]).toBe("time,bot,model,engine,triggered_by,input_tokens,output_tokens,cached_input_tokens,cost_usd,cost_source,thread,department,person");
-    expect(lines[1]).toBe("2026-09-01T10:00:00.000Z,Scout,claude-sonnet-5,claudeAgent,ada@example.test,1200,300,900,0.012,reported,t1,,ada@example.test");
+    expect(lines[0]).toBe("time,bot,model,engine,triggered_by,input_tokens,output_tokens,cached_input_tokens,cost_usd,cost_source,thread,department,project,person");
+    expect(lines[1]).toBe("2026-09-01T10:00:00.000Z,Scout,claude-sonnet-5,claudeAgent,ada@example.test,1200,300,900,0.012,reported,t1,,,ada@example.test");
     expect(lines[2]).toContain("\"'=HYPERLINK(\"\"x\"\")\"");
     expect(lines[2]).toContain('"a,b@example.test"');
-    expect(lines[2]).toMatch(/,,,t1,,"a,b@example.test"$/);
+    expect(lines[2]).toMatch(/,,,t1,,,"a,b@example.test"$/);
     expect(usageCsv([{ ...rows[0]!, costSource: "estimated" }]).split("\n")[1]).toContain(",0.012,estimated,t1");
   });
 

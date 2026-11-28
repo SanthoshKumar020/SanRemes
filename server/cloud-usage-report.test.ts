@@ -60,6 +60,25 @@ describe("buildCloudUsageReport", () => {
     expect(report.unpricedRows).toBe(1);
   });
 
+  it("groups managed-agent spend by project tag, untagged rows under Untagged", () => {
+    const report = buildCloudUsageReport({
+      from: new Date("2026-11-01T00:00:00.000Z"),
+      to: new Date("2026-11-30T00:00:00.000Z"),
+      rows: [
+        row({ project: "alpha", trigger: { kind: "managed-agent", agentId: "agent-1", agentName: "Briefing", executor: "local", runId: "run-1" } }),
+        row({ project: "alpha", input: 50, output: 25, costUsd: 0.005, trigger: { kind: "managed-agent", agentId: "agent-1", agentName: "Briefing", executor: "local", runId: "run-1" } }),
+        row({ input: 10, output: 5, costUsd: null, trigger: { kind: "managed-agent", agentId: "agent-2", agentName: "Other", executor: "local", runId: "run-2" } }),
+      ],
+      agentRuns: [run({}), run({ id: "run-2", agentId: "agent-2" })],
+      agentNames: new Map([["agent-1", "Briefing"]]),
+    });
+    expect(report.projects).toEqual([
+      { project: "alpha", runs: 1, inputTokens: 150, outputTokens: 75, costUsd: 0.015 },
+      { project: "Untagged", runs: 1, inputTokens: 10, outputTokens: 5, costUsd: null },
+    ]);
+    expect(cloudUsageCsv(report)).toContain("project,alpha,,,1,150,75,0.015,");
+  });
+
   it("counts a ledger-only run and marks runs without reported usage", () => {
     const report = buildCloudUsageReport({
       from: new Date("2026-11-01T00:00:00.000Z"),

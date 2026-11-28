@@ -13,6 +13,7 @@ import {
   botChangeRows,
   changedPaths,
   configChangeRows,
+  countAdminActions,
   flushAdminActivity,
   parseActivityWhat,
   pruneAdminActivity,
@@ -268,4 +269,13 @@ it("records explicit tool selection and connected-app permission changes", () =>
   const reset = botChangeRows({ id: "b" }, after, before);
   expect(reset.flatMap(row => row.changed).sort()).toEqual(["connectorScopes", "connectorTools", "toolScope"]);
   expect(botChangeRows({ id: "b" }, after, after)).toEqual([]);
+});
+
+it("counts this month's admin actions", async () => {
+  const dir = tempDir();
+  expect(countAdminActions(dir)).toBe(0);
+  appendAdminAction(dir, { category: "config", action: "config.update", actor: BOSS });
+  appendAdminAction(dir, { category: "bot-api", action: "bot-api.update", actor: BOSS });
+  await flushAdminActivity(dir);
+  expect(countAdminActions(dir)).toBe(2);
 });

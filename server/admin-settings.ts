@@ -1,6 +1,7 @@
-// The admin settings file: the compliance-mode toggle and the Motion paid toggle, kept in admin-settings.json
-// (0600) beside the other per-server files. Both default off. Neither is a certification: the toggles are controls
-// over what the server keeps and what paid work it will attempt, not an attestation of anything.
+// The admin settings file: the compliance-mode toggle, the Motion paid toggle and the Bot API IP allowlist, kept in
+// admin-settings.json (0600) beside the other per-server files. The toggles default off and an empty allowlist means
+// no restriction; neither is a certification: the toggles are controls over what the server keeps and what paid work it
+// will attempt, not an attestation of anything.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
@@ -15,11 +16,13 @@ const settingsSchema = z.object({
   auditStrict: z.boolean(),
   /** Motion's paid video generation is allowed at all; off means every attempt is refused before any provider is called. */
   motionPaid: z.boolean(),
+  /** Addresses that may call the Bot API at all; empty means no restriction. Each entry is an IP address or an IPv4 CIDR range. */
+  botApiAllowlist: z.array(z.string()).default([]),
 }).strict();
 
 export type AdminSettings = z.infer<typeof settingsSchema>;
 
-export const DEFAULT_ADMIN_SETTINGS: AdminSettings = { version: 1, auditStrict: false, motionPaid: false };
+export const DEFAULT_ADMIN_SETTINGS: AdminSettings = { version: 1, auditStrict: false, motionPaid: false, botApiAllowlist: [] };
 
 export function createAdminSettingsStore(dataDir: string) {
   const file = join(dataDir, ADMIN_SETTINGS_FILE);
@@ -35,7 +38,7 @@ export function createAdminSettingsStore(dataDir: string) {
   };
   return {
     read,
-    save(patch: Partial<Pick<AdminSettings, "auditStrict" | "motionPaid">>): AdminSettings {
+    save(patch: Partial<Pick<AdminSettings, "auditStrict" | "motionPaid" | "botApiAllowlist">>): AdminSettings {
       const next = { ...read(), ...patch, version: 1 as const };
       writeFileAtomic(file, `${JSON.stringify(next)}\n`, { mode: 0o600 });
       return next;

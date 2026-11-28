@@ -42,6 +42,7 @@ const createBody = z.object({
   capUsd: z.number().positive().max(1_000_000).optional(),
   capTokens: z.number().int().positive().max(1_000_000_000).optional(),
   capPeriod: z.enum(["day", "month"]).optional(),
+  project: z.string().min(1).max(100).optional(),
   enabled: z.boolean().optional(),
   executorPreference: z.enum(["auto", "local", "cloud"]).optional(),
 }).strict();
@@ -53,6 +54,7 @@ const patchBody = z.object({
   capUsd: z.number().positive().max(1_000_000).nullable().optional(),
   capTokens: z.number().int().positive().max(1_000_000_000).nullable().optional(),
   capPeriod: z.enum(["day", "month"]).optional(),
+  project: z.string().min(1).max(100).nullable().optional(),
   enabled: z.boolean().optional(),
   executorPreference: z.enum(["auto", "local", "cloud"]).optional(),
 }).strict();
@@ -96,7 +98,7 @@ export function createManagedAgentRoutes(deps: ManagedAgentRouteDeps): RouteHand
       if (!parsed.success) return json(res, 400, { error: "Send a name, a bot, and what the agent should do." });
       if (deps.botExists && !deps.botExists(parsed.data.botId)) return json(res, 404, { error: "No such bot." });
       try {
-        const agent = deps.store.create(parsed.data as { name: string; botId: string; instructions: string; schedule?: ManagedAgentSchedule; routineId?: string; allowedTools?: string[]; capUsd?: number; capTokens?: number; capPeriod?: "day" | "month"; enabled?: boolean; executorPreference?: HandoffPreference });
+        const agent = deps.store.create(parsed.data as { name: string; botId: string; instructions: string; schedule?: ManagedAgentSchedule; routineId?: string; allowedTools?: string[]; capUsd?: number; capTokens?: number; capPeriod?: "day" | "month"; project?: string; enabled?: boolean; executorPreference?: HandoffPreference });
         return json(res, 201, { agent });
       } catch (error) {
         return json(res, 400, { error: error instanceof Error ? error.message : "Could not create that agent." });

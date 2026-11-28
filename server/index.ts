@@ -101,6 +101,8 @@ import { DATA_INTERNAL_MCP_PATH, dataRpc } from "./data/rpc.ts";
 import { FILEGEN_INTERNAL_MCP_PATH, filegenRpc } from "./filegen/rpc.ts";
 import { removeRetiredAppFiles } from "./retired-apps.ts"; import { createEmailRoutes } from "./routes/email.ts"; import { createEmailHost, EMAIL_INTERNAL_MCP_PATH, emailAccess } from "./email/host.ts"; import { createEmailService } from "./email/service.ts"; import { createPostizRoutes } from "./routes/postiz.ts"; import { createPostiz } from "./postiz/service.ts";
 import { createDataRoutes } from "./data/routes.ts";
+import { DataShareStore } from "./data/shares.ts";
+import { createDataSharesRoutes } from "./routes/data-shares.ts";
 import { createSpreadsheetRoutes } from "./spreadsheet/routes.ts";
 import { DataSheetRegistry } from "./data/sheet.ts";
 import { DataFailure } from "./data/types.ts";
@@ -556,6 +558,8 @@ import {
   type AdminActionRow,
   type AdminActor,
 } from "./admin-activity.ts";
+import { createAdminSettingsStore } from "./admin-settings.ts";
+import { createAdminSessionRoutes } from "./routes/admin-sessions.ts";
 import {
   frameForMember,
   memberBody, memberBot, memberFramePayload,
@@ -9311,7 +9315,7 @@ const webhooks = new WebhookManager({
     if (!forceNew && trigger.resultsThreadId && store.taskByThread(trigger.botId, trigger.resultsThreadId)) return trigger.resultsThreadId;
     return store.createTask(trigger.botId, "Updates", false)?.threadId;
   }, ...createWebhookRoomPost({ store, cfg, roomTalks }) });
-const webhookRequests = new WebhookRequestService({ store, webhooks, botName: (botId) => store.bot(botId)?.name ?? "the bot" }); const botApi = createBotApiHost({ store, manager: botApiManager, actsAsOwner: { available: botApiAsOwnerAvailable, refusal: (auth) => !botApiAsOwnerAvailable() ? "A key can act as the owner only on a server one person uses (no members and at most one admin, named by address), not on a team's Cloud or a shared or hosted workspace." : (sharedWorkspaceFullAccessEnabled() ? auth.scopes.includes("admin") : ownHome.owner(auth) || (CLOUD_PERSONAL && cloudOwnerSession(auth)) || (auth.kind === "loopback" && auth.trust !== "service" && auth.scopes.includes("admin") && !CLOUD_HOME)) ? null : "Only this server's owner can let a key act as them." }, startTurn, threadBusy, canStart: canAdmitDirectTurn, canConfine: (botId) => registry.get(store.bot(botId)?.modelSelection.instanceId ?? "")?.adapter.capabilities.guestTurns === "confined", discard: (botId, threadId) => { store.deleteTask(botId, threadId); }, included: () => !cloudPlanTier.starter(), opened: (threadId) => { if (CLOUD_OWNER_KEY) threadStarters.set(threadId, CLOUD_OWNER_KEY); }, hooksBaseUrl: () => webhookIngressStatus().baseUrl, manageRefusal: (auth, botId) => auth.scopes.includes("admin") || (CLOUD_TEAM && levelOf(auth, botId) === "edit") ? null : refusalFor(store.bot(botId)?.name ?? "this bot", "edit").error, claimRequest: () => { cloudPower?.arrived("/hooks", {}); moveFreeze.assertTurns(); return workspaceMaintenance.request(); }, record: (auth, row) => appendAdminAction(DATA_DIR, { ...row, actor: decisionActorFor(auth) }) });
+const webhookRequests = new WebhookRequestService({ store, webhooks, botName: (botId) => store.bot(botId)?.name ?? "the bot" }); const botApi = createBotApiHost({ store, manager: botApiManager, actsAsOwner: { available: botApiAsOwnerAvailable, refusal: (auth) => !botApiAsOwnerAvailable() ? "A key can act as the owner only on a server one person uses (no members and at most one admin, named by address), not on a team's Cloud or a shared or hosted workspace." : (sharedWorkspaceFullAccessEnabled() ? auth.scopes.includes("admin") : ownHome.owner(auth) || (CLOUD_PERSONAL && cloudOwnerSession(auth)) || (auth.kind === "loopback" && auth.trust !== "service" && auth.scopes.includes("admin") && !CLOUD_HOME)) ? null : "Only this server's owner can let a key act as them." }, startTurn, threadBusy, canStart: canAdmitDirectTurn, canConfine: (botId) => registry.get(store.bot(botId)?.modelSelection.instanceId ?? "")?.adapter.capabilities.guestTurns === "confined", discard: (botId, threadId) => { store.deleteTask(botId, threadId); }, included: () => !cloudPlanTier.starter(), opened: (threadId) => { if (CLOUD_OWNER_KEY) threadStarters.set(threadId, CLOUD_OWNER_KEY); }, hooksBaseUrl: () => webhookIngressStatus().baseUrl, manageRefusal: (auth, botId) => auth.scopes.includes("admin") || (CLOUD_TEAM && levelOf(auth, botId) === "edit") ? null : refusalFor(store.bot(botId)?.name ?? "this bot", "edit").error, claimRequest: () => { cloudPower?.arrived("/hooks", {}); moveFreeze.assertTurns(); return workspaceMaintenance.request(); }, record: (auth, row) => appendAdminAction(DATA_DIR, { ...row, actor: decisionActorFor(auth) }), allowlist: () => createAdminSettingsStore(DATA_DIR).read().botApiAllowlist });
 const appTriggers = createAppTriggerHost({ store, webhooks, webhookBase: () => webhookIngressStatus().baseUrl, routines: () => routines!, botState: unattendedDispatchState, timeZone: routineTimeZone, emit: (frame) => { broadcast(frame); starterRoutineWake?.emitted(frame); }, connectionMode: () => composio.connectionMode(cfg),
   access: composio.brokerAccess, connectedApps: () => composio.connectedServices(cfg), visibleBot: (auth, botId) => visibleTo(viewerFor(auth)).bot(botId),
   audit: (row) => appendDecision(DATA_DIR, { ...row, decision: "auto-approved", source: "routine" }) });
@@ -12300,7 +12304,7 @@ ROUTES.push(createDataRoutes({
   sheets: dataSheets,
   compileChart, validateVegaLite, renderer: chartRenderer,
   exportRoots: dataExportRoots,
-}));
+})); ROUTES.push(createDataSharesRoutes({ store: new DataShareStore({ dataDir: DATA_DIR }), bot: (id) => store.bot(id), engine: dataEngine, sheets: dataSheets, isOwner: ownerOrAdmin })); ROUTES.push(createAdminSessionRoutes({ dataDir: DATA_DIR, sessions, isOwner: ownerOrAdmin }));
 ROUTES.push(createSpreadsheetRoutes({
   bot: (id) => store.bot(id),
   context: async (bot, signal) => ({

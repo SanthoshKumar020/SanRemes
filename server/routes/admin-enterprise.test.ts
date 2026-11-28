@@ -119,9 +119,10 @@ describe("admin enterprise routes", () => {
     expect(((await response.json()) as { error: string }).error).toContain("SANREMES_DECISION_RETENTION_DAYS");
   });
 
-  it("toggles compliance mode and Motion, and the Motion generate path always refuses", async () => {
-    const { call } = await serve("owner");
-    expect((await call("/api/admin/compliance")).body).toEqual({ auditStrict: false });
+  it("toggles compliance mode and Motion, and the Motion generate path always refuses", async () => {    const { call } = await serve("owner");
+    expect((await call("/api/admin/compliance")).body).toMatchObject({ auditStrict: false, adminActionsThisMonth: 0, botApiAllowlistCount: 0 });
+    expect((await call("/api/admin/compliance")).body).toHaveProperty("retention");
+    expect((await call("/api/admin/compliance")).body).toHaveProperty("motion");
     expect((await call("/api/admin/motion")).body).toMatchObject({ paidEnabled: false, provider: "none", ready: false });
     expect((await call("/api/admin/motion/generate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt: "a harbour" }) })).status).toBe(409);
     const on = await call("/api/admin/motion", put({ paidEnabled: true }));
@@ -133,5 +134,24 @@ describe("admin enterprise routes", () => {
     const member = await serve("member");
     expect((await member.call("/api/admin/motion", put({ paidEnabled: false })))).toMatchObject({ status: 403 });
     expect((await member.call("/api/admin/compliance")).status).toBe(403);
+  });
+
+  it("manages the Bot API allowlist and reports consolidated settings", async () => {
+    const { call } = await serve("owner");
+    expect((await call("/api/admin/bot-api-allowlist")).body).toEqual({ allowlist: [] });
+    const bad = await call("/api/admin/bot-api-allowlist", put({ allowlist: ["not-an-ip"] }));
+    expect(bad.status).toBe(400);
+    const saved = await call("/api/admin/bot-api-allowlist", put({ allowlist: ["203.0.113.5", "198.51.100.0/24"] }));
+    expect(saved.status).toBe(200);
+    expect(saved.body).toEqual({ allowlist: ["203.0.113.5", "198.51.100.0/24"] });
+    expect((await call("/api/admin/bot-api-allowlist")).body).toEqual({ allowlist: ["203.0.113.5", "198.51.100.0/24"] });
+    const settings = await call("/api/admin/settings");
+    expect(settings.status).toBe(200);
+    expect(settings.body).toMatchObject({ auditStrict: false, botApiAllowlist: ["203.0.113.5", "198.51.100.0/24"] });
+    expect(settings.body).toHaveProperty("retention");
+    expect(settings.body).toHaveProperty("motion");
+    const member = await serve("member");
+    expect((await member.call("/api/admin/bot-api-allowlist", put({ allowlist: [] })))).toMatchObject({ status: 403 });
+    expect((await member.call("/api/admin/settings")).status).toBe(403);
   });
 });

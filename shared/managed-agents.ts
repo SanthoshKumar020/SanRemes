@@ -25,6 +25,8 @@ export interface ManagedAgent {
   capUsd?: number;
   capTokens?: number;
   capPeriod: "day" | "month";
+  /** A cost-code tag: usage rows this agent books carry it, so the usage report groups spend by project. */
+  project?: string;
   enabled: boolean;
   executorPreference: HandoffPreference;
   nextRunAt: number | null;
@@ -86,8 +88,18 @@ export interface CloudUsageReport {
   to: string;
   agents: CloudUsageAgentRow[];
   jobs: CloudUsageJobRow[];
+  /** Spend by cost-code tag, from the managed-agent rows that carry one; rows with no tag count under "Untagged". */
+  projects: CloudUsageProjectRow[];
   totalInputTokens: number;
   totalOutputTokens: number;
   totalCostUsd: number | null;
   unpricedRows: number;
+}
+
+export interface CloudUsageProjectRow {
+  project: string;
+  runs: number;
+  inputTokens: number;
+  outputTokens: number;
+  costUsd: number | null;
 }
