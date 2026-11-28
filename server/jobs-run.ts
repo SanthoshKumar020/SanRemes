@@ -9,6 +9,9 @@ import { join } from "node:path";
 import type { JobRun, JobRunApplied, JobRunSkipped, JobsJob, JobsQueueItem } from "../shared/jobs.ts";
 import type { JobsStore, SubmitGate } from "./jobs-store.ts";
 import { applyPrompt, HUMAN_CHECK_MARKER, parseSearchReport, searchPrompt, tailorResumeText } from "./jobs-resume.ts";
+import { createCompanyResearchCache, type CompanyResearchOutcome } from "./jobs-company-research.ts";
+import { layoutFingerprint, parseLayoutChange, parseLayoutReport } from "./jobs-layout-guard.ts";
+import { reportDeliveryLine, type ReportDeliveryOutcome } from "./jobs-report-delivery.ts";
 import { writeFileAtomic } from "./atomic.ts";
 import type { TasksStore } from "./tasks-store.ts";
 
@@ -32,6 +35,10 @@ export interface JobRunDeps {
   now?: () => number;
   /** Waits between applications; defaults to a real timer. Tests pass a fake that records the delay. */
   sleep?: (ms: number) => Promise<void>;
+  /** Company research for one ranked job; absent, jobs are tailored without research. */
+  researchCompany?(input: { company: string; role?: string; location?: string }): Promise<CompanyResearchOutcome>;
+  /** Sends the finished report; absent, the run stays pending-bridge as before. */
+  deliverReport?(input: { runId: string; text: string }): Promise<ReportDeliveryOutcome[]>;
 }
 
 const SETTLE_TIMEOUT_MS = 20 * 60_000;
@@ -101,9 +108,20 @@ export class JobRunDriver {
     const run = this.deps.store.getRun(id);
     if (!run || run.phase !== "stopped") return null;
     this.pausedIds.delete(id);
-    this.deps.store.updateRun(id, { phase: "searching", finishedAt: undefined });
+    this.deps.store.updateRun(id, {
+      phase: "searching",
+      finishedAt: undefined,
+      ...(run.takeover?.status === "waiting" ? { takeover: { ...run.takeover, status: "resumed" } } : {}),
+    });
     void this.execute(id).catch(() => undefined);
     return this.deps.store.getRun(id);
+  }
+
+  /** Marks a waiting takeover done without resuming: the person finished the step another way. */
+  abandonTakeover(id: string): JobRun | null {
+    const run = this.deps.store.getRun(id);
+    if (!run || !run.takeover) return null;
+    return this.deps.store.setRunTakeover(id, { ...run.takeover, status: "abandoned" });
   }
 
   private paused(id: string): boolean {
@@ -113,12 +131,13 @@ export class JobRunDriver {
   private async execute(runId: string): Promise<void> {
     if (this.executing.has(runId)) return;
     this.executing.add(runId);
+    const researchCache = createCompanyResearchCache();
     try {
-      const stopped = await this.searchAndTailor(runId);
+      const stopped = await this.searchAndTailor(runId, researchCache);
       if (stopped) return;
       const settings = this.deps.store.snapshot().settings;
       if (!settings.autoApply) {
-        this.finish(runId, "done", "queued for approval");
+        await this.finish(runId, "done", "queued for approval");
         return;
       }
       const ranked = this.rankedJobs(runId);
@@ -130,25 +149,30 @@ export class JobRunDriver {
         seen.add(item.jobId);
         return true;
       });
-      const humanCheck = await this.applyAll(runId, approved);
+      const stoppedReason = await this.applyAll(runId, approved);
       if (this.paused(runId)) {
-        this.finish(runId, "stopped", "paused");
+        await this.finish(runId, "stopped", "paused");
         return;
       }
-      if (humanCheck) {
-        this.finish(runId, "stopped", "the site asked for a human check — the bot stopped and never tried to solve it");
+      if (stoppedReason === "human-check") {
+        await this.finish(runId, "stopped", "the site asked for a human check — the bot stopped and never tried to solve it");
         return;
       }
-      this.finish(runId, "done", "applied");
+      if (stoppedReason === "layout-change") {
+        const reason = this.deps.store.getRun(runId)?.takeover?.reason ?? "the application page looks different";
+        await this.finish(runId, "stopped", `${reason} — the run stopped so you can take over`);
+        return;
+      }
+      await this.finish(runId, "done", "applied");
     } catch (error) {
       const reason = error instanceof Error ? error.message : "The run stopped unexpectedly.";
-      this.finish(runId, "stopped", reason);
+      await this.finish(runId, "stopped", reason);
     } finally {
       this.executing.delete(runId);
     }
   }
 
-  private async searchAndTailor(runId: string): Promise<boolean> {
+  private async searchAndTailor(runId: string, researchCache: ReturnType<typeof createCompanyResearchCache>): Promise<boolean> {
     const store = this.deps.store;
     const settings = store.snapshot().settings;
     const applyBotId = settings.applyBotId;
@@ -164,12 +188,12 @@ export class JobRunDriver {
     const prior = store.getRun(runId);
     store.updateRun(runId, { phase: "tailoring", searched: (prior?.searched ?? 0) + reported.length, found: (prior?.found ?? 0) + added.length });
     if (this.paused(runId)) {
-      this.finish(runId, "stopped", "paused");
+      await this.finish(runId, "stopped", "paused");
       return true;
     }
-    this.tailorRanked(runId);
+    await this.tailorRanked(runId, researchCache);
     if (this.paused(runId)) {
-      this.finish(runId, "stopped", "paused");
+      await this.finish(runId, "stopped", "paused");
       return true;
     }
     return false;
@@ -184,7 +208,7 @@ export class JobRunDriver {
       .sort((a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0));
   }
 
-  private tailorRanked(runId: string): void {
+  private async tailorRanked(runId: string, researchCache: ReturnType<typeof createCompanyResearchCache>): Promise<void> {
     const store = this.deps.store;
     const data = store.snapshot();
     const profile = data.profile;
@@ -207,6 +231,9 @@ export class JobRunDriver {
       if (!cwd) {
         this.addSkipped(runId, { jobId: job.id, company: job.company, title: job.title, reason: "Resume Bot is not set up" });
         continue;
+      }
+      if (this.deps.researchCompany) {
+        store.recordCompanyResearch(job.id, await this.researchJob(researchCache, job));
       }
       let text: string;
       try {
@@ -231,8 +258,25 @@ export class JobRunDriver {
     }
   }
 
-  /** True when a turn ended because the site asked for a human check, so the run stops. */
-  private async applyAll(runId: string, approved: readonly JobsQueueItem[]): Promise<boolean> {
+  /** Best-effort company research through the per-run cache: a failure is recorded, never thrown. */
+  private async researchJob(cache: ReturnType<typeof createCompanyResearchCache>, job: JobsJob): Promise<CompanyResearchOutcome> {
+    const input = { company: job.company, role: job.title, location: job.location };
+    const research = this.deps.researchCompany!;
+    try {
+      return await cache.researchCompanyCached(input, {
+        research: async () => {
+          const outcome = await research(input);
+          if (!outcome.ok) throw new Error(outcome.reason);
+          return { answer: outcome.research.summary, sources: outcome.research.sources, searches: outcome.research.searches, pagesRead: outcome.research.pagesRead };
+        },
+      });
+    } catch {
+      return { ok: false, company: job.company, reason: "The web search did not answer." };
+    }
+  }
+
+  /** What stopped the run: a human check, a changed page layout, or null when it ran through or paused. */
+  private async applyAll(runId: string, approved: readonly JobsQueueItem[]): Promise<"human-check" | "layout-change" | null> {
     const store = this.deps.store;
     store.updateRun(runId, { phase: "applying" });
     const settings = store.snapshot().settings;
@@ -240,7 +284,7 @@ export class JobRunDriver {
     let queueFallback = !this.deps.tasks;
     let attempted = 0;
     for (const item of approved) {
-      if (this.paused(runId)) return false;
+      if (this.paused(runId)) return null;
       const data = store.snapshot();
       const job = data.jobs.find((one) => one.id === item.jobId);
       const resume = data.resumes.find((one) => one.id === item.tailoredResumeId);
@@ -255,7 +299,7 @@ export class JobRunDriver {
       }
       if (attempted > 0) {
         await this.sleep(PACE_MIN_MS + Math.random() * (PACE_MAX_MS - PACE_MIN_MS));
-        if (this.paused(runId)) return false;
+        if (this.paused(runId)) return null;
       }
       let taskId: string | undefined;
       if (this.deps.tasks && applyBotId) {
@@ -277,7 +321,7 @@ export class JobRunDriver {
       try {
         const outcome = await this.awaitSettled<{ applied: boolean; closingText?: string }>((onSettled) =>
           this.deps.startApply!({
-            botId: applyBotId, jobId: job.id, prompt: applyPrompt(job, resume.path),
+            botId: applyBotId, jobId: job.id, prompt: applyPrompt(job, resume.path, job.lastGoodLayout?.labels),
             onSettled: (settledApplied, settledText) => onSettled({ applied: settledApplied, closingText: settledText }),
           }));
         applied = outcome.applied;
@@ -304,11 +348,22 @@ export class JobRunDriver {
       });
       if (closingText?.trimStart().startsWith(HUMAN_CHECK_MARKER)) {
         if (queueFallback) this.deps.store.updateRun(runId, { queueFallback: true });
-        return true;
+        store.setRunTakeover(runId, { jobId: job.id, reason: "The site asked for a human check — the bot stopped and never tried to solve it.", at: this.now(), status: "waiting" });
+        return "human-check";
+      }
+      const layoutChange = closingText ? parseLayoutChange(closingText) : null;
+      if (layoutChange) {
+        if (queueFallback) this.deps.store.updateRun(runId, { queueFallback: true });
+        store.setRunTakeover(runId, { jobId: job.id, reason: layoutChange, at: this.now(), status: "waiting" });
+        return "layout-change";
+      }
+      if (applied && closingText) {
+        const labels = parseLayoutReport(closingText);
+        if (labels && labels.length) store.setLastGoodLayout(job.id, layoutFingerprint(labels), labels);
       }
     }
     if (queueFallback) this.deps.store.updateRun(runId, { queueFallback: true });
-    return false;
+    return null;
   }
 
   private addApplied(runId: string, entry: JobRunApplied): void {
@@ -335,13 +390,33 @@ export class JobRunDriver {
     });
   }
 
-  private finish(runId: string, phase: "done" | "stopped", note: string): void {
+  private async finish(runId: string, phase: "done" | "stopped", note: string): Promise<void> {
     const store = this.deps.store;
     store.updateRun(runId, { phase: "reporting" });
     const run = store.getRun(runId);
     if (!run) return;
-    const reportText = buildReport(run, note);
-    store.updateRun(runId, { phase, finishedAt: this.now(), reportText, whatsapp: "pending-bridge" });
+    const draft = buildReport(run, note);
+    let whatsapp: JobRun["whatsapp"] = "pending-bridge";
+    let reportText = draft;
+    if (this.deps.deliverReport) {
+      let outcomes: ReportDeliveryOutcome[] | null = null;
+      try {
+        outcomes = await this.deps.deliverReport({ runId, text: draft });
+      } catch {
+        outcomes = null;
+      }
+      if (outcomes === null) {
+        whatsapp = "failed";
+        reportText = buildReport(run, note, "Report delivery failed — read the report here.");
+      } else {
+        if (outcomes.length === 0) whatsapp = "not-configured";
+        else if (outcomes.some((outcome) => outcome.status === "sent")) whatsapp = "sent";
+        else if (outcomes.some((outcome) => outcome.status === "failed")) whatsapp = "failed";
+        else whatsapp = "not-configured";
+        reportText = buildReport(run, note, reportDeliveryLine(outcomes));
+      }
+    }
+    store.updateRun(runId, { phase, finishedAt: this.now(), reportText, whatsapp });
     const applyBotId = store.snapshot().settings.applyBotId;
     const threadId = applyBotId ? this.deps.botThreadId?.(applyBotId) ?? null : null;
     if (threadId && this.deps.appendMessage) {
@@ -351,7 +426,7 @@ export class JobRunDriver {
 }
 
 /** Plain words, no jargon: every application with its outcome, every skip with its reason. */
-export function buildReport(run: JobRun, note: string): string {
+export function buildReport(run: JobRun, note: string, deliveryLine?: string): string {
   const lines = [`Job search report — ${when(run.startedAt)}`];
   const submitted = run.applied.filter((entry) => entry.status === "submitted");
   const notSubmitted = run.applied.filter((entry) => entry.status !== "submitted");
@@ -380,6 +455,6 @@ export function buildReport(run: JobRun, note: string): string {
   if (run.queueFallback) {
     lines.push("Some applications ran without a queue task because the task queue was unavailable.");
   }
-  lines.push("WhatsApp delivery is pending bridge setup — read the report here.");
+  lines.push(deliveryLine ?? "WhatsApp delivery is pending bridge setup — read the report here.");
   return lines.join("\n");
 }

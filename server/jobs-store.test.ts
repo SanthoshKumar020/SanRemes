@@ -294,3 +294,63 @@ describe("keyword match score", () => {
     expect(keywordMatchScore(["Databricks"], ["databricks"])).toBe(100);
   });
 });
+
+describe("outcomes, follow-ups, and the tracker", () => {
+  it("records outcomes, moves interview and rejected jobs, and leaves offer jobs where they are", () => {
+    const { store } = makeStore();
+    seedJob(store, "job-1");
+    seedJob(store, "job-2");
+    expect(store.recordOutcome("job-1", { kind: "interview", note: "First round" })?.status).toBe("interview");
+    expect(store.recordOutcome("job-2", { kind: "offer" })?.status).toBe("new");
+    expect(store.recordOutcome("job-2", { kind: "no-reply" })?.outcome?.kind).toBe("no-reply");
+    expect(store.recordOutcome("missing", { kind: "rejected" })).toBeNull();
+  });
+
+  it("sets and clears follow-ups", () => {
+    const { store } = makeStore();
+    seedJob(store);
+    expect(store.setFollowUp("job-1", START + DAY, "Chase the recruiter")?.followUpAt).toBe(START + DAY);
+    expect(store.setFollowUp("job-1", null)?.followUpAt).toBeUndefined();
+    expect(store.setFollowUp("missing", START)).toBeNull();
+  });
+
+  it("summarises totals, per-platform conversion, due follow-ups, and outcome counts", () => {
+    const { store } = makeStore();
+    const one = seedJob(store, "job-1");
+    store.addJob({ id: "job-2", platform: "linkedin", url: "https://www.linkedin.com/jobs/2", title: "Data Engineer", company: "Beta" });
+    store.setJobStatus(one.id, "applied", START);
+    store.recordOutcome(one.id, { kind: "interview" });
+    store.setFollowUp(one.id, START - 1000, "Chase");
+    store.recordOutcome("job-2", { kind: "no-reply" });
+    const summary = store.trackerSummary();
+    expect(summary.totals).toMatchObject({ applied: 0, interview: 1, new: 1 });
+    expect(summary.perPlatform).toEqual([
+      { platform: "linkedin", applied: 0, interview: 0, rejected: 0, offer: 0, conversion: 0 },
+      { platform: "naukri", applied: 0, interview: 1, rejected: 0, offer: 0, conversion: 0 },
+    ]);
+    expect(summary.followUpsDue).toHaveLength(1);
+    expect(summary.followUpsDue[0]?.id).toBe("job-1");
+    expect(summary.outcomes).toEqual({ interview: 1, rejected: 0, offer: 0, noReply: 1 });
+  });
+
+  it("merges report-bridge settings without dropping the URLs already saved", () => {
+    const { store } = makeStore();
+    const settings = store.setSettings({ reportBridge: { whatsappUrl: "https://example.com/notify", secretName: "job-bridge" } });
+    expect(settings.reportBridge).toEqual({ whatsappUrl: "https://example.com/notify", secretName: "job-bridge" });
+    const merged = store.setSettings({ reportBridge: { telegramUrl: "https://example.com/tg" } });
+    expect(merged.reportBridge).toEqual({ whatsappUrl: "https://example.com/notify", telegramUrl: "https://example.com/tg", secretName: "job-bridge" });
+  });
+
+  it("records company research and takeover state on the run", () => {
+    const { store } = makeStore();
+    seedJob(store);
+    store.recordCompanyResearch("job-1", { ok: true, research: { company: "Acme", summary: "Acme builds widgets.", sources: [], researchedAt: START, searches: 1, pagesRead: 1 } });
+    expect(store.snapshot().jobs[0]?.companyResearch?.summary).toBe("Acme builds widgets.");
+    store.recordCompanyResearch("job-1", { ok: false, company: "Acme", reason: "The web search did not answer." });
+    expect(store.snapshot().jobs[0]?.companyResearch).toMatchObject({ failed: true, summary: "" });
+    const run = store.createRun("auto");
+    expect(store.setRunTakeover(run.id, { jobId: "job-1", reason: "the page changed", at: START, status: "waiting" })?.takeover?.status).toBe("waiting");
+    expect(store.clearRunTakeover(run.id)?.takeover).toBeUndefined();
+    expect(store.setRunTakeover("missing", { jobId: "job-1", reason: "x", at: START, status: "waiting" })).toBeNull();
+  });
+});

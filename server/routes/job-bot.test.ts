@@ -497,3 +497,135 @@ it("lets an auto-approved queue item through the apply route only while auto-app
   expect(refused.status).toBe(409);
   expect(refused.body.reason).toBe("not-approved");
 });
+
+it("summarises the tracker, records outcomes, and sets follow-ups", async () => {
+  const { api, store } = await serve();
+  seedProfile(store);
+  const { job } = seed(store);
+  store.setJobStatus(job.id, "applied", 1_000);
+  const tracker = await api("/api/jobs/tracker");
+  expect(tracker.status).toBe(200);
+  expect(tracker.body.tracker.totals.applied).toBe(1);
+  expect(tracker.body.tracker.perPlatform).toEqual([
+    { platform: "naukri", applied: 1, interview: 0, rejected: 0, offer: 0, conversion: 0 },
+  ]);
+  const outcome = await api(`/api/jobs/${job.id}/outcome`, { method: "POST", body: JSON.stringify({ kind: "interview", note: "First round on Friday" }) });
+  expect(outcome.status).toBe(200);
+  expect(outcome.body.job).toMatchObject({ status: "interview", outcome: { kind: "interview" } });
+  const followUp = await api(`/api/jobs/${job.id}/follow-up`, { method: "POST", body: JSON.stringify({ at: 500, note: "Chase the recruiter" }) });
+  expect(followUp.status).toBe(200);
+  expect(followUp.body.job.followUpAt).toBe(500);
+  const due = await api("/api/jobs/tracker");
+  expect(due.body.tracker.outcomes.interview).toBe(1);
+  expect(due.body.tracker.followUpsDue).toHaveLength(1);
+  const cleared = await api(`/api/jobs/${job.id}/follow-up`, { method: "POST", body: JSON.stringify({ at: null }) });
+  expect(cleared.status).toBe(200);
+  expect(cleared.body.job.followUpAt).toBeUndefined();
+  expect((await api(`/api/jobs/nope/outcome`, { method: "POST", body: JSON.stringify({ kind: "offer" }) })).status).toBe(404);
+  expect((await api(`/api/jobs/${job.id}/outcome`, { method: "POST", body: JSON.stringify({ kind: "hired" }) })).status).toBe(400);
+});
+
+it("generates a cover letter, interview prep, and a resume variant into the Resume Bot workspace", async () => {
+  const { api, store, resumeDir } = await serve();
+  seedProfile(store);
+  const { job } = seed(store);
+  await api("/api/jobs/settings", { method: "PATCH", body: JSON.stringify({ resumeBotId: "resume-bot" }) });
+  const cover = await api(`/api/jobs/${job.id}/cover-letter`, { method: "POST", body: "{}" });
+  expect(cover.status).toBe(200);
+  expect(cover.body.resume.kind).toBe("cover-letter");
+  expect(cover.body.job.coverLetterId).toBe(cover.body.resume.id);
+  expect(cover.body.resume.text).toContain("Data Engineer");
+  expect(existsSync(join(resumeDir, "documents", `cover-letter-${job.id}.docx`))).toBe(true);
+  expect(existsSync(join(resumeDir, "documents", `cover-letter-${job.id}.pdf`))).toBe(true);
+  const prep = await api(`/api/jobs/${job.id}/interview-prep`, { method: "POST", body: "{}" });
+  expect(prep.status).toBe(200);
+  expect(prep.body.resume.kind).toBe("interview-prep");
+  expect(prep.body.job.interviewPrepId).toBe(prep.body.resume.id);
+  expect(prep.body.resume.text).toContain("Interview prep");
+  const variant = await api(`/api/jobs/${job.id}/resume-variant`, { method: "POST", body: JSON.stringify({ platform: "linkedin" }) });
+  expect(variant.status).toBe(200);
+  expect(variant.body.resume.kind).toBe("tailored");
+  expect(variant.body.job.tailoredResumeId).toBe(variant.body.resume.id);
+  expect((await api(`/api/jobs/nope/cover-letter`, { method: "POST", body: "{}" })).status).toBe(404);
+  expect((await api(`/api/jobs/${job.id}/resume-variant`, { method: "POST", body: JSON.stringify({ platform: "monster" }) })).status).toBe(400);
+});
+
+it("resumes or abandons a run stopped by a layout change", async () => {
+  const { api, store } = await serve({
+    sleep: async () => {},
+    startSearch: async (input) => {
+      input.onSettled?.(runReport([{ platform: "naukri", url: "https://www.naukri.com/job/1", title: "Data Engineer", company: "Acme" }]));
+      return { started: true };
+    },
+    startApply: async (input) => { input.onSettled?.(false, "LAYOUT CHANGED: the apply button moved."); return { started: true }; },
+  });
+  seedProfile(store);
+  await api("/api/jobs/settings", { method: "PATCH", body: JSON.stringify({ applyBotId: "apply-bot", resumeBotId: "resume-bot" }) });
+  const started = await api("/api/jobs/runs", { method: "POST", body: "{}" });
+  const stopped = await waitForRun(api, started.body.run.id, "stopped");
+  expect(stopped.takeover).toMatchObject({ status: "waiting" });
+  expect((await api(`/api/jobs/runs/missing/takeover/abandon`, { method: "POST", body: "{}" })).status).toBe(404);
+  const resumed = await api(`/api/jobs/runs/${started.body.run.id}/takeover/resume`, { method: "POST", body: "{}" });
+  expect(resumed.status).toBe(200);
+  expect(resumed.body.run.takeover.status).toBe("resumed");
+  const doneAgain = await waitForRun(api, started.body.run.id, "done");
+  expect(doneAgain.takeover.status).toBe("resumed");
+  expect(doneAgain.applied).toHaveLength(1);
+  const abandoned = await api(`/api/jobs/runs/${started.body.run.id}/takeover/abandon`, { method: "POST", body: "{}" });
+  expect(abandoned.status).toBe(200);
+  expect(abandoned.body.run.takeover.status).toBe("abandoned");
+});
+
+it("saves report-bridge settings and delivers the run report through the bridge", async () => {
+  const received: Array<{ secret: string | string[] | undefined; body: string }> = [];
+  const notify = createServer((req, res) => {
+    let body = "";
+    req.on("data", (chunk) => { body += chunk; });
+    req.on("end", () => {
+      received.push({ secret: req.headers["x-sanremes-notify-secret"], body });
+      res.writeHead(200);
+      res.end("{}");
+    });
+  });
+  servers.push(notify);
+  await new Promise<void>((ready) => notify.listen(0, "127.0.0.1", ready));
+  const url = `http://127.0.0.1:${(notify.address() as AddressInfo).port}/api/whatsapp/notify`;
+  const { api, store } = await serve({
+    sleep: async () => {},
+    resolveReportSecret: () => "bridge-secret",
+    startSearch: async (input) => {
+      input.onSettled?.(runReport([{ platform: "naukri", url: "https://www.naukri.com/job/1", title: "Data Engineer", company: "Acme" }]));
+      return { started: true };
+    },
+    startApply: async (input) => { input.onSettled?.(true); return { started: true }; },
+  });
+  seedProfile(store);
+  const saved = await api("/api/jobs/settings", { method: "PATCH", body: JSON.stringify({ applyBotId: "apply-bot", resumeBotId: "resume-bot", reportBridge: { whatsappUrl: url, secretName: "job-bridge" } }) });
+  expect(saved.status).toBe(200);
+  expect(saved.body.settings.reportBridge).toEqual({ whatsappUrl: url, secretName: "job-bridge" });
+  const started = await api("/api/jobs/runs", { method: "POST", body: "{}" });
+  const done = await waitForRun(api, started.body.run.id, "done");
+  expect(done.whatsapp).toBe("sent");
+  expect(done.reportText).toContain("Report sent to WhatsApp.");
+  expect(received).toHaveLength(1);
+  expect(received[0]?.secret).toBe("bridge-secret");
+  expect(JSON.parse(received[0]?.body ?? "{}")).toMatchObject({ source: "sanremes-job-bot", runId: started.body.run.id });
+});
+
+it("marks a run failed when the bridge URL is set but its secret is not saved", async () => {
+  const { api, store } = await serve({
+    sleep: async () => {},
+    resolveReportSecret: () => null,
+    startSearch: async (input) => {
+      input.onSettled?.(runReport([{ platform: "naukri", url: "https://www.naukri.com/job/1", title: "Data Engineer", company: "Acme" }]));
+      return { started: true };
+    },
+    startApply: async (input) => { input.onSettled?.(true); return { started: true }; },
+  });
+  seedProfile(store);
+  await api("/api/jobs/settings", { method: "PATCH", body: JSON.stringify({ applyBotId: "apply-bot", resumeBotId: "resume-bot", reportBridge: { whatsappUrl: "http://127.0.0.1:9/notify", secretName: "job-bridge" } }) });
+  const started = await api("/api/jobs/runs", { method: "POST", body: "{}" });
+  const done = await waitForRun(api, started.body.run.id, "done");
+  expect(done.whatsapp).toBe("failed");
+  expect(done.reportText).toContain("WhatsApp delivery failed (the bridge secret is not saved)");
+});

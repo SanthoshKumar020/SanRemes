@@ -146,6 +146,45 @@ export async function tailorResume(jobId: string, request: Request = api): Promi
   return request<{ resume: JobsResume; job: JobsJob; queue: JobsQueueItem | null }>(`/api/jobs/${jobId}/tailor`, { method: "POST" });
 }
 
+export async function fetchTracker(request: Request = api): Promise<{ tracker: TrackerSummary }> {
+  return request<{ tracker: TrackerSummary }>("/api/jobs/tracker");
+}
+
+/** The Jobs page tracker: status totals, per-platform results, follow-ups due now, outcome counts. */
+export interface TrackerSummary {
+  totals: Record<JobStatus, number>;
+  perPlatform: { platform: string; applied: number; interview: number; rejected: number; offer: number; conversion: number }[];
+  followUpsDue: JobsJob[];
+  outcomes: { interview: number; rejected: number; offer: number; noReply: number };
+}
+
+export type JobOutcomeKind = "interview" | "rejected" | "offer" | "no-reply";
+
+/** Records how an application ended: interview and rejected move the job; offer and no-reply only record the outcome. */
+export async function recordOutcome(id: string, kind: JobOutcomeKind, note?: string, request: Request = api): Promise<{ job: JobsJob }> {
+  return request<{ job: JobsJob }>(`/api/jobs/${encodeURIComponent(id)}/outcome`, { method: "POST", body: JSON.stringify({ kind, ...(note ? { note } : {}) }) });
+}
+
+/** Sets a follow-up date and note; a null date clears the follow-up. */
+export async function setFollowUp(id: string, at: number | null, note?: string, request: Request = api): Promise<{ job: JobsJob }> {
+  return request<{ job: JobsJob }>(`/api/jobs/${encodeURIComponent(id)}/follow-up`, { method: "POST", body: JSON.stringify({ at, ...(note ? { note } : {}) }) });
+}
+
+/** Writes a cover letter for a job into the Resume Bot workspace and records it on the job. */
+export async function generateCoverLetter(id: string, request: Request = api): Promise<{ resume: JobsResume; job: JobsJob; pdfPath: string }> {
+  return request<{ resume: JobsResume; job: JobsJob; pdfPath: string }>(`/api/jobs/${encodeURIComponent(id)}/cover-letter`, { method: "POST", body: JSON.stringify({}) });
+}
+
+/** Writes interview prep for a job into the Resume Bot workspace and records it on the job. */
+export async function generateInterviewPrep(id: string, request: Request = api): Promise<{ resume: JobsResume; job: JobsJob; pdfPath: string }> {
+  return request<{ resume: JobsResume; job: JobsJob; pdfPath: string }>(`/api/jobs/${encodeURIComponent(id)}/interview-prep`, { method: "POST", body: JSON.stringify({}) });
+}
+
+/** Writes a per-platform resume variant for a job into the Resume Bot workspace. */
+export async function generateResumeVariant(id: string, platform: "naukri" | "linkedin" | "default" = "default", request: Request = api): Promise<{ resume: JobsResume; job: JobsJob }> {
+  return request<{ resume: JobsResume; job: JobsJob }>(`/api/jobs/${encodeURIComponent(id)}/resume-variant`, { method: "POST", body: JSON.stringify({ platform }) });
+}
+
 /** Starts a Job Apply Bot search turn; found jobs land in the queue once the turn reports them. */
 export async function startJobSearch(request: Request = api): Promise<{ started: boolean; botId: string }> {
   return request<{ started: boolean; botId: string }>("/api/jobs/search", { method: "POST", body: JSON.stringify({}) });

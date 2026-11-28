@@ -11,6 +11,10 @@ import type { LoginBots } from "../../shared/logins.ts";
 import { DAILY_CAP_MAX, jobsProfileSchema, type JobRun, type JobsData, type JobsJob, type JobsQueueItem, type JobStatus } from "../../shared/jobs.ts";
 import { writeFileAtomic } from "../atomic.ts";
 import type { SignedInSites } from "../browser-sites.ts";
+import type { CompanyResearchOutcome } from "../jobs-company-research.ts";
+import { buildCoverLetterText, buildInterviewPrep, coverLetterDocument, tailorResumeVariant, writeDocumentFiles } from "../jobs-documents.ts";
+import { deliverRunReport, type ReportDeliveryOutcome } from "../jobs-report-delivery.ts";
+import type { FilegenDocument } from "../filegen/index.ts";
 import type { SubmitGate } from "../jobs-store.ts";
 import { JobsStore } from "../jobs-store.ts";
 import { applyPrompt, parseSearchReport, searchPrompt, tailorResumeText } from "../jobs-resume.ts";
@@ -49,6 +53,10 @@ export interface JobBotRouteDeps {
   appendMessage?(threadId: string, text: string): void;
   /** Lifts the Job Apply Bot from approval mode ask to auto the first time auto-apply runs; never changes any other mode. Absent, the mode is left alone. */
   liftApplyBotMode?(): void;
+  /** Company research for one ranked job; absent, runs tailor without research. */
+  researchCompany?(input: { company: string; role?: string; location?: string }): Promise<CompanyResearchOutcome>;
+  /** The Vault saved-secret value for a report-bridge secret name; absent, reports stay pending-bridge. */
+  resolveReportSecret?(name: string): string | null;
 }
 
 const ID = /^[\w-]{1,128}$/u;
@@ -79,6 +87,11 @@ const settingsBody = z.object({
   autoApply: z.boolean().optional(),
   companyPages: z.array(z.string().max(2048)).max(50).optional(),
   twoFactor: z.record(z.string().min(1).max(64), z.boolean()).optional(),
+  reportBridge: z.object({
+    whatsappUrl: z.string().url().max(2048).optional(),
+    telegramUrl: z.string().url().max(2048).optional(),
+    secretName: z.string().max(128).optional(),
+  }).strict().optional(),
 }).strict();
 const profileBody = jobsProfileSchema.partial().strict();
 /** The setup wizard's shape: the profile and the settings under their own keys. */
@@ -90,6 +103,12 @@ const statusBody = z.object({
 const searchBody = z.object({ applyBotId: z.string().max(128).optional() }).strict();
 const extractBody = z.object({ filename: z.string().min(1).max(300), dataBase64: z.string().min(1).max(14_000_000) }).strict();
 const batchApproveBody = z.object({ ids: z.array(z.string().regex(ID)).min(1).max(50) }).strict();
+const outcomeBody = z.object({
+  kind: z.enum(["interview", "rejected", "offer", "no-reply"]),
+  note: z.string().max(500).optional(),
+}).strict();
+const followUpBody = z.object({ at: z.number().int().nullable(), note: z.string().max(500).optional() }).strict();
+const variantBody = z.object({ platform: z.enum(["naukri", "linkedin", "default"]).optional() }).strict();
 
 export function createJobBotRoutes(deps: JobBotRouteDeps): RouteHandler {
   const { store } = deps;
@@ -103,6 +122,24 @@ export function createJobBotRoutes(deps: JobBotRouteDeps): RouteHandler {
     sleep: deps.sleep,
     resumeCwd: deps.resumeCwd,
     appendMessage: deps.appendMessage,
+    researchCompany: deps.researchCompany,
+    deliverReport: async ({ runId, text }) => {
+      const bridge = store.snapshot().settings.reportBridge;
+      if (!bridge || (!bridge.whatsappUrl && !bridge.telegramUrl)) return [];
+      const channels = (["whatsapp", "telegram"] as const)
+        .filter((channel) => bridge[channel === "whatsapp" ? "whatsappUrl" : "telegramUrl"]);
+      const secret = bridge.secretName ? deps.resolveReportSecret?.(bridge.secretName) ?? null : null;
+      if (!secret) {
+        return channels.map((channel): ReportDeliveryOutcome => ({ channel, status: "failed", note: "the bridge secret is not saved" }));
+      }
+      const outcomes = await deliverRunReport({
+        runId,
+        text,
+        ...(bridge.whatsappUrl ? { whatsapp: { url: bridge.whatsappUrl, secret } } : {}),
+        ...(bridge.telegramUrl ? { telegram: { url: bridge.telegramUrl, secret } } : {}),
+      });
+      return outcomes.filter((outcome) => channels.includes(outcome.channel));
+    },
   });
   const state = (): Omit<JobsData, "version"> & { version: number; appliedToday: number } => {
     const data = store.snapshot();
@@ -240,6 +277,93 @@ export function createJobBotRoutes(deps: JobBotRouteDeps): RouteHandler {
       if (current.phase !== "stopped") return json(res, 409, { error: "That run is not paused.", phase: current.phase });
       return json(res, 200, { run: runs.resume(runRoute[1]!)! });
     }
+    const takeover = /^runs\/([\w-]{1,128})\/takeover\/(resume|abandon)$/u.exec(rest);
+    if (takeover && method === "POST") {
+      const current = runs.getRun(takeover[1]!);
+      if (!current) return json(res, 404, { error: "No such run." });
+      if (!current.takeover) return json(res, 409, { error: "That run has no takeover waiting." });
+      if (takeover[2] === "abandon") {
+        return json(res, 200, { run: runs.abandonTakeover(takeover[1]!)! });
+      }
+      if (current.phase !== "stopped") return json(res, 409, { error: "That run is not paused.", phase: current.phase });
+      return json(res, 200, { run: runs.resume(takeover[1]!)! });
+    }
+    if (rest === "tracker" && method === "GET") {
+      return json(res, 200, { tracker: store.trackerSummary() });
+    }
+    const outcome = /^([\w-]{1,128})\/outcome$/u.exec(rest);
+    if (outcome && method === "POST") {
+      const body = outcomeBody.safeParse(await readBody(req, 4096));
+      if (!body.success) return json(res, 400, { error: "Send an outcome: interview, rejected, offer, or no-reply." });
+      const changed = store.recordOutcome(outcome[1]!, { kind: body.data.kind, ...(body.data.note ? { note: body.data.note } : {}) });
+      return changed ? json(res, 200, { job: changed }) : json(res, 404, { error: NO_SUCH_JOB });
+    }
+    const followUp = /^([\w-]{1,128})\/follow-up$/u.exec(rest);
+    if (followUp && method === "POST") {
+      const body = followUpBody.safeParse(await readBody(req, 4096));
+      if (!body.success) return json(res, 400, { error: "Send a follow-up date, or null to clear it." });
+      const changed = store.setFollowUp(followUp[1]!, body.data.at, body.data.note);
+      return changed ? json(res, 200, { job: changed }) : json(res, 404, { error: NO_SUCH_JOB });
+    }
+    const documentRoute = /^([\w-]{1,128})\/(cover-letter|interview-prep)$/u.exec(rest);
+    if (documentRoute && method === "POST") {
+      const data = store.snapshot();
+      const job = data.jobs.find((one) => one.id === documentRoute[1]);
+      if (!job) return json(res, 404, { error: NO_SUCH_JOB });
+      if (!data.profile) return json(res, 400, { error: "Set up the profile first." });
+      const resumeBotId = data.settings.resumeBotId;
+      if (!resumeBotId) return json(res, 409, { error: "Set up the Resume Bot first." });
+      const cwd = deps.resumeCwd?.(resumeBotId) ?? null;
+      if (!cwd) return json(res, 503, { error: "The Resume Bot's workspace could not be found." });
+      const kind = documentRoute[2] as "cover-letter" | "interview-prep";
+      const prep = kind === "interview-prep" ? buildInterviewPrep(data.profile, job, job.companyResearch?.summary) : null;
+      const text = prep?.text ?? buildCoverLetterText(data.profile, job);
+      const doc: FilegenDocument = prep?.document ?? coverLetterDocument(data.profile, job);
+      let files: { docxPath: string; pdfPath: string };
+      try {
+        files = await writeDocumentFiles(join(cwd, "documents"), `${kind}-${job.id}`.slice(0, 100), doc);
+      } catch {
+        return json(res, 503, { error: "The document could not be saved." });
+      }
+      const resume = store.addResume({
+        jobId: job.id, kind, path: files.docxPath, text,
+        note: `${kind === "cover-letter" ? "Cover letter" : "Interview prep"} for ${job.title} at ${job.company}`,
+      });
+      if (kind === "cover-letter") store.setCoverLetter(job.id, resume.id);
+      else store.setInterviewPrep(job.id, resume.id);
+      return json(res, 200, { resume, job: store.snapshot().jobs.find((one) => one.id === job.id)!, pdfPath: files.pdfPath });
+    }
+    const variant = /^([\w-]{1,128})\/resume-variant$/u.exec(rest);
+    if (variant && method === "POST") {
+      const body = variantBody.safeParse(await readBody(req, 4096));
+      if (!body.success) return json(res, 400, { error: "Send a platform: naukri, linkedin, or default." });
+      const data = store.snapshot();
+      const job = data.jobs.find((one) => one.id === variant[1]);
+      if (!job) return json(res, 404, { error: NO_SUCH_JOB });
+      if (!data.profile) return json(res, 400, { error: "Set up the profile first." });
+      const resumeBotId = data.settings.resumeBotId;
+      if (!resumeBotId) return json(res, 409, { error: "Set up the Resume Bot first." });
+      const cwd = deps.resumeCwd?.(resumeBotId) ?? null;
+      if (!cwd) return json(res, 503, { error: "The Resume Bot's workspace could not be found." });
+      const platform = body.data.platform ?? "default";
+      let text: string;
+      try {
+        text = tailorResumeVariant(data.profile, job, platform);
+      } catch (error) {
+        return json(res, 400, { error: error instanceof Error ? error.message : "That resume variant does not fit on one page." });
+      }
+      const id = randomUUID();
+      const path = join(cwd, "resumes", `${id}.txt`);
+      try {
+        mkdirSync(join(cwd, "resumes"), { recursive: true });
+        writeFileAtomic(path, text);
+      } catch {
+        return json(res, 503, { error: "The resume variant could not be saved." });
+      }
+      const resume = store.addResume({ id, jobId: job.id, kind: "tailored", path, text, note: `Resume variant for ${job.title} at ${job.company} (${platform})` });
+      store.setJobTailoredResume(job.id, resume.id);
+      return json(res, 200, { resume, job: store.snapshot().jobs.find((one) => one.id === job.id)! });
+    }
     if (rest === "extract" && method === "POST") {
       const body = extractBody.safeParse(await readBody(req, 14_000_000));
       if (!body.success) return json(res, 400, { error: "Send the resume filename and its base64 contents." });
@@ -311,7 +435,7 @@ export function createJobBotRoutes(deps: JobBotRouteDeps): RouteHandler {
       const started = await deps.startApply({
         botId: applyBotId,
         jobId: job.id,
-        prompt: applyPrompt(job, resume.path),
+        prompt: applyPrompt(job, resume.path, job.lastGoodLayout?.labels),
         onSettled: (applied) => {
           try {
             store.recordQueueAttempt(item.id, applied ? "submitted" : "not submitted");

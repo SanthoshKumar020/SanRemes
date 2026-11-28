@@ -78,7 +78,7 @@ describe("JobSetupWizard", () => {
       profile: expect.objectContaining({ name: "Santhoshkumar", location: "Chennai", skills: ["Databricks", "PySpark", "SQL"] }),
     }));
     expect(fixture.ensureJobBots).toHaveBeenCalledWith([]);
-    expect(host.textContent).toContain("Automated applying can get an account restricted");
+    expect(host.textContent).toContain("Automated applying can look like bot activity");
     expect(host.textContent).toContain("Stored encrypted in this app's Vault on this computer (logins.json.enc); only the Job Apply Bot can use it");
     expect(host.textContent).toContain("cannot use your own signed-in browser");
 

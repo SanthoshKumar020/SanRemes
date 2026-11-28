@@ -50,7 +50,7 @@ export type JobsProfile = z.infer<typeof jobsProfileSchema>;
 export const jobsResumeSchema = z.object({
   id: idSchema,
   jobId: z.string().max(128).nullable().optional(),
-  kind: z.enum(["base", "tailored"]),
+  kind: z.enum(["base", "tailored", "cover-letter", "interview-prep"]),
   path: textSchema(1024).min(1),
   createdAt: z.number(),
   note: textSchema(500).optional(),
@@ -58,6 +58,23 @@ export const jobsResumeSchema = z.object({
   text: textSchema(20_000).optional(),
 }).strict();
 export type JobsResume = z.infer<typeof jobsResumeSchema>;
+
+export const companyResearchSchema = z.object({
+  summary: textSchema(2000),
+  sources: z.array(z.object({ title: textSchema(300), url: z.string().url().max(2048) }).strict()).max(10).default([]),
+  researchedAt: z.number(),
+  searches: z.number().int().min(0).optional(),
+  pagesRead: z.number().int().min(0).optional(),
+  failed: z.boolean().optional(),
+  reason: textSchema(500).optional(),
+}).strict();
+
+export const jobOutcomeSchema = z.object({
+  kind: z.enum(["interview", "rejected", "offer", "no-reply"]),
+  at: z.number(),
+  note: textSchema(500).optional(),
+}).strict();
+export type JobOutcome = z.infer<typeof jobOutcomeSchema>;
 
 export const jobsJobSchema = z.object({
   id: idSchema,
@@ -77,6 +94,17 @@ export const jobsJobSchema = z.object({
   tailoredResumeId: z.string().max(128).optional(),
   appliedAt: z.number().optional(),
   notes: textSchema(2000).optional(),
+  companyResearch: companyResearchSchema.optional(),
+  followUpAt: z.number().optional(),
+  followUpNote: textSchema(500).optional(),
+  outcome: jobOutcomeSchema.optional(),
+  coverLetterId: z.string().max(128).optional(),
+  interviewPrepId: z.string().max(128).optional(),
+  lastGoodLayout: z.object({
+    fingerprint: z.string().max(128),
+    labels: z.array(z.string().max(200)).max(50),
+    at: z.number(),
+  }).strict().optional(),
 }).strict();
 export type JobsJob = z.infer<typeof jobsJobSchema>;
 
@@ -126,9 +154,16 @@ export const jobRunSchema = z.object({
   applied: z.array(jobRunAppliedSchema).max(500).default([]),
   skipped: z.array(jobRunSkippedSchema).max(500).default([]),
   reportText: z.string().max(50_000).default(""),
-  whatsapp: z.enum(["sent", "pending-bridge", "not-configured"]).default("pending-bridge"),
+  whatsapp: z.enum(["sent", "pending-bridge", "not-configured", "failed"]).default("pending-bridge"),
   /** True when at least one application ran without its queue task because the queue was unavailable. */
   queueFallback: z.boolean().default(false),
+  /** A layout change or human check stopped the run on one job; the person takes that step over. */
+  takeover: z.object({
+    jobId: idSchema,
+    reason: textSchema(500),
+    at: z.number(),
+    status: z.enum(["waiting", "resumed", "abandoned"]),
+  }).strict().optional(),
 }).strict();
 export type JobRun = z.infer<typeof jobRunSchema>;
 
@@ -156,6 +191,12 @@ export const jobsSettingsSchema = z.object({
   autoApply: z.boolean().default(true),
   /** Company career pages to search alongside the platforms; empty means platforms only. */
   companyPages: stringList(50, 2048),
+  /** Where run reports go: one notify URL per channel, plus the Vault saved-secret name holding the notify secret. */
+  reportBridge: z.object({
+    whatsappUrl: z.string().url().max(2048).optional(),
+    telegramUrl: z.string().url().max(2048).optional(),
+    secretName: z.string().max(128).optional(),
+  }).strict().optional(),
 }).strict();
 export type JobsSettings = z.infer<typeof jobsSettingsSchema>;
 

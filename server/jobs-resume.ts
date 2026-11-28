@@ -3,6 +3,7 @@
 import { z } from "zod";
 
 import { jobPlatformSchema, type JobsJob, type JobsProfile } from "../shared/jobs.ts";
+import { layoutPromptSection } from "./jobs-layout-guard.ts";
 
 /** A search turn reports its matches in one fenced block at the end of its reply; the server records it. */
 export const SEARCH_REPORT_FENCE = "sanremes-jobs";
@@ -66,7 +67,8 @@ function containsKeyword(text: string, keywords: readonly string[]): boolean {
 }
 
 /** Builds a single-page tailored resume from the stored profile and the job, reordering matched material first. */
-export function tailorResumeText(profile: JobsProfile, job: Pick<JobsJob, "title" | "company" | "jdKeywords" | "jdText">): string {
+export function tailorResumeText(profile: JobsProfile, job: Pick<JobsJob, "title" | "company" | "jdKeywords" | "jdText">, options?: { maxLines?: number }): string {
+  const maxLines = options?.maxLines ?? RESUME_PAGE_MAX_LINES;
   const keywords = job.jdKeywords ?? [];
   const matchedSkills = profile.skills.filter((skill) => keywords.some((keyword) => keyword.trim().toLowerCase() === skill.trim().toLowerCase()));
   const otherSkills = profile.skills.filter((skill) => !matchedSkills.includes(skill));
@@ -94,7 +96,7 @@ export function tailorResumeText(profile: JobsProfile, job: Pick<JobsJob, "title
     lines.push("");
   }
   let text = lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
-  while (estimateResumeLines(text) > RESUME_PAGE_MAX_LINES) {
+  while (estimateResumeLines(text) > maxLines) {
     const bulletLines = text.split("\n").map((line, index) => ({ line, index })).filter(({ line }) => line.startsWith("• "));
     const droppable = [...bulletLines].reverse().find(({ line }) => !containsKeyword(line, keywords))
       ?? [...bulletLines].reverse()[0];
@@ -103,7 +105,7 @@ export function tailorResumeText(profile: JobsProfile, job: Pick<JobsJob, "title
     next.splice(droppable.index, 1);
     text = next.join("\n").trim();
   }
-  if (estimateResumeLines(text) > RESUME_PAGE_MAX_LINES) throw new Error("That tailored resume does not fit on one page.");
+  if (estimateResumeLines(text) > maxLines) throw new Error("That tailored resume does not fit on one page.");
   return text;
 }
 
@@ -127,7 +129,7 @@ export function searchPrompt(settings: { search: { keywords: string[]; locations
 }
 
 /** The prompt for one approved application: the bot submits it in its own browser and reports the outcome. */
-export function applyPrompt(job: Pick<JobsJob, "id" | "title" | "company" | "url">, resumePath: string): string {
+export function applyPrompt(job: Pick<JobsJob, "id" | "title" | "company" | "url">, resumePath: string, expectedLayoutLabels?: readonly string[]): string {
   return [
     `Submit the application for "${job.title}" at ${job.company} (${job.url}) in your own browser profile.`,
     `Upload the tailored resume at ${resumePath} with the existing agent_browser_upload tool.`,
@@ -136,5 +138,6 @@ export function applyPrompt(job: Pick<JobsJob, "id" | "title" | "company" | "url
     `If the site asks for a human check, shows unusual-activity wording, or challenges the sign-in, stop at once and start your closing message with ${HUMAN_CHECK_MARKER} — never try to solve it.`,
     `If the application is submitted, end your reply with a line: ${APPLIED_MARKER} ${job.id}`,
     "If it is not submitted, say plainly what stopped it.",
+    layoutPromptSection(expectedLayoutLabels),
   ].join(" ");
 }

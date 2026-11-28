@@ -28,6 +28,16 @@ export async function resumeJobRun(id: string, request: Request = api): Promise<
   return request<{ run: JobRun }>(`/api/jobs/runs/${encodeURIComponent(id)}/resume`, { method: "POST", body: JSON.stringify({}) });
 }
 
+/** Resumes a run stopped on a takeover: the person finished the step, and the run carries on. */
+export async function resumeTakeover(id: string, request: Request = api): Promise<{ run: JobRun }> {
+  return request<{ run: JobRun }>(`/api/jobs/runs/${encodeURIComponent(id)}/takeover/resume`, { method: "POST", body: JSON.stringify({}) });
+}
+
+/** Marks a waiting takeover done without resuming: the person finished the step another way. */
+export async function abandonTakeover(id: string, request: Request = api): Promise<{ run: JobRun }> {
+  return request<{ run: JobRun }>(`/api/jobs/runs/${encodeURIComponent(id)}/takeover/abandon`, { method: "POST", body: JSON.stringify({}) });
+}
+
 const ACTIVE_PHASES: readonly JobRunPhase[] = ["searching", "tailoring", "applying", "reporting"];
 
 /** Still working: polling should keep asking until the phase leaves this set. */

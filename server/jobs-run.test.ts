@@ -185,6 +185,92 @@ describe("the run driver", () => {
     expect(stopped.applied).toHaveLength(1);
     expect(stopped.applied[0]?.status).toBe("not-submitted");
     expect(stopped.reportText).toContain("The run stopped early: the site asked for a human check — the bot stopped and never tried to solve it");
+    expect(stopped.takeover?.status).toBe("waiting");
+  });
+
+  it("stops the run when a turn closes with a layout change, and records the takeover", async () => {
+    const { driver } = await makeDriver({
+      startApply: async (input) => {
+        input.onSettled?.(false, "LAYOUT CHANGED: the apply button is gone and the form has new fields.");
+        return { started: true };
+      },
+    });
+    const run = driver.start();
+    await waitFor(driver, run.id, "stopped");
+    const stopped = driver.getRun(run.id)!;
+    expect(stopped.applied).toHaveLength(1);
+    expect(stopped.takeover).toMatchObject({ status: "waiting" });
+    expect(stopped.takeover?.reason).toContain("the apply button is gone");
+    expect(stopped.reportText).toContain("the run stopped so you can take over");
+    expect(driver.abandonTakeover(run.id)?.takeover?.status).toBe("abandoned");
+    expect(driver.abandonTakeover("no-such-run")).toBeNull();
+  });
+
+  it("stores the layout fingerprint from a successful apply's LAYOUT: line", async () => {
+    const { driver, store } = await makeDriver({
+      startApply: async (input) => {
+        input.onSettled?.(true, "Applied.\nLAYOUT: Apply now | Upload resume | Submit");
+        return { started: true };
+      },
+    });
+    const run = driver.start();
+    await waitFor(driver, run.id, "done");
+    const acme = store.snapshot().jobs.find((job) => job.company === "Acme")!;
+    expect(acme.lastGoodLayout?.labels).toEqual(["Apply now", "Upload resume", "Submit"]);
+    expect(acme.lastGoodLayout?.fingerprint).toMatch(/^[0-9a-f]{64}$/u);
+  });
+
+  it("sends the finished report through the delivery dep and marks the run sent", async () => {
+    const delivered: Array<{ runId: string; text: string }> = [];
+    const { driver, posted } = await makeDriver({
+      deliverReport: async (input) => {
+        delivered.push(input);
+        return [{ channel: "whatsapp", status: "sent" }];
+      },
+    });
+    const run = driver.start();
+    await waitFor(driver, run.id, "done");
+    const done = driver.getRun(run.id)!;
+    expect(done.whatsapp).toBe("sent");
+    expect(done.reportText).toContain("Report sent to WhatsApp.");
+    expect(delivered).toHaveLength(1);
+    expect(delivered[0]?.runId).toBe(run.id);
+    expect(posted[0]).toBe(done.reportText);
+  });
+
+  it("marks the run failed when report delivery fails, and still posts the report", async () => {
+    const { driver, posted } = await makeDriver({
+      deliverReport: async () => [{ channel: "whatsapp", status: "failed", note: "the bridge could not be reached" }],
+    });
+    const run = driver.start();
+    await waitFor(driver, run.id, "done");
+    const done = driver.getRun(run.id)!;
+    expect(done.whatsapp).toBe("failed");
+    expect(done.reportText).toContain("WhatsApp delivery failed (the bridge could not be reached)");
+    expect(posted).toHaveLength(1);
+  });
+
+  it("researches each company once per run and still applies when research fails", async () => {
+    const researched: string[] = [];
+    const { driver, store } = await makeDriver({
+      researchCompany: async (input) => {
+        researched.push(input.company);
+        if (input.company === "Beta") return { ok: false, company: "Beta", reason: "The web search did not answer." };
+        return {
+          ok: true,
+          research: { company: input.company, summary: "Acme builds widgets.", sources: [], researchedAt: 1, searches: 1, pagesRead: 1 },
+        };
+      },
+    });
+    const run = driver.start();
+    await waitFor(driver, run.id, "done");
+    const done = driver.getRun(run.id)!;
+    expect(done.applied).toHaveLength(2);
+    expect(researched).toEqual(["Acme", "Beta"]);
+    const acme = store.snapshot().jobs.find((job) => job.company === "Acme")!;
+    expect(acme.companyResearch?.summary).toBe("Acme builds widgets.");
+    const beta = store.snapshot().jobs.find((job) => job.company === "Beta")!;
+    expect(beta.companyResearch?.failed).toBe(true);
   });
 
   it("skips the second application on one platform once that platform's daily share is used", async () => {

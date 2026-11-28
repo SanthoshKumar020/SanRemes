@@ -2,13 +2,13 @@ import { useEffect, useRef, useState } from "react";
 
 import { t } from "@/lib/i18n";
 import {
-  fetchJobRun, fetchJobRuns, isRunActive, latestRun, pauseJobRun, resumeJobRun, startJobRun, upsertRun,
+  abandonTakeover, fetchJobRun, fetchJobRuns, isRunActive, latestRun, pauseJobRun, resumeJobRun, resumeTakeover, startJobRun, upsertRun,
   type JobRun,
 } from "@/lib/jobs-run";
 import {
-  applyQueueItem, approveQueueItem, batchApproveQueue, emptyJobsState, fetchJobs, fetchPlatforms, rejectQueueItem,
+  applyQueueItem, approveQueueItem, batchApproveQueue, emptyJobsState, fetchJobs, fetchPlatforms, fetchTracker, generateCoverLetter, generateInterviewPrep, generateResumeVariant, rejectQueueItem,
   saveSettings, sortedJobs, startJobSearch, tailorResume, updateJobStatus,
-  type JobPlatformStatus, type JobsJob, type JobsState, type JobStatus,
+  type JobPlatformStatus, type JobsJob, type JobsState, type JobStatus, type TrackerSummary,
 } from "@/lib/jobs";
 import { fetchTasks, type Task } from "@/lib/tasks";
 import { useStoreDispatch, useStoreSelector } from "@/state/store-select";
@@ -52,6 +52,9 @@ export function JobBotPage() {
   const [companyPages, setCompanyPages] = useState<string[]>([]);
   const [newPage, setNewPage] = useState("");
   const [savingPages, setSavingPages] = useState(false);
+  const [tracker, setTracker] = useState<TrackerSummary | null>(null);
+  const [docBusy, setDocBusy] = useState<string | null>(null);
+  const [takeoverBusy, setTakeoverBusy] = useState<string | null>(null);
   const runPoll = useRef(0);
   /** A run takes minutes, so keep asking every 3s until it finishes or stops; a new poll cancels the old one. */
   const pollRun = async (id: string) => {
@@ -91,6 +94,9 @@ export function JobBotPage() {
     fetchTasks()
       .then(({ tasks }) => { if (live) setQueueTasks(tasks); })
       .catch(() => { if (live) { setQueueTasks([]); setQueueTasksFailed(true); } });
+    fetchTracker()
+      .then(({ tracker: found }) => { if (live) setTracker(found); })
+      .catch(() => undefined);
     return () => { live = false; runPoll.current += 1; };
   }, []);
 
@@ -263,6 +269,51 @@ export function JobBotPage() {
       setRunBusy(false);
     }
   };
+  const resumeTakeoverRun = async (run: JobRun) => {
+    if (takeoverBusy) return;
+    setTakeoverBusy(`resume:${run.id}`);
+    setError("");
+    try {
+      const { run: next } = await resumeTakeover(run.id);
+      setRuns((prev) => upsertRun(prev ?? [], next));
+      setNotice(t("jobs.takeover.resumed"));
+      if (isRunActive(next)) void pollRun(run.id);
+    } catch (error) {
+      setError(routeReason(error, t("jobs.takeover.failed")));
+    } finally {
+      setTakeoverBusy(null);
+    }
+  };
+  const abandonTakeoverRun = async (run: JobRun) => {
+    if (takeoverBusy) return;
+    setTakeoverBusy(`abandon:${run.id}`);
+    setError("");
+    try {
+      const { run: next } = await abandonTakeover(run.id);
+      setRuns((prev) => upsertRun(prev ?? [], next));
+      setNotice(t("jobs.takeover.done"));
+    } catch (error) {
+      setError(routeReason(error, t("jobs.takeover.failed")));
+    } finally {
+      setTakeoverBusy(null);
+    }
+  };
+  const makeDocument = async (job: JobsJob, kind: "cover-letter" | "interview-prep" | "resume-variant", label: string) => {
+    if (docBusy) return;
+    setDocBusy(`${kind}:${job.id}`);
+    setError("");
+    try {
+      if (kind === "cover-letter") await generateCoverLetter(job.id);
+      else if (kind === "interview-prep") await generateInterviewPrep(job.id);
+      else await generateResumeVariant(job.id, job.platform === "linkedin" ? "linkedin" : job.platform === "naukri" ? "naukri" : "default");
+      await refresh();
+      setNotice(t("jobs.documents.ready", { kind: label, company: job.company }));
+    } catch (error) {
+      setError(routeReason(error, t("jobs.documents.failed")));
+    } finally {
+      setDocBusy(null);
+    }
+  };
   const pageUrlOk = (value: string): boolean => {
     try {
       const url = new URL(value);
@@ -308,6 +359,8 @@ export function JobBotPage() {
 
   const jobById = (id: string) => jobs?.jobs.find((job) => job.id === id);
   const latest = runs ? latestRun(runs) : null;
+  const takeoverRun = runs?.find((run) => run.takeover?.status === "waiting") ?? null;
+  const takeoverJob = takeoverRun?.takeover ? jobById(takeoverRun.takeover.jobId) : undefined;
   const runTasks = latest?.applied.filter((entry) => entry.taskId !== undefined) ?? [];
   const taskById = (id: string) => queueTasks?.find((task) => task.id === id);
   const botName = (botId: string | null): string => {
@@ -407,6 +460,29 @@ export function JobBotPage() {
                 )}
               </section>
 
+              {takeoverRun !== null && takeoverRun.takeover && (
+                <section aria-label={t("jobs.takeover.title")} className={SECTION}>
+                  <h2 className="text-[14px] font-semibold text-ink">{t("jobs.takeover.title")}</h2>
+                  <p className="mt-1 text-[13px] leading-relaxed text-ink-secondary">
+                    {t("jobs.takeover.body", {
+                      company: takeoverJob ? `${takeoverJob.title} at ${takeoverJob.company}` : takeoverRun.takeover.jobId,
+                      reason: takeoverRun.takeover.reason,
+                    })}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {takeoverJob && (
+                      <a href={takeoverJob.url} target="_blank" rel="noreferrer" className="ui-button ui-button-md">{t("jobs.takeover.openJob")}</a>
+                    )}
+                    <button type="button" onClick={() => void resumeTakeoverRun(takeoverRun)} disabled={takeoverBusy !== null} className="ui-button ui-button-md ui-button-primary disabled:opacity-50">
+                      {takeoverBusy === `resume:${takeoverRun.id}` ? t("jobs.takeover.resuming") : t("jobs.takeover.resume")}
+                    </button>
+                    <button type="button" onClick={() => void abandonTakeoverRun(takeoverRun)} disabled={takeoverBusy !== null} className="ui-button ui-button-md disabled:opacity-50">
+                      {takeoverBusy === `abandon:${takeoverRun.id}` ? t("jobs.takeover.abandoning") : t("jobs.takeover.abandon")}
+                    </button>
+                  </div>
+                </section>
+              )}
+
               {latest !== null && (latest.applied.length > 0 || latest.skipped.length > 0 || latest.reportText !== "") && (
                 <section aria-label={t("jobs.report.title")} className={SECTION}>
                   <h2 className="text-[14px] font-semibold text-ink">{t("jobs.report.title")}</h2>
@@ -471,10 +547,60 @@ export function JobBotPage() {
                       ? t("jobs.report.whatsappSent")
                       : latest.whatsapp === "pending-bridge"
                         ? t("jobs.report.whatsappPending")
-                        : t("jobs.report.whatsappNotConfigured")}
+                        : latest.whatsapp === "failed"
+                          ? t("jobs.report.whatsappFailed")
+                          : t("jobs.report.whatsappNotConfigured")}
                   </p>
                 </section>
               )}
+
+              <section aria-label={t("jobs.tracker.title")} className={SECTION}>
+                <h2 className="text-[14px] font-semibold text-ink">{t("jobs.tracker.title")}</h2>
+                <p className="mt-1 text-[13px] leading-relaxed text-ink-secondary">{t("jobs.tracker.body")}</p>
+                {tracker === null ? (
+                  <p className="mt-1 text-[13px] text-ink-secondary">{t("jobs.page.loading")}</p>
+                ) : jobs.jobs.length === 0 ? (
+                  <p className="mt-1 text-[13px] text-ink-secondary">{t("jobs.tracker.empty")}</p>
+                ) : (
+                  <>
+                    <p className="mt-2 text-[13px] leading-relaxed text-ink-secondary">
+                      {t("jobs.tracker.applied", { count: tracker.totals.applied })}
+                      {` · ${t("jobs.tracker.interviews", { count: tracker.outcomes.interview })}`}
+                      {` · ${t("jobs.tracker.rejected", { count: tracker.outcomes.rejected })}`}
+                      {` · ${t("jobs.tracker.offers", { count: tracker.outcomes.offer })}`}
+                      {` · ${t("jobs.tracker.noReply", { count: tracker.outcomes.noReply })}`}
+                    </p>
+                    <h3 className="mt-3 text-[13px] font-medium text-ink">{t("jobs.tracker.perPlatform")}</h3>
+                    {tracker.perPlatform.length === 0 ? (
+                      <p className="mt-1 text-[13px] text-ink-secondary">{t("jobs.tracker.empty")}</p>
+                    ) : (
+                      <ul className="mt-1 flex flex-col gap-1 text-[13px] text-ink-secondary">
+                        {tracker.perPlatform.map((row) => (
+                          <li key={row.platform}>
+                            {row.platform}: {t("jobs.tracker.applied", { count: row.applied })} · {t("jobs.tracker.conversion", { conversion: row.conversion })}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <h3 className="mt-3 text-[13px] font-medium text-ink">{t("jobs.tracker.followUps")}</h3>
+                    {tracker.followUpsDue.length === 0 ? (
+                      <p className="mt-1 text-[13px] text-ink-secondary">{t("jobs.tracker.followUpsEmpty")}</p>
+                    ) : (
+                      <ul className="mt-1 flex flex-col gap-2">
+                        {tracker.followUpsDue.map((job) => (
+                          <li key={job.id} className="rounded-lg border border-hairline/60 p-3">
+                            <p className="text-[13px] font-medium text-ink">{job.title} · {job.company}</p>
+                            <p className="mt-0.5 text-[12px] text-ink-secondary">
+                              {t("jobs.tracker.followUpDue", { date: dateText(job.followUpAt ?? 0) })}
+                              {job.followUpNote ? ` · ${job.followUpNote}` : ""}
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                )}
+              </section>
 
               <section aria-label={t("jobs.page.taskQueue")} className={SECTION}>
                 <h2 className="text-[14px] font-semibold text-ink">{t("jobs.page.taskQueue")}</h2>
@@ -604,11 +730,25 @@ export function JobBotPage() {
                           <p className="mt-0.5 text-[12px] text-ink-secondary">
                             {job.salaryText ? `${t("jobs.matches.salaryPosted", { salary: job.salaryText })} · ` : ""}{profile?.salaryExpected ? t("jobs.matches.salaryExpected", { salary: profile.salaryExpected }) : ""}
                           </p>
-                          <div className="mt-2 flex gap-2">
+                          <div className="mt-2 flex flex-wrap gap-2">
                             <button type="button" onClick={() => void runTailor(job)} disabled={tailoring !== null || queued} className="ui-button ui-button-md disabled:opacity-50">
                               {tailoring === job.id ? t("jobs.matches.tailoring") : queued ? t("jobs.matches.queued") : t("jobs.matches.tailor")}
                             </button>
+                            <button type="button" onClick={() => void makeDocument(job, "cover-letter", t("jobs.documents.coverLetter"))} disabled={docBusy !== null} className="ui-button ui-button-md disabled:opacity-50">
+                              {docBusy === `cover-letter:${job.id}` ? t("jobs.documents.coverLetterMaking") : t("jobs.documents.coverLetter")}
+                            </button>
+                            <button type="button" onClick={() => void makeDocument(job, "interview-prep", t("jobs.documents.interviewPrep"))} disabled={docBusy !== null} className="ui-button ui-button-md disabled:opacity-50">
+                              {docBusy === `interview-prep:${job.id}` ? t("jobs.documents.interviewPrepMaking") : t("jobs.documents.interviewPrep")}
+                            </button>
+                            <button type="button" onClick={() => void makeDocument(job, "resume-variant", t("jobs.documents.resumeVariant"))} disabled={docBusy !== null} className="ui-button ui-button-md disabled:opacity-50">
+                              {docBusy === `resume-variant:${job.id}` ? t("jobs.documents.resumeVariantMaking") : t("jobs.documents.resumeVariant")}
+                            </button>
                           </div>
+                          {(job.coverLetterId || job.interviewPrepId) && (
+                            <p className="mt-1 text-[12px] text-ink-secondary">
+                              {[job.coverLetterId ? t("jobs.documents.coverLetterReady") : null, job.interviewPrepId ? t("jobs.documents.interviewPrepReady") : null].filter(Boolean).join(" · ")}
+                            </p>
+                          )}
                         </li>
                       );
                     })}

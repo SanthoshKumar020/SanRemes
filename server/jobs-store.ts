@@ -4,7 +4,8 @@ import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { DAILY_CAP_DEFAULT, jobRunSchema, jobsFileSchema, jobsJobSchema, jobsProfileSchema, jobsResumeSchema, jobsSettingsSchema, type JobPlatform, type JobPlatformSettings, type JobRun, type JobsData, type JobsJob, type JobsProfile, type JobsQueueItem, type JobsResume, type JobsSettings, type JobStatus, type QueueState } from "../shared/jobs.ts";
+import { DAILY_CAP_DEFAULT, jobRunSchema, jobsFileSchema, jobsJobSchema, jobsProfileSchema, jobsResumeSchema, jobsSettingsSchema, type JobOutcome, type JobPlatform, type JobPlatformSettings, type JobRun, type JobsData, type JobsJob, type JobsProfile, type JobsQueueItem, type JobsResume, type JobsSettings, type JobStatus, type QueueState } from "../shared/jobs.ts";
+import type { CompanyResearchOutcome } from "./jobs-company-research.ts";
 
 import { writeFileAtomic } from "./atomic.ts";
 
@@ -32,6 +33,15 @@ export interface JobsSettingsPatch {
   twoFactor?: Record<string, boolean>;
   autoApply?: boolean;
   companyPages?: string[];
+  reportBridge?: { whatsappUrl?: string; telegramUrl?: string; secretName?: string };
+}
+
+/** The Jobs page tracker: status totals, per-platform results, follow-ups due now, outcome counts. */
+export interface TrackerSummary {
+  totals: Record<JobStatus, number>;
+  perPlatform: { platform: string; applied: number; interview: number; rejected: number; offer: number; conversion: number }[];
+  followUpsDue: JobsJob[];
+  outcomes: { interview: number; rejected: number; offer: number; noReply: number };
 }
 
 /** One found job as a search turn reports it, before the store scores and dedupes it. */
@@ -137,7 +147,10 @@ export class JobsStore {
     const updated = this.update((data) => {
       const search = { ...data.settings.search, ...patch.search };
       const platforms = { ...data.settings.platforms, ...patch.platforms };
-      data.settings = jobsSettingsSchema.parse({ ...data.settings, ...patch, platforms, search });
+      const reportBridge = patch.reportBridge ? { ...data.settings.reportBridge, ...patch.reportBridge } : data.settings.reportBridge;
+      const merged = { ...data.settings, ...patch, platforms, search };
+      if (reportBridge) merged.reportBridge = reportBridge;
+      data.settings = jobsSettingsSchema.parse(merged);
     });
     return updated.settings;
   }
@@ -229,6 +242,91 @@ export class JobsStore {
     return changed;
   }
 
+  /** Records how an application ended. Interview and rejected move the job status; offer and no-reply leave it where it is: the status list has no offer state, and a silent application stays applied. */
+  recordOutcome(jobId: string, outcome: { kind: JobOutcome["kind"]; note?: string }): JobsJob | null {
+    const at = this.now();
+    let changed: JobsJob | null = null;
+    this.update((data) => {
+      const job = data.jobs.find((one) => one.id === jobId);
+      if (!job) return;
+      job.outcome = { kind: outcome.kind, at, ...(outcome.note ? { note: outcome.note } : {}) };
+      if (outcome.kind === "interview" || outcome.kind === "rejected") {
+        job.status = outcome.kind;
+        job.statusAt = at;
+      }
+      changed = { ...job };
+    });
+    return changed;
+  }
+
+  /** Sets a follow-up date and note; a null date clears the follow-up and its note. */
+  setFollowUp(jobId: string, at: number | null, note?: string): JobsJob | null {
+    let changed: JobsJob | null = null;
+    this.update((data) => {
+      const job = data.jobs.find((one) => one.id === jobId);
+      if (!job) return;
+      if (at === null) {
+        delete job.followUpAt;
+        delete job.followUpNote;
+      } else {
+        job.followUpAt = at;
+        if (note === undefined) delete job.followUpNote;
+        else job.followUpNote = note;
+      }
+      changed = { ...job };
+    });
+    return changed;
+  }
+
+  /** Stores company research on the job. A failed attempt is stored too, with an empty summary, so the next run knows it was tried. */
+  recordCompanyResearch(jobId: string, outcome: CompanyResearchOutcome): JobsJob | null {
+    const at = this.now();
+    let changed: JobsJob | null = null;
+    this.update((data) => {
+      const job = data.jobs.find((one) => one.id === jobId);
+      if (!job) return;
+      job.companyResearch = outcome.ok
+        ? { summary: outcome.research.summary, sources: outcome.research.sources, researchedAt: outcome.research.researchedAt, searches: outcome.research.searches, pagesRead: outcome.research.pagesRead }
+        : { summary: "", sources: [], researchedAt: at, failed: true, reason: outcome.reason };
+      changed = { ...job };
+    });
+    return changed;
+  }
+
+  setCoverLetter(jobId: string, resumeId: string): JobsJob | null {
+    let changed: JobsJob | null = null;
+    this.update((data) => {
+      const job = data.jobs.find((one) => one.id === jobId);
+      if (!job) return;
+      job.coverLetterId = resumeId;
+      changed = { ...job };
+    });
+    return changed;
+  }
+
+  setInterviewPrep(jobId: string, resumeId: string): JobsJob | null {
+    let changed: JobsJob | null = null;
+    this.update((data) => {
+      const job = data.jobs.find((one) => one.id === jobId);
+      if (!job) return;
+      job.interviewPrepId = resumeId;
+      changed = { ...job };
+    });
+    return changed;
+  }
+
+  setLastGoodLayout(jobId: string, fingerprint: string, labels: readonly string[]): JobsJob | null {
+    const at = this.now();
+    let changed: JobsJob | null = null;
+    this.update((data) => {
+      const job = data.jobs.find((one) => one.id === jobId);
+      if (!job) return;
+      job.lastGoodLayout = { fingerprint, labels: [...labels], at };
+      changed = { ...job };
+    });
+    return changed;
+  }
+
   enqueue(jobId: string, tailoredResumeId: string): JobsQueueItem | null {
     const item: JobsQueueItem = { id: randomUUID(), jobId, tailoredResumeId, state: "pending", attempts: [] };
     let added: JobsQueueItem | null = null;
@@ -301,6 +399,48 @@ export class JobsStore {
       changed = { ...run };
     });
     return changed;
+  }
+
+  setRunTakeover(runId: string, takeover: NonNullable<JobRun["takeover"]>): JobRun | null {
+    return this.updateRun(runId, { takeover });
+  }
+
+  clearRunTakeover(runId: string): JobRun | null {
+    let changed: JobRun | null = null;
+    this.update((data) => {
+      const run = data.runs.find((one) => one.id === runId);
+      if (!run) return;
+      delete run.takeover;
+      changed = { ...run };
+    });
+    return changed;
+  }
+
+  /** Status totals, per-platform results with interview conversion, follow-ups due now, outcome counts. */
+  trackerSummary(): TrackerSummary {
+    const data = this.read();
+    const now = this.now();
+    const totals: Record<JobStatus, number> = { new: 0, queued: 0, approved: 0, applied: 0, interview: 0, rejected: 0, saved: 0, skipped: 0, expired: 0 };
+    const byPlatform = new Map<string, { platform: string; applied: number; interview: number; rejected: number; offer: number }>();
+    const outcomes = { interview: 0, rejected: 0, offer: 0, noReply: 0 };
+    for (const job of data.jobs) {
+      totals[job.status]++;
+      const row = byPlatform.get(job.platform) ?? { platform: job.platform, applied: 0, interview: 0, rejected: 0, offer: 0 };
+      byPlatform.set(job.platform, row);
+      if (job.status === "applied") row.applied++;
+      if (job.outcome?.kind === "interview") { row.interview++; outcomes.interview++; }
+      if (job.outcome?.kind === "rejected") { row.rejected++; outcomes.rejected++; }
+      if (job.outcome?.kind === "offer") { row.offer++; outcomes.offer++; }
+      if (job.outcome?.kind === "no-reply") outcomes.noReply++;
+    }
+    const perPlatform = [...byPlatform.values()]
+      .sort((a, b) => a.platform.localeCompare(b.platform))
+      .map((row) => ({ ...row, conversion: row.applied === 0 ? 0 : Math.round((row.interview / row.applied) * 100) }));
+    const followUpsDue = data.jobs
+      .filter((job) => job.followUpAt !== undefined && job.followUpAt <= now && (job.status === "applied" || job.status === "interview"))
+      .sort((a, b) => (a.followUpAt ?? 0) - (b.followUpAt ?? 0))
+      .map((job) => structuredClone(job));
+    return { totals, perPlatform, followUpsDue, outcomes };
   }
 
   appliedToday(now: number = this.now()): number {

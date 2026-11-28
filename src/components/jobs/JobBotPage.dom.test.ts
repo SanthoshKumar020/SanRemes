@@ -7,28 +7,53 @@ import { setLocale } from "@/lib/i18n";
 const fixture = vi.hoisted(() => ({
   fetchJobs: vi.fn(),
   fetchPlatforms: vi.fn(),
+  fetchTracker: vi.fn(),
   startJobSearch: vi.fn(),
   tailorResume: vi.fn(),
+  generateCoverLetter: vi.fn(),
+  generateInterviewPrep: vi.fn(),
+  generateResumeVariant: vi.fn(),
   approveQueueItem: vi.fn(),
   rejectQueueItem: vi.fn(),
   batchApproveQueue: vi.fn(),
   applyQueueItem: vi.fn(),
   updateJobStatus: vi.fn(),
   saveSettings: vi.fn(),
+  fetchJobRuns: vi.fn(),
+  fetchJobRun: vi.fn(),
+  startJobRun: vi.fn(),
+  pauseJobRun: vi.fn(),
+  resumeJobRun: vi.fn(),
+  resumeTakeover: vi.fn(),
+  abandonTakeover: vi.fn(),
   dispatch: vi.fn(),
 }));
 vi.mock("@/lib/jobs", async (importOriginal) => ({
   ...await importOriginal<typeof import("@/lib/jobs")>(),
   fetchJobs: (...args: unknown[]) => fixture.fetchJobs(...args),
   fetchPlatforms: (...args: unknown[]) => fixture.fetchPlatforms(...args),
+  fetchTracker: (...args: unknown[]) => fixture.fetchTracker(...args),
   startJobSearch: (...args: unknown[]) => fixture.startJobSearch(...args),
   tailorResume: (...args: unknown[]) => fixture.tailorResume(...args),
+  generateCoverLetter: (...args: unknown[]) => fixture.generateCoverLetter(...args),
+  generateInterviewPrep: (...args: unknown[]) => fixture.generateInterviewPrep(...args),
+  generateResumeVariant: (...args: unknown[]) => fixture.generateResumeVariant(...args),
   approveQueueItem: (...args: unknown[]) => fixture.approveQueueItem(...args),
   rejectQueueItem: (...args: unknown[]) => fixture.rejectQueueItem(...args),
   batchApproveQueue: (...args: unknown[]) => fixture.batchApproveQueue(...args),
   applyQueueItem: (...args: unknown[]) => fixture.applyQueueItem(...args),
   updateJobStatus: (...args: unknown[]) => fixture.updateJobStatus(...args),
   saveSettings: (...args: unknown[]) => fixture.saveSettings(...args),
+}));
+vi.mock("@/lib/jobs-run", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@/lib/jobs-run")>(),
+  fetchJobRuns: (...args: unknown[]) => fixture.fetchJobRuns(...args),
+  fetchJobRun: (...args: unknown[]) => fixture.fetchJobRun(...args),
+  startJobRun: (...args: unknown[]) => fixture.startJobRun(...args),
+  pauseJobRun: (...args: unknown[]) => fixture.pauseJobRun(...args),
+  resumeJobRun: (...args: unknown[]) => fixture.resumeJobRun(...args),
+  resumeTakeover: (...args: unknown[]) => fixture.resumeTakeover(...args),
+  abandonTakeover: (...args: unknown[]) => fixture.abandonTakeover(...args),
 }));
 vi.mock("@/state/store-select", () => ({
   useStoreDispatch: () => fixture.dispatch,
@@ -65,6 +90,26 @@ const baseState = {
   resumes: [{ id: "r-1", jobId: "job-1", kind: "tailored", path: "/resumes/r-1.txt", createdAt: 1, text: "Santhoshkumar\nDatabricks, SQL, PySpark", note: "Tailored for Data Engineer at Acme" }],
   appliedToday: 1,
 };
+const trackerState = {
+  totals: { new: 1, queued: 0, approved: 2, applied: 1, interview: 0, rejected: 0, saved: 0, skipped: 0, expired: 0 },
+  perPlatform: [
+    { platform: "naukri", applied: 1, interview: 0, rejected: 0, offer: 0, conversion: 0 },
+    { platform: "linkedin", applied: 0, interview: 0, rejected: 0, offer: 0, conversion: 0 },
+  ],
+  followUpsDue: [{ ...baseState.jobs[2], followUpAt: 1, followUpNote: "Chase the recruiter" }],
+  outcomes: { interview: 0, rejected: 0, offer: 0, noReply: 0 },
+};
+const doneRun = {
+  id: "run-1", kind: "auto", startedAt: 1, phase: "done", searched: 0, found: 0,
+  applied: [], skipped: [], reportText: "", whatsapp: "pending-bridge", queueFallback: false,
+};
+const takeoverRun = {
+  ...doneRun,
+  phase: "stopped",
+  searched: 1,
+  found: 1,
+  takeover: { jobId: "job-3", reason: "the apply button moved", at: 1, status: "waiting" },
+};
 
 async function render() {
   root = createRoot(host);
@@ -90,6 +135,17 @@ beforeEach(() => {
     { platform: "naukri", enabled: true, signedIn: true },
     { platform: "linkedin", enabled: true, signedIn: false },
   ] });
+  fixture.fetchTracker.mockResolvedValue({ tracker: trackerState });
+  fixture.fetchJobRuns.mockResolvedValue({ runs: [] });
+  fixture.fetchJobRun.mockResolvedValue({ run: doneRun });
+  fixture.startJobRun.mockResolvedValue({ run: doneRun });
+  fixture.pauseJobRun.mockResolvedValue({ run: doneRun });
+  fixture.resumeJobRun.mockResolvedValue({ run: doneRun });
+  fixture.resumeTakeover.mockResolvedValue({ run: { ...takeoverRun, takeover: { ...takeoverRun.takeover, status: "resumed" } } });
+  fixture.abandonTakeover.mockResolvedValue({ run: { ...takeoverRun, takeover: { ...takeoverRun.takeover, status: "abandoned" } } });
+  fixture.generateCoverLetter.mockResolvedValue({ resume: { id: "doc-1" }, job: { id: "job-1" }, pdfPath: "/docs/cover.pdf" });
+  fixture.generateInterviewPrep.mockResolvedValue({ resume: { id: "doc-2" }, job: { id: "job-1" }, pdfPath: "/docs/prep.pdf" });
+  fixture.generateResumeVariant.mockResolvedValue({ resume: { id: "r-2" }, job: { id: "job-1" } });
   fixture.startJobSearch.mockResolvedValue({ started: true, botId: "apply-1", recorded: 2, skipped: 0 });
   fixture.tailorResume.mockResolvedValue({ resume: { id: "r-1" }, job: { id: "job-1" }, queue: null });
   fixture.approveQueueItem.mockResolvedValue({ queue: { id: "q-1", state: "approved" } });
@@ -192,6 +248,49 @@ describe("JobBotPage", () => {
     await click(button("Changed vs base"));
     expect(host.textContent).toContain("Every added line must come from your profile");
     expect(host.textContent).toContain("+ Databricks, SQL, PySpark");
+  });
+
+  it("shows the application tracker with totals, per-platform conversion, and due follow-ups", async () => {
+    await render();
+    expect(host.textContent).toContain("Application tracker");
+    expect(host.textContent).toContain("Applied 1");
+    expect(host.textContent).toContain("Interviews 0");
+    expect(host.textContent).toContain("naukri: Applied 1 · 0% reached interview");
+    expect(host.textContent).toContain("linkedin: Applied 0 · 0% reached interview");
+    expect(host.textContent).toContain("Follow-ups due");
+    expect(host.textContent).toContain("Chase the recruiter");
+  });
+
+  it("shows the takeover card and resumes the run from it", async () => {
+    fixture.fetchJobRuns.mockResolvedValue({ runs: [takeoverRun] });
+    await render();
+    expect(host.textContent).toContain("Needs you");
+    expect(host.textContent).toContain("The run stopped on Data Engineer at Gamma — the apply button moved");
+    expect(host.querySelector('a[href="https://www.naukri.com/job/3"]')?.textContent).toContain("Open the job");
+    const card = host.querySelector('section[aria-label="Needs you"]')!;
+    const resumeButton = [...card.querySelectorAll("button")].find((el) => el.textContent?.trim() === "Resume run")!;
+    await click(resumeButton);
+    expect(fixture.resumeTakeover).toHaveBeenCalledWith("run-1");
+    expect(host.textContent).toContain("Run resumed.");
+  });
+
+  it("shows the takeover card and marks the run done from it", async () => {
+    fixture.fetchJobRuns.mockResolvedValue({ runs: [takeoverRun] });
+    await render();
+    await click(button("Mark done"));
+    expect(fixture.abandonTakeover).toHaveBeenCalledWith("run-1");
+    expect(host.textContent).toContain("Marked done.");
+  });
+
+  it("generates a cover letter, interview prep, and resume variant for a match", async () => {
+    await render();
+    await click(button("Cover letter"));
+    expect(fixture.generateCoverLetter).toHaveBeenCalledWith("job-1");
+    expect(host.textContent).toContain("Cover letter ready for Acme.");
+    await click(button("Interview prep"));
+    expect(fixture.generateInterviewPrep).toHaveBeenCalledWith("job-1");
+    await click(button("Resume variant"));
+    expect(fixture.generateResumeVariant).toHaveBeenCalledWith("job-1", "naukri");
   });
 
   it("groups tracked jobs by status and lets the status change by hand", async () => {
